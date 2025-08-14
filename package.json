@@ -1,0 +1,28 @@
+{
+  "name": "expressblog",
+  "version": "1.0.0",
+  "description": "- create an empty repository on your GitHub\r - Don't change the default settings -> no readme, no .gitignore, no license (This can be done later)",
+  "main": "app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OneMillionthUsername/ExpressBlog.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/OneMillionthUsername/ExpressBlog/issues"
+  },
+  "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
