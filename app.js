@@ -19,16 +19,46 @@ import dotenv from 'dotenv';
 import { unlink as unlinkAsync } from 'fs/promises';
 import { swaggerUiMiddleware, swaggerUiSetup } from './swagger.js';
 import logger, { loggerMiddleware } from './logger.js'; // Unser neues Logging-System
-import { createEscapeInputMiddleware } from './utils.js';
 import helmet from 'helmet';
 import { error } from 'console';
 import { isBigIntObject } from 'util/types';
+import * as middleware from './utils/middleware.js';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
 // Validating critical vars
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+// --- Rate limiters ---
+// Basis-Konfiguration für alle Limiter
+const baseLimiterConfig = {
+  standardHeaders: true,
+  legacyHeaders: false, // Moderne Header verwenden
+  message: { error: 'Rate limit exceeded' }
+};
+
+// Schärfere Limits für kritische Endpoints
+const strictLimiter = rateLimit({
+  ...baseLimiterConfig,
+  windowMs: 15 * 60 * 1000,
+  max: 10
+});
+
+const globalLimiter = rateLimit({
+  ...baseLimiterConfig,
+  windowMs: 15 * 60 * 1000,
+  max: 30
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Zu viele Loginversuche. Bitte später erneut versuchen.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 if (missingVars.length > 0) {
     logger.error('Missing required environment variables', { missingVars });
@@ -75,25 +105,43 @@ logger.debug('Logger system initialized - DEBUG level active');
 logger.debug('Test debug message - if you see this, debug logging works!');
 
 const app = express();
+const postRouter = express.Router();
+const commentsRouter = express.Router();
 // Datenbank initialisieren
 async function initializeApp() {
-    console.log('Initializing database...');
-    
-    // Datenbankverbindung testen
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-        console.error('Database connection failed! Server will exit.');
-        process.exit(1);
-    }
-    
-    // Schema erstellen
-    const schemaCreated = await initializeDatabase();
-    if (!schemaCreated) {
-        console.error('Database schema could not be created! Server will exit.');
-        process.exit(1);
-    }
-    
-    console.log('Database successfully initialized');
+  console.log('Initializing database...');
+  // Datenbankverbindung testen
+  const dbConnected = await testConnection();
+  if (!dbConnected) {
+      console.error('Database connection failed! Server will exit.');
+      process.exit(1);
+  }
+  
+  // Schema erstellen
+  const schemaCreated = await initializeDatabase();
+  if (!schemaCreated) {
+      console.error('Database schema could not be created! Server will exit.');
+      process.exit(1);
+  }
+  
+  console.log('Database successfully initialized');
+  // SSL-Zertifikate nur in Development laden (Plesk übernimmt SSL in Production)
+  let httpsOptions = null;
+  if (!IS_PLESK && !IS_PRODUCTION) {
+      try {
+          const sslPath = join(__dirname, '..', 'ssl');
+          httpsOptions = {
+              key: readFileSync(join(sslPath, 'private-key.pem')),
+              cert: readFileSync(join(sslPath, 'certificate.pem'))
+          };
+          console.log('SSL certificates loaded successfully (Development)');
+      } catch (error) {
+          console.warn('SSL certificates not found - HTTP only available');
+          console.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
+      }
+  } else {
+      console.log('Production mode: SSL handled by Plesk/webserver');
+  }
 }
 
 // App initialisieren (asynchron)
@@ -103,28 +151,9 @@ initializeApp().then(() => {
     console.error('Server initialization failed:', error);
 });
 
-// SSL-Zertifikate nur in Development laden (Plesk übernimmt SSL in Production)
-let httpsOptions = null;
-if (!IS_PLESK && !IS_PRODUCTION) {
-    try {
-        const sslPath = join(__dirname, '..', 'ssl');
-        httpsOptions = {
-            key: readFileSync(join(sslPath, 'private-key.pem')),
-            cert: readFileSync(join(sslPath, 'certificate.pem'))
-        };
-        console.log('SSL certificates loaded successfully (Development)');
-    } catch (error) {
-        console.warn('SSL certificates not found - HTTP only available');
-        console.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
-    }
-} else {
-    console.log('Production mode: SSL handled by Plesk/webserver');
-}
-
 // ===========================================
 // MIDDLEWARE
 // ===========================================
-
 // Helmet core + secure CSP (no 'unsafe-inline')
 app.use(helmet({
   contentSecurityPolicy: {
@@ -174,8 +203,9 @@ app.use(helmet({
   referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
 
+app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
+
 // ensure other endpoints use requireJsonContent(req,res) if they expect JSON
-app.use(createEscapeInputMiddleware(['content', 'description']));
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true,
@@ -188,7 +218,7 @@ app.use(express.urlencoded({
 app.use(cookieParser());
 app.set('trust proxy', true); // Damit Express die korrekte IP-Adresse des Clients hinter einem Reverse Proxy erkennt
 app.use(loggerMiddleware);
-app.use(express.static('public'));
+
 
 // Prevent open redirects.
 app.use((req, res) => {
@@ -239,23 +269,87 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   res.status(404).send("Sorry, can't find that!");
 });
+// custom 500
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
+app.use(middleware.errorHandlerMiddleware);
+app.use(globalLimiter);
 
+// Statische Dateien mit korrekten MIME-Types
+app.use(express.static(publicDirectoryPath, {
+    setHeaders: (res, path) => {
+        // JavaScript-Dateien
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        }
+        // CSS-Dateien
+        else if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+        }
+        // JSON-Dateien
+        else if (path.endsWith('.json')) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        }
+        // Cache-Control für statische Assets
+        if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 Jahr
+        }
+    }
+}));
 
+// ===========================================
+// PUBLIC ENDPOINTS
+// ===========================================
 
-// Sample route
+// Health Check Endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: IS_PRODUCTION ? 'production' : 'development',
+        version: process.env.npm_package_version || '1.0.0'
+    });
+});
+
 app.get('/', (req, res) => {
-  res.send('Hello, World!');
+  res.sendFile(join(publicDirectoryPath, 'index.html'));
 });
 
-// Another route with parameters
-app.get('/user/:id', (req, res) => {
-  const userId = req.params.id;
-  res.send(`User ID is ${userId}`);
+postRouter.all('/blogpost/:slug', middleware.requireJsonContent, async (req, res) => {
+  //hier allgemeine Logik ausführen
+  //logging
+  //sanitazing
 });
+
+// commentsRouter.all();
+
+postRouter.get('/blogpost/:slug', async (req, res) => {
+  const slug = req.params.slug;
+  try {
+    const post = DatabaseService.getPostBySlug(slug);
+    if(!post) return res.status(404).json({ error: 'Blogpost not found' });
+    if(post.deleted) return res.status(410).json({ error: 'Blogpost deleted' });
+    if(!post.published) return res.status(403).json({ error: 'Blogpost not published' });
+
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    const referer = req.get('Referer');
+
+    DatabaseService.incrementViews(slug, ipAddress, userAgent, referer).catch(err => {
+      console.error('Fehler beim Tracking:', err);
+    });
+    res.json(convertBigInts(post) || post);
+  } catch (error) {
+    console.error('Error loading the blog post', error);
+    res.status(500).json({ error: 'Server failed to load the blogpost' });
+  }
+});
+
+app.use(postRouter);
+app.use(commentsRouter);
 
 // Export the app to be used by the server
 export default app;
