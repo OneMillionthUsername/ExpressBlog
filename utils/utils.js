@@ -90,6 +90,17 @@ export function convertBigInts(obj) {
   return obj;
 }
 
+export function parseTags(tags) {
+  if (typeof tags === 'string' && tags.trim() !== '') {
+    try {
+      return JSON.parse(tags);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 // Utility: truncate
 function truncateSlug(slug, maxLength = 50) {
   if (slug.length <= maxLength) return slug;

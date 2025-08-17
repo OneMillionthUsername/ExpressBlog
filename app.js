@@ -83,6 +83,7 @@ import {
     extractTokenFromRequest,
     AUTH_COOKIE_NAME  // Import the correct cookie name
 } from './auth.js';
+import { createSlug } from './utils/utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -345,6 +346,21 @@ postRouter.get('/blogpost/:slug', async (req, res) => {
   } catch (error) {
     console.error('Error loading the blog post', error);
     res.status(500).json({ error: 'Server failed to load the blogpost' });
+  }
+});
+
+postRouter.post('/blogpost', strictLimiter, authenticateToken, requireAdmin, middleware.requireJsonContent, async (req, res) => {
+  const { title, content, tags } = req.body;
+  const slug = createSlug(title);
+  try {
+    const result = await DatabaseService.createPost({ title, slug, content, tags, author: req.user.username });
+    if (!result) {
+      return res.status(400).json({ error: 'Failed to create blog post' });
+    }
+    res.status(201).json({ message: 'Blog post created successfully', postId: convertBigInts(result.postId), title: result.title });
+  } catch (error) {
+    console.error('Error creating new blog post', error);
+    res.status(500).json({ error: 'Server failed to create the blogpost' });
   }
 });
 
