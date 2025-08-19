@@ -8,7 +8,7 @@
 
 class BlogpostError extends Error {}
 
-import mariadb from 'mariadb';
+import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils';
 
 // MariaDB Connection Pool konfigurieren
@@ -45,10 +45,9 @@ export const DatabaseService = {
       if(!post.published) {
         throw new Error('Post not published');
       }
-      const convertedPost = convertBigInts(post);
-      return convertedPost;
+      return convertBigInts(post);
     } catch (error) {
-      throw new BlogpostError('Error in getPostBySlug:', error);
+      throw new BlogpostError(`Error in getPostBySlug: ${error.message}`);
     } finally {
       if (conn) conn.release();
     }
@@ -89,7 +88,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
-      throw new BlogpostError('Error in getAllPosts:', error);
+      throw new BlogpostError(`Error in getAllPosts: ${error.message}`);
     } finally {
       if (conn) conn.release();
     }

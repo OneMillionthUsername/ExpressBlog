@@ -7,13 +7,10 @@ const actualUtils = await import("../utils/utils.js");
 jest.unstable_mockModule("../utils/utils.js", () => ({
   escapeAllStrings: jest.fn(),
   sanitizeFilename: jest.fn((filename) => "safe_" + filename),
-  parseTags: jest.fn(),
-  convertBigInts: jest.fn(),
-  createSlug: jest.fn()
 }));
 
-// 3. Die gemockten Funktionen importieren
-const { escapeAllStrings, sanitizeFilename, createSlug, convertBigInts } = await import("../utils/utils.js");
+// Die gemockten Funktionen importieren
+const { escapeAllStrings, sanitizeFilename } = await import("../utils/utils.js");
 
 // 4. Mock-Implementierung mit der ECHTEN Funktion setzen
 escapeAllStrings.mockImplementation((obj, whitelist, path) => 
@@ -41,7 +38,7 @@ beforeEach(() => {
   i = 0;
 });
 
-describe("test the createEscapeInputMiddleware", () => {
+describe("test createEscapeInputMiddleware", () => {
   it("should escape in req: body, query, params, cookies, headers and file names", async () => {
 
   escapeInputMiddleware(req, res, next);
@@ -60,46 +57,55 @@ describe("test the createEscapeInputMiddleware", () => {
   expect(sanitizeFilename).toHaveBeenCalledWith("file.txt");
   expect(next).toHaveBeenCalled();
   });
-  describe('Test createSlug', () => {
-    it('should create a slug from the title', () => {
-      const title = ['Hello World! This is a Test.',
-        'Hällo! > Das ist ein sehr langer Titööl, mit Sönderzeichen <.',
-        '',
-        '../../..',
-        "..\\..\\..",
-        "..\\..\\..TitelName",
-        'something.exe'
-      ];
-      const slugs = ['hello-world-this-is-a-test',
-        'haello-das-ist-ein-sehr-langer-titoeoel-mit',
-        '',
-        '',
-        '',
-        'titelname',
-        'somethingexe'
-      ];
-      const result = [];
-      title.forEach(title => {
-          const slug = actualUtils.createSlug(title);
-          result.push(slug);  
-      });
-      result.forEach((slug, i) => {
-        expect(slug).toBe(slugs[i])
-      });
+});
+
+describe('Test createSlug', () => {
+  it('should create a slug from the title', () => {
+    const title = ['Hello World! This is a Test.',
+      'Hällo! > Das ist ein sehr langer Titööl, mit Sönderzeichen <.',
+      '',
+      '../../..',
+      "..\\..\\..",
+      "..\\..\\..TitelName",
+      'something.exe'
+    ];
+    const slugs = ['hello-world-this-is-a-test',
+      'haello-das-ist-ein-sehr-langer-titoeoel-mit',
+      '',
+      '',
+      '',
+      'titelname',
+      'somethingexe'
+    ];
+    const result = [];
+    title.forEach(title => {
+        const slug = actualUtils.createSlug(title);
+        result.push(slug);  
+    });
+    result.forEach((slug, i) => {
+      //console.log(slug + '===' + slugs[i]);
+      expect(slug).toBe(slugs[i])
     });
   });
-  describe('Test convertBigInts', () => {
-    it('Should convert all big ints to int' , () => {
-      let input = [3n, 12, 1235213n, 1214.2, 1234123413251231323411324n,-12312, 'abcs'];
-      let expected = [3, 12, 1235213, 1214.2,NaN,-12312, NaN];
-      let result = [];
-      input.forEach(number => {
-        result.push(actualUtils.convertBigInts(number));
-      });
-      result.forEach((number, i) => {
-        console.log(number + ' === ' + expected[i]);
-        expect(number).toBe(expected[i]);
-      });
+  it('should truncate a slug to 50 chars', () => {
+    let langerTitel = 'Das ist ein sehr langer Titel, mit mehr als Fünfzig Zeichen an Text! Er wird jetzt auf Fünfzig gekürzt.';
+    let expected = 'Das ist ein sehr langer Titel, mit mehr als Fünfzi';
+    let result = actualUtils.truncateSlug(langerTitel);
+    expect(result).toBe(expected);
+  });
+});
+
+describe('Test convertBigInts', () => {
+  it('Should convert all big ints to int' , () => {
+    let input = [3n, 12, 1235213n, 1214.2, 1234123413251231323411324n,-12312, 'abcs'];
+    let expected = [3, 12, 1235213, 1214.2,NaN,-12312, NaN];
+    let result = [];
+    input.forEach(number => {
+      result.push(actualUtils.convertBigInts(number));
+    });
+    result.forEach((number, i) => {
+      //console.log(number + ' === ' + expected[i]);
+      expect(number).toBe(expected[i]);
     });
   });
 });

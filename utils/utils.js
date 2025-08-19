@@ -143,16 +143,17 @@ export function convertBigInts(obj) {
 export function parseTags(tags) {
   if (typeof tags === 'string' && tags.trim() !== '') {
     try {
-      return JSON.parse(tags);
+      const parsed = JSON.parse(tags);
+      if (Array.isArray(parsed)) return parsed;
     } catch {
-      return [];
+      return tags.split(",").map(tag => tag.trim()).filter(Boolean);
     }
   }
   return [];
 }
 
 // Utility: truncate
-function truncateSlug(slug, maxLength = 50) {
+export function truncateSlug(slug, maxLength = 50) {
   if (slug.length <= maxLength) return slug;
   const truncated = slug.slice(0, maxLength);
   const lastDash = truncated.lastIndexOf("-");
