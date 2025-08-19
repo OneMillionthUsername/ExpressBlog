@@ -48,7 +48,6 @@ export function unescapeHtml(str) {
  * @param {string[]} path
  */
 export function escapeAllStrings(obj, whitelist = [], path = []) {
-  path = path || [];
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
@@ -114,11 +113,28 @@ export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
 
 // Convert BigInts in the object to Numbers (recursive)
 export function convertBigInts(obj) {
+  if (typeof obj === 'bigint'){
+    // Zu große Werte als 'NaN' zurückgeben
+    if (obj > Number.MAX_SAFE_INTEGER || obj < Number.MIN_SAFE_INTEGER) {
+      return NaN;
+    }
+    return Number(obj);
+  }
+  if (typeof obj === 'number') return obj;
+  if (typeof obj === 'string') return NaN;
+
   if (Array.isArray(obj)) return obj.map(convertBigInts);
   if (obj && typeof obj === 'object') {
     for (const key in obj) {
-      if (typeof obj[key] === 'bigint') obj[key] = Number(obj[key]);
-      else if (typeof obj[key] === 'object') obj[key] = convertBigInts(obj[key]);
+      if (typeof obj[key] === 'bigint') {
+        if (obj[key] > Number.MAX_SAFE_INTEGER || obj[key] < Number.MIN_SAFE_INTEGER) {
+          obj[key] = NaN;
+        } else {
+          obj[key] = Number(obj[key]);
+        }
+      } else if (typeof obj[key] === 'object') {
+        obj[key] = convertBigInts(obj[key]);
+      }
     }
   }
   return obj;

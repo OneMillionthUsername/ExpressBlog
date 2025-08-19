@@ -25,7 +25,8 @@
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
     "dompurify": "^3.2.6",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0"
   },
   "devDependencies": {
     "cross-env": "^10.0.0",
