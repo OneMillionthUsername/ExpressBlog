@@ -1,5 +1,6 @@
-// important for import ... from to work.
+// jest.config.js
 export default {
-    testEnvironment: "node",
-  transform: {},
+  testEnvironment: 'node',
+  extensionsToTreatAsEsm: [".js"], 
+  transform: {}, // keine Babel/ts-jest Transformation
 };

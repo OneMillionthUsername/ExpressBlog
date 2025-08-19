@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "start": "node server.js"
   },
   "repository": {
@@ -26,6 +26,7 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "cross-env": "^10.0.0",
     "jest": "^30.0.5"
   }
 }
