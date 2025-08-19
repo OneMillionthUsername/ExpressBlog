@@ -18,6 +18,7 @@ export function sanitizeFilename(name) {
     .replace(/[^a-zA-Z0-9._-]/g, "_")      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
+
 function escapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -26,6 +27,16 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+export function unescapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
 }
 /**
  * Escape strings recursively but:

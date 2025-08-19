@@ -1,4 +1,4 @@
-import { beforeEach, expect, jest } from "@jest/globals";
+import { beforeEach, describe, expect, jest } from "@jest/globals";
 
 // 1. ERST das originale Modul importieren
 const actualUtils = await import("../utils/utils.js");
@@ -14,7 +14,7 @@ jest.unstable_mockModule("../utils/utils.js", () => ({
 }));
 
 // 3. Die gemockten Funktionen importieren
-const { escapeAllStrings, sanitizeFilename } = await import("../utils/utils.js");
+const { escapeAllStrings, sanitizeFilename, createSlug } = await import("../utils/utils.js");
 
 // 4. Mock-Implementierung mit der ECHTEN Funktion setzen
 escapeAllStrings.mockImplementation((obj, whitelist, path) => 
@@ -29,7 +29,7 @@ const escapeInputMiddleware = createEscapeInputMiddleware(whitelist);
 let req, res, next;
 beforeEach(() => {
   req = {
-    body: { title: "<b>abc</b>", content: "<b>test</b>" },
+    body: { title: "<b>abc</b> Das Gewitter kommmt!", content: "<b>test</b>" },
     query: { q: "<script>" },
     params: { id: "<img>" },
     cookies: { session: "<cookie>" },
@@ -43,16 +43,12 @@ beforeEach(() => {
 
 describe("test the createEscapeInputMiddleware", () => {
   it("should escape body, query, params, cookies, headers and file names", async () => {
-      // Debug: Was passiert wirklich?
-  console.log('Before:', req.body.title);
-  
+
   escapeInputMiddleware(req, res, next);
-  
-  console.log('After:', req.body.title);
-  console.log('escapeAllStrings called with:', escapeAllStrings.mock.calls);
+  //console.log('escapeAllStrings called with:', escapeAllStrings.mock.calls);
 
 
-    expect(req.body.title).toBe('&lt;b&gt;abc&lt;/b&gt;');
+    expect(req.body.title).toBe('&lt;b&gt;abc&lt;/b&gt; Das Gewitter kommmt!');
     expect(req.body.content).toBe("<b>test</b>");
     expect(req.query.q).toBe('&lt;script&gt;');
     expect(req.file.safeFilename).toBe("safe_file.txt");
@@ -65,5 +61,12 @@ describe("test the createEscapeInputMiddleware", () => {
     expect(escapeAllStrings).toHaveBeenCalled();
     expect(sanitizeFilename).toHaveBeenCalledWith("file.txt");
     expect(next).toHaveBeenCalled();
+  });
+  describe('Test createSlug', () => {
+    it('should create a slug from the title', () => {
+      const title = 'Hello World! This is a Test.';
+      const slug = actualUtils.createSlug(title);
+      expect(slug).toBe('hello-world-this-is-a-test');
+    });
   });
 });
