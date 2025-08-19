@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test_linux": "NODE_OPTIONS=--experimental-vm-modules jest",
     "start": "node server.js"
   },
   "repository": {
@@ -23,6 +24,7 @@
   },
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
+    "dompurify": "^3.2.6",
     "express": "^5.1.0"
   },
   "devDependencies": {

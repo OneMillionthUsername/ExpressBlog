@@ -1,10 +1,32 @@
+import DOMPurify from 'dompurify'; // npm install dompurify
+import { JSDOM } from 'jsdom';
+
+// Für Node.js Server-Side
+const window = new JSDOM('').window;
+const DOMPurifyServer = DOMPurify(window);
+
+const FORBIDDEN_KEYS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype'
+]);
+
+
 // Utility zum sicheren Escapen von Dateinamen
 export function sanitizeFilename(name) {
   return path.basename(name)                // Pfadbestandteile entfernen
     .replace(/[^a-zA-Z0-9._-]/g, "_")      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
-
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 /**
  * Escape strings recursively but:
  * - prevent prototype pollution by skipping forbidden keys
@@ -15,12 +37,13 @@ export function sanitizeFilename(name) {
  * @param {string[]} path
  */
 export function escapeAllStrings(obj, whitelist = [], path = []) {
+  path = path || [];
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
     if (currentKey && whitelist.includes(currentKey)) {
       // SANITIZE allowed HTML server-side (not raw)
-      return DOMPurify.sanitize(obj, {
+      return DOMPurifyServer.sanitize(obj, {
         ALLOWED_TAGS: [
           'p','br','b','i','strong','em','u',
           'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3'
