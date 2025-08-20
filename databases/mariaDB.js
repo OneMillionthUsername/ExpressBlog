@@ -190,4 +190,19 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async createPost(postData) {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const result = await conn.query('INSERT INTO posts SET ?', [postData]);
+      if(!result || result.affectedRows === 0) {
+        throw new Error('Failed to create post');
+      }
+      return { id: result.insertId, ...postData };
+    } catch (error) {
+      throw new BlogpostError('Error in createPost:', error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
 }

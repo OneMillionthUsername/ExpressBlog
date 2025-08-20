@@ -18,7 +18,7 @@ escapeAllStrings.mockImplementation((obj, whitelist, path) =>
 );
 
 // 5. Rest der Imports
-const { createEscapeInputMiddleware } = await import("../utils/middleware.js");
+const { createEscapeInputMiddleware } = await import("../middleware/securityMiddleware.js");
 const whitelist = ["content"];
 const escapeInputMiddleware = createEscapeInputMiddleware(whitelist);
 

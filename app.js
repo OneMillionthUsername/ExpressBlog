@@ -22,8 +22,9 @@ import logger, { loggerMiddleware } from './logger.js'; // Unser neues Logging-S
 import helmet from 'helmet';
 import { error } from 'console';
 import { isBigIntObject } from 'util/types';
-import * as middleware from './utils/middleware.js';
+import * as middleware from './middleware/securityMiddleware.js';
 import rateLimit from 'express-rate-limit';
+import postRouter from './routes/postRoutes.js';
 
 dotenv.config();
 
@@ -106,8 +107,8 @@ logger.debug('Logger system initialized - DEBUG level active');
 logger.debug('Test debug message - if you see this, debug logging works!');
 
 const app = express();
-const postRouter = express.Router();
-const commentsRouter = express.Router();
+
+//const commentsRouter = express.Router();
 // Datenbank initialisieren
 async function initializeApp() {
   console.log('Initializing database...');
@@ -319,53 +320,8 @@ app.get('/', (req, res) => {
   res.sendFile(join(publicDirectoryPath, 'index.html'));
 });
 
-postRouter.all('/blogpost/:slug', middleware.requireJsonContent, async (req, res) => {
-  //hier allgemeine Logik ausführen
-  //logging
-  //sanitazing
-});
-
-// commentsRouter.all();
-
-postRouter.get('/blogpost/:slug', async (req, res) => {
-  const slug = req.params.slug;
-  try {
-    const post = DatabaseService.getPostBySlug(slug);
-    if(!post) return res.status(404).json({ error: 'Blogpost not found' });
-    if(post.deleted) return res.status(410).json({ error: 'Blogpost deleted' });
-    if(!post.published) return res.status(403).json({ error: 'Blogpost not published' });
-
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const userAgent = req.get('User-Agent');
-    const referer = req.get('Referer');
-
-    DatabaseService.incrementViews(slug, ipAddress, userAgent, referer).catch(err => {
-      console.error('Fehler beim Tracking:', err);
-    });
-    res.json(convertBigInts(post) || post);
-  } catch (error) {
-    console.error('Error loading the blog post', error);
-    res.status(500).json({ error: 'Server failed to load the blogpost' });
-  }
-});
-
-postRouter.post('/blogpost', strictLimiter, authenticateToken, requireAdmin, middleware.requireJsonContent, async (req, res) => {
-  const { title, content, tags } = req.body;
-  const slug = createSlug(title);
-  try {
-    const result = await DatabaseService.createPost({ title, slug, content, tags, author: req.user.username });
-    if (!result) {
-      return res.status(400).json({ error: 'Failed to create blog post' });
-    }
-    res.status(201).json({ message: 'Blog post created successfully', postId: convertBigInts(result.postId), title: result.title });
-  } catch (error) {
-    console.error('Error creating new blog post', error);
-    res.status(500).json({ error: 'Server failed to create the blogpost' });
-  }
-});
-
 app.use(postRouter);
-app.use(commentsRouter);
+//app.use(commentsRouter);
 
 // Export the app to be used by the server
 export default app;

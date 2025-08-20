@@ -1,6 +1,6 @@
 import path from "path";
-import { escapeAllStrings } from "./utils.js";
-import * as utils from "./utils.js";
+import { escapeAllStrings } from "../utils/utils.js";
+import * as utils from "../utils/utils.js";
 
 // --- Helper: safer content-type check ---
 export function requireJsonContent(req, res, next) {
