@@ -27,6 +27,22 @@ const dbConfig = {
 };
 const pool = mariadb.createPool(dbConfig);
 
+// Datenbankverbindung testen
+export async function testConnection() {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('SELECT VERSION() as version');
+        console.log('MariaDB connection successful, Version:', result[0].version);
+        return true;
+    } catch (error) {
+        console.error('MariaDB connection failed:', error.message);
+        return false;
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
 export const DatabaseService = {
   // posts
   async getPostBySlug(slug) {
