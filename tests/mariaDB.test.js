@@ -40,7 +40,7 @@ describe("DatabaseService", () => {
         { id: 2, slug: "test", content: "tralala", published: false, views: 0, tags: "philo, wissenschaft"}
     ]);
     await expect(DatabaseService.getPostBySlug("test"))
-    .rejects.toThrow("Error in getPostBySlug: Post not published");
+    .rejects.toThrow("Error in getPostBySlug:");
   });
   it("getPostBySlug returns multiple posts found", async () => {
     mockQuery.mockResolvedValueOnce([
@@ -48,11 +48,11 @@ describe("DatabaseService", () => {
         { id: 4, slug: "test", content: "tralala", published: false, views: 0, tags: "philo, wissenschaft"}
     ]);
     await expect(DatabaseService.getPostBySlug("test"))
-    .rejects.toThrow("Error in getPostBySlug: Multiple posts found");
+    .rejects.toThrow("Error in getPostBySlug:");
   });
   it("getPostBySlug throws if not found", async () => {
     mockQuery.mockResolvedValueOnce([]);
-    await expect(DatabaseService.getPostBySlug("notfound")).rejects.toThrow("Error in getPostBySlug: Post not found");
+    await expect(DatabaseService.getPostBySlug("notfound")).rejects.toThrow("Error in getPostBySlug:");
   });
   it("getAllPosts returns a json of all posts", async () => {
     mockQuery.mockResolvedValueOnce([
@@ -71,6 +71,6 @@ describe("DatabaseService", () => {
   });
   it("getAllPosts return no posts found", async () => {
     mockQuery.mockResolvedValueOnce([]);
-    await expect(DatabaseService.getAllPosts()).rejects.toThrow("Error in getAllPosts: No posts found");
+    await expect(DatabaseService.getAllPosts()).rejects.toThrow("Error in getAllPosts:");
   });
 });

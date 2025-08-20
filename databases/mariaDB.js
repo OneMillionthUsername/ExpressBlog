@@ -10,6 +10,7 @@ class BlogpostError extends Error {}
 
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils';
+import queryBuilder from '../utils/queryBuilder';
 
 // MariaDB Connection Pool konfigurieren
 const dbConfig = {
@@ -49,7 +50,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
+      const { query, params } = queryBuilder('get', 'posts', { slug });
+      const result = await conn.query(query, params);
+      //const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
       if(!result || result.length === 0) {
         throw new Error('Post not found');
       }
@@ -63,7 +66,7 @@ export const DatabaseService = {
       }
       return convertBigInts(post);
     } catch (error) {
-      throw new BlogpostError(`Error in getPostBySlug: ${error.message}`);
+      throw new BlogpostError('Error in getPostBySlug:', error);
     } finally {
       if (conn) conn.release();
     }
@@ -72,7 +75,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
+      const { query, params } = queryBuilder('get', 'posts', { id });
+const result = await conn.query(query, params);
+      //const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
       if(!result || result.length === 0) {
         throw new Error('Post not found');
       }
@@ -90,7 +95,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('SELECT * FROM posts');
+      const { query, params } = queryBuilder('get', 'posts');
+      const result = await conn.query(query, params);
+      //const result = await conn.query('SELECT * FROM posts');
       if(!result || result.length === 0) {
         throw new Error('No posts found');
       }
@@ -113,7 +120,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
+      const { query, params } = queryBuilder('read', 'posts', { tags: { like: `%${tag}%` } });
+      const result = await conn.query(query, params);
+      //const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
       if(!result || result.length === 0) {
         throw new Error('No posts found for this tag');
       }
@@ -195,7 +204,7 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('DELETE FROM posts WHERE id = ? OR slug = ?', [id, slug]);
+      const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ? OR slug = ?', [id, slug]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
