@@ -1,14 +1,14 @@
 import { DatabaseService } from "../databases/mariaDB";
-import { cardModel } from "../models/cardModel";
+import { Card } from "../models/cardModel";
 
 const createCard = async (cardData) => {
-    const { error, value } = cardModel.validate(cardData);
+    const { error, value } = Card.validate(cardData);
     if (error) {
         throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
     try {
         const card = await DatabaseService.createCard(value);
-        return new cardModel(card);
+        return new Card(card);
     } catch (error) {
         console.error('Error creating card:', error);
         throw error;
@@ -17,19 +17,19 @@ const createCard = async (cardData) => {
 
 const getAllCards = async () => {
     try {
-        const cards = DatabaseService.getAllCards();
+        const cards = await DatabaseService.getAllCards();
         if (!cards || cards.length === 0) {
             return [];
         }
         // validate
         const validCards = [];
         for (const card of cards) {
-            const { error, value } = cardModel.validate(card);
+            const { error, value } = Card.validate(card);
             if (error) {
                 console.error('Validation failed for card:', error.details.map(d => d.message).join('; '));
                 continue;
             }
-            validCards.push(new cardModel(value));
+            validCards.push(new Card(value));
         }
         return validCards;
     } catch (error) {
@@ -44,11 +44,11 @@ const getCardById = async (id) => {
         if (!card) {
             throw new Error('Card not found');
         }
-        const { error, value } = cardModel.validate(card);
+        const { error, value } = Card.validate(card);
         if (error) {
             throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
         }
-        return new cardModel(value);
+        return new Card(value);
     } catch (error) {
         console.error('Error getting card by id:', error);
         throw error;
