@@ -11,7 +11,6 @@ export function requireJsonContent(req, res, next) {
       .status(415)
       .json({ error: "Content-Type muss application/json sein" });
   }
-
   next(); // alles ok → nächste Middleware / Route
 }
 

@@ -7,7 +7,8 @@
  */
 
 import { DatabaseService } from '../databases/mariaDB';
-import adminModel from '../models/adminModel';
+import { Admin } from '../models/adminModel';
+import bcrypt from 'bcrypt';
 
 const getAdminByUsername = async (username) => {
     try {
@@ -15,11 +16,11 @@ const getAdminByUsername = async (username) => {
         if (!admin) {
             throw new Error('Admin not found');
         }
-        const { error, value } = adminModel.validate(admin);
+        const { error, value } = Admin.validate(admin);
         if (error) {
             throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
         }
-        return new adminModel(value);
+        return new Admin(value);
     } catch (error) {
         console.error('Error fetching admin by username:', error);
         throw error;
@@ -56,7 +57,57 @@ const updateAdminStatus = async (adminId, status) => {
     }
 }
 
+// Admin-Login
+const authenticateAdmin = async (username, password) => {
+    // 1. Input-Validierung
+    if (!username || typeof username !== 'string' || username.trim() === '') {
+        throw new Error('Valid username is required');
+    }
+    if (!password || typeof password !== 'string' || password.length < 3) {
+        throw new Error('Valid password is required');
+    }
+
+    try {
+        const adminData = await DatabaseService.getAdminByUsername(username.trim());
+        if (!adminData) return null;
+
+        // 2. Admin-Objekt validieren
+        const { error, value } = Admin.validate(adminData);
+        if (error) {
+            console.error('Invalid admin data from database:', error.details.map(d => d.message).join('; '));
+            return null;
+        }
+
+        const admin = new Admin(value);
+        
+        // 3. Account-Status prüfen
+        if (!admin.active || (admin.locked_until && new Date() < new Date(admin.locked_until))) {
+            return null;
+        }
+        
+        const isValidPassword = await bcrypt.compare(password, admin.password_hash);
+        
+        if (isValidPassword) {
+            await updateAdminLoginSuccess(admin.id);
+            return {
+                id: admin.id,
+                username: admin.username,
+                role: admin.role,
+                email: admin.email,
+                full_name: admin.full_name
+            };
+        } else {
+            await updateAdminLoginFailure(admin.id);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error during admin authentication:', error);
+        return null;
+    }
+};
+
 export default {
+    authenticateAdmin,
     getAdminByUsername,
     updateAdminLoginSuccess,
     updateAdminLoginFailure,

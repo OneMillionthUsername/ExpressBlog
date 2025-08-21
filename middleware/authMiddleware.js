@@ -7,7 +7,6 @@
  */
 
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 import { adminModel } from '../models/adminModel';
 
 export const AUTH_COOKIE_NAME = 'authToken';
@@ -105,44 +104,6 @@ export function extractTokenFromRequest(req) {
     return null;
 }
 
-// Admin-Login validieren (Datenbank-basiert)
-export async function validateAdminLogin(username, password) {
-    if (!username || !password) {
-        return null;
-    }
-    try {
-        const { default: adminController } = await import('../controllers/adminController.js');
-        const admin = await adminController.getAdminByUsername(username);
-        
-        if (!admin || !admin.active || admin.locked_until && new Date() < new Date(admin.locked_until)) {
-            return null;
-        }
-        
-        const isValidPassword = await bcrypt.compare(password, admin.password_hash);
-        
-        if (isValidPassword) {
-            await adminController.updateAdminLoginSuccess(admin.id);
-
-            const returnUser = {
-                id: admin.id,
-                username: admin.username,
-                role: admin.role,
-                email: admin.email,
-                full_name: admin.full_name
-            };
-            
-            return returnUser;
-        } else {
-            await adminController.updateAdminLoginFailure(admin.id);
-            return null;
-        }
-    } catch (error) {
-        console.error('ERROR during admin login validation:');
-        console.error(error);
-        return null;
-    }
-}
-
 // Passwort hashen (für Admin-Passwort-Update)
 // export async function hashPassword(password) {
 //     try {
@@ -184,7 +145,6 @@ export function authenticateToken(req, res, next) {
         });
     }
 }
-
 // Admin-Only Middleware
 export function requireAdmin(req, res, next) {
     if (!req.user || req.user.role !== 'admin') {
