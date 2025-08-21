@@ -102,12 +102,8 @@ const result = await conn.query(query, params);
         throw new Error('No posts found');
       }
       return result.map(post => {
-        // 1. Rufe die Funktion auf, um das 'post'-Objekt direkt zu modifizieren
         convertBigInts(post);
-        // 2. Füge die Tags hinzu. Da das 'post'-Objekt schon verändert wurde,
-        //    kannst du die Eigenschaft einfach hinzufügen
         post.tags = parseTags(post.tags);
-        // 3. Gib das nun vollständig korrigierte und modifizierte Objekt zurück
         return post;
       });
     } catch (error) {
@@ -160,7 +156,8 @@ const result = await conn.query(query, params);
     let conn;
     try {
       conn = await pool.getConnection();
-      await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
+      const update = await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
+      return update.affectedRows > 0;
       //await conn.query(`INSERT INTO post_views (post_id, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
       throw new BlogpostError('Error in incrementViews:', error);
@@ -216,12 +213,229 @@ const result = await conn.query(query, params);
   },
 
   // Cards
-
+  async createCard(cardData) {
+      let conn;
+      try {
+          conn = await pool.getConnection();
+          const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
+          if (result.affectedRows === 0) {
+              throw new Error('Failed to create card');
+          }
+          return {
+            success: true,
+            card: {
+                ...cardData
+            }
+          };
+      } catch (error) {
+          console.error('Error in createCard:', error);
+          throw error;
+      } finally {
+          if (conn) conn.release();
+      }
+  },
+  async getAllCards() {
+      let conn;
+      try {
+          conn = await pool.getConnection();
+          const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+          return result.map(card => ({
+              ...convertBigInts(card)
+          }));
+      } catch (error) {
+          console.error('Error in getAllCards:', error);
+          throw error;
+      } finally {
+          if (conn) conn.release();
+      }
+  },
+  async getCardById(cardId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
+        return result.length > 0 ? {
+            ...convertBigInts(result[0])
+        } : null;
+    } catch (error) {
+        console.error('Couldn\'t find card', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async deleteCard(cardId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('DELETE FROM cards WHERE id = ?', [cardId]);
+        return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
   // Comments
+  async addComment(postId, commentData) {
+      let conn;
+      try {
+          conn = await pool.getConnection();
+          const result = await conn.query('INSERT INTO comments ? WHERE post_id = ?', [commentData, postId]);
 
+          return {
+              success: true,
+              comment: {
+                  id: Number(result.insertId),
+                  ...commentData
+              }
+          };
+      } catch (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      } finally {
+          if (conn) conn.release();
+      }
+  },
+  async getCommentsByPost(postId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query(`
+            SELECT id, username, text, created_at
+            FROM comments 
+            WHERE post_id = ? AND approved = 1
+            ORDER BY created_at ASC
+        `, [postId]);
+        return result.map(comment => ({
+            id: Number(comment.id),
+            username: comment.username,
+            text: comment.text,
+            created_at: comment.created_at
+        }));
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async deleteComment(commentId, postId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query(
+            'DELETE FROM comments WHERE id = ? AND post_id = ?',
+            [commentId, postId]
+        );
+        return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  }, 
   // Media
-
+  async addMedia(mediaData) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('INSERT INTO media SET ?', [mediaData]);
+        return {
+            success: true,
+            mediaId: Number(result.insertId)
+        };
+    } catch (error) {
+      console.error('Error adding media:', error);
+      throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async deleteMedia(mediaId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('DELETE FROM media WHERE id = ?', [mediaId]);
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error deleting media:', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
   // Admin
+  async getAdminByUsername(username) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
+        return result.length > 0 ? result[0] : null;
+    } catch (error) {
+      console.error('Error fetching admin by username:', error);
+      throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async updateAdminLoginSuccess(adminId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const update = await conn.query('UPDATE admins SET last_login = NOW(), login_attempts = 0, locked_until = NULL WHERE id = ?', [adminId]);
+        return update.affectedRows > 0;
+      } catch (error) {
+      console.error('Error updating admin login success:', error);
+      throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async updateAdminLoginFailure(adminId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        // Aktuelle Login-Attempts abrufen
+        const result = await conn.query('SELECT login_attempts FROM admins WHERE id = ?', [adminId]);
+        if (result.length > 0) {
+            const currentAttempts = result[0].login_attempts + 1;
+            let locked_until = null;
+
+            // Account nach 3 fehlgeschlagenen Versuchen für 30 Minuten sperren
+            if (currentAttempts >= 3) {
+                locked_until = new Date(Date.now() + 30 * 60 * 1000); // 30 Minuten
+            }
+
+          const update = await conn.query('UPDATE admins SET login_attempts = ?, locked_until = ? WHERE id = ?', [currentAttempts, locked_until, adminId]);
+          return update.affectedRows > 0;
+        }
+        else {
+            // Admin not found
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating admin login failure:', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async updateAdminStatus(adminId, active) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('UPDATE admins SET active = ? WHERE id = ?', [active, adminId]);
+        return result.affectedRows > 0;
+    } catch (error) {
+        console.error('Error updating admin status:', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  } 
 }
 
 // Graceful Shutdown

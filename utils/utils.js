@@ -19,7 +19,7 @@ export function sanitizeFilename(name) {
     .substring(0, 255);                     // Länge begrenzen
 }
 
-function escapeHtml(str) {
+export function escapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
     .replace(/&/g, '&amp;')
@@ -152,7 +152,6 @@ export function parseTags(tags) {
   return [];
 }
 
-// Utility: truncate
 export function truncateSlug(slug, maxLength = 50) {
   if (slug.length <= maxLength) return slug;
   const truncated = slug.slice(0, maxLength);

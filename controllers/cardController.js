@@ -14,6 +14,10 @@ const createCard = async (cardData) => {
 const getAllCards = async () => {
     try {
         const cards = DatabaseService.getAllCards();
+        if (!cards || cards.length === 0) {
+            return [];
+        }
+        
         return cards.map(card => new cardModel(card));
     } catch (error) {
         console.error('Error getting all cards:', error);
