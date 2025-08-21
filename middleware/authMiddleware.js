@@ -8,6 +8,7 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { adminModel } from '../models/adminModel';
 
 export const AUTH_COOKIE_NAME = 'authToken';
 
@@ -34,7 +35,7 @@ const JWT_CONFIG = {
 
 // Generate JWT token
 export function generateToken(user) {
-    if(user && typeof user !== 'adminModel') {
+    if(user && !(user instanceof adminModel)) {
         throw new Error('Invalid user data for token generation');
     }
  
@@ -58,10 +59,139 @@ export function generateToken(user) {
         throw new Error('Token generation failed');
     }
 }
+// verifyToken
+export function verifyToken(token) {   
+    try {        
+        const decoded = jwt.verify(token, JWT_CONFIG.SECRET_KEY, {
+            algorithms: [JWT_CONFIG.ALGORITHM],
+            issuer: JWT_CONFIG.ISSUER,
+            audience: JWT_CONFIG.AUDIENCE
+        });
+        
+        return decoded;
+    } catch (error) {
+        console.error('JWT verification failed');
+        console.error('Error details:', error.message);
+        if (process.env.NODE_ENV !== 'production') {
+            console.error('Full error stack:', error.stack);
+        }
+        
+        return null;
+    }
+}
 
-export default (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (!token) return res.status(403).send('No token provided');
-    // Check token validity here
+// Token aus Request extrahieren
+/**
+ * Extracts the JWT token from an Express request object.
+ * Checks the Authorization header and cookies for a token.
+ * @param {import('express').Request} req - The Express request object.
+ * @returns {string|null} The extracted JWT token, or null if not found.
+ */
+export function extractTokenFromRequest(req) {    
+    // Prüfe Authorization Header
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const headerToken = authHeader.substring(7);
+        return headerToken;
+    }
+    
+    // Prüfe Cookies (fallback)
+    if (req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
+        const cookieToken = req.cookies[AUTH_COOKIE_NAME];
+        return cookieToken;
+    }
+    
+    return null;
+}
+
+// Admin-Login validieren (Datenbank-basiert)
+export async function validateAdminLogin(username, password) {
+    if (!username || !password) {
+        return null;
+    }
+    try {
+        const { default: adminController } = await import('../controllers/adminController.js');
+        const admin = await adminController.getAdminByUsername(username);
+        
+        if (!admin || !admin.active || admin.locked_until && new Date() < new Date(admin.locked_until)) {
+            return null;
+        }
+        
+        const isValidPassword = await bcrypt.compare(password, admin.password_hash);
+        
+        if (isValidPassword) {
+            await adminController.updateAdminLoginSuccess(admin.id);
+
+            const returnUser = {
+                id: admin.id,
+                username: admin.username,
+                role: admin.role,
+                email: admin.email,
+                full_name: admin.full_name
+            };
+            
+            return returnUser;
+        } else {
+            await adminController.updateAdminLoginFailure(admin.id);
+            return null;
+        }
+    } catch (error) {
+        console.error('ERROR during admin login validation:');
+        console.error(error);
+        return null;
+    }
+}
+
+// Passwort hashen (für Admin-Passwort-Update)
+// export async function hashPassword(password) {
+//     try {
+//         const saltRounds = 12; // Höhere Sicherheit
+//         return await bcrypt.hash(password, saltRounds);
+//     } catch (error) {
+//         console.error('Fehler beim Passwort-Hashing:', error);
+//         throw error;
+//     }
+// }
+
+// JWT-Middleware für Express
+export function authenticateToken(req, res, next) {
+    const token = extractTokenFromRequest(req);
+    
+    if (!token) {
+        return res.status(401).json({ 
+            error: 'Access denied',
+            message: 'JWT token required' 
+        });
+    }
+    try {
+        const user = verifyToken(token);
+        if (!user) {
+            return res.status(401).json({ 
+                error: 'Invalid token',
+                message: 'Token is expired or invalid' 
+            });
+        }
+        
+        // Attach user info to request
+        req.user = user;
+        next();
+    } catch (error) {
+        console.error('Error during token authentication:', error);
+        return res.status(500).json({ 
+            error: 'Internal server error',
+            message: 'Token authentication failed' 
+        });
+    }
+}
+
+// Admin-Only Middleware
+export function requireAdmin(req, res, next) {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ 
+            error: 'Admin privileges required',
+            message: 'Only administrators have access to this function' 
+        });
+    }
     next();
-};
+}
