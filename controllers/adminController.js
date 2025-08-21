@@ -6,13 +6,49 @@
 - Error Handling: Ensures that errors in data retrieval are handled gracefully.
  */
 
+import { DatabaseService } from '../databases/mariaDB';
 import adminModel from '../models/adminModel';
 
-export async function getAllUsers(req, res) {
+const getAdminByUsername = async (username) => {
     try {
-        if (err) return res.status(500).send(`Error retrieving users: ${err.message}`);
-        res.status(200).json(users);
-    } catch (err) {
-        res.status(500).send('Error retrieving users');
+        const admin = await DatabaseService.getAdminByUsername(username);
+        return new adminModel(admin);
+    } catch (error) {
+        console.error('Error fetching admin by username:', error);
+        throw error;
     }
+}
+
+const updateAdminLoginSuccess = async (adminId) => {
+    try {
+        await DatabaseService.updateAdminLoginSuccess(adminId);
+    } catch (error) {
+        console.error('Error updating admin login success:', error);
+        throw error;
+    }
+}
+
+const updateAdminLoginFailure = async (adminId) => {
+    try {
+        await DatabaseService.updateAdminLoginFailure(adminId);
+    } catch (error) {
+        console.error('Error updating admin login failure:', error);
+        throw error;
+    }
+}
+
+const updateAdminStatus = async (adminId, status) => {
+    try {
+        await DatabaseService.updateAdminStatus(adminId, status);
+    } catch (error) {
+        console.error('Error updating admin status:', error);
+        throw error;
+    }
+}
+
+export default {
+    getAdminByUsername,
+    updateAdminLoginSuccess,
+    updateAdminLoginFailure,
+    updateAdminStatus
 }

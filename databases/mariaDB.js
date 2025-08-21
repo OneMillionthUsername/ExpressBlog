@@ -45,7 +45,7 @@ export async function testConnection() {
 }
 
 export const DatabaseService = {
-  // posts
+  // Posts
   async getPostBySlug(slug) {
     let conn;
     try {
@@ -168,47 +168,31 @@ const result = await conn.query(query, params);
       if (conn) conn.release();
     }
   },
-  async createPost(post) {
+  async updatePost(id, post) {
     let conn;
     try {
       conn = await pool.getConnection();
 
-      const result = await conn.query('INSERT INTO posts SET ?', [post]);
-      if(!result || result.affectedRows === 0) {
-        throw new Error('Failed to create post');
-      }
-      return { id: result.insertId, ...post };
-    } catch (error) {
-      throw new BlogpostError('Error in createPost:', error);
-    } finally {
-      if (conn) conn.release();
-    }
-  },
-  async updatePost(id, slug, post) {
-    let conn;
-    try {
-      conn = await pool.getConnection();
-
-      const result = await conn.query('UPDATE posts SET ? WHERE id = ? AND slug = ?', [post, id, slug]);
+      const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, id]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to update post');
       }
-      return { id, slug, ...post };
+      return { id, ...post };
     } catch (error) {
       throw new BlogpostError('Error in updatePost:', error);
     } finally {
       if (conn) conn.release();
     }
   },
-  async deletePost(id, slug) {
+  async deletePost(id) {
     let conn;
     try {
       conn = await pool.getConnection();
-      const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ? OR slug = ?', [id, slug]);
+      const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
-      return { id, slug };
+      return { id };
     } catch (error) {
       throw new BlogpostError('Error in deletePost:', error);
     } finally {
@@ -230,4 +214,28 @@ const result = await conn.query(query, params);
       if (conn) conn.release();
     }
   },
+
+  // Cards
+
+  // Comments
+
+  // Media
+
+  // Admin
 }
+
+// Graceful Shutdown
+process.on('SIGINT', async () => {
+    console.log('Closing MariaDB connections...');
+    await pool.end();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('Closing MariaDB connections...');
+    await pool.end();
+    process.exit(0);
+});
+
+export { pool };
+export default pool;

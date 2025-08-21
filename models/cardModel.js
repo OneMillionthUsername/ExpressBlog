@@ -4,7 +4,8 @@ export class Card{
         title = "",
         subtitle = "",
         link = "",
-        img = ""
+        img = "",
+        published = false
     } = {})
     {
         this.id = id;
@@ -12,5 +13,6 @@ export class Card{
         this.subtitle = subtitle;
         this.link = link;
         this.img = img;
+        this.published = published;
     }
 }

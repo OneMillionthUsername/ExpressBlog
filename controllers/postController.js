@@ -9,7 +9,7 @@ const getPostBySlug = async (slug) => {
     console.error('Error fetching post by slug:', error);
     throw error;
   }
-};
+}
 
 const createPost = async (postData) => {
   try {
@@ -19,7 +19,7 @@ const createPost = async (postData) => {
     console.error('Error creating post:', error);
     throw error;
   }
-};
+}
 
 const getPostById = async (post_id) => {
   try {
@@ -29,7 +29,7 @@ const getPostById = async (post_id) => {
     console.error('Error fetching post by id:', error);
     throw error;
   }
-};
+}
 
 const updatePost = async (postId, postData) => {
   try {
@@ -43,18 +43,17 @@ const updatePost = async (postId, postData) => {
     console.error('Error updating post:', error);
     throw error;
   }
-};
+}
 
 const getAllPosts = async () => {
   try {
     const posts = await DatabaseService.getAllPosts();
-    // Wandelt jeden Post in eine Model-Instanz um
     return posts.map(post => new Post(post));
   } catch (error) {
     console.error('Error fetching all posts:', error);
     throw error;
   }
-};
+}
 
 const getMostReadPosts = async () => {
   try {
@@ -64,14 +63,15 @@ const getMostReadPosts = async () => {
     console.error('Error fetching most read posts:', error);
     throw error;
   }
-};
+}
 
-const deletePost = async (post_id, slug) => {
+const deletePost = async (post_id) => {
   try {
-    const deleted = await DatabaseService.deletePost(post_id,slug);
-    
+    await DatabaseService.deletePost(post_id);
+    return { success: true, message: 'Post deleted successfully' };
   } catch (error) {
-    
+    console.error('Error deleting post', error);
+    throw error;
   }
 }
 
@@ -81,5 +81,6 @@ export default {
   getPostById,
   updatePost,
   getAllPosts,
-  getMostReadPosts
+  getMostReadPosts,
+  deletePost
 };

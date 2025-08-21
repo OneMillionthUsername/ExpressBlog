@@ -6,6 +6,7 @@ export class Comment {
     text = "",
     ip_address = null,
     approved = true,
+    published = false,
     created_at = new Date(),
     updated_at = new Date(),
   } = {}) {
@@ -15,6 +16,7 @@ export class Comment {
     this.text = text;
     this.ip_address = ip_address;
     this.approved = !!approved;
+    this.published = !!published;
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
   }
