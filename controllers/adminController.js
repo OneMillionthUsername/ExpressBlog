@@ -12,7 +12,14 @@ import adminModel from '../models/adminModel';
 const getAdminByUsername = async (username) => {
     try {
         const admin = await DatabaseService.getAdminByUsername(username);
-        return new adminModel(admin);
+        if (!admin) {
+            throw new Error('Admin not found');
+        }
+        const { error, value } = adminModel.validate(admin);
+        if (error) {
+            throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+        }
+        return new adminModel(value);
     } catch (error) {
         console.error('Error fetching admin by username:', error);
         throw error;

@@ -5,6 +5,7 @@
 - Data Validation: Ensures that required fields are present before data is saved.
 - Database Interaction: Provides a model to interact with MongoDB or other databases.
  */
+import Joi from "joi";
 
 export class Admin {
   constructor({
@@ -34,4 +35,23 @@ export class Admin {
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
   }
+
+  static validate(payload = {}) {
+    return adminSchema.validate(payload, { abortEarly: false, stripUnknown: true });
+  }
 }
+
+export const adminSchema = Joi.object({
+  id: Joi.number().integer().optional(),
+  username: Joi.string().max(100).required(),
+  password_hash: Joi.string().required(),
+  email: Joi.string().email().required(),
+  full_name: Joi.string().max(200).optional(),
+  role: Joi.string().valid("admin", "editor", "viewer").required(),
+  active: Joi.boolean().optional(),
+  last_login: Joi.date().optional(),
+  login_attempts: Joi.number().integer().min(0).optional(),
+  locked_until: Joi.date().optional(),
+  created_at: Joi.date().optional(),
+  updated_at: Joi.date().optional()
+});

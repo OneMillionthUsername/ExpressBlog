@@ -7,7 +7,11 @@ const getPostBySlug = async (slug) => {
     if (!post) {
       throw new Error('Post not found');
     }
-    return new Post(post);
+    const { error, value } = Post.validate(post);
+    if (error) {
+      throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+    }
+    return new Post(value);
   } catch (error) {
     console.error('Error fetching post by slug:', error);
     throw error;
@@ -15,8 +19,12 @@ const getPostBySlug = async (slug) => {
 }
 
 const createPost = async (postData) => {
+  const { error, value } = Post.validate(postData);
+  if (error) {
+    throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+  }
   try {
-    const result = await DatabaseService.createPost(postData);
+    const result = await DatabaseService.createPost(value);
     if (!result) {
       throw new Error('Post creation failed');
     }
@@ -30,7 +38,14 @@ const createPost = async (postData) => {
 const getPostById = async (post_id) => {
   try {
     const post = await DatabaseService.getPostById(post_id);
-    return new Post(post);
+    if (!post) {
+      throw new Error('Post not found');
+    }
+    const { error, value } = Post.validate(post);
+    if (error) {
+      throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+    }
+    return new Post(value);
   } catch (error) {
     console.error('Error fetching post by id:', error);
     throw error;
@@ -38,8 +53,12 @@ const getPostById = async (post_id) => {
 }
 
 const updatePost = async (postId, postData) => {
+  const { error, value } = Post.validate(postData);
+  if (error) {
+    throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+  }
   try {
-    const updated = await DatabaseService.updatePost(postId, postData);
+    const updated = await DatabaseService.updatePost(postId, value);
     if (!updated) {
       throw new Error('Post not found or not updated');
     }
@@ -59,7 +78,16 @@ const getAllPosts = async () => {
     if(!posts) {
       return { success: false, message: 'No posts found', posts: [] };
     }
-    return { success: true, posts: posts.map(post => new Post(post)) };
+    const validPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      validPosts.push(new Post(value));
+    }
+    return { success: true, posts: validPosts };
   } catch (error) {
     console.error('Error fetching all posts:', error);
     throw error;
@@ -72,7 +100,16 @@ const getMostReadPosts = async () => {
     if(!posts) {
       return { success: false, message: 'No posts found', posts: [] };
     }
-    return { success: true, posts: posts.map(post => new Post(post)) };
+    const validPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      validPosts.push(new Post(value));
+    }
+    return { success: true, posts: validPosts };
   } catch (error) {
     console.error('Error fetching most read posts:', error);
     throw error;

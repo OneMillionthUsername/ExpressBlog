@@ -1,3 +1,5 @@
+import Joi from "joi";
+
 export class Media {
     constructor({
         id = null,
@@ -22,4 +24,21 @@ export class Media {
         this.used_in_posts = Array.isArray(used_in_posts) ? used_in_posts : [];
         this.created_at = new Date(created_at);
     }
+
+    static validate(payload = {}) {
+        return mediaSchema.validate(payload, { abortEarly: false, stripUnknown: true });
+    }
 }
+
+export const mediaSchema = Joi.object({
+    id: Joi.number().integer().optional(),
+    post_id: Joi.number().integer().required(),
+    original_name: Joi.string().max(200).required(),
+    file_size: Joi.number().integer().min(0).optional(),
+    mime_type: Joi.string().max(100).optional(),
+    uploaded_by: Joi.string().max(100).optional(),
+    path: Joi.string().max(200).required(),
+    alt_text: Joi.string().max(200).optional(),
+    used_in_posts: Joi.array().items(Joi.number().integer()).optional(),
+    created_at: Joi.date().optional()
+});

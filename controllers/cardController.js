@@ -2,8 +2,12 @@ import { DatabaseService } from "../databases/mariaDB";
 import { cardModel } from "../models/cardModel";
 
 const createCard = async (cardData) => {
+    const { error, value } = cardModel.validate(cardData);
+    if (error) {
+        throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+    }
     try {
-        const card = await DatabaseService.createCard(cardData);
+        const card = await DatabaseService.createCard(value);
         return new cardModel(card);
     } catch (error) {
         console.error('Error creating card:', error);
@@ -17,8 +21,17 @@ const getAllCards = async () => {
         if (!cards || cards.length === 0) {
             return [];
         }
-        
-        return cards.map(card => new cardModel(card));
+        // validate
+        const validCards = [];
+        for (const card of cards) {
+            const { error, value } = cardModel.validate(card);
+            if (error) {
+                console.error('Validation failed for card:', error.details.map(d => d.message).join('; '));
+                continue;
+            }
+            validCards.push(new cardModel(value));
+        }
+        return validCards;
     } catch (error) {
         console.error('Error getting all cards:', error);
         throw error;
@@ -28,7 +41,14 @@ const getAllCards = async () => {
 const getCardById = async (id) => {
     try {
         const card = await DatabaseService.getCardById(id);
-        return new cardModel(card);
+        if (!card) {
+            throw new Error('Card not found');
+        }
+        const { error, value } = cardModel.validate(card);
+        if (error) {
+            throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+        }
+        return new cardModel(value);
     } catch (error) {
         console.error('Error getting card by id:', error);
         throw error;

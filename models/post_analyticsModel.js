@@ -1,3 +1,5 @@
+import Joi from "joi";
+
 export class PostAnalytics {
   constructor({
     id = null,
@@ -20,4 +22,21 @@ export class PostAnalytics {
     this.city = city;
     this.created_at = new Date(created_at);
   }
+
+  static validate(payload = {}) {
+    return postAnalyticsSchema.validate(payload, { abortEarly: false, stripUnknown: true });
+  }
 }
+
+export const postAnalyticsSchema = Joi.object({
+  id: Joi.number().integer().optional(),
+  post_id: Joi.number().integer().required(),
+  event_type: Joi.string().valid("view", "click", "share").required(),
+  ip_address: Joi.string().ip().required(),
+  user_agent: Joi.string().max(200).required(),
+  referer: Joi.string().uri().optional(),
+  country: Joi.string().max(100).optional(),
+  city: Joi.string().max(100).optional(),
+  created_at: Joi.date().optional()
+});
+

@@ -2,8 +2,12 @@ import { DatabaseService } from "../databases/mariaDB";
 import { mediaModel } from "../models/mediaModel.js";
 
 const addMedia = async (mediaData) => {
+    const { error, value } = mediaModel.validate(mediaData);
+    if (error) {
+        throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+    }
     try {
-        const media = await DatabaseService.addMedia(mediaData);
+        const media = await DatabaseService.addMedia(value);
         return { success: true, message: 'Media added successfully' };
     } catch (error) {
         console.error('Error adding media:', error);

@@ -1,3 +1,5 @@
+import Joi from "joi";
+
 export class Comment {
   constructor({
     id = null,
@@ -20,4 +22,21 @@ export class Comment {
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
   }
-}   
+
+  static validate(payload = {}) {
+    return commentSchema.validate(payload, { abortEarly: false, stripUnknown: true });
+  }
+}
+
+export const commentSchema = Joi.object({
+  id: Joi.number().integer().optional(),
+  post_id: Joi.number().integer().required(),
+  username: Joi.string().max(100).required(),
+  text: Joi.string().max(1000).required(),
+  ip_address: Joi.string().ip().required(),
+  approved: Joi.boolean().optional(),
+  published: Joi.boolean().optional(),
+  created_at: Joi.date().optional(),
+  updated_at: Joi.date().optional()
+});
+
