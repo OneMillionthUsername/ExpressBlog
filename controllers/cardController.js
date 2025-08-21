@@ -41,7 +41,7 @@ const deleteCard = async (id) => {
         if (!deleted) {
             throw new Error('Card not found or not deleted');
         }
-        return { success: true };
+        return { success: true, message: 'Card deleted successfully' };
     } catch (error) {
         console.error('Error deleting card:', error);
         throw error;

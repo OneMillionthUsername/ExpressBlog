@@ -174,7 +174,7 @@ const result = await conn.query(query, params);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to update post');
       }
-      return { id, ...post };
+      return { success: true };
     } catch (error) {
       throw new BlogpostError('Error in updatePost:', error);
     } finally {
@@ -204,14 +204,13 @@ const result = await conn.query(query, params);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to create post');
       }
-      return { id: result.insertId, ...postData };
+      return { success: true, id: result.insertId, ...postData };
     } catch (error) {
       throw new BlogpostError('Error in createPost:', error);
     } finally {
       if (conn) conn.release();
     }
   },
-
   // Cards
   async createCard(cardData) {
       let conn;
@@ -223,9 +222,7 @@ const result = await conn.query(query, params);
           }
           return {
             success: true,
-            card: {
-                ...cardData
-            }
+            card: {...cardData, id: Number(result.insertId)}
           };
       } catch (error) {
           console.error('Error in createCard:', error);

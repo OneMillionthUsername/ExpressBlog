@@ -6,6 +6,9 @@
 - Flow Control: Uses next() to pass control to the next middleware or route handler.
  */
 
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+
 export default (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) return res.status(403).send('No token provided');

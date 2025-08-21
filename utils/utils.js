@@ -10,15 +10,12 @@ const FORBIDDEN_KEYS = new Set([
   'constructor',
   'prototype'
 ]);
-
-
 // Utility zum sicheren Escapen von Dateinamen
 export function sanitizeFilename(name) {
   return path.basename(name)                // Pfadbestandteile entfernen
     .replace(/[^a-zA-Z0-9._-]/g, "_")      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
-
 export function escapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -28,7 +25,6 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
-
 export function unescapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -83,7 +79,6 @@ export function escapeAllStrings(obj, whitelist = [], path = []) {
   }
   return obj;
 }
-
 export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
   if (!title) return "";
 
@@ -110,7 +105,6 @@ export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
 
   return slug;
 }
-
 // Convert BigInts in the object to Numbers (recursive)
 export function convertBigInts(obj) {
   if (typeof obj === 'bigint'){
@@ -139,7 +133,6 @@ export function convertBigInts(obj) {
   }
   return obj;
 }
-
 export function parseTags(tags) {
   if (typeof tags === 'string' && tags.trim() !== '') {
     try {
@@ -151,7 +144,6 @@ export function parseTags(tags) {
   }
   return [];
 }
-
 export function truncateSlug(slug, maxLength = 50) {
   if (slug.length <= maxLength) return slug;
   const truncated = slug.slice(0, maxLength);

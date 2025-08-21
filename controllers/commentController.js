@@ -3,8 +3,11 @@ import { commentModel } from "../models/commentModel.js";
 
 const addComment = async (post_id, commentData) => {
     try {
-        const comment = await DatabaseService.addComment(post_id, commentData);
-        return new commentModel(comment);
+        const result = await DatabaseService.addComment(post_id, commentData);
+        if (!result || result.affectedRows === 0) {
+            throw new Error('Failed to add comment');
+        }
+        return { success: true, message: 'Comment added successfully' };
     } catch (error) {
         console.error('Error adding comment:', error);
         throw error;

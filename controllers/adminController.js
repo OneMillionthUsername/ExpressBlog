@@ -21,7 +21,8 @@ const getAdminByUsername = async (username) => {
 
 const updateAdminLoginSuccess = async (adminId) => {
     try {
-        await DatabaseService.updateAdminLoginSuccess(adminId);
+        const update = await DatabaseService.updateAdminLoginSuccess(adminId);
+        return update;
     } catch (error) {
         console.error('Error updating admin login success:', error);
         throw error;
@@ -30,7 +31,8 @@ const updateAdminLoginSuccess = async (adminId) => {
 
 const updateAdminLoginFailure = async (adminId) => {
     try {
-        await DatabaseService.updateAdminLoginFailure(adminId);
+        const update = await DatabaseService.updateAdminLoginFailure(adminId);
+        return update;
     } catch (error) {
         console.error('Error updating admin login failure:', error);
         throw error;
@@ -39,7 +41,8 @@ const updateAdminLoginFailure = async (adminId) => {
 
 const updateAdminStatus = async (adminId, status) => {
     try {
-        await DatabaseService.updateAdminStatus(adminId, status);
+        const update = await DatabaseService.updateAdminStatus(adminId, status);
+        return update;
     } catch (error) {
         console.error('Error updating admin status:', error);
         throw error;
