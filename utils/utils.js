@@ -150,3 +150,12 @@ export function truncateSlug(slug, maxLength = 50) {
   const lastDash = truncated.lastIndexOf("-");
   return lastDash > 0 ? truncated.slice(0, lastDash) : truncated;
 }
+export function incrementViews(req, postId) {
+  const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.get('User-Agent');
+  const referer = req.get('Referer');
+
+  DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
+    console.error('Fehler beim Tracking:', err);
+  });
+}

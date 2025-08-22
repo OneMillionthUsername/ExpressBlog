@@ -152,7 +152,8 @@ const result = await conn.query(query, params);
       if (conn) conn.release();
     }
   },
-  async incrementViews(postId, ipAddress, userAgent, referer) {
+  async increasePostViews(postId, ipAddress, userAgent, referer) {
+    // TODO: Implement tracking of post views
     let conn;
     try {
       conn = await pool.getConnection();
@@ -160,7 +161,7 @@ const result = await conn.query(query, params);
       return update.affectedRows > 0;
       //await conn.query(`INSERT INTO post_views (post_id, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
-      throw new BlogpostError('Error in incrementViews:', error);
+      throw new BlogpostError('Error in increasePostViews:', error);
     } finally {
       if (conn) conn.release();
     }

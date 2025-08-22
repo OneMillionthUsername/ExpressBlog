@@ -32,35 +32,6 @@ dotenv.config();
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-// --- Rate limiters ---
-// Basis-Konfiguration für alle Limiter
-const baseLimiterConfig = {
-  standardHeaders: true,
-  legacyHeaders: false, // Moderne Header verwenden
-  message: { error: 'Rate limit exceeded' }
-};
-
-// Schärfere Limits für kritische Endpoints
-const strictLimiter = rateLimit({
-  ...baseLimiterConfig,
-  windowMs: 15 * 60 * 1000,
-  max: 10
-});
-
-const globalLimiter = rateLimit({
-  ...baseLimiterConfig,
-  windowMs: 15 * 60 * 1000,
-  max: 30
-});
-
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { error: 'Zu viele Loginversuche. Bitte später erneut versuchen.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
 if (missingVars.length > 0) {
     logger.error('Missing required environment variables', { missingVars });
     logger.error('Create .env file with these variables before starting the server');

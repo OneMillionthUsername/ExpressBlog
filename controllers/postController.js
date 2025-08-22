@@ -1,16 +1,21 @@
+/**
+ * Fehler im Controller als Exceptions werfen
+ * in der Route abfangen und an das Frontend zurückgeben
+ */
+
 import { Post } from '../models/postModel.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 
 const getPostBySlug = async (slug) => {
   try {
     const post = await DatabaseService.getPostBySlug(slug);
-    if (!post) {
-      throw new Error('Post not found');
-    }
     const { error, value } = Post.validate(post);
     if (error) {
       throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
+    if (!post) throw new Error('Blogpost not found');
+    if (post.deleted) throw new Error('Blogpost deleted');
+    if (!post.published) throw new Error('Blogpost not published');
     return new Post(value);
   } catch (error) {
     console.error('Error fetching post by slug:', error);
@@ -45,6 +50,8 @@ const getPostById = async (post_id) => {
     if (error) {
       throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
+    if (post.deleted) throw({ error: 'Blogpost deleted' });
+    if (!post.published) throw({ error: 'Blogpost not published' });
     return new Post(value);
   } catch (error) {
     console.error('Error fetching post by id:', error);
@@ -57,15 +64,16 @@ const updatePost = async (postId, postData) => {
   if (error) {
     throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
   }
-  try {
+try {
     const updated = await DatabaseService.updatePost(postId, value);
     if (!updated) {
       throw new Error('Post not found or not updated');
     }
-    //redirect zur view
-    //const post = await DatabaseService.getPostById(postId);
-    //return new Post(post);
-    return {success: true, message: 'Post updated successfully'};
+    const post = await DatabaseService.getPostById(postId);
+    if (!post) throw new Error('Post not found after update');
+    const { error: valError, value: valValue } = Post.validate(post);
+    if (valError) throw new Error('Validation failed after update: ' + valError.details.map(d => d.message).join('; '));
+    return new Post(valValue);
   } catch (error) {
     console.error('Error updating post:', error);
     throw error;
@@ -75,8 +83,8 @@ const updatePost = async (postId, postData) => {
 const getAllPosts = async () => {
   try {
     const posts = await DatabaseService.getAllPosts();
-    if(!posts) {
-      return { success: false, message: 'No posts found', posts: [] };
+    if (!posts) {
+      throw new Error('No posts found');
     }
     const validPosts = [];
     for (const post of posts) {
@@ -85,9 +93,14 @@ const getAllPosts = async () => {
         console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
         continue;
       }
-      validPosts.push(new Post(value));
+      if (value.published) {
+        validPosts.push(new Post(value));
+      }
     }
-    return { success: true, posts: validPosts };
+    if (validPosts.length === 0) {
+      throw new Error('No valid published posts found');
+    }
+    return validPosts;
   } catch (error) {
     console.error('Error fetching all posts:', error);
     throw error;

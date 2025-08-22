@@ -6,6 +6,8 @@
  */
 
 import { Router } from 'express';
+import { loginLimiter } from '../utils/limiters';
+
 const router = Router();
 import { getAllUsers } from '../controllers/userController';
 

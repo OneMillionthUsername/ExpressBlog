@@ -13,7 +13,6 @@ export function requireJsonContent(req, res, next) {
   }
   next(); // alles ok → nächste Middleware / Route
 }
-
 /**
  * Factory to create middleware
  * @param {string[]} whitelist - names of fields that contain HTML (e.g. ['content'])
@@ -47,7 +46,6 @@ export function createEscapeInputMiddleware(whitelist = []) {
     next();
   };
 }
-
 // --- error handler (production-safe) ---
 export function errorHandlerMiddleware(err, req, res, next) {
   logger.error(err); // internal logging only

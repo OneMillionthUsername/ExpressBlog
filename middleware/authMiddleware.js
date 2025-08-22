@@ -37,7 +37,6 @@ export function authenticateToken(req, res, next) {
         });
     }
 }
-
 // Admin-Only Middleware
 export function requireAdmin(req, res, next) {
     if (!req.user || req.user.role !== 'admin') {
