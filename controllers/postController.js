@@ -9,13 +9,11 @@ import { DatabaseService } from '../databases/mariaDB.js';
 const getPostBySlug = async (slug) => {
   try {
     const post = await DatabaseService.getPostBySlug(slug);
-    if (!post) throw new Error('Blogpost not found');
+    if (!post) throw new Error('Post not found or not published');
     const { error, value } = Post.validate(post);
     if (error) {
       throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
-    if (value.deleted) throw new Error('Blogpost deleted');
-    if (!value.published) throw new Error('Blogpost not published');
     return new Post(value);
   } catch (error) {
     console.error('Error fetching post by slug:', error);

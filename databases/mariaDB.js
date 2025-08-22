@@ -50,21 +50,13 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await pool.getConnection();
-      const { query, params } = queryBuilder('get', 'posts', { slug });
-      const result = await conn.query(query, params);
-      //const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
-      if(!result || result.length === 0) {
-        throw new Error('Post not found');
-      }
-      if(result.length > 1) {
-        throw new Error('Multiple posts found');
-      }
-
-      const post = result[0];
-      if(!post.published) {
-        throw new Error('Post not published');
-      }
-      return convertBigInts(post);
+      //const { query, params } = queryBuilder('get', 'posts', { slug });
+      //const result = await conn.query(query, params);
+      const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
+      if (!result || result.length === 0) return null;
+      if (result.length > 1) return null;
+      if (!result[0].published) return null;
+      return convertBigInts(result[0]);
     } catch (error) {
       throw new BlogpostError('Error in getPostBySlug:', error);
     } finally {

@@ -1,9 +1,13 @@
 import DOMPurify from 'dompurify'; // npm install dompurify
 import { JSDOM } from 'jsdom';
+import { AUTH_COOKIE_NAME } from '../services/authService';
+import path from 'path';
+import { DatabaseService } from '../databases/mariaDB';
 
 // Für Node.js Server-Side
 const window = new JSDOM('').window;
 const DOMPurifyServer = DOMPurify(window);
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 const FORBIDDEN_KEYS = new Set([
   '__proto__',
@@ -108,14 +112,13 @@ export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
 // Convert BigInts in the object to Numbers (recursive)
 export function convertBigInts(obj) {
   if (typeof obj === 'bigint'){
-    // Zu große Werte als 'NaN' zurückgeben
     if (obj > Number.MAX_SAFE_INTEGER || obj < Number.MIN_SAFE_INTEGER) {
       return NaN;
     }
     return Number(obj);
   }
   if (typeof obj === 'number') return obj;
-  if (typeof obj === 'string') return NaN;
+  if (typeof obj === 'string') return obj; // Nicht NaN!
 
   if (Array.isArray(obj)) return obj.map(convertBigInts);
   if (obj && typeof obj === 'object') {
@@ -158,4 +161,36 @@ export function incrementViews(req, postId) {
   DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
     console.error('Fehler beim Tracking:', err);
   });
+}
+export function sendLoginResponse(res, admin, token) {
+  res.cookie(AUTH_COOKIE_NAME, token, {
+      httpOnly: true,           // Nicht per JavaScript lesbar
+      secure: IS_PRODUCTION,    // Nur über HTTPS
+      sameSite: 'strict',       // CSRF-Schutz
+      maxAge: 24 * 60 * 60 * 1000, // 24h
+      path: '/'                 // Für ganze Domain
+  });
+
+  res.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+          id: admin.id,
+          username: admin.username,
+          role: admin.role
+      }
+  });
+}
+export function sendLogoutResponse(res) {
+    res.clearCookie(AUTH_COOKIE_NAME, {
+        httpOnly: true,
+        secure: IS_PRODUCTION,
+        sameSite: 'strict',
+        path: '/'
+    });
+
+    res.json({
+        success: true,
+        message: 'Logged out successfully'
+    });
 }

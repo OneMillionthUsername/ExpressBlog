@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --setupFilesAfterEnv=./tests/setup.js",
     "test_linux": "NODE_OPTIONS=--experimental-vm-modules jest",
     "start": "node server.js"
   },

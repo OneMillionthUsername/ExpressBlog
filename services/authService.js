@@ -6,20 +6,21 @@
  */
 
 import jwt from 'jsonwebtoken';
-import { adminModel } from '../models/adminModel';
+import { Admin } from '../models/adminModel.js';
 
 export const AUTH_COOKIE_NAME = 'authToken';
 
 // JWT-Secret Validation
-if (!process.env.JWT_SECRET) {
-    console.error('FATAL ERROR: JWT_SECRET environment variable is required!');
-    console.error('Please add JWT_SECRET to your .env file');
-    console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
-    process.exit(1);
-}
-if (process.env.JWT_SECRET.length < 32) {
-    console.error('FATAL ERROR: JWT_SECRET must be at least 32 characters long');
-    process.exit(1);
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    if (process.env.NODE_ENV === 'test') {
+        console.warn('WARNING: JWT_SECRET not set in test environment');
+        process.env.JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
+    } else {
+        console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
+        console.error('Please add JWT_SECRET to your .env file');
+        console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
+        process.exit(1);
+    }
 }
 
 // JWT-Konfiguration
@@ -33,7 +34,7 @@ const JWT_CONFIG = {
 
 // Generate JWT token
 export function generateToken(user) {
-    if(user && !(user instanceof adminModel)) {
+    if(user && !(user instanceof Admin)) {
         throw new Error('Invalid user data for token generation');
     }
  
@@ -65,7 +66,6 @@ export function verifyToken(token) {
             issuer: JWT_CONFIG.ISSUER,
             audience: JWT_CONFIG.AUDIENCE
         });
-        
         return decoded;
     } catch (error) {
         console.error('JWT verification failed');
@@ -77,7 +77,6 @@ export function verifyToken(token) {
         return null;
     }
 }
-
 // Token aus Request extrahieren
 /**
  * Extracts the JWT token from an Express request object.
@@ -88,18 +87,15 @@ export function verifyToken(token) {
 export function extractTokenFromRequest(req) {    
     // Prüfe Authorization Header
     const authHeader = req.headers.authorization;
-    
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const headerToken = authHeader.substring(7);
         return headerToken;
     }
-    
     // Prüfe Cookies (fallback)
     if (req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
         const cookieToken = req.cookies[AUTH_COOKIE_NAME];
         return cookieToken;
     }
-    
     return null;
 }
 

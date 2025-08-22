@@ -98,7 +98,6 @@ const authenticateAdmin = async (username, password) => {
         return null;
     }
 };
-
 export default {
     authenticateAdmin,
     getAdminByUsername,
