@@ -26,7 +26,6 @@ const getAdminByUsername = async (username) => {
         throw error;
     }
 }
-
 const updateAdminLoginSuccess = async (adminId) => {
     try {
         const update = await DatabaseService.updateAdminLoginSuccess(adminId);
@@ -36,7 +35,6 @@ const updateAdminLoginSuccess = async (adminId) => {
         throw error;
     }
 }
-
 const updateAdminLoginFailure = async (adminId) => {
     try {
         const update = await DatabaseService.updateAdminLoginFailure(adminId);
@@ -46,7 +44,6 @@ const updateAdminLoginFailure = async (adminId) => {
         throw error;
     }
 }
-
 const updateAdminStatus = async (adminId, status) => {
     try {
         const update = await DatabaseService.updateAdminStatus(adminId, status);
@@ -56,7 +53,6 @@ const updateAdminStatus = async (adminId, status) => {
         throw error;
     }
 }
-
 // Admin-Login
 const authenticateAdmin = async (username, password) => {
     // 1. Input-Validierung
@@ -66,7 +62,6 @@ const authenticateAdmin = async (username, password) => {
     if (!password || typeof password !== 'string' || password.length < 3) {
         throw new Error('Valid password is required');
     }
-
     try {
         const adminData = await DatabaseService.getAdminByUsername(username.trim());
         if (!adminData) return null;
@@ -77,9 +72,7 @@ const authenticateAdmin = async (username, password) => {
             console.error('Invalid admin data from database:', error.details.map(d => d.message).join('; '));
             return null;
         }
-
         const admin = new Admin(value);
-        
         // 3. Account-Status prüfen
         if (!admin.active || (admin.locked_until && new Date() < new Date(admin.locked_until))) {
             return null;

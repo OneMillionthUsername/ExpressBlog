@@ -61,9 +61,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const publicDirectoryPath = join(__dirname, '..'); // Ein Ordner nach oben
 const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-// locals
-app.locals.admin = 'false'; // Setting a global variable
-
+// globals
+//--------------------------------------------
 // Plesk-Environment-Erkennung
 const IS_PLESK = process.env.PLESK_ENV === 'true' || process.env.NODE_ENV === 'production';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';

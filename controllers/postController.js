@@ -143,7 +143,6 @@ const deletePost = async (post_id) => {
     throw error;
   }
 }
-
 export default {
   getPostBySlug,
   createPost,
