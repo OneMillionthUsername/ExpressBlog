@@ -2,7 +2,7 @@ import csrf from '@dr.pogodin/csurf';
 
 const csrfProtection = csrf({
     cookie: {
-        httpOnly: true, // CSRF cookie can't be accessed via JavaScript
+        httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
     }

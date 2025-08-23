@@ -8,7 +8,7 @@
  */
 
 //server.js
-import app from './app';  // Import the Express app from app.js
+import app from './app.js'; 
 
 // ===========================================
 // SERVER STARTEN

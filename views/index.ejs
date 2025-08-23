@@ -4,3 +4,112 @@
 - Dynamic Rendering: Allows server-side rendering of dynamic content before sending it to the client.
 - Template Reusability: Templates help in reusing HTML code and keeping it DRY (Don’t Repeat Yourself). 
 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="assets/js/module-loader.js" defer></script>
+    <script src="assets/js/page-initializers.js" defer></script>
+    <title>Sub specie aeternitatis</title>
+    <link rel="canonical" href="https://speculumx.at/">
+</head>
+<body>
+    <div class="container-fluid header-section">
+        <div class="d-flex justify-content-center align-items-center mb-2">
+            <img src="assets/ornaments/1131830.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
+            <h1 class="mt-5 main-title mb-0">Ratio et Realitas</h1>
+            <img src="assets/ornaments/1131830.svg" alt="Ornament" class="ornament ml-3">
+        </div>
+        <h2 class="mt-3 sub-title">In statu nascendi</h2>
+        <p class="mt-3 description">Ein Blog über Philosophie, Wissenschaft und künstliche Intelligenz</p>
+        <hr class="header-divider">
+    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="sidebar">
+                    <!-- Beliebte Beiträge -->
+                    <h2 class="sidebar-title mt-4">Beliebte Beiträge</h2>
+                    <ul class="nav-list" id="popular-posts">
+                        <!-- Dynamisch per JS befüllt -->
+                    </ul>
+
+                    <!-- Kategorien -->
+                    <!-- <h2 class="sidebar-title">Kategorien</h2>
+                    <ul class="nav-list">
+                        <li><a class="sidebar-link-style" href="#">Philosophie</a></li>
+                        <li><a class="sidebar-link-style" href="#">KI & Technik</a></li>
+                        <li><a class="sidebar-link-style" href="#">Mathematik</a></li>
+                        <li><a class="sidebar-link-style" href="#">Wissenschaft</a></li>
+                    </ul> -->
+
+                    <!-- Archiv nach Jahren -->
+                    <h2 class="sidebar-title mt-4">Archiv</h2>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="archiveDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Jahr wählen
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="archiveDropdown" id="year-archive-dropdown">
+                            <!-- Dynamisch per JS befüllt -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <!-- In deiner content-area -->
+                <div class="content-area">
+                    <h3 class="featured-title">Ausgewählte Beiträge</h3>
+                    <div class="featured-posts-grid">
+                        <div class="featured-post-card">
+                            <h4 class="featured-post-title">AI Agents</h4>
+                            <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
+                            <a href="pages/read_post.html?post=59" class="btn btn-outline-primary">Lesen</a>
+                        </div>
+                        <div class="featured-post-card">
+                            <h4 class="featured-post-title">Vom Archiv zur Ablenkung</h4>
+                            <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
+                            <a href="pages/read_post.html?post=54" class="btn btn-outline-primary">Lesen</a>
+                        </div>
+                        <div class="featured-post-card">
+                            <h4 class="featured-post-title">Universität Wien</h4>
+                            <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
+                            <a href="pages/read_post.html?post=52" class="btn btn-outline-primary">Lesen</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="container my-5">
+        <h3 class="featured-title">Fundstücke & Empfehlungen</h3>
+        <div class="row" id="discoveries-grid">
+            <!-- Platzhalter für bis zu 9 Cards -->
+        </div>
+    </div>
+    <footer class="site-footer mt-5">
+        <div class="container text-center py-4">
+            <span class="footer-title">Sub specie aeternitatis</span>
+            <p class="footer-text mb-2">© 2025 BitQuake Digital &nbsp;|&nbsp; Philosophie, Wissenschaft & KI</p>
+            <div class="footer-links">
+                <a href="/pages/about.html">Kontakt</a> &nbsp;|&nbsp;
+                <a href="/pages/list_posts.html">Blogposts</a> &nbsp;|&nbsp;
+                <a href="/pages/archiv.html">Archiv</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="assets/js/utils.js" defer></script>
+    <script src="assets/js/admin.js" defer></script>
+</body>
+</html>

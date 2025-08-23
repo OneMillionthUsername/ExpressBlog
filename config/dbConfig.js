@@ -5,4 +5,16 @@
 - Database Configuration: Centralizes database connection settings for better maintainability. 
 */
 
-export const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/mydb';
+export const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    connectionLimit: 10,
+    acquireTimeout: 30000,
+    timeout: 30000,
+    reconnect: true,
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci'
+};

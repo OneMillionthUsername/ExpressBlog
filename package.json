@@ -25,12 +25,16 @@
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dompurify": "^3.2.6",
     "dotenv": "^17.2.1",
+    "ejs": "^3.1.10",
     "express": "^5.1.0",
     "joi": "^18.0.1",
     "jsdom": "^26.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "cross-env": "^10.0.0",

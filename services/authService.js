@@ -22,7 +22,6 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
         process.exit(1);
     }
 }
-
 // JWT-Konfiguration
 const JWT_CONFIG = {
     SECRET_KEY: process.env.JWT_SECRET,
@@ -31,7 +30,6 @@ const JWT_CONFIG = {
     ISSUER: 'blog-app',
     AUDIENCE: 'blog-users'
 };
-
 // Generate JWT token
 export function generateToken(user) {
     if(user && !(user instanceof Admin)) {

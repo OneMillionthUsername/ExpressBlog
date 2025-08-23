@@ -249,7 +249,7 @@ app.use((err, req, res, next) => {
 app.use(csrfProtection);
 app.use(middleware.errorHandlerMiddleware);
 app.use(globalLimiter);
-
+app.set('view engine', 'ejs');
 // Statische Dateien mit korrekten MIME-Types
 app.use(express.static(publicDirectoryPath, {
     setHeaders: (res, path) => {
@@ -288,7 +288,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(join(publicDirectoryPath, 'index.html'));
+  res.render('index');
 });
 
 app.get('/csrf-token', (req, res) => {
