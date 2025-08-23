@@ -294,11 +294,12 @@ app.get('/', (req, res) => {
 app.get('/csrf-token', (req, res) => {
     res.json({ csrfToken: req.csrfToken() });
 });
+
 app.use('/auth', routes.authRouter);
 app.use('/admin', routes.adminRouter);
 app.use('/blogpost', routes.postRouter);
 app.use('/upload', routes.uploadRouter);
 app.use('/comments', routes.commentsRouter);
-
+app.use('/extension', routes.extensionRouter);
 // Export the app to be used by the server
 export default app;

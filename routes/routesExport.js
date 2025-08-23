@@ -3,11 +3,13 @@ import uploadRouter from './routes/uploadRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
 import authRouter from './routes/authRoutes.js';
 import commentsRouter from './routes/commentRoutes.js';
+import extensionRouter from './extensionRoutes.js';
 
 export default {
     postRouter,
     uploadRouter,
     adminRouter,
     authRouter,
-    commentsRouter
+    commentsRouter,
+    extensionRouter
 };
