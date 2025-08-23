@@ -1,8 +1,8 @@
-import { DatabaseService } from "../databases/mariaDB";
-import { commentModel } from "../models/commentModel.js";
+import { DatabaseService } from "../databases/mariaDB.js";
+import Comment from "../models/commentModel.js";
 
 const addComment = async (post_id, commentData) => {
-    const { error, value } = commentModel.validate(commentData);
+    const { error, value } = Comment.validate(commentData);
     if (error) {
         throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
@@ -25,12 +25,12 @@ const getCommentsByPostId = async (post_id) => {
         }
         const validComments = [];
         for (const comment of comments) {
-            const { error, value } = commentModel.validate(comment);
+            const { error, value } = Comment.validate(comment);
             if (error) {
                 console.error('Validation failed for comment:', error.details.map(d => d.message).join('; '));
                 continue;
             }
-            validComments.push(new commentModel(value));
+            validComments.push(new Comment(value));
         }
         return validComments;
     } catch (error) {

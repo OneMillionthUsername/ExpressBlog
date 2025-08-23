@@ -9,8 +9,8 @@
 class BlogpostError extends Error {}
 
 import * as mariadb from 'mariadb';
-import { convertBigInts, parseTags } from '../utils/utils';
-import queryBuilder from '../utils/queryBuilder';
+import { convertBigInts, parseTags } from '../utils/utils.js';
+import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
 
 const pool = mariadb.createPool(dbConfig);
@@ -25,6 +25,168 @@ export async function testConnection() {
         return true;
     } catch (error) {
         console.error('MariaDB connection failed:', error.message);
+        return false;
+    } finally {
+        if (conn) conn.release();
+    }
+}
+export async function initializeDatabase() {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        console.log('Initializing MariaDB schema...');
+
+        // Posts-Tabelle
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS posts (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content LONGTEXT NOT NULL,
+                slug VARCHAR(50) NOT NULL UNIQUE,
+                tags JSON DEFAULT NULL,
+                author VARCHAR(100) DEFAULT 'admin',
+                views BIGINT DEFAULT 0,
+                published BOOLEAN DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                
+                INDEX idx_posts_created_at (created_at DESC),
+                INDEX idx_posts_views (views DESC),
+                INDEX idx_posts_author (author),
+                INDEX idx_posts_published (published)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Comments-Tabelle
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS comments (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT NOT NULL,
+                username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
+                text VARCHAR(1000) NOT NULL,
+                ip_address VARCHAR(45) DEFAULT NULL,
+                approved BOOLEAN DEFAULT 1,
+                published BOOLEAN DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+                INDEX idx_comments_post_id (post_id),
+                INDEX idx_comments_created_at (created_at DESC),
+                INDEX idx_comments_approved (approved),
+
+                FOREIGN KEY (post_id) REFERENCES posts(id)
+                    ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Uploads/Media-Tabelle
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS media (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT NOT NULL,
+                original_name VARCHAR(255) NOT NULL,
+                file_size BIGINT DEFAULT NULL,
+                mime_type VARCHAR(100) DEFAULT NULL,
+                uploaded_by VARCHAR(100) DEFAULT NULL,
+                upload_path VARCHAR(500) DEFAULT NULL,
+                alt_text VARCHAR(255) DEFAULT NULL,
+                used_in_posts JSON DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                
+                INDEX idx_media_uploaded_by (uploaded_by),
+                INDEX idx_media_created_at (created_at DESC),
+                INDEX idx_media_mime_type (mime_type),
+                INDEX idx_media_original_name(original_name),
+
+                FOREIGN KEY (post_id) REFERENCES posts(id)
+                    ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Analytics/Views-Tabelle
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS post_analytics (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT NOT NULL,
+                event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
+                ip_address VARCHAR(45) DEFAULT NULL,
+                user_agent TEXT DEFAULT NULL,
+                referer VARCHAR(500) DEFAULT NULL,
+                country VARCHAR(50) DEFAULT NULL,
+                city VARCHAR(100) DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+                INDEX idx_analytics_post_id (post_id),
+                INDEX idx_analytics_event_type (event_type),
+                INDEX idx_analytics_created_at (created_at DESC),
+                INDEX idx_analytics_ip (ip_address),
+
+                FOREIGN KEY (post_id) REFERENCES posts(id)
+                    ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS admins (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                email VARCHAR(255) DEFAULT NULL,
+                full_name VARCHAR(255) DEFAULT NULL,
+                role ENUM('admin', 'editor', 'viewer') DEFAULT 'admin',
+                active BOOLEAN DEFAULT 1,
+                last_login DATETIME DEFAULT NULL,
+                login_attempts INT DEFAULT 0,
+                locked_until DATETIME DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                
+                INDEX idx_admins_username (username),
+                INDEX idx_admins_active (active),
+                INDEX idx_admins_role (role),
+                INDEX idx_admins_last_login (last_login)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Backup-Tabelle für gelöschte Posts (Wiederherstellung)
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS deleted_posts (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                original_id BIGINT NOT NULL,
+                title VARCHAR(500) NOT NULL,
+                content LONGTEXT NOT NULL,
+                tags JSON DEFAULT NULL,
+                author VARCHAR(100) DEFAULT NULL,
+                views BIGINT DEFAULT 0,
+                original_created_at DATETIME NOT NULL,
+                deleted_by VARCHAR(100) NOT NULL,
+                deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                reason TEXT DEFAULT NULL,
+
+                INDEX idx_deleted_posts_original_id (original_id),
+                INDEX idx_deleted_posts_deleted_at (deleted_at DESC),
+                INDEX idx_deleted_posts_author (author),
+                INDEX idx_deleted_posts_deleted_by (deleted_by)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        // Karten-Tabelle
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS cards (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(200) NOT NULL,
+                subtitle VARCHAR(200) DEFAULT NULL,
+                link VARCHAR(500) NOT NULL,
+                img VARCHAR(500) NOT NULL,
+                published BOOLEAN DEFAULT 0
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        console.log('MariaDB schema created/verified successfully');
+        return true;
+    } catch (error) {
+        console.error('Error creating MariaDB schema:', error);
         return false;
     } finally {
         if (conn) conn.release();

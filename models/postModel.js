@@ -33,7 +33,7 @@ export class Post {
 export const postSchema = Joi.object({
   id: Joi.number().integer().optional(),
   slug: Joi.string().min(3).max(50).pattern(/^[a-z0-9-]+$/).required(),
-  title: Joi.string().min(3).max(200).required(),
+  title: Joi.string().min(3).max(255).required(),
   content: Joi.string().required(),
   tags: Joi.array().items(Joi.string().max(50)).optional(),
   author: Joi.string().max(100).required(),

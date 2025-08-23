@@ -16,16 +16,16 @@ import http from 'http';
 import { readFileSync } from 'fs';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import { unlink as unlinkAsync } from 'fs/promises';
-import { swaggerUiMiddleware, swaggerUiSetup } from './swagger.js';
-import logger, { loggerMiddleware } from './logger.js'; // Unser neues Logging-System
+//import { unlink as unlinkAsync } from 'fs/promises';
+import { swaggerUiMiddleware, swaggerUiSetup } from "./utils/swagger.js";
+import { loggerMiddleware } from "./middleware/loggerMiddleware.js"; 
 import helmet from 'helmet';
-import { error } from 'console';
-import { isBigIntObject } from 'util/types';
+//import { error } from 'console';
+//import { isBigIntObject } from 'util/types';
 import * as middleware from './middleware/securityMiddleware.js';
-import rateLimit from 'express-rate-limit';
+//import rateLimit from 'express-rate-limit';
 import routes from './routes/routesExport.js';
-import { csrfProtection } from './utils/csrf.js';
+import csrfProtection from './utils/csrf.js';
 
 dotenv.config();
 
@@ -44,19 +44,7 @@ import {
     testConnection, 
     initializeDatabase, 
     DatabaseService 
-} from './database.js';
-
-// Import cookie name from auth.js to ensure consistency
-import { 
-    generateToken, 
-    verifyToken, 
-    validateAdminLogin, 
-    authenticateToken, 
-    requireAdmin,
-    extractTokenFromRequest,
-    AUTH_COOKIE_NAME  // Import the correct cookie name
-} from './auth.js';
-import { createSlug } from './utils/utils.js';
+} from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

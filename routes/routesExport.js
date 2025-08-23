@@ -1,8 +1,8 @@
-import postRouter from './routes/postRoutes.js';
-import uploadRouter from './routes/uploadRoutes.js';
-import adminRouter from './routes/adminRoutes.js';
-import authRouter from './routes/authRoutes.js';
-import commentsRouter from './routes/commentRoutes.js';
+import postRouter from './postRoutes.js';
+import uploadRouter from './uploadRoutes.js';
+import adminRouter from './adminRoutes.js';
+import authRouter from './authRoutes.js';
+import commentsRouter from './commentsRoutes.js';
 import extensionRouter from './extensionRoutes.js';
 
 export default {

@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify'; // npm install dompurify
 import { JSDOM } from 'jsdom';
-import { AUTH_COOKIE_NAME } from '../services/authService';
+import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import path from 'path';
-import { DatabaseService } from '../databases/mariaDB';
+import { DatabaseService } from '../databases/mariaDB.js';
 
 // Für Node.js Server-Side
 const window = new JSDOM('').window;

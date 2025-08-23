@@ -6,11 +6,12 @@
  */
 
 import { Router } from 'express';
-import { loginLimiter } from '../utils/limiters';
+import { loginLimiter } from '../utils/limiters.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+const adminRouter = Router();
 
-const router = Router();
-import { getAllUsers } from '../controllers/userController';
+adminRouter.get('/admin', authenticateToken, requireAdmin, (req, res) => {
+    res.json({ message: 'Welcome to the admin panel' });
+});
 
-router.get('/users', getAllUsers);
-
-export default router;
+export default adminRouter;

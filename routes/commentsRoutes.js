@@ -1,9 +1,9 @@
 import express from "express";
-import { requireJsonContent } from "../middleware/securityMiddleware";
+import { requireJsonContent } from "../middleware/securityMiddleware.js";
 import { globalLimiter, strictLimiter } from "../utils/limiters.js";
-import * as commentsController from "../controllers/commentsController.js";
-import { requireAdmin, authenticateToken } from "../middleware/authMiddleware";
-import { csrfProtection } from "../utils/csrf.js";
+import * as commentsController from "../controllers/commentController.js";
+import { requireAdmin, authenticateToken } from "../middleware/authMiddleware.js";
+import csrfProtection from "../utils/csrf.js";
 
 const commentsRouter = express.Router();
 

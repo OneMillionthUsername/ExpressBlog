@@ -24,15 +24,18 @@
   },
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
+    "@dr.pogodin/csurf": "^1.16.5",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "dompurify": "^3.2.6",
     "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "helmet": "^8.1.0",
     "joi": "^18.0.1",
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

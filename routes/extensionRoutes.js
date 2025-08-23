@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAdmin, authenticateToken } from "../middleware/authMiddleware";
+import { requireAdmin, authenticateToken } from "../middleware/authMiddleware.js";
 import { globalLimiter } from "../utils/limiters.js";
 
 const extensionRouter = express.Router();
@@ -20,3 +20,5 @@ extensionRouter.get('/google-api-key', globalLimiter, authenticateToken, require
     }
     res.json({ apiKey: process.env.GOOGLE_API_KEY });
 });
+
+export default extensionRouter;

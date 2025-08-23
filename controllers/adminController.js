@@ -6,8 +6,8 @@
 - Error Handling: Ensures that errors in data retrieval are handled gracefully.
  */
 
-import { DatabaseService } from '../databases/mariaDB';
-import { Admin } from '../models/adminModel';
+import { DatabaseService } from '../databases/mariaDB.js';
+import { Admin } from '../models/adminModel.js';
 import bcrypt from 'bcrypt';
 
 const getAdminByUsername = async (username) => {

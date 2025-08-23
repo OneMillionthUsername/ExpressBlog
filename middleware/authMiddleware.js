@@ -5,7 +5,7 @@
 - Reusable Logic: Can be applied to multiple routes to handle common tasks like authentication or logging.
 - Flow Control: Uses next() to pass control to the next middleware or route handler.
  */
-import * as authService from '../services/authService';
+import * as authService from '../services/authService.js';
 
 // JWT-Middleware für Express
 export function authenticateToken(req, res, next) {

@@ -9,4 +9,4 @@ const csrfProtection = csrf({
 
 });
 
-export default { csrfProtection };
+export default csrfProtection;

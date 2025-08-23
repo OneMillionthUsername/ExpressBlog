@@ -1,6 +1,6 @@
 import Joi from "joi";
 
-export class Comment {
+export default class Comment {
   constructor({
     id = null,
     post_id = null,
@@ -33,7 +33,7 @@ export const commentSchema = Joi.object({
   post_id: Joi.number().integer().required(),
   username: Joi.string().max(100).required(),
   text: Joi.string().max(1000).required(),
-  ip_address: Joi.string().ip().required(),
+  ip_address: Joi.string().ip().optional(),
   approved: Joi.boolean().optional(),
   published: Joi.boolean().optional(),
   created_at: Joi.date().optional(),
