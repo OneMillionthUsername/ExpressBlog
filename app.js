@@ -24,10 +24,8 @@ import { error } from 'console';
 import { isBigIntObject } from 'util/types';
 import * as middleware from './middleware/securityMiddleware.js';
 import rateLimit from 'express-rate-limit';
-import postRouter from './routes/postRoutes.js';
-import uploadRouter from './routes/uploadRoutes.js';
-import adminRouter from './routes/adminRoutes.js';
-import authRouter from './routes/authRoutes.js';
+import routes from './routes/routesExport.js';
+import { csrfProtection } from './utils/csrf.js';
 
 dotenv.config();
 
@@ -248,7 +246,7 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
-
+app.use(csrfProtection);
 app.use(middleware.errorHandlerMiddleware);
 app.use(globalLimiter);
 
@@ -293,11 +291,14 @@ app.get('/', (req, res) => {
   res.sendFile(join(publicDirectoryPath, 'index.html'));
 });
 
-app.use('/auth', authRouter);
-app.use('/admin', adminRouter);
-app.use('/blogpost', postRouter);
-app.use('/upload', uploadRouter);
-//app.use(commentsRouter);
+app.get('/csrf-token', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+});
+app.use('/auth', routes.authRouter);
+app.use('/admin', routes.adminRouter);
+app.use('/blogpost', routes.postRouter);
+app.use('/upload', routes.uploadRouter);
+app.use('/comments', routes.commentsRouter);
 
 // Export the app to be used by the server
 export default app;

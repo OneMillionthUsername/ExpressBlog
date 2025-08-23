@@ -21,7 +21,6 @@ postRouter.all('*', async (req, res) => {
 postRouter.use(['/create', '/update/*', '/delete/*'], requireJsonContent);
 
 // commentsRouter.all();
-
 postRouter.get('/all', globalLimiter, async (req, res) => {
   try {
     const posts = await postController.getAllPosts();

@@ -17,7 +17,6 @@ const addComment = async (post_id, commentData) => {
         throw error;
     }
 }
-
 const getCommentsByPostId = async (post_id) => {
     try {
         const comments = await DatabaseService.getCommentsByPostId(post_id);
@@ -39,7 +38,6 @@ const getCommentsByPostId = async (post_id) => {
         throw error;
     }
 }
-
 const deleteComment = async (comment_id, post_id) => {
     try {
         const result = await DatabaseService.deleteComment(comment_id, post_id);
@@ -52,7 +50,6 @@ const deleteComment = async (comment_id, post_id) => {
         throw error;
     }
 }
-
 export default {
     addComment,
     getCommentsByPostId,

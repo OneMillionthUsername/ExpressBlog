@@ -1,17 +1,12 @@
-import csrf from 'csurf';
+import csrf from '@dr.pogodin/csurf';
 
-// CSRF-Middleware
-const csrfProtection = csrf({ 
-    cookie: { 
-        httpOnly: true, 
-        secure: IS_PRODUCTION,
+const csrfProtection = csrf({
+    cookie: {
+        httpOnly: true, // CSRF cookie can't be accessed via JavaScript
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
-    } 
+    }
+
 });
 
-app.use(csrfProtection);
-
-// Token an Frontend senden
-app.get('/csrf-token', (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
+export default { csrfProtection };
