@@ -25,6 +25,9 @@ import { isBigIntObject } from 'util/types';
 import * as middleware from './middleware/securityMiddleware.js';
 import rateLimit from 'express-rate-limit';
 import postRouter from './routes/postRoutes.js';
+import uploadRouter from './routes/uploadRoutes.js';
+import adminRouter from './routes/adminRoutes.js';
+import authRouter from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -290,7 +293,10 @@ app.get('/', (req, res) => {
   res.sendFile(join(publicDirectoryPath, 'index.html'));
 });
 
-app.use(postRouter);
+app.use('/auth', authRouter);
+app.use('/admin', adminRouter);
+app.use('/blogpost', postRouter);
+app.use('/upload', uploadRouter);
 //app.use(commentsRouter);
 
 // Export the app to be used by the server

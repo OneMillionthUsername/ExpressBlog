@@ -39,7 +39,7 @@ authRouter.all('*', requireJsonContent, async (req, res) => {
  *       401:
  *         description: Ungültige Anmeldedaten
  */
-authRouter.post('/auth/login', loginLimiter, async (req, res) => {
+authRouter.post('/login', loginLimiter, async (req, res) => {
     try {
         // Timeout für Auth-Operationen
         const timeoutPromise = new Promise((_, reject) => {
@@ -61,11 +61,10 @@ authRouter.post('/auth/login', loginLimiter, async (req, res) => {
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
-
 // POST /auth/verify - Token-Verifikation
 // Response:
 //   - On success:
-authRouter.post('/auth/verify', strictLimiter, (req, res) => {
+authRouter.post('/verify', strictLimiter, (req, res) => {
     try {
         const token = authService.extractTokenFromRequest(req);
         let tokenSource = 'unknown';
@@ -131,9 +130,8 @@ authRouter.post('/auth/verify', strictLimiter, (req, res) => {
         });
     }
 });
-
 // POST /auth/logout - Abmeldung
-authRouter.post('/auth/logout', (req, res) => {
+authRouter.post('/logout', (req, res) => {
     sendLogoutResponse(res);
 });
 

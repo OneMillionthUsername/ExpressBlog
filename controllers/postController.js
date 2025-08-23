@@ -9,7 +9,7 @@ import { DatabaseService } from '../databases/mariaDB.js';
 const getPostBySlug = async (slug) => {
   try {
     const post = await DatabaseService.getPostBySlug(slug);
-    if (!post) throw new Error('Post not found or not published');
+    if (!post || !post.published) throw new Error('Post not found or not published');
     const { error, value } = Post.validate(post);
     if (error) {
       throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));

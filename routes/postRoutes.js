@@ -11,15 +11,18 @@ import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const postRouter = express.Router();
-postRouter.all('*', requireJsonContent, async (req, res) => {
+postRouter.all('*', async (req, res) => {
   //hier allgemeine Logik ausführen
   //logging
   //sanitazing
 });
 
+// Nur für Routen, die JSON erwarten
+postRouter.use(['/create', '/update/*', '/delete/*'], requireJsonContent);
+
 // commentsRouter.all();
 
-postRouter.get('/blogpost/all', globalLimiter, async (req, res) => {
+postRouter.get('/all', globalLimiter, async (req, res) => {
   try {
     const posts = await postController.getAllPosts();
     res.json(convertBigInts(posts) || posts);
@@ -28,7 +31,17 @@ postRouter.get('/blogpost/all', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load blog posts' });
   }
 });
-postRouter.get('/blogpost/:slug', globalLimiter, async (req, res) => {
+// Spezifische Routen VOR parametrische Routen
+postRouter.get('/most-read', globalLimiter, async (req, res) => {
+  try {
+    const posts = await postController.getMostReadPosts();
+    res.json(convertBigInts(posts) || posts);
+  } catch (error) {
+    console.error('Error loading most read blog posts', error);
+    res.status(500).json({ error: 'Server failed to load most read blog posts' });
+  }
+});
+postRouter.get('/:slug', globalLimiter, async (req, res) => {
   const slug = req.params.slug;
   try {
     const post = await postController.getPostBySlug(slug);
@@ -39,7 +52,7 @@ postRouter.get('/blogpost/:slug', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
-postRouter.get('/blogpost/:post_id', globalLimiter, async (req, res) => {
+postRouter.get('/by-id/:post_id', globalLimiter, async (req, res) => {
   const postId = req.params.post_id;
   try {
     const post = await postController.getPostById(postId);
@@ -50,16 +63,7 @@ postRouter.get('/blogpost/:post_id', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
-postRouter.get('/blogpost/most-read', globalLimiter, async (req, res) => {
-  try {
-    const posts = await postController.getMostReadPosts();
-    res.json(convertBigInts(posts) || posts);
-  } catch (error) {
-    console.error('Error loading most read blog posts', error);
-    res.status(500).json({ error: 'Server failed to load most read blog posts' });
-  }
-});
-postRouter.post('/blogpost/create', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
+postRouter.post('/create', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
   const { title, content, tags } = req.body;
   const slug = createSlug(title);
   try {
@@ -73,7 +77,7 @@ postRouter.post('/blogpost/create', strictLimiter, authenticateToken, requireAdm
     res.status(500).json({ error: 'Server failed to create the blogpost' });
   }
 });
-postRouter.put('/blogpost/update/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
+postRouter.put('/update/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
   const postId = req.params.post_id;
   const { title, content, tags } = req.body;
   try {
@@ -87,7 +91,7 @@ postRouter.put('/blogpost/update/:post_id', strictLimiter, authenticateToken, re
     res.status(500).json({ error: 'Server failed to update the blogpost' });
   }
 });
-postRouter.delete('/blogpost/delete/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
+postRouter.delete('/delete/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
   const postId = req.params.post_id;
   try {
     const result = await postController.deletePost(postId);

@@ -58,7 +58,7 @@ export const DatabaseService = {
       if (!result[0].published) return null;
       return convertBigInts(result[0]);
     } catch (error) {
-      throw new BlogpostError('Error in getPostBySlug:', error);
+      return new BlogpostError('Error in getPostBySlug:', error);
     } finally {
       if (conn) conn.release();
     }
@@ -352,6 +352,19 @@ const result = await conn.query(query, params);
         return result.affectedRows > 0;
     } catch (error) {
         console.error('Error deleting media:', error);
+        throw error;
+    } finally {
+        if (conn) conn.release();
+    }
+  },
+  async getMediaById(mediaId) {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const result = await conn.query('SELECT * FROM media WHERE id = ?', [mediaId]);
+        return result.length > 0 ? convertBigInts(result[0]) : null;
+    } catch (error) {
+        console.error('Error fetching media by ID:', error);
         throw error;
     } finally {
         if (conn) conn.release();

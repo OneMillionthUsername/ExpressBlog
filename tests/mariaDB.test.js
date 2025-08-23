@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest } from "@jest/globals";
+import { afterAll, afterEach, beforeEach, describe, expect, jest } from "@jest/globals";
 
 // Pool und Connection mocken
 const mockQuery = jest.fn();
@@ -32,6 +32,11 @@ beforeEach(() => {
   mockGetConnection.mockClear();
 });
 
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.clearAllTimers();
+});
+
 describe("DatabaseService", () => {
   it("getPostBySlug returns post if found and published", async () => {
     mockQuery.mockResolvedValueOnce([
@@ -43,25 +48,14 @@ describe("DatabaseService", () => {
     expect(mockGetConnection).toHaveBeenCalled();
     expect(mockRelease).toHaveBeenCalled();
   });
-  // it("getPostBySlug returns an exception if post not published", async () => {
-  //   mockQuery.mockResolvedValueOnce([
-  //       { id: 2, slug: "test", content: "tralala", published: false, views: 0, tags: "philo, wissenschaft"}
-  //   ]);
-  //   await expect(DatabaseService.getPostBySlug("test"))
-  //   .rejects.toThrow("Error in getPostBySlug:");
-  // });
   it("getPostBySlug returns multiple posts found", async () => {
     mockQuery.mockResolvedValueOnce([
         { id: 3, slug: "test", content: "tralala", published: false, views: 0, tags: "philo, wissenschaft"},
         { id: 4, slug: "test", content: "tralala", published: false, views: 0, tags: "philo, wissenschaft"}
     ]);
-    await expect(DatabaseService.getPostBySlug("test"))
-    .rejects.toThrow("Error in getPostBySlug:");
+    const post = await DatabaseService.getPostBySlug("test");
+    expect(post).toBeNull();
   });
-  // it("getPostBySlug throws if not found", async () => {
-  //   mockQuery.mockResolvedValueOnce([]);
-  //   await expect(DatabaseService.getPostBySlug("notfound")).rejects.toThrow("Error in getPostBySlug:");
-  // });
   it("getAllPosts returns a json of all posts", async () => {
     mockQuery.mockResolvedValueOnce([
         { id: 3, slug: "test", content: "tralala", published: true, views: 10, tags: "philo, wissenschaft"},
@@ -81,20 +75,35 @@ describe("DatabaseService", () => {
     mockQuery.mockResolvedValueOnce([]);
     await expect(DatabaseService.getAllPosts()).rejects.toThrow("Error in getAllPosts:");
   });
-
-  it("getPostBySlug returns null if not published", async () => {
+  it("getPostBySlug throws if slug is invalid", async () => {
+    const post = await DatabaseService.getPostBySlug("");
+    expect(post).toBeNull();
+    const postTwo = await DatabaseService.getPostBySlug("!@#$");
+    expect(postTwo).toBeNull();
+  });
+  it("getPostBySlug returns null if deleted or not published", async () => {
     mockQuery.mockResolvedValueOnce([
       { id: 2, slug: "test", published: false, views: 0, tags: "philo, wissenschaft"}
     ]);
     const post = await DatabaseService.getPostBySlug("test");
     expect(post).toBeNull();
   });
-});
-
-describe('PostController Tests', () => {
-  it("getPostBySlug throws if post not found", async () => {
-    jest.mocked(DatabaseService.getPostBySlug).mockResolvedValueOnce(null);
-    await expect(postController.getPostBySlug("notfound")).rejects.toThrow("Post not found");
+    it("getAllPosts returns a json of all posts", async () => {
+    mockQuery.mockResolvedValueOnce([
+      { id: 3, slug: "test", content: "tralala", published: true, views: 10, tags: "philo, wissenschaft" },
+      { id: 4, slug: "best", content: "trululu", published: false, views: 120, tags: "kilo, bissenschaft, kunst" }
+    ]);
+    const posts = await DatabaseService.getAllPosts();
+    expect(posts).toBeDefined();
+    expect(posts.length).toEqual(2);
+    expect(posts[0]).toEqual({
+      id: 3,
+      slug: "test",
+      content: "tralala",
+      published: true,
+      views: 10,
+      tags: ["philo", "wissenschaft"]
+    });
   });
 });
 

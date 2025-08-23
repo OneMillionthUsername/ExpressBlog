@@ -12,6 +12,9 @@ import bcrypt from 'bcrypt';
 
 const getAdminByUsername = async (username) => {
     try {
+        if (!username || typeof username !== 'string' || username.trim() === '') {
+            throw new Error('Valid username is required');
+        }
         const admin = await DatabaseService.getAdminByUsername(username);
         if (!admin) {
             throw new Error('Admin not found');
@@ -57,10 +60,10 @@ const updateAdminStatus = async (adminId, status) => {
 const authenticateAdmin = async (username, password) => {
     // 1. Input-Validierung
     if (!username || typeof username !== 'string' || username.trim() === '') {
-        throw new Error('Valid username is required');
+        throw new Error('Username and password are required');
     }
     if (!password || typeof password !== 'string' || password.length < 3) {
-        throw new Error('Valid password is required');
+        throw new Error('Username and password are required');
     }
     try {
         const adminData = await DatabaseService.getAdminByUsername(username.trim());

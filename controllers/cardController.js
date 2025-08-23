@@ -14,7 +14,6 @@ const createCard = async (cardData) => {
         throw error;
     }
 }
-
 const getAllCards = async () => {
     try {
         const cards = await DatabaseService.getAllCards();
@@ -37,9 +36,11 @@ const getAllCards = async () => {
         throw error;
     }
 }
-
 const getCardById = async (id) => {
     try {
+        if (!Number.isInteger(id) || id <= 0) {
+            throw new Error('Invalid card ID');
+        }
         const card = await DatabaseService.getCardById(id);
         if (!card) {
             throw new Error('Card not found');
@@ -54,9 +55,11 @@ const getCardById = async (id) => {
         throw error;
     }
 }
-
 const deleteCard = async (id) => {
     try {
+        if (!Number.isInteger(id) || id <= 0) {
+            throw new Error('Invalid card ID');
+        }
         const deleted = await DatabaseService.deleteCard(id);
         if (!deleted) {
             throw new Error('Card not found or not deleted');
@@ -67,7 +70,6 @@ const deleteCard = async (id) => {
         throw error;
     }
 }
-
 export default {
     createCard,
     getAllCards,

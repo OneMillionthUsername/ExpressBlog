@@ -28,14 +28,21 @@ const { Admin } = await import('../models/adminModel.js');
 const bcrypt = await import('bcrypt');
 const adminController = await import('../controllers/adminController.js');
 
-describe('AdminController', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    
-    // Admin.validate als statische Methode mocken
-    Admin.validate = jest.fn();
-  });
+let consoleSpy;
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  // Admin.validate als statische Methode mocken
+  Admin.validate = jest.fn();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.clearAllTimers();
+});
+
+describe('AdminController', () => {
   describe('authenticateAdmin', () => {
     const mockAdminData = {
       id: 1,
@@ -47,7 +54,16 @@ describe('AdminController', () => {
       active: true,
       locked_until: null
     };
-
+    it('should throw error when username or password is empty', async () => {
+      await expect(adminController.default.authenticateAdmin('', 'password123'))
+        .rejects.toThrow('Username and password are required');
+      await expect(adminController.default.authenticateAdmin('testadmin', ''))
+        .rejects.toThrow('Username and password are required');
+    });
+    it('should throw error when username is empty', async () => {
+      await expect(adminController.default.getAdminByUsername(''))
+        .rejects.toThrow('Valid username is required');
+    });
     it('should authenticate valid admin successfully', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockResolvedValue(mockAdminData);
@@ -70,7 +86,6 @@ describe('AdminController', () => {
       expect(bcrypt.default.compare).toHaveBeenCalledWith('password123', '$2b$10$hashedpassword');
       expect(DatabaseService.updateAdminLoginSuccess).toHaveBeenCalledWith(1);
     });
-
     it('should return null for invalid password', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockResolvedValue(mockAdminData);
@@ -85,7 +100,6 @@ describe('AdminController', () => {
       expect(result).toBeNull();
       expect(DatabaseService.updateAdminLoginFailure).toHaveBeenCalledWith(1);
     });
-
     it('should return null for non-existent admin', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockResolvedValue(null);
@@ -97,7 +111,6 @@ describe('AdminController', () => {
       expect(result).toBeNull();
       expect(DatabaseService.getAdminByUsername).toHaveBeenCalledWith('nonexistent');
     });
-
     it('should return null for inactive admin', async () => {
       // Arrange
       const inactiveAdmin = { ...mockAdminData, active: false };
@@ -110,7 +123,6 @@ describe('AdminController', () => {
       // Assert
       expect(result).toBeNull();
     });
-
     it('should return null for locked admin', async () => {
       // Arrange
       const lockedAdmin = { 
@@ -126,7 +138,6 @@ describe('AdminController', () => {
       // Assert
       expect(result).toBeNull();
     });
-
     it('should return null when validation fails', async () => {
       // Arrange
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -152,7 +163,6 @@ describe('AdminController', () => {
       // Cleanup
       consoleSpy.mockRestore();
     });
-
     it('should return null when database error occurs', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockRejectedValue(new Error('Database error'));
@@ -164,7 +174,6 @@ describe('AdminController', () => {
       expect(result).toBeNull();
     });
   });
-
   describe('getAdminByUsername', () => {
     it('should return admin when found and valid', async () => {
       // Arrange

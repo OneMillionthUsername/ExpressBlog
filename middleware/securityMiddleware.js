@@ -20,10 +20,10 @@ export function requireJsonContent(req, res, next) {
 export function createEscapeInputMiddleware(whitelist = []) {
   return function escapeInputMiddleware(req, res, next) {
     try {
-      req.body = escapeAllStrings(req.body, whitelist);
-      req.query = escapeAllStrings(req.query, whitelist);
-      req.params = escapeAllStrings(req.params, whitelist);
-      if(req.cookies) req.cookies = escapeAllStrings(req.cookies, whitelist);
+      if (req.body) req.body = escapeAllStrings(req.body, whitelist);
+      if (req.query) req.query = escapeAllStrings(req.query, whitelist);
+      if (req.params) req.params = escapeAllStrings(req.params, whitelist);
+      if (req.cookies) req.cookies = escapeAllStrings(req.cookies, whitelist);
       const safeHeaders = ["user-agent", "referer"];
       safeHeaders.forEach(h => {
         if (req.headers[h]) {
@@ -42,6 +42,7 @@ export function createEscapeInputMiddleware(whitelist = []) {
     } catch (err) {
       // don't crash the server because of bad input
       console.error('Error in escapeInputMiddleware:', err);
+      return next();
     }
     next();
   };

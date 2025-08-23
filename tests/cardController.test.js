@@ -21,17 +21,20 @@ const { DatabaseService } = await import('../databases/mariaDB.js');
 const { Card } = await import('../models/cardModel.js');
 const cardController = await import('../controllers/cardController.js');
 
+let consoleSpy;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.clearAllTimers();
+});
+
 describe('CardController', () => {
-  let consoleSpy;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    consoleSpy.mockRestore();
-  });
 describe('createCard', () => {
   it('should throw error when validation fails', async () => {
     const cardData = { title: '' };
@@ -43,7 +46,6 @@ describe('createCard', () => {
     await expect(cardController.default.createCard(cardData))
       .rejects.toThrow('Validation failed: Title required; Link required');
   });
-
   it('should throw error when database fails', async () => {
     const cardData = { title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
     Card.validate.mockReturnValue({ error: null, value: cardData });
@@ -54,21 +56,28 @@ describe('createCard', () => {
     
     expect(consoleSpy).toHaveBeenCalledWith('Error creating card:', expect.any(Error));
   });
+  it('should throw error when card data is incomplete', async () => {
+    const cardData = { title: 'Test' }; // Fehlender Link und Bild
+    Card.validate.mockReturnValue({ 
+      error: { details: [{ message: 'Link required' }, { message: 'Image required' }] }, 
+      value: null 
+    });
+  
+    await expect(cardController.default.createCard(cardData))
+      .rejects.toThrow('Validation failed: Link required; Image required');
+  });
 });
-
 describe('getAllCards', () => {
   it('should return empty array when no cards', async () => {
     DatabaseService.getAllCards.mockResolvedValue([]);
     const result = await cardController.default.getAllCards();
     expect(result).toEqual([]);
   });
-
   it('should return empty array when cards is null', async () => {
     DatabaseService.getAllCards.mockResolvedValue(null);
     const result = await cardController.default.getAllCards();
     expect(result).toEqual([]);
   });
-
   it('should filter out invalid cards', async () => {
     const cards = [
       { id: 1, title: 'Valid Card' },
@@ -89,7 +98,6 @@ describe('getAllCards', () => {
     expect(result[1]).toEqual(cards[2]);
     expect(consoleSpy).toHaveBeenCalledWith('Validation failed for card:', 'Invalid');
   });
-
   it('should throw error when database fails', async () => {
     DatabaseService.getAllCards.mockRejectedValue(new Error('DB Error'));
     
@@ -97,6 +105,24 @@ describe('getAllCards', () => {
       .rejects.toThrow('DB Error');
     
     expect(consoleSpy).toHaveBeenCalledWith('Error getting all cards:', expect.any(Error));
+  });
+  it('should return valid cards', async () => {
+    const cards = [
+      { id: 1, title: 'Valid Card', link: 'http://valid.com', img: 'http://valid.jpg' },
+      { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' }
+    ];
+    
+    DatabaseService.getAllCards.mockResolvedValue(cards);
+    Card.validate
+      .mockReturnValueOnce({ error: null, value: cards[0] })
+      .mockReturnValueOnce({ error: null, value: cards[1] });
+
+    const result = await cardController.default.getAllCards();
+    
+    expect(result).toEqual([
+      { id: 1, title: 'Valid Card', link: 'http://valid.com', img: 'http://valid.jpg' },
+      { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' }
+    ]);
   });
 });
 describe('getCardById', () => {
@@ -110,7 +136,6 @@ describe('getCardById', () => {
     expect(result).toEqual(card);
     expect(DatabaseService.getCardById).toHaveBeenCalledWith(1);
   });
-
   it('should throw error when card not found', async () => {
     DatabaseService.getCardById.mockResolvedValue(null);
 
@@ -119,7 +144,6 @@ describe('getCardById', () => {
     
     expect(consoleSpy).toHaveBeenCalledWith('Error getting card by id:', expect.any(Error));
   });
-
   it('should throw error when validation fails', async () => {
     const card = { id: 1, title: '' };
     DatabaseService.getCardById.mockResolvedValue(card);
@@ -131,15 +155,19 @@ describe('getCardById', () => {
     await expect(cardController.default.getCardById(1))
       .rejects.toThrow('Validation failed: Invalid card');
   });
-
   it('should throw error when database fails', async () => {
     DatabaseService.getCardById.mockRejectedValue(new Error('DB timeout'));
 
     await expect(cardController.default.getCardById(1))
       .rejects.toThrow('DB timeout');
   });
+  it('should throw error when card ID is invalid', async () => {
+    await expect(cardController.default.getCardById(-1))
+      .rejects.toThrow('Invalid card ID');
+    await expect(cardController.default.deleteCard('abc'))
+      .rejects.toThrow('Invalid card ID');
+  });
 });
-
 describe('deleteCard', () => {
   it('should delete card successfully', async () => {
     DatabaseService.deleteCard.mockResolvedValue(true);
