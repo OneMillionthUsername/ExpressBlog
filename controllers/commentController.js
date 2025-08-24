@@ -1,13 +1,13 @@
 import { DatabaseService } from "../databases/mariaDB.js";
 import Comment from "../models/commentModel.js";
 
-const addComment = async (post_id, commentData) => {
+const addComment = async (postId, commentData) => {
     const { error, value } = Comment.validate(commentData);
     if (error) {
         throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
     try {
-        const result = await DatabaseService.addComment(post_id, value);
+        const result = await DatabaseService.addComment(postId, value);
         if (!result || result.affectedRows === 0) {
             throw new Error('Failed to add comment');
         }
@@ -17,9 +17,9 @@ const addComment = async (post_id, commentData) => {
         throw error;
     }
 }
-const getCommentsByPostId = async (post_id) => {
+const getCommentsByPostId = async (postId) => {
     try {
-        const comments = await DatabaseService.getCommentsByPostId(post_id);
+        const comments = await DatabaseService.getCommentsByPostId(postId);
         if (!comments || comments.length === 0) {
             return [];
         }
@@ -38,9 +38,9 @@ const getCommentsByPostId = async (post_id) => {
         throw error;
     }
 }
-const deleteComment = async (comment_id, post_id) => {
+const deleteComment = async (commentId, postId) => {
     try {
-        const result = await DatabaseService.deleteComment(comment_id, post_id);
+        const result = await DatabaseService.deleteComment(commentId, postId);
         if (!result) {
             throw new Error('Comment not found or not deleted');
         }

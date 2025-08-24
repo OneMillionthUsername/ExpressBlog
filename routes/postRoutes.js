@@ -9,6 +9,7 @@ import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 
 const postRouter = express.Router();
 // postRouter.all('*', async (req, res, next) => {
@@ -17,9 +18,6 @@ const postRouter = express.Router();
 //   //sanitazing
 //   next();
 // });
-
-// Nur für Routen, die JSON erwarten
-postRouter.use(['/create', '/update/:post_id', '/delete/:post_id'], requireJsonContent);
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {
@@ -41,7 +39,10 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load most read blog posts' });
   }
 });
-postRouter.get('/:slug', globalLimiter, async (req, res) => {
+postRouter.get('/:slug', 
+  globalLimiter, 
+  validateSlug,
+  async (req, res) => {
   const slug = req.params.slug;
   try {
     const post = await postController.getPostBySlug(slug);
@@ -52,7 +53,10 @@ postRouter.get('/:slug', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
-postRouter.get('/by-id/:post_id', globalLimiter, async (req, res) => {
+postRouter.get('/by-id/:post_id', 
+  globalLimiter, 
+  validateId,
+  async (req, res) => {
   const postId = req.params.post_id;
   try {
     const post = await postController.getPostById(postId);
@@ -63,7 +67,13 @@ postRouter.get('/by-id/:post_id', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
-postRouter.post('/create', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
+postRouter.post('/create', 
+  strictLimiter,
+  requireJsonContent,
+  validatePostBody, 
+  requireAdmin, 
+  authenticateToken, 
+  async (req, res) => {
   const { title, content, tags } = req.body;
   const slug = createSlug(title);
   try {
@@ -77,12 +87,19 @@ postRouter.post('/create', strictLimiter, authenticateToken, requireAdmin, async
     res.status(500).json({ error: 'Server failed to create the blogpost' });
   }
 });
-postRouter.put('/update/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
-  const postId = req.params.post_id;
-  const { title, content, tags } = req.body;
-  try {
-    const result = await postController.updatePost(postId, { title, content, tags });
-    if (!result) {
+postRouter.put('/update/:post_id',
+  strictLimiter,
+  requireJsonContent,
+  validateId,
+  validatePostBody,
+  requireAdmin,
+  authenticateToken,
+  async (req, res) => {
+    const postId = req.params.post_id;
+    const { title, content, tags } = req.body;
+    try {
+      const result = await postController.updatePost(postId, { title, content, tags });
+      if (!result) {
       return res.status(400).json({ error: 'Failed to update blog post' });
     }
     res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.postId), title: result.title });
@@ -91,12 +108,22 @@ postRouter.put('/update/:post_id', strictLimiter, authenticateToken, requireAdmi
     res.status(500).json({ error: 'Server failed to update the blogpost' });
   }
 });
-postRouter.delete('/delete/:post_id', strictLimiter, authenticateToken, requireAdmin, async (req, res) => {
-  const postId = req.params.post_id;
-  try {
-    const result = await postController.deletePost(postId);
-    if (!result) {
-      return res.status(400).json({ error: 'Failed to delete blog post' });
+postRouter.delete(
+  '/delete/:post_id',
+  strictLimiter,
+  requireJsonContent,
+  validateId,
+  requireAdmin,
+  authenticateToken,
+  async (req, res) => {
+    const postId = req.params.post_id;
+    if (validationService.validateId(postId) === false) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+    try {
+      const result = await postController.deletePost(postId);
+      if (!result) {
+        return res.status(400).json({ error: 'Failed to delete blog post' });
     }
     res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(result.postId) });
   } catch (error) {

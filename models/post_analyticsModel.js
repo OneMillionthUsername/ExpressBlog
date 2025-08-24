@@ -30,13 +30,13 @@ export class PostAnalytics {
 
 export const postAnalyticsSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  post_id: Joi.number().integer().required(),
+  post_id: Joi.number().integer().min(1).required(),
   event_type: Joi.string().valid("view", "click", "share").required(),
   ip_address: Joi.string().ip().required(),
   user_agent: Joi.string().max(200).required(),
   referer: Joi.string().uri().optional(),
   country: Joi.string().max(100).optional(),
   city: Joi.string().max(100).optional(),
-  created_at: Joi.date().optional()
+  created_at: Joi.date().required()
 });
 

@@ -43,15 +43,15 @@ export class Admin {
 
 export const adminSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  username: Joi.string().max(100).required(),
-  password_hash: Joi.string().required(),
+  username: Joi.string().min(1).max(100).required(),
+  password_hash: Joi.string().min(8).required(),
   email: Joi.string().email().required(),
-  full_name: Joi.string().max(200).optional(),
+  full_name: Joi.string().min(2).max(200).optional(),
   role: Joi.string().valid("admin", "editor", "viewer").required(),
   active: Joi.boolean().optional(),
   last_login: Joi.date().optional(),
   login_attempts: Joi.number().integer().min(0).optional(),
   locked_until: Joi.date().optional(),
-  created_at: Joi.date().optional(),
+  created_at: Joi.date().required(),
   updated_at: Joi.date().optional()
 });

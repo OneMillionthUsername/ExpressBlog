@@ -10,6 +10,7 @@ import { sendLoginResponse, sendLogoutResponse } from '../utils/utils.js';
 import * as adminController from "../controllers/adminController.js";
 import * as authService from "../services/authService.js";
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
+import { celebrate, Joi, Segments } from 'celebrate';
 
 const authRouter = express.Router();
 // authRouter.all('*', requireJsonContent, async (req, res) => {
@@ -39,7 +40,16 @@ const authRouter = express.Router();
  *       401:
  *         description: Ungültige Anmeldedaten
  */
-authRouter.post('/login', loginLimiter, async (req, res) => {
+// Login-Validierung
+authRouter.post('/login',
+  loginLimiter,
+  celebrate({
+    [Segments.BODY]: Joi.object({
+      username: Joi.string().min(1).max(100).required(),
+      password: Joi.string().min(8).max(100).required()
+    })
+  }),
+  async (req, res) => {
     try {
         // Timeout für Auth-Operationen
         const timeoutPromise = new Promise((_, reject) => {
@@ -64,7 +74,14 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 // POST /auth/verify - Token-Verifikation
 // Response:
 //   - On success:
-authRouter.post('/verify', strictLimiter, (req, res) => {
+authRouter.post('/verify',
+  strictLimiter,
+  celebrate({
+    [Segments.BODY]: Joi.object({
+      token: Joi.string().min(10).max(512).optional()
+    })
+  }),
+  (req, res) => {
     try {
         const token = authService.extractTokenFromRequest(req);
         let tokenSource = 'unknown';
@@ -86,20 +103,9 @@ authRouter.post('/verify', strictLimiter, (req, res) => {
             });
         }
         let admin;
-        try {
-            admin = authService.verifyToken(token);
-            if (!admin) {
-                console.warn(`[AUTH AUDIT] Token verification failed: Invalid or expired token (source: ${tokenSource})`);
-                return res.status(403).json({ 
-                    success: false,
-                    data: {
-                        valid: false,
-                        error: 'Token invalid or expired' 
-                    }
-                });
-            }
-        } catch (err) {
-            console.error(`[AUTH AUDIT] Error during token verification (source: ${tokenSource}):`, err);
+        admin = authService.verifyToken(token);
+        if (!admin) {
+            console.warn(`[AUTH AUDIT] Token verification failed: Invalid or expired token (source: ${tokenSource})`);
             return res.status(403).json({ 
                 success: false,
                 data: {
@@ -120,12 +126,12 @@ authRouter.post('/verify', strictLimiter, (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Token verification error:', error);
-        res.status(500).json({ 
+        console.error(`[AUTH AUDIT] Error during token verification (source: ${tokenSource}):`, err);
+        return res.status(403).json({ 
             success: false,
             data: {
                 valid: false,
-                error: 'Internal server error' 
+                error: 'Token invalid or expired' 
             }
         });
     }

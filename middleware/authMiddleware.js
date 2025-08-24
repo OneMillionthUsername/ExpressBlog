@@ -18,7 +18,7 @@ export function authenticateToken(req, res, next) {
         });
     }
     try {
-        const user = verifyToken(token);
+        const user = authService.verifyToken(token);
         if (!user) {
             return res.status(401).json({ 
                 error: 'Invalid token',

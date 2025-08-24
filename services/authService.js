@@ -70,10 +70,6 @@ export function verifyToken(token) {
     } catch (error) {
         console.error('JWT verification failed');
         console.error('Error details:', error.message);
-        if (process.env.NODE_ENV !== 'production') {
-            console.error('Full error stack:', error.stack);
-        }
-        
         return null;
     }
 }

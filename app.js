@@ -218,7 +218,6 @@ app.use('/auth', routes.authRouter);
 app.use('/blogpost', routes.postRouter);
 app.use('/upload', routes.uploadRouter);
 app.use('/comments', routes.commentsRouter);
-app.use('/extension', routes.extensionRouter);
 
 // HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen ausgeschlossen
 app.use((req, res, next) => {

@@ -2,11 +2,19 @@
 import express from 'express';
 import { imageUpload } from '../middleware/uploadMiddleware.js';
 import mediaController from '../controllers/mediaController.js';
-import { requireAdmin } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import { strictLimiter } from '../utils/limiters.js';
+import { validateMediaFile } from "../middleware/validationMiddleware.js";
 
 const uploadRouter = express.Router();
 
-uploadRouter.post('/image', requireAdmin, imageUpload.single('image'), async (req, res) => {
+uploadRouter.post('/image', 
+  strictLimiter,
+  imageUpload.single('image'), 
+  validateMediaFile,
+  requireAdmin, 
+  authenticateToken,
+  async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ 
@@ -14,7 +22,6 @@ uploadRouter.post('/image', requireAdmin, imageUpload.single('image'), async (re
         error: 'No file uploaded' 
       });
     }
-
     // Media-Objekt für Datenbank erstellen
     const mediaData = {
       post_id: req.body.post_id || null, // Optional: falls Bild zu Post gehört
@@ -25,10 +32,8 @@ uploadRouter.post('/image', requireAdmin, imageUpload.single('image'), async (re
       path: req.file.path,
       alt_text: req.body.alt_text || null
     };
-
     // Media in Datenbank speichern
     const result = await mediaController.addMedia(mediaData);
-    
     res.json({
       success: true,
       message: 'Image uploaded successfully',
@@ -41,10 +46,8 @@ uploadRouter.post('/image', requireAdmin, imageUpload.single('image'), async (re
         mimeType: req.file.mimetype
       }
     });
-
   } catch (error) {
     console.error('Upload error:', error);
-    
     // Datei löschen bei Fehler
     if (req.file && req.file.path) {
       try {
@@ -53,7 +56,6 @@ uploadRouter.post('/image', requireAdmin, imageUpload.single('image'), async (re
         console.error('Error deleting file:', unlinkError);
       }
     }
-    
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Upload failed' 

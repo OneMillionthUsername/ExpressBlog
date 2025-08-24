@@ -1,3 +1,61 @@
+import { getUrlParameter, escapeHtml } from './utils.js';
+import validationService from '../../../services/validationService.js';
+
+
+async function addComment(postId, username, commentText) {
+    // Input-Validierung (client-seitig)
+    if (!validationService.validateId(postId)) {
+        showCommentFeedback('Ungültige Post-ID.', 'error');
+        return false;
+    }
+    if(!validationService.validateString(username, { min: 0, max: 50 })) {
+        showCommentFeedback('Ungültiger Benutzername.', 'error');
+        return false;
+    }
+    if (!commentText || commentText.trim().length === 0) {
+        showCommentFeedback('Bitte gib einen Kommentar ein.', 'error');
+        return false;
+    }
+    if (commentText.trim().length > 1000) {
+        showCommentFeedback('Kommentar ist zu lang (maximal 1000 Zeichen).', 'error');
+        return false;
+    }
+    try {      
+        const response = await fetch(`/comments/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username && username.trim() !== '' ? escapeHtml(username.trim()) : '',
+                text: escapeHtml(commentText.trim())
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            alert('Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler'));
+            return false;
+        }
+        console.log('Kommentar erfolgreich hinzugefügt:', result.newComment);
+        
+        // Kommentare neu laden und anzeigen
+        await displayComments(postId);
+
+        // Formular zurücksetzen
+        resetCommentForm();
+        
+        // Erfolgs-Feedback
+        showCommentFeedback('Kommentar erfolgreich hinzugefügt! 🎉', 'success');
+        
+        return true;
+    } catch (error) {
+        console.error('Fehler beim Hinzufügen des Kommentars:', error);
+        showCommentFeedback('Netzwerkfehler beim Speichern des Kommentars. Bitte versuche es später erneut.', 'error');
+        return false;
+    }
+}
 // Format relative time
 function formatCommentTime(commentCreatedAt) {
     const now = new Date();
@@ -32,7 +90,9 @@ async function displayComments(postId) {
         </div>
     `;
     try {
-        const comments = await getCommentsByPostId(postId);
+        const response = await fetch(`/comments/${postId}`);
+        const comments = await response.json();
+
         if (comments.length === 0) {
             commentsContainer.innerHTML = `
                 <div class="no-comments">
@@ -82,6 +142,49 @@ async function displayComments(postId) {
         updateCommentCount(0);
     }
 }
+// Kommentar löschen (nur für Admins mit JWT)
+async function deleteComment(postId, commentId) {
+    // Prüfe Admin-Status
+    if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) {
+        showCommentFeedback('Nur Administratoren können Kommentare löschen.', 'error');
+        return false;
+    }
+    if (!confirm('Möchten Sie diesen Kommentar wirklich löschen?')) {
+        return false;
+    }
+    try {
+        const response = await fetch(`/comments/${postId}/${commentId}`, {
+            method: 'DELETE',
+            credentials: 'include', // HTTP-only Cookies verwenden
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const result = await response.json();
+        // Bei 401/403 - Session abgelaufen
+        if (response.status === 401 || response.status === 403) {
+            showCommentFeedback('Session abgelaufen. Bitte melden Sie sich erneut an.', 'error');
+            // Optional: Admin-Logout aufrufen falls verfügbar
+            if (typeof adminLogout === 'function') {
+                await adminLogout();
+            }
+            return false;
+        }
+        if (!response.ok) {
+            showCommentFeedback('Fehler beim Löschen: ' + (result.error || 'Unbekannter Fehler'), 'error');
+            return false;
+        }
+        // Kommentare neu laden und anzeigen
+        await displayComments(postId);
+        // Erfolgs-Feedback
+        showCommentFeedback('Kommentar erfolgreich gelöscht.', 'info');
+        return true;
+    } catch (error) {
+        console.error('Fehler beim Löschen des Kommentars:', error);
+        showCommentFeedback('Netzwerkfehler beim Löschen des Kommentars.', 'error');
+        return false;
+    }
+}
 // Kommentar-Formular zurücksetzen
 function resetCommentForm() {
     const form = document.getElementById('comment-form');
@@ -121,13 +224,17 @@ function updateCharCounter() {
 }
 async function handleCommentSubmit(event) {
     event.preventDefault();
-    const postId = getUrlParameter('post');
+    const postId = escapeHtml(getUrlParameter('post'));
     if (!postId) {
-        alert('Fehler: Post-ID nicht gefunden.');
+        showCommentFeedback('Fehler: Post-ID nicht gefunden.', 'error');
         return;
     }
-    const username = document.getElementById('comment-username').value.trim();
-    const commentText = document.getElementById('comment-text').value.trim();
+    if (!validateId(postId)) {
+        showCommentFeedback('Ungültige Post-ID!', 'error');
+        return;
+    }
+    const username = escapeHtml(document.getElementById('comment-username').value.trim());
+    const commentText = escapeHtml(document.getElementById('comment-text').value.trim());
     const commentData = { username: username, text: commentText };
     // Submit-Button deaktivieren während des Sendens
     const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -136,8 +243,14 @@ async function handleCommentSubmit(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird gesendet...';
     
     try {
-        const success = await addComment(postId, commentData);
-        if (success) {
+        const success = await fetch(`/comments/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(commentData)
+        });
+        if (success.ok) {
             // Username für nächstes Mal speichern
             saveUsername();
         }
@@ -147,3 +260,108 @@ async function handleCommentSubmit(event) {
         submitBtn.innerHTML = originalText;
     }
 }
+function updateCommentCount(count) {
+    const commentCount = document.getElementById('comment-count');
+    if (commentCount) {
+        commentCount.textContent = count;
+    }
+    
+    const commentTitle = document.getElementById('comments-title');
+    if (commentTitle) {
+        commentTitle.innerHTML = `
+            💬 Kommentare <span class="badge badge-secondary">${count}</span>
+        `;
+    }
+}
+// Kommentarsystem initialisieren
+async function initializeCommentsSystem() {    
+    // Post-Id aus URL extrahieren
+    const postId = getUrlParameter('post');
+    if (!postId) {
+        console.warn('Keine Post-ID gefunden, Kommentarsystem wird nicht geladen.');
+        return;
+    }
+    // Kommentare laden und anzeigen
+    await displayComments(postId);
+    // Event Listener für Formular
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', handleCommentSubmit);
+    }
+    // Event Listener für Character Counter
+    const commentTextarea = document.getElementById('comment-text');
+    if (commentTextarea) {
+        commentTextarea.addEventListener('input', updateCharCounter);
+        commentTextarea.addEventListener('keyup', updateCharCounter);
+    }
+}
+// Username aus localStorage laden/speichern (für Benutzerfreundlichkeit)
+function loadSavedUsername() {
+    const savedUsername = localStorage.getItem('blog_comment_username');
+    const usernameInput = document.getElementById('comment-username');
+    
+    if (savedUsername && usernameInput) {
+        usernameInput.value = savedUsername;
+    }
+}
+function saveUsername() {
+    const usernameInput = document.getElementById('comment-username');
+    if (usernameInput && usernameInput.value.trim()) {
+        localStorage.setItem('blog_comment_username', usernameInput.value.trim());
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadSavedUsername();
+    
+    const usernameInput = document.getElementById('comment-username');
+    if (usernameInput) {
+        usernameInput.addEventListener('blur', saveUsername);
+    }
+});
+// Feedback-Nachrichten anzeigen
+function showCommentFeedback(message, type = 'info') {
+    const feedbackContainer = document.getElementById('comment-feedback');
+    if (!feedbackContainer) {
+        // Falls kein Container vorhanden ist, erstelle einen
+        const container = document.createElement('div');
+        container.id = 'comment-feedback';
+        container.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'error' ? 'alert-danger' : 'alert-info';
+    
+    const feedback = document.createElement('div');
+    feedback.className = `alert ${alertClass} alert-dismissible fade show`;
+    feedback.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    `;
+    feedback.style.animation = 'slideInRight 0.3s ease-out';
+    
+    const container = document.getElementById('comment-feedback');
+    container.appendChild(feedback);
+    
+    // Auto-remove nach 4 Sekunden
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 300);
+        }
+    }, 4000);
+}
+// mark module as loaded
+if (window.moduleLoader) window.moduleLoader.markLoaded('comments');

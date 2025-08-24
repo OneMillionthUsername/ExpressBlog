@@ -30,13 +30,13 @@ export default class Comment {
 
 export const commentSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  post_id: Joi.number().integer().required(),
-  username: Joi.string().max(100).required(),
-  text: Joi.string().max(1000).required(),
+  post_id: Joi.number().integer().min(1).required(),
+  username: Joi.string().min(3).max(100).required(),
+  text: Joi.string().min(1).max(1000).required(),
   ip_address: Joi.string().ip().optional(),
   approved: Joi.boolean().optional(),
   published: Joi.boolean().optional(),
-  created_at: Joi.date().optional(),
+  created_at: Joi.date().required(),
   updated_at: Joi.date().optional()
 });
 
