@@ -8,26 +8,24 @@
 */
 
 // app.js
+
+
 import express from 'express';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import https from 'https';
-import http from 'http';
 import { readFileSync } from 'fs';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 //import { unlink as unlinkAsync } from 'fs/promises';
 import { swaggerUiMiddleware, swaggerUiSetup } from "./utils/swagger.js";
-import { loggerMiddleware } from "./middleware/loggerMiddleware.js"; 
+import logger, { loggerMiddleware } from "./middleware/loggerMiddleware.js";
 import helmet from 'helmet';
-//import { error } from 'console';
-//import { isBigIntObject } from 'util/types';
+import * as config from './config/config.js';
 import * as middleware from './middleware/securityMiddleware.js';
 //import rateLimit from 'express-rate-limit';
+import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
 import csrfProtection from './utils/csrf.js';
 
-dotenv.config();
 
 // Validating critical vars
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
@@ -52,16 +50,10 @@ const publicDirectoryPath = join(__dirname, '..'); // Ein Ordner nach oben
 const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 // globals
 //--------------------------------------------
-// Plesk-Environment-Erkennung
-const IS_PLESK = process.env.PLESK_ENV === 'true' || process.env.NODE_ENV === 'production';
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '2mb';
-const URLENCODED_BODY_LIMIT = process.env.URLENCODED_BODY_LIMIT || '2mb';
-
-logger.info(`Server mode: ${IS_PRODUCTION ? 'Production' : 'Development'}`);
-logger.info(`Plesk integration: ${IS_PLESK ? 'Enabled' : 'Disabled'}`);
-logger.info(`JSON body limit: ${JSON_BODY_LIMIT}`);
-logger.info(`URL-encoded body limit: ${URLENCODED_BODY_LIMIT}`);
+logger.info(`Server mode: ${config.IS_PRODUCTION ? 'Production' : 'Development'}`);
+logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
+logger.info(`JSON body limit: ${config.JSON_BODY_LIMIT}`);
+logger.info(`URL-encoded body limit: ${config.URLENCODED_BODY_LIMIT}`);
 logger.debug('Logger system initialized - DEBUG level active');
 logger.debug('Test debug message - if you see this, debug logging works!');
 
@@ -77,32 +69,13 @@ async function initializeApp() {
       console.error('Database connection failed! Server will exit.');
       process.exit(1);
   }
-  
   // Schema erstellen
   const schemaCreated = await initializeDatabase();
   if (!schemaCreated) {
       console.error('Database schema could not be created! Server will exit.');
       process.exit(1);
   }
-  
   console.log('Database successfully initialized');
-  // SSL-Zertifikate nur in Development laden (Plesk übernimmt SSL in Production)
-  let httpsOptions = null;
-  if (!IS_PLESK && !IS_PRODUCTION) {
-      try {
-          const sslPath = join(__dirname, '..', 'ssl');
-          httpsOptions = {
-              key: readFileSync(join(sslPath, 'private-key.pem')),
-              cert: readFileSync(join(sslPath, 'certificate.pem'))
-          };
-          console.log('SSL certificates loaded successfully (Development)');
-      } catch (error) {
-          console.warn('SSL certificates not found - HTTP only available');
-          console.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
-      }
-  } else {
-      console.log('Production mode: SSL handled by Plesk/webserver');
-  }
 }
 
 // App initialisieren (asynchron)
@@ -154,7 +127,7 @@ app.use(helmet({
       frameAncestors: ["'none'"]
     }
   },
-  hsts: IS_PRODUCTION ? {
+  hsts: config.IS_PRODUCTION ? {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
@@ -181,8 +154,52 @@ app.set('trust proxy', true); // Damit Express die korrekte IP-Adresse des Clien
 app.use(loggerMiddleware);
 
 
+app.use(csrfProtection);
+app.use(globalLimiter);
+app.use(middleware.errorHandlerMiddleware);
+app.set('view engine', 'ejs');
+// Statische Dateien mit korrekten MIME-Types
+app.use(express.static(publicDirectoryPath, {
+  setHeaders: (res, path) => {
+    // JavaScript-Dateien
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+    // CSS-Dateien
+    else if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+          }
+          // JSON-Dateien
+          else if (path.endsWith('.json')) {
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          }
+          // Cache-Control für statische Assets
+          if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 Jahr
+          }
+        }
+  }));
+  
+  // ===========================================
+  // PUBLIC ENDPOINTS
+  // ===========================================
+  
+  // Health Check Endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: IS_PRODUCTION ? 'production' : 'development',
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
+
+app.get('/', (req, res) => {
+  res.render('index');
+});
 // Prevent open redirects.
-app.use((req, res) => {
+app.get('/redirect', (req, res) => {
   try {
     if (new Url(req.query.url).host !== 'speculumx.at') {
       return res.status(400).end(`Unsupported redirect to host: ${req.query.url}`)
@@ -193,13 +210,22 @@ app.use((req, res) => {
   res.redirect(req.query.url)
 });
 
+app.get('/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+app.use('/auth', routes.authRouter);
+app.use('/blogpost', routes.postRouter);
+app.use('/upload', routes.uploadRouter);
+app.use('/comments', routes.commentsRouter);
+app.use('/extension', routes.extensionRouter);
+
 // HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen ausgeschlossen
 app.use((req, res, next) => {
     // API-Routen von HTTPS-Redirect ausschließen
-    if (req.url.startsWith('/auth/') || req.url.startsWith('/api/') || req.url.startsWith('/blogpost') || req.url.startsWith('/comments/') || req.url.startsWith('/upload/')) {
+    if (req.url.startsWith('/auth/') || req.url.startsWith('/extension/') || req.url.startsWith('/blogpost') || req.url.startsWith('/comments/') || req.url.startsWith('/upload/')) {
         return next(); // Kein Redirect für API-Calls
     }
-    
     // Plesk verwendet x-forwarded-proto Header
     if (IS_PLESK && req.header('x-forwarded-proto') === 'http') {
         // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
@@ -234,60 +260,5 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
-app.use(csrfProtection);
-app.use(middleware.errorHandlerMiddleware);
-app.use(globalLimiter);
-app.set('view engine', 'ejs');
-// Statische Dateien mit korrekten MIME-Types
-app.use(express.static(publicDirectoryPath, {
-    setHeaders: (res, path) => {
-        // JavaScript-Dateien
-        if (path.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        }
-        // CSS-Dateien
-        else if (path.endsWith('.css')) {
-            res.setHeader('Content-Type', 'text/css; charset=utf-8');
-        }
-        // JSON-Dateien
-        else if (path.endsWith('.json')) {
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        }
-        // Cache-Control für statische Assets
-        if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
-            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 Jahr
-        }
-    }
-}));
-
-// ===========================================
-// PUBLIC ENDPOINTS
-// ===========================================
-
-// Health Check Endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: IS_PRODUCTION ? 'production' : 'development',
-        version: process.env.npm_package_version || '1.0.0'
-    });
-});
-
-app.get('/', (req, res) => {
-  res.render('index');
-});
-
-app.get('/csrf-token', (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
-
-app.use('/auth', routes.authRouter);
-app.use('/admin', routes.adminRouter);
-app.use('/blogpost', routes.postRouter);
-app.use('/upload', routes.uploadRouter);
-app.use('/comments', routes.commentsRouter);
-app.use('/extension', routes.extensionRouter);
 // Export the app to be used by the server
 export default app;

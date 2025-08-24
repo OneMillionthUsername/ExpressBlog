@@ -8,38 +8,57 @@
  */
 
 //server.js
+import http from 'http';
+import https from 'https';
+import * as config from './config/config.js';
 import app from './app.js'; 
 
 // ===========================================
 // SERVER STARTEN
 // ===========================================
-
-const PORT = process.env.PORT || (IS_PLESK ? 8080 : 3000);
-const HTTPS_PORT = process.env.HTTPS_PORT || (IS_PLESK ? 8443 : 3443);
-const HOST = process.env.HOST || '0.0.0.0';
+// Plesk-Environment-Erkennung
 
 console.log(`Server configuration:`);
-console.log(`HTTP Port: ${PORT}`);
-console.log(`HTTPS Port: ${HTTPS_PORT}`);
-console.log(`Host: ${HOST}`);
-console.log(`Domain: ${process.env.DOMAIN || 'not set'}`);
+console.log(`HTTP Port: ${config.PORT}`);
+console.log(`HTTPS Port: ${config.HTTPS_PORT}`);
+console.log(`Host: ${config.HOST}`);
+console.log(`Domain: ${config.DOMAIN || 'not set'}`);
+
+// SSL-Zertifikate nur in Development laden (Plesk übernimmt SSL in Production)
+let httpsOptions = null;
+if (!config.IS_PLESK && !config.IS_PRODUCTION) {
+    try {
+        const sslPath = join(__dirname, '..', 'ssl');
+        httpsOptions = {
+            key: readFileSync(join(sslPath, 'private-key.pem')),
+            cert: readFileSync(join(sslPath, 'certificate.pem'))
+        };
+        console.log('SSL certificates loaded successfully (Development)');
+    } catch (error) {
+        console.warn('SSL certificates not found - HTTP only available');
+        console.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
+    }
+} else {
+    console.log('Production mode: SSL handled by Plesk/webserver');
+}
 
 // HTTP Server (für Entwicklung und Redirects)
 const httpServer = http.createServer(app);
+
 
 // Server-Timeouts konfigurieren
 httpServer.setTimeout(30000); // 30 Sekunden
 httpServer.headersTimeout = 31000; // Etwas höher als setTimeout
 
-httpServer.listen(PORT, HOST, () => {
-    const protocol = IS_PRODUCTION || httpsOptions ? 'https' : 'http';
+httpServer.listen(config.PORT, config.HOST, () => {
+    const protocol = config.IS_PRODUCTION || httpsOptions ? 'https' : 'http';
     const domain = process.env.DOMAIN || 'localhost';
-    const displayPort = (protocol === 'http' && PORT === 80) || (protocol === 'https' && PORT === 443) ? '' : `:${PORT}`;
-    
-    console.log(`HTTP Server running on ${HOST}:${PORT}`);
+    const displayPort = (protocol === 'http' && config.PORT === 80) || (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
+
+    console.log(`HTTP Server running on ${config.HOST}:${config.PORT}`);
     console.log(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
 
-    if(IS_PRODUCTION) {
+    if(config.IS_PRODUCTION) {
         console.log('Production mode: SSL handled by Plesk/webserver');
     }
     else if (httpsOptions) {
@@ -48,8 +67,8 @@ httpServer.listen(PORT, HOST, () => {
     else {
         console.log('Development mode: HTTP only - run "node ssl/generate-certs.js" to enable HTTPS');
     }
-    
-    if (IS_PLESK) {
+
+    if (config.IS_PLESK) {
         console.log('Plesk mode: SSL handled by Plesk');
     } else if (!httpsOptions) {
         console.log('HTTP only available - run "node ssl/generate-certs.js" for HTTPS');
@@ -81,10 +100,10 @@ function gracefulShutdown(signal) {
 }
 
 // HTTPS Server nur in Development starten
-if (!IS_PLESK && httpsOptions) {
+if (!config.IS_PLESK && httpsOptions) {
     const httpsServer = https.createServer(httpsOptions, app);
-    httpsServer.listen(HTTPS_PORT, HOST, () => {
-        console.log(`HTTPS Server running on https://${HOST}:${HTTPS_PORT}`);
+    httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
+        console.log(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
         console.log('SSL/TLS enabled - secure connection available');
         console.log('Certificate: Self-signed for development (browser warning normal)');
         console.log('JWT authentication enabled');

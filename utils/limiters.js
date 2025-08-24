@@ -1,3 +1,5 @@
+import rateLimit from 'express-rate-limit';
+
 // --- Rate limiters ---
 // Basis-Konfiguration für alle Limiter
 const baseLimiterConfig = {

@@ -11,14 +11,15 @@ import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 const postRouter = express.Router();
-postRouter.all('*', async (req, res) => {
-  //hier allgemeine Logik ausführen
-  //logging
-  //sanitazing
-});
+// postRouter.all('*', async (req, res, next) => {
+//   //hier allgemeine Logik ausführen
+//   //logging
+//   //sanitazing
+//   next();
+// });
 
 // Nur für Routen, die JSON erwarten
-postRouter.use(['/create', '/update/*', '/delete/*'], requireJsonContent);
+postRouter.use(['/create', '/update/:post_id', '/delete/:post_id'], requireJsonContent);
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {

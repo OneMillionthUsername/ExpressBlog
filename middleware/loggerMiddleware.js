@@ -17,3 +17,5 @@ export function loggerMiddleware(req, res, next) {
     });
     next();
 }
+
+export default logger;

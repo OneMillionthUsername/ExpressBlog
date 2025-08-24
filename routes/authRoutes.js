@@ -12,11 +12,11 @@ import * as authService from "../services/authService.js";
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
 
 const authRouter = express.Router();
-authRouter.all('*', requireJsonContent, async (req, res) => {
-  //hier allgemeine Logik ausführen
-  //logging
-  //sanitazing
-});
+// authRouter.all('*', requireJsonContent, async (req, res) => {
+//   //hier allgemeine Logik ausführen
+//   //logging
+//   //sanitazing
+// });
 /**
  * @openapi
  * /auth/login:

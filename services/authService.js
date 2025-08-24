@@ -4,11 +4,21 @@
 - authService.js: Handles user authentication logic.
 - productService.js: Contains logic related to products, like fetching product data.
  */
-
+import dotenv from 'dotenv';
+dotenv.config();
 import jwt from 'jsonwebtoken';
 import { Admin } from '../models/adminModel.js';
 
+
 export const AUTH_COOKIE_NAME = 'authToken';
+// JWT-Konfiguration
+const JWT_CONFIG = {
+    SECRET_KEY: process.env.JWT_SECRET,
+    EXPIRES_IN: '24h', // Token-Lebensdauer
+    ALGORITHM: 'HS256',
+    ISSUER: 'blog-app',
+    AUDIENCE: 'blog-users'
+};
 
 // JWT-Secret Validation
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -22,14 +32,6 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
         process.exit(1);
     }
 }
-// JWT-Konfiguration
-const JWT_CONFIG = {
-    SECRET_KEY: process.env.JWT_SECRET,
-    EXPIRES_IN: '24h', // Token-Lebensdauer
-    ALGORITHM: 'HS256',
-    ISSUER: 'blog-app',
-    AUDIENCE: 'blog-users'
-};
 // Generate JWT token
 export function generateToken(user) {
     if(user && !(user instanceof Admin)) {
