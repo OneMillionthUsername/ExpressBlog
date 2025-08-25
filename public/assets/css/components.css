@@ -1,0 +1,78 @@
+/* ========================================
+   BUTTONS & FORM ELEMENTS
+   ======================================== */
+.btn {
+    font-family: var(--font-secondary);
+    font-size: 1.1rem;
+    padding: 12px 25px;
+    border-radius: 25px;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-block;
+    margin: 5px;
+    border: none;
+    cursor: pointer;
+}
+.btn-outline-primary {
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    background: transparent;
+}
+.btn-outline-primary:hover {
+    background-color: var(--color-accent);
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.2);
+}
+.btn-outline-secondary {
+    color: var(--color-secondary);
+    border: 1px solid var(--color-secondary);
+    background: transparent;
+}
+.btn-outline-secondary:hover {
+    background-color: var(--color-secondary);
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(162, 127, 77, 0.2);
+}
+.btn-secondary-theme,
+.comment-form .btn-primary {
+    background: var(--color-secondary) !important;
+    border-color: var(--color-secondary) !important;
+    color: #fff !important;
+    box-shadow: 0 5px 15px rgba(162, 127, 77, 0.15);
+}
+.btn-secondary-theme:hover,
+.comment-form .btn-primary:hover {
+    background: #8a6a3f !important;
+    border-color: #8a6a3f !important;
+    color: #fff !important;
+}
+/* ========================================
+   FORMS & MODALS
+   ======================================== */
+.create-form {
+    max-width: 100%;
+    margin: 0 auto;
+}
+.form-label {
+    font-family: var(--font-primary);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+.create-input, .create-textarea {
+    font-family: var(--font-secondary);
+    font-size: 1.1rem;
+    border: 2px solid #e8f4f8;
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+    transition: var(--transition);
+    background-color: #fafafa;
+    width: 100%;
+}
+.create-input:focus, .create-textarea:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background-color: #ffffff;
+    outline: none;
+}

@@ -159,25 +159,18 @@ function updateNavigationVisibility() {
 // Admin-Toolbar erstellen
 function createAdminToolbar() {
     if (!isAdminLoggedIn) return;
-    
     // Prüfen ob Toolbar bereits existiert
     if (elementExists('admin-toolbar')) return;
-    
-    const toolbar = createElement('div', {
-        id: 'admin-toolbar',
-        // TODO: Styles für die Toolbar hinzufügen in CSS
-        cssText: ADMIN_STYLES.toolbar
-    }, `
+    const toolbar = createElement('div');
+    toolbar.id = 'admin-toolbar';
+    toolbar.className = 'admin-toolbar';
+    toolbar.innerHTML = `
         <span>Admin-Modus aktiv</span>
-        <button onclick="adminLogout()" style="${ADMIN_STYLES.logoutButton}" 
-                onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
-                onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+        <button onclick="adminLogout()" class="admin-logout-btn">
             Logout
         </button>
-    `);
-    
+    `;
     document.body.prepend(toolbar);
-    
     // Body-Padding anpassen wegen der Toolbar
     document.body.style.paddingTop = ADMIN_CONFIG.TOOLBAR_HEIGHT;
 }
@@ -190,12 +183,6 @@ function showAdminLoginModal() {
     if (document.getElementById('admin-login-modal')) return;
     const modal = document.createElement('div');
     modal.id = 'admin-login-modal';
-    modal.style = `
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 99999;
-    animation: fadeIn 0.3s ease-out;
-    `;
-    modal.className = 'admin-login-modal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -219,7 +206,6 @@ function showAdminLoginModal() {
         </div>
     `;
     document.body.appendChild(modal);
-
     // Event-Handler
     document.getElementById('admin-login-cancel').onclick = () => modal.remove();
     document.getElementById('admin-login-submit').onclick = async () => {
@@ -233,7 +219,6 @@ function showAdminLoginModal() {
         if (success) modal.remove();
         else showError('Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben.');
     };
-
     function showError(msg) {
         const err = document.getElementById('admin-login-error');
         err.textContent = msg;
@@ -290,7 +275,7 @@ async function addReadPostAdminControls() {
         const adminControls = document.getElementById('admin-controls');
         if (adminControls) {
             adminControls.innerHTML = `
-                <button type="button" onclick="deletePostAndRedirect('${postId}')" class="btn btn-outline-danger btn-lg ml-2" style="${ADMIN_STYLES.deleteButton}">
+                <button type="button" onclick="deletePostAndRedirect('${postId}')" class="btn admin-delete-btn btn-lg ml-2">
                     Post löschen
                 </button>
                 <button type="button" class="btn btn-outline-warning btn-lg ml-2" onclick="redirectEditPost('${postId}')">
@@ -328,7 +313,7 @@ function addAdminMenuItemToNavbar() {
         if (menu && !document.getElementById('admin-create-link')) {
             const createLi = document.createElement('li');
             createLi.id = 'admin-create-link';
-            createLi.innerHTML = '<a href="/pages/create.html">Post erstellen</a>';
+            createLi.innerHTML = '<a href="/blogpost/create.html">Post erstellen</a>';
             menu.insertBefore(createLi, menu.firstChild.nextSibling);
         }
         if (menu && !document.getElementById('admin-createCard-modal')) {
@@ -354,98 +339,10 @@ function addAdminMenuItemToNavbar() {
         }
     }
 }
-// Konfiguration und Konstanten
-// muss nach css übertragen werden
 const ADMIN_CONFIG = {
-    // UI-Einstellungen
     TOOLBAR_HEIGHT: '30px',
     ELEMENT_WAIT_TIMEOUT: 5000
 };
-// CSS-Styles für Admin-UI (zentralisiert)
-const ADMIN_STYLES = {
-    toolbar: `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.95) 100%);
-        color: white;
-        padding: 6px 15px;
-        text-align: center;
-        z-index: 10000;
-        font-family: var(--font-primary, 'Playfair Display'), serif;
-        font-size: 0.9rem;
-        font-weight: 600;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(10px);
-        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-    `,
-    logoutButton: `
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 4px 12px;
-        border-radius: 20px;
-        margin-left: 15px;
-        cursor: pointer;
-        font-family: var(--font-primary, 'Playfair Display'), serif;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(5px);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    `,
-    loginButton: `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, var(--color-secondary, #a27f4d) 0%, var(--color-accent, #ff9800) 100%);
-        color: white;
-        border: none;
-        padding: 12px 16px;
-        border-radius: 50%;
-        cursor: pointer;
-        z-index: 9999;
-        font-size: 1.3rem;
-        box-shadow: 0 4px 15px rgba(162, 127, 77, 0.4);
-        transition: all 0.3s ease;
-        width: 60px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    `,
-    deleteButton: `
-        background: #e74c3c;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 25px;
-        cursor: pointer;
-        font-weight: 500;
-        margin-top: 10px;
-    `
-};
-// Benutzer-Nachrichten (zentralisiert)
-const ADMIN_MESSAGES = {
-    login: {
-        success: 'Admin-Login erfolgreich!',
-        failed: 'Falsches Passwort!',
-        required: 'Sie müssen als Admin eingeloggt sein, um Posts zu löschen.'
-    },
-    posts: {
-        deleteConfirm: 'Sind Sie sicher, dass Sie diesen Blogpost löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
-        deleteSuccess: 'Blogpost wurde erfolgreich gelöscht.',
-        deleteError: 'Fehler beim Löschen: ',
-        networkError: 'Netzwerkfehler beim Löschen des Posts.'
-    }
-};
-export { addAdminMenuItemToNavbar, checkAdminStatusCached };
+export { addAdminMenuItemToNavbar, checkAdminStatusCached, ADMIN_CONFIG };
 // mark module as loaded
 if (window.moduleLoader) window.moduleLoader.markLoaded('admin');
