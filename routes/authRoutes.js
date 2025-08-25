@@ -59,15 +59,31 @@ authRouter.post('/login',
         // Authentication
         const admin = await Promise.race([authPromise, timeoutPromise]);
         if (!admin) {
+            console.warn(`[AUTH AUDIT] Failed login for username: ${req.body.username}`);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
         // Token generation
         const { id, username, role } = admin;
         const token = authService.generateToken({ id, username, role });
-        // Response
-        sendLoginResponse(res, admin, token);
+        res.cookie(AUTH_COOKIE_NAME, token, {
+            httpOnly: true,           // Nicht per JavaScript lesbar
+            secure: IS_PRODUCTION,    // Nur über HTTPS
+            sameSite: 'strict',       // CSRF-Schutz
+            maxAge: 24 * 60 * 60 * 1000, // 24h
+            path: '/'                 // Für ganze Domain
+        });
+        console.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
+        res.json({
+            success: true,
+            message: 'Login successful',
+            user: {
+                id: admin.id,
+                username: admin.username,
+                role: admin.role
+            }
+        });
     } catch (error) {
-        console.error('Login error:', error);
+        console.error(`[AUTH AUDIT] Login error for username: ${req.body.username}`, error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
@@ -138,9 +154,23 @@ authRouter.post('/verify',
 });
 // POST /auth/logout - Abmeldung
 authRouter.post('/logout', (req, res) => {
-    sendLogoutResponse(res);
-});
+    // Cookie entfernen (auch wenn nicht vorhanden, ist das idempotent)
+    res.clearCookie(AUTH_COOKIE_NAME, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+    });
 
+    // Optional: Logging
+    //console.info(`[AUTH AUDIT] Logout for user: ${req.user?.username || 'unknown'}`);
+
+    // Klare Antwort für das Frontend
+    res.status(200).json({
+        success: true,
+        message: 'Logout erfolgreich. Sie wurden abgemeldet.'
+    });
+});
 export default authRouter;
 
 

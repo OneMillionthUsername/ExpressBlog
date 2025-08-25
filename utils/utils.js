@@ -14,6 +14,29 @@ const FORBIDDEN_KEYS = new Set([
   'constructor',
   'prototype'
 ]);
+export async function makeApiRequest(url, options = {}) {
+    try {
+        const response = await fetch(url, {
+            credentials: 'include', // sendet Cookies mit
+            headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+            ...options
+        });
+        // Versuche, JSON zu parsen, falls vorhanden
+        let result;
+        try {
+            result = await response.json();
+        } catch {
+            result = null;
+        }
+        if (!response.ok) {
+            return { success: false, error: result?.error || response.statusText, status: response.status, data: result };
+        }
+        return result;
+    } catch (error) {
+        console.warn('API-Request fehlgeschlagen:', error);
+        return { success: false, error: error.message || 'Netzwerkfehler' };
+    }
+}
 // Utility zum sicheren Escapen von Dateinamen
 export function sanitizeFilename(name) {
   return path.basename(name)                // Pfadbestandteile entfernen
@@ -167,36 +190,4 @@ export function incrementViews(req, postId) {
   DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
     console.error('Fehler beim Tracking:', err);
   });
-}
-export function sendLoginResponse(res, admin, token) {
-  res.cookie(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,           // Nicht per JavaScript lesbar
-      secure: IS_PRODUCTION,    // Nur über HTTPS
-      sameSite: 'strict',       // CSRF-Schutz
-      maxAge: 24 * 60 * 60 * 1000, // 24h
-      path: '/'                 // Für ganze Domain
-  });
-
-  res.json({
-      success: true,
-      message: 'Login successful',
-      user: {
-          id: admin.id,
-          username: admin.username,
-          role: admin.role
-      }
-  });
-}
-export function sendLogoutResponse(res) {
-    res.clearCookie(AUTH_COOKIE_NAME, {
-        httpOnly: true,
-        secure: IS_PRODUCTION,
-        sameSite: 'strict',
-        path: '/'
-    });
-
-    res.json({
-        success: true,
-        message: 'Logged out successfully'
-    });
 }

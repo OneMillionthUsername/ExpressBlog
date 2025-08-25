@@ -1,6 +1,5 @@
 import { getUrlParameter, escapeHtml } from './utils.js';
 import validationService from '../../../services/validationService.js';
-import e from 'express';
 
 async function loadComments(postId) {
     if (!postId || !validationService.validateIdSchema(postId)) {
