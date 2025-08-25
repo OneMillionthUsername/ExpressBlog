@@ -1,26 +1,66 @@
 import { getUrlParameter, escapeHtml } from './utils.js';
 import validationService from '../../../services/validationService.js';
+import e from 'express';
 
-
+async function loadComments(postId) {
+    if (!postId || !validationService.validateIdSchema(postId)) {
+        console.warn('Ungültige Post-ID, Kommentarsystem wird nicht geladen.');
+        return;
+    }
+    try {
+        const response = await fetch(`/comments/${postId}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                // Keine Kommentare gefunden, leere Liste zurückgeben
+                return [];
+            }
+        } else {
+            showCommentFeedback('Fehler beim Laden der Kommentare. Bitte versuche es später erneut.', 'error');
+            return [];
+        }
+        const comments = await response.json();
+        if (!Array.isArray(comments)) {
+            showCommentFeedback('Unerwartetes Format der Kommentare.', 'error');
+            return [];
+        }
+        return comments.map(comment => ({
+            ...comment,
+            createdAt: formatCommentTime(comment.createdAt)
+        }));
+    } catch (error) {
+        console.error('Fehler beim Laden der Kommentare:', error);
+        showCommentFeedback('Fehler beim Laden der Kommentare:', 'error');
+        return [];
+    }
+}
 async function addComment(postId, username, commentText) {
     // Input-Validierung (client-seitig)
-    if (!validationService.validateId(postId)) {
+    if (!validationService.validateIdSchema(postId)) {
         showCommentFeedback('Ungültige Post-ID.', 'error');
         return false;
     }
-    if(!validationService.validateString(username, { min: 0, max: 50 })) {
-        showCommentFeedback('Ungültiger Benutzername.', 'error');
+
+    if (!isValidUsername(username)) {
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            showCommentFeedback('Name enthält ungültige Zeichen.', 'error');
+        } else if (username.trim().length > 50) {
+            showCommentFeedback('Name zu lang (maximal 50 Zeichen).', 'error');
+        } else {
+            // showCommentFeedback('Name darf nicht leer sein.', 'error');
+        }
         return false;
     }
-    if (!commentText || commentText.trim().length === 0) {
-        showCommentFeedback('Bitte gib einen Kommentar ein.', 'error');
+    if (!isValidComment(commentText)) {
+        if (commentText.trim().length < 1) {
+            showCommentFeedback('Kommentar darf nicht leer sein.', 'error');
+        } else if (commentText.trim().length > 1000) {
+            showCommentFeedback('Kommentar ist zu lang (maximal 1000 Zeichen).', 'error');
+        } else {
+            showCommentFeedback('Kommentar muss mindestens ein sichtbares Zeichen enthalten.', 'error');
+        }
         return false;
     }
-    if (commentText.trim().length > 1000) {
-        showCommentFeedback('Kommentar ist zu lang (maximal 1000 Zeichen).', 'error');
-        return false;
-    }
-    try {      
+    try {
         const response = await fetch(`/comments/${postId}`, {
             method: 'POST',
             headers: {
@@ -31,50 +71,22 @@ async function addComment(postId, username, commentText) {
                 text: escapeHtml(commentText.trim())
             })
         });
-        
-        const result = await response.json();
-        
+        const result = await response.json();      
         if (!response.ok) {
-            alert('Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler'));
+            showCommentFeedback('Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler'), 'error');
             return false;
         }
-        console.log('Kommentar erfolgreich hinzugefügt:', result.newComment);
-        
         // Kommentare neu laden und anzeigen
         await displayComments(postId);
-
         // Formular zurücksetzen
-        resetCommentForm();
-        
+        resetCommentForm();        
         // Erfolgs-Feedback
         showCommentFeedback('Kommentar erfolgreich hinzugefügt! 🎉', 'success');
-        
         return true;
     } catch (error) {
         console.error('Fehler beim Hinzufügen des Kommentars:', error);
         showCommentFeedback('Netzwerkfehler beim Speichern des Kommentars. Bitte versuche es später erneut.', 'error');
         return false;
-    }
-}
-// Format relative time
-function formatCommentTime(commentCreatedAt) {
-    const now = new Date();
-    const commentTime = new Date(commentCreatedAt);
-    const diffMs = now - commentTime;
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffMinutes < 1) {
-        return 'vor wenigen Sekunden';
-    } else if (diffMinutes < 60) {
-        return `vor ${diffMinutes} Minute${diffMinutes === 1 ? '' : 'n'}`;
-    } else if (diffHours < 24) {
-        return `vor ${diffHours} Stunde${diffHours === 1 ? '' : 'n'}`;
-    } else if (diffDays < 30) {
-        return `vor ${diffDays} Tag${diffDays === 1 ? '' : 'en'}`;
-    } else {
-        return commentTime.toLocaleDateString('de-DE');
     }
 }
 async function displayComments(postId) {
@@ -90,9 +102,7 @@ async function displayComments(postId) {
         </div>
     `;
     try {
-        const response = await fetch(`/comments/${postId}`);
-        const comments = await response.json();
-
+        const comments = await loadComments(postId);
         if (comments.length === 0) {
             commentsContainer.innerHTML = `
                 <div class="no-comments">
@@ -129,7 +139,7 @@ async function displayComments(postId) {
         // actualise commentscounter
         updateCommentCount(comments.length);
     } catch (error) {
-        //console.error('Fehler beim Anzeigen der Kommentare:', error);
+        console.error('Fehler beim Anzeigen der Kommentare:', error);
         commentsContainer.innerHTML = `
             <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle"></i>
@@ -142,11 +152,15 @@ async function displayComments(postId) {
         updateCommentCount(0);
     }
 }
-// Kommentar löschen (nur für Admins mit JWT)
+// Kommentar löschen (Admin)
 async function deleteComment(postId, commentId) {
     // Prüfe Admin-Status
     if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) {
         showCommentFeedback('Nur Administratoren können Kommentare löschen.', 'error');
+        return false;
+    }
+    if(!validationService.validateIdSchema(postId) || !validationService.validateIdSchema(commentId)) {
+        showCommentFeedback('Ungültige ID.', 'error');
         return false;
     }
     if (!confirm('Möchten Sie diesen Kommentar wirklich löschen?')) {
@@ -229,13 +243,20 @@ async function handleCommentSubmit(event) {
         showCommentFeedback('Fehler: Post-ID nicht gefunden.', 'error');
         return;
     }
-    if (!validateId(postId)) {
+    if (!validationService.validateIdSchema(postId)) {
         showCommentFeedback('Ungültige Post-ID!', 'error');
         return;
     }
     const username = escapeHtml(document.getElementById('comment-username').value.trim());
     const commentText = escapeHtml(document.getElementById('comment-text').value.trim());
-    const commentData = { username: username, text: commentText };
+    if (!validationService.isValidUsernameSchema(username)) {
+        showCommentFeedback('Ungültiger Benutzername!', 'error');
+        return;
+    }
+    if (!validationService.isValidCommentSchema(commentText)) {
+        showCommentFeedback('Ungültiger Kommentartext!', 'error');
+        return;
+    }
     // Submit-Button deaktivieren während des Sendens
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
@@ -243,13 +264,7 @@ async function handleCommentSubmit(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird gesendet...';
     
     try {
-        const success = await fetch(`/comments/${postId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(commentData)
-        });
+        const success = await addComment(postId, username, commentText);
         if (success.ok) {
             // Username für nächstes Mal speichern
             saveUsername();
@@ -281,6 +296,10 @@ async function initializeCommentsSystem() {
         console.warn('Keine Post-ID gefunden, Kommentarsystem wird nicht geladen.');
         return;
     }
+    if(!validationService.validateIdSchema(postId)) {
+        console.warn('Ungültige Post-ID, Kommentarsystem wird nicht geladen.');
+        return;
+    }
     // Kommentare laden und anzeigen
     await displayComments(postId);
     // Event Listener für Formular
@@ -293,6 +312,27 @@ async function initializeCommentsSystem() {
     if (commentTextarea) {
         commentTextarea.addEventListener('input', updateCharCounter);
         commentTextarea.addEventListener('keyup', updateCharCounter);
+    }
+}
+// Format relative time
+function formatCommentTime(commentCreatedAt) {
+    const now = new Date();
+    const commentTime = new Date(commentCreatedAt);
+    const diffMs = now - commentTime;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffMinutes < 1) {
+        return 'vor wenigen Sekunden';
+    } else if (diffMinutes < 60) {
+        return `vor ${diffMinutes} Minute${diffMinutes === 1 ? '' : 'n'}`;
+    } else if (diffHours < 24) {
+        return `vor ${diffHours} Stunde${diffHours === 1 ? '' : 'n'}`;
+    } else if (diffDays < 30) {
+        return `vor ${diffDays} Tag${diffDays === 1 ? '' : 'en'}`;
+    } else {
+        return commentTime.toLocaleDateString('de-DE');
     }
 }
 // Username aus localStorage laden/speichern (für Benutzerfreundlichkeit)
