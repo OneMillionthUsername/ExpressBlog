@@ -8,7 +8,7 @@ import { URL } from 'url';
  * @param {*} id - Die zu prüfende ID.
  * @returns {boolean} - Ob die ID gültig ist.
  */
-function validateIdSchema(id) {
+function isValidIdSchema(id) {
     // Prüft, ob die ID existiert, ein String ist, nur Ziffern enthält und positiv ist
     if (typeof id !== 'string') return false;
     const trimmed = id.trim();
@@ -20,7 +20,7 @@ function validateIdSchema(id) {
     if (parseInt(trimmed, 10) <= 0) return false;
     return true;
 }
-function validateStringSchema(str, { min = 1, max = 1000, pattern = null, blacklist = [] } = {}) {
+function isValidStringSchema(str, { min = 1, max = 1000, pattern = null, blacklist = [] } = {}) {
     if (typeof str !== 'string') return false;
     const trimmed = str.trim();
     if (trimmed.length < min || trimmed.length > max) return false;
@@ -28,7 +28,7 @@ function validateStringSchema(str, { min = 1, max = 1000, pattern = null, blackl
     if (blacklist.some(word => trimmed.includes(word))) return false;
     return true;
 }
-function validateUrlSchema(url) {
+function isValidUrlSchema(url) {
     try {
         const u = new URL(url);
         // Nur http/https erlauben
@@ -40,7 +40,7 @@ function validateUrlSchema(url) {
         return false;
     }
 }
-function validateDateSchema(dateStr, { notPast = false, notFuture = false } = {}) {
+function isValidDateSchema(dateStr, { notPast = false, notFuture = false } = {}) {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return false;
     const now = new Date();
@@ -68,15 +68,32 @@ function isValidCommentSchema(commentText) {
     if (!containsVisibleChar(trimmed)) return false;
     return true;
 }
+/**
+ * Validiert ein Passwort nach gängigen Kriterien.
+ * Mindestlänge, Groß-/Kleinbuchstaben, Zahl und Sonderzeichen.
+ * @param {string} password
+ * @returns {boolean}
+ */
+function isValidPasswordSchema(password) {
+    if (typeof password !== 'string') return false;
+    const trimmed = password.trim();
+    if (trimmed.length < 8) return false; // Mindestlänge
+    if (!/[A-Z]/.test(trimmed)) return false; // Großbuchstabe
+    if (!/[a-z]/.test(trimmed)) return false; // Kleinbuchstabe
+    if (!/[0-9]/.test(trimmed)) return false; // Zahl
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(trimmed)) return false; // Sonderzeichen
+    return true;
+}
 
 const validationService = {
-    validateIdSchema,
-    validateStringSchema,
-    validateUrlSchema,
-    validateDateSchema,
+    isValidIdSchema,
+    isValidStringSchema,
+    isValidUrlSchema,
+    isValidDateSchema,
     containsVisibleCharSchema,
     isValidUsernameSchema,
-    isValidCommentSchema
+    isValidCommentSchema,
+    isValidPasswordSchema
 };
 
 export default validationService;
