@@ -5,7 +5,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import { sanitizeFilename } from "../utils/utils";
 
 function validateId(req, res, next) {
-  const postId = req.params.post_id;
+  const postId = req.params.postId;
   if (!validationService.validateIdSchema(postId)) {
     return res.status(400).json({ error: 'Invalid post ID' });
   }

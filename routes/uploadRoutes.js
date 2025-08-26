@@ -24,7 +24,7 @@ uploadRouter.post('/image',
     }
     // Media-Objekt für Datenbank erstellen
     const mediaData = {
-      post_id: req.body.post_id || null, // Optional: falls Bild zu Post gehört
+      postId: req.body.postId || null, // Optional: falls Bild zu Post gehört
       original_name: req.file.originalname,
       file_size: req.file.size,
       mime_type: req.file.mimetype,

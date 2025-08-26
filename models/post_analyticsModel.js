@@ -3,7 +3,7 @@ import Joi from "joi";
 export class PostAnalytics {
   constructor({
     id = null,
-    post_id = null,
+    postId = null,
     event_type = "view",
     ip_address = null,
     user_agent = null,
@@ -13,7 +13,7 @@ export class PostAnalytics {
     created_at = new Date(),
   } = {}) {
     this.id = id;
-    this.post_id = post_id;
+    this.postId = postId;
     this.event_type = event_type;
     this.ip_address = ip_address;
     this.user_agent = user_agent;
@@ -30,7 +30,7 @@ export class PostAnalytics {
 
 export const postAnalyticsSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  post_id: Joi.number().integer().min(1).required(),
+  postId: Joi.number().integer().min(1).required(),
   event_type: Joi.string().valid("view", "click", "share").required(),
   ip_address: Joi.string().ip().required(),
   user_agent: Joi.string().max(200).required(),

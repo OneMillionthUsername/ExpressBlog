@@ -31,7 +31,7 @@ commentsRouter.post('/:postId',
       text: Joi.string().min(1).max(1000).required()
     })
   }),
-  commentsController.addComment
+  commentsController.createComment
 );
 
 commentsRouter.delete('/:postId/:commentId',

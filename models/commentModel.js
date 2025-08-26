@@ -3,7 +3,7 @@ import Joi from "joi";
 export default class Comment {
   constructor({
     id = null,
-    post_id = null,
+    postId = null,
     username = "Anonym",
     text = "",
     ip_address = null,
@@ -13,7 +13,7 @@ export default class Comment {
     updated_at = new Date(),
   } = {}) {
     this.id = id;
-    this.post_id = post_id;
+    this.postId = postId;
     this.username = username;
     this.text = text;
     this.ip_address = ip_address;
@@ -30,7 +30,7 @@ export default class Comment {
 
 export const commentSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  post_id: Joi.number().integer().min(1).required(),
+  postId: Joi.number().integer().min(1).required(),
   username: Joi.string().min(3).max(100).required(),
   text: Joi.string().min(1).max(1000).required(),
   ip_address: Joi.string().ip().optional(),

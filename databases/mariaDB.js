@@ -61,7 +61,7 @@ export async function initializeDatabase() {
         await conn.query(`
             CREATE TABLE IF NOT EXISTS comments (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                post_id BIGINT NOT NULL,
+                postId BIGINT NOT NULL,
                 username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
                 text VARCHAR(1000) NOT NULL,
                 ip_address VARCHAR(45) DEFAULT NULL,
@@ -70,11 +70,11 @@ export async function initializeDatabase() {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-                INDEX idx_comments_post_id (post_id),
+                INDEX idx_comments_postId (postId),
                 INDEX idx_comments_created_at (created_at DESC),
                 INDEX idx_comments_approved (approved),
 
-                FOREIGN KEY (post_id) REFERENCES posts(id)
+                FOREIGN KEY (postId) REFERENCES posts(id)
                     ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
@@ -83,7 +83,7 @@ export async function initializeDatabase() {
         await conn.query(`
             CREATE TABLE IF NOT EXISTS media (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                post_id BIGINT NOT NULL,
+                postId BIGINT NOT NULL,
                 original_name VARCHAR(255) NOT NULL,
                 file_size BIGINT DEFAULT NULL,
                 mime_type VARCHAR(100) DEFAULT NULL,
@@ -98,7 +98,7 @@ export async function initializeDatabase() {
                 INDEX idx_media_mime_type (mime_type),
                 INDEX idx_media_original_name(original_name),
 
-                FOREIGN KEY (post_id) REFERENCES posts(id)
+                FOREIGN KEY (postId) REFERENCES posts(id)
                     ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
@@ -107,7 +107,7 @@ export async function initializeDatabase() {
         await conn.query(`
             CREATE TABLE IF NOT EXISTS post_analytics (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                post_id BIGINT NOT NULL,
+                postId BIGINT NOT NULL,
                 event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
                 ip_address VARCHAR(45) DEFAULT NULL,
                 user_agent TEXT DEFAULT NULL,
@@ -116,12 +116,12 @@ export async function initializeDatabase() {
                 city VARCHAR(100) DEFAULT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-                INDEX idx_analytics_post_id (post_id),
+                INDEX idx_analytics_postId (postId),
                 INDEX idx_analytics_event_type (event_type),
                 INDEX idx_analytics_created_at (created_at DESC),
                 INDEX idx_analytics_ip (ip_address),
 
-                FOREIGN KEY (post_id) REFERENCES posts(id)
+                FOREIGN KEY (postId) REFERENCES posts(id)
                     ON DELETE CASCADE ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
@@ -300,7 +300,7 @@ const result = await conn.query(query, params);
       conn = await pool.getConnection();
       const update = await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
       return update.affectedRows > 0;
-      //await conn.query(`INSERT INTO post_views (post_id, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
+      //await conn.query(`INSERT INTO post_views (postId, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
       throw new BlogpostError('Error in increasePostViews:', error);
     } finally {
@@ -417,11 +417,11 @@ const result = await conn.query(query, params);
     }
   },
   // Comments
-  async addComment(postId, commentData) {
+  async createComment(postId, commentData) {
       let conn;
       try {
           conn = await pool.getConnection();
-          const result = await conn.query('INSERT INTO comments ? WHERE post_id = ?', [commentData, postId]);
+          const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
 
           return {
               success: true,
@@ -444,7 +444,7 @@ const result = await conn.query(query, params);
         const result = await conn.query(`
             SELECT id, username, text, created_at
             FROM comments 
-            WHERE post_id = ? AND approved = 1
+            WHERE postId = ? AND approved = 1
             ORDER BY created_at ASC
         `, [postId]);
         return result.map(comment => ({
@@ -465,7 +465,7 @@ const result = await conn.query(query, params);
     try {
         conn = await pool.getConnection();
         const result = await conn.query(
-            'DELETE FROM comments WHERE id = ? AND post_id = ?',
+            'DELETE FROM comments WHERE id = ? AND postId = ?',
             [commentId, postId]
         );
         return result.affectedRows > 0;

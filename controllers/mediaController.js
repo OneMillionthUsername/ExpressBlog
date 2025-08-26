@@ -52,9 +52,9 @@ const deleteMedia = async (media_id) => {
         throw error;
     }
 }
-const getMediaByPostId = async (post_id) => {
+const getMediaByPostId = async (postId) => {
     try {
-        const mediaList = await DatabaseService.getMediaByPostId(post_id);
+        const mediaList = await DatabaseService.getMediaByPostId(postId);
         if (!mediaList || mediaList.length === 0) {
             return [];
         }
@@ -71,7 +71,7 @@ const getMediaByPostId = async (post_id) => {
         
         return validMedia;
     } catch (error) {
-        console.error('Error fetching media by post_id:', error);
+        console.error('Error fetching media by postId:', error);
         throw error;
     }
 }

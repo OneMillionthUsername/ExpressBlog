@@ -32,7 +32,7 @@ async function loadComments(postId) {
         return [];
     }
 }
-async function addComment(postId, username, commentText) {
+async function createComment(postId, username, commentText) {
     // Input-Validierung (client-seitig)
     if (!isValidIdSchema(postId)) {
         showFeedback('Ungültige Post-ID.', 'error');
@@ -263,7 +263,7 @@ async function handleCommentSubmit(event) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird gesendet...';
     
     try {
-        const success = await addComment(postId, username, commentText);
+        const success = await createComment(postId, username, commentText);
         if (success.ok) {
             // Username für nächstes Mal speichern
             saveUsername();

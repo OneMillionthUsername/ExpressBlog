@@ -38,9 +38,9 @@ const createPost = async (postData) => {
     throw error;
   }
 }
-const getPostById = async (post_id) => {
+const getPostById = async (postId) => {
   try {
-    const post = await DatabaseService.getPostById(post_id);
+    const post = await DatabaseService.getPostById(postId);
     if (!post) {
       throw new Error('Post not found');
     }
@@ -129,9 +129,9 @@ const getMostReadPosts = async () => {
     throw error;
   }
 }
-const deletePost = async (post_id) => {
+const deletePost = async (postId) => {
   try {
-    const result = await DatabaseService.deletePost(post_id);
+    const result = await DatabaseService.deletePost(postId);
     if (!result) {
       throw new Error('Post not found or not deleted');
     }

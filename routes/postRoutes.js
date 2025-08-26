@@ -53,11 +53,11 @@ postRouter.get('/:slug',
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
-postRouter.get('/by-id/:post_id', 
+postRouter.get('/by-id/:postId', 
   globalLimiter, 
   validateId,
   async (req, res) => {
-  const postId = req.params.post_id;
+  const postId = req.params.postId;
   try {
     const post = await postController.getPostById(postId);
     incrementViews(req, postId);
@@ -87,7 +87,7 @@ postRouter.post('/create',
     res.status(500).json({ error: 'Server failed to create the blogpost' });
   }
 });
-postRouter.put('/update/:post_id',
+postRouter.put('/update/:postId',
   strictLimiter,
   requireJsonContent,
   validateId,
@@ -95,7 +95,7 @@ postRouter.put('/update/:post_id',
   requireAdmin,
   authenticateToken,
   async (req, res) => {
-    const postId = req.params.post_id;
+    const postId = req.params.postId;
     const { title, content, tags } = req.body;
     try {
       const result = await postController.updatePost(postId, { title, content, tags });
@@ -109,14 +109,14 @@ postRouter.put('/update/:post_id',
   }
 });
 postRouter.delete(
-  '/delete/:post_id',
+  '/delete/:postId',
   strictLimiter,
   requireJsonContent,
   validateId,
   requireAdmin,
   authenticateToken,
   async (req, res) => {
-    const postId = req.params.post_id;
+    const postId = req.params.postId;
     if (validationService.validateId(postId) === false) {
       return res.status(400).json({ error: 'Invalid post ID' });
     }

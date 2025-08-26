@@ -3,7 +3,7 @@ import Joi from "joi";
 export class Media {
     constructor({
         id = null,
-        post_id = null,
+        postId = null,
         original_name = "",
         file_size = null,
         mime_type = null,
@@ -14,7 +14,7 @@ export class Media {
         created_at = new Date(),
     } = {}){
         this.id = id;
-        this.post_id = post_id;
+        this.postId = postId;
         this.original_name = original_name;
         this.file_size = file_size;
         this.mime_type = mime_type;
@@ -32,7 +32,7 @@ export class Media {
 
 export const mediaSchema = Joi.object({
     id: Joi.number().integer().optional(),
-    post_id: Joi.number().integer().min(1).required(),
+    postId: Joi.number().integer().min(1).required(),
     original_name: Joi.string().min(2).max(255).required(),
     file_size: Joi.number().integer().min(0).optional(),
     mime_type: Joi.string().max(100).optional(),
