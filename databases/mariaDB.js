@@ -6,7 +6,7 @@
 - Environment Setup: Makes it easy to configure different databases for different environments (development, production).
 */
 
-class BlogpostError extends Error {}
+class databaseError extends Error {}
 
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
@@ -207,7 +207,7 @@ export const DatabaseService = {
       if (!result[0].published) return null;
       return convertBigInts(result[0]);
     } catch (error) {
-      throw new BlogpostError(`Error in getPostBySlug: ${error.message}`, error);
+      throw new databaseError(`Error in getPostBySlug: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -227,7 +227,7 @@ export const DatabaseService = {
       post.tags = parseTags(post.tags);
       return post;
     } catch (error) {
-      throw new BlogpostError(`Error in getPostById: ${error.message}`, error);
+      throw new databaseError(`Error in getPostById: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -248,7 +248,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
-      throw new BlogpostError(`Error in getAllPosts: ${error.message}`);
+      throw new databaseError(`Error in getAllPosts: ${error.message}`);
     } finally {
       if (conn) conn.release();
     }
@@ -269,7 +269,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
-      throw new BlogpostError('Error in getPostsByTag:', error);
+      throw new databaseError('Error in getPostsByTag:', error);
     } finally {
       if (conn) conn.release();
     }
@@ -288,7 +288,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
-      throw new BlogpostError(`Error in getMostReadPosts: ${error.message}`, error);
+      throw new databaseError(`Error in getMostReadPosts: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -305,7 +305,7 @@ export const DatabaseService = {
       return { success: true };
       //await conn.query(`INSERT INTO post_views (postId, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
-      throw new BlogpostError(`Error in increasePostViews: ${error.message}`, error);
+      throw new databaseError(`Error in increasePostViews: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -314,10 +314,10 @@ export const DatabaseService = {
     let conn;
     try {
       if(post === null) {
-        throw new BlogpostError('Post is null');
+        throw new databaseError('Post is null');
       }
       if (typeof post !== 'object' || post === undefined || Object.keys(post).length === 0) {
-        throw new BlogpostError('No fields provided for update');
+        throw new databaseError('No fields provided for update');
       }
       conn = await pool.getConnection();
 
@@ -327,7 +327,7 @@ export const DatabaseService = {
       }
       return { success: true };
     } catch (error) {
-      throw new BlogpostError(`Error in updatePost: ${error.message}`, error);
+      throw new databaseError(`Error in updatePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -342,7 +342,7 @@ export const DatabaseService = {
       }
       return { success: true };
     } catch (error) {
-      throw new BlogpostError(`Error in deletePost: ${error.message}`, error);
+      throw new databaseError(`Error in deletePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -351,7 +351,7 @@ export const DatabaseService = {
     let conn;
     try {
       if(postData === null || typeof postData !== 'object' || Object.keys(postData).length === 0) {
-        throw new BlogpostError('Post is null or invalid');
+        throw new databaseError('Post is null or invalid');
       }
       conn = await pool.getConnection();
       const result = await conn.query('INSERT INTO posts SET ?', [postData]);
@@ -360,27 +360,29 @@ export const DatabaseService = {
       }
       return { success: true, id: result.insertId, ...postData };
     } catch (error) {
-      throw new BlogpostError(`Error in createPost: ${error.message}`, error);
+      throw new databaseError(`Error in createPost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
   },
   // Cards
   async createCard(cardData) {
-      let conn;
-      try {
+    let conn;
+    try {
+          if (!cardData || typeof cardData !== 'object') {
+            throw new databaseError("Card is null or invalid");
+          }
           conn = await pool.getConnection();
           const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
           if (result.affectedRows === 0) {
-              throw new Error('Failed to create card');
+              throw new Error('No rows affected');
           }
           return {
             success: true,
             card: {...cardData, id: Number(result.insertId)}
           };
       } catch (error) {
-          console.error(`Error in createCard: ${error.message}`, error);
-          throw error;
+          throw new databaseError(`Error in createCard: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
       }
@@ -390,12 +392,14 @@ export const DatabaseService = {
       try {
           conn = await pool.getConnection();
           const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+          if (!result || result.length === 0) {
+              throw new Error('No cards found');
+          }
           return result.map(card => ({
               ...convertBigInts(card)
           }));
       } catch (error) {
-          console.error('Error in getAllCards:', error);
-          throw error;
+          throw new databaseError(`Error in getAllCards: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
       }
@@ -403,14 +407,16 @@ export const DatabaseService = {
   async getCardById(cardId) {
     let conn;
     try {
+        if(cardId === null || isNaN(cardId)) {
+            throw new databaseError("ID is null or invalid");
+        }
         conn = await pool.getConnection();
         const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
         return result.length > 0 ? {
             ...convertBigInts(result[0])
         } : null;
     } catch (error) {
-        console.error('Couldn\'t find card', error);
-        throw error;
+        throw new databaseError(`Error in getCardById: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -418,12 +424,18 @@ export const DatabaseService = {
   async deleteCard(cardId) {
     let conn;
     try {
+        if(cardId === null || isNaN(cardId)) {
+            throw new databaseError("ID is null or invalid");
+        }
         conn = await pool.getConnection();
         const result = await conn.query('DELETE FROM cards WHERE id = ?', [cardId]);
-        return result.affectedRows > 0;
+        if (result.affectedRows > 0) {
+            return { success: true };
+        } else {
+            throw new databaseError("No rows affected");
+        }
     } catch (error) {
-      console.error('Error deleting card:', error);
-      throw error;
+      throw new databaseError(`Error in deleteCard: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }

@@ -1,4 +1,5 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
+import express from "express";
 
 // Pool und Connection mocken
 const mockQuery = jest.fn();
@@ -227,8 +228,28 @@ describe("DatabaseService", () => {
   // Cards
   describe('createCard', () => {
     it('createCard creates card without errors', async () => {
-      mockQuery.mockResolvedValueOnce({ insertId: 1 });
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1, insertId: 1 });
       await expect(DatabaseService.createCard({ title: 'New Card', content: 'Card Content' })).resolves.not.toThrow();
+    });
+    it('createCard returns success and card object', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1, insertId: 1 });
+      const cardData = {
+        title: 'Test Card',
+        subtitle: 'Test Subtitle',
+        link: 'https://example.com',
+        img: '/images/test.png',
+        published: 1
+      };
+      const result = await DatabaseService.createCard(cardData);
+    
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.card).toBeDefined();
+      expect(result.card.title).toBe(cardData.title);
+      expect(result.card.id).toBeGreaterThan(0);
+      expect(result.card.link).toBe(cardData.link);
+      expect(result.card.img).toBe(cardData.img);
+      expect(result.card.published).toBe(cardData.published);
     });
     it('createCard throws if no data provided', async () => {
       await expect(DatabaseService.createCard(null)).rejects.toThrow("Error in createCard: Card is null or invalid");
@@ -236,6 +257,58 @@ describe("DatabaseService", () => {
     it('createCard throws if DB error occurs', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
       await expect(DatabaseService.createCard({ title: 'New Card', content: 'Card Content' })).rejects.toThrow("Error in createCard: DB error");
+    });
+    it('createCard throws if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.createCard({ title: 'New Card', content: 'Card Content' })).rejects.toThrow("Error in createCard: No rows affected");
+    });
+  });
+  describe('getAllCards', () => {
+    it('getAllCards returns all cards without errors', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: 1, title: 'Test Card' }]);
+      await expect(DatabaseService.getAllCards()).resolves.not.toThrow();
+    });
+    it('getAllCards throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.getAllCards()).rejects.toThrow("Error in getAllCards: DB error");
+    });
+    it('getAllCards throws if no cards found', async () => {
+      mockQuery.mockResolvedValueOnce([]);
+      await expect(DatabaseService.getAllCards()).rejects.toThrow("Error in getAllCards: No cards found");
+    });
+  });
+  describe('getCardById', () => {
+    it('getCardById returns card without errors', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: 1, title: 'Test Card' }]);
+      await expect(DatabaseService.getCardById(1)).resolves.not.toThrow();
+    });
+    it('getCardById throws if no ID provided', async () => {
+      await expect(DatabaseService.getCardById(null)).rejects.toThrow("Error in getCardById: ID is null or invalid");
+    });
+    it('getCardById throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.getCardById(1)).rejects.toThrow("Error in getCardById: DB error");
+    });
+    it('getCardById returns null if no card found', async () => {
+      mockQuery.mockResolvedValueOnce([]);
+      await expect(DatabaseService.getCardById(999)).resolves.toBeNull();
+    });
+  });
+  describe('deleteCard', () => {
+    it('deleteCard deletes card without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.deleteCard(1)).resolves.not.toThrow();
+    });
+    it('deleteCard throws if no ID provided', async () => {
+      await expect(DatabaseService.deleteCard(null)).rejects.toThrow("Error in deleteCard: ID is null or invalid");
+    });
+    it('deleteCard throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.deleteCard(1)).rejects.toThrow("Error in deleteCard: DB error");
+    });
+    it('deleteCard throws if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.deleteCard(1)).rejects.toThrow("Error in deleteCard: No rows affected");
     });
   });
   // Comments
