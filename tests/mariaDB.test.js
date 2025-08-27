@@ -315,14 +315,56 @@ describe("DatabaseService", () => {
   describe('createComment', () => {
     it('createComment creates comment without errors', async () => {
       mockQuery.mockResolvedValueOnce({ insertId: 1 });
-      await expect(DatabaseService.createComment({ postId: 1, text: 'New Comment' })).resolves.not.toThrow();
+      await expect(DatabaseService.createComment(1, { text: 'New Comment' })).resolves.not.toThrow();
     });
     it('createComment throws if no data provided', async () => {
-      await expect(DatabaseService.createComment(null)).rejects.toThrow("Error in createComment: Comment is null or invalid");
+      await expect(DatabaseService.createComment(1, null)).rejects.toThrow("Error in createComment: Comment data is null or invalid");
+    });
+    it('createComment throws if no postId provided', async () => {
+      await expect(DatabaseService.createComment(null, { text: 'New Comment' })).rejects.toThrow("Error in createComment: Post ID is null or invalid");
     });
     it('createComment throws if DB error occurs', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
-      await expect(DatabaseService.createComment({ postId: 1, text: 'New Comment' })).rejects.toThrow("Error in createComment: DB error");
+      await expect(DatabaseService.createComment(1, { text: 'New Comment' })).rejects.toThrow("Error in createComment: DB error");
+    });
+    it('createComment returns success and comment object', async () => {
+      mockQuery.mockResolvedValueOnce({ insertId: 1 });
+      const commentData = { text: 'New Comment' };
+      await expect(DatabaseService.createComment(1, commentData)).resolves.toEqual(
+        { success: true, comment: { id: 1, postId: 1, text: 'New Comment' } }
+      );
+    });
+  });
+  describe('getCommentsByPostId', () => {
+    it('getCommentsByPostId returns comments for a post', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: 1, text: 'Comment 1', created_at: new Date('2023-01-01'), username: 'user1' }]);
+      await expect(DatabaseService.getCommentsByPostId(1)).resolves.toEqual([
+        { id: 1, text: 'Comment 1', created_at: new Date('2023-01-01'), username: 'user1' }
+      ]);
+    });
+    it('getCommentsByPostId throws if no postId provided', async () => {
+      await expect(DatabaseService.getCommentsByPostId(null)).rejects.toThrow("Error in getCommentsByPostId: Post ID is null or invalid");
+    });
+    it('getCommentsByPostId throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.getCommentsByPostId(1)).rejects.toThrow("Error in getCommentsByPostId: DB error");
+    });
+  });
+  describe('deleteComment', () => {
+    it('deleteComment deletes comment without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.deleteComment(1)).resolves.not.toThrow();
+    });
+    it('deleteComment throws if no ID provided', async () => {
+      await expect(DatabaseService.deleteComment(null)).rejects.toThrow("Error in deleteComment: Comment ID is null or invalid");
+    });
+    it('deleteComment throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.deleteComment(1)).rejects.toThrow("Error in deleteComment: DB error");
+    });
+    it('deleteComment throws if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.deleteComment(1)).resolves.toBeNull();
     });
   });
   // Media

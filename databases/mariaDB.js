@@ -444,6 +444,12 @@ export const DatabaseService = {
   async createComment(postId, commentData) {
       let conn;
       try {
+        if (!postId || isNaN(postId) || postId === null) {
+            throw new databaseError("Post ID is null or invalid");
+        }
+        if (!commentData || typeof commentData !== 'object' || commentData === null) {
+            throw new databaseError("Comment data is null or invalid");
+        }
           conn = await pool.getConnection();
           const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
 
@@ -451,19 +457,22 @@ export const DatabaseService = {
               success: true,
               comment: {
                   id: Number(result.insertId),
+                  postId: Number(postId),
                   ...commentData
               }
           };
       } catch (error) {
-        console.error(`Error adding comment: ${error.message}`, error);
-        throw error;
+        throw new databaseError(`Error in createComment: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
       }
   },
-  async getCommentsByPost(postId) {
+  async getCommentsByPostId(postId) {
     let conn;
     try {
+        if (!postId || isNaN(postId) || postId === null) {
+            throw new databaseError("Post ID is null or invalid");
+        }
         conn = await pool.getConnection();
         const result = await conn.query(`
             SELECT id, username, text, created_at
@@ -478,8 +487,7 @@ export const DatabaseService = {
             created_at: comment.created_at
         }));
     } catch (error) {
-        console.error('Error fetching comments:', error);
-        throw error;
+       throw new databaseError(`Error in getCommentsByPostId: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -487,15 +495,17 @@ export const DatabaseService = {
   async deleteComment(commentId, postId) {
     let conn;
     try {
+        if (!commentId || isNaN(commentId) || commentId === null) {
+            throw new databaseError("Comment ID is null or invalid");
+        }
         conn = await pool.getConnection();
         const result = await conn.query(
             'DELETE FROM comments WHERE id = ? AND postId = ?',
             [commentId, postId]
         );
-        return result.affectedRows > 0;
+        return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
-      console.error('Error deleting comment:', error);
-      throw error;
+      throw new databaseError(`Error in deleteComment: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
