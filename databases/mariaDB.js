@@ -207,7 +207,7 @@ export const DatabaseService = {
       if (!result[0].published) return null;
       return convertBigInts(result[0]);
     } catch (error) {
-      return new BlogpostError('Error in getPostBySlug:', error);
+      throw new BlogpostError(`Error in getPostBySlug: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -217,7 +217,7 @@ export const DatabaseService = {
     try {
       conn = await pool.getConnection();
       const { query, params } = queryBuilder('get', 'posts', { id });
-const result = await conn.query(query, params);
+      const result = await conn.query(query, params);
       //const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
       if(!result || result.length === 0) {
         throw new Error('Post not found');
@@ -227,7 +227,7 @@ const result = await conn.query(query, params);
       post.tags = parseTags(post.tags);
       return post;
     } catch (error) {
-      throw new BlogpostError('Error in getPostById:', error);
+      throw new BlogpostError(`Error in getPostById: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -288,7 +288,7 @@ const result = await conn.query(query, params);
         return post;
       });
     } catch (error) {
-      throw new BlogpostError('Error in getMostReadPosts:', error);
+      throw new BlogpostError(`Error in getMostReadPosts: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -299,10 +299,13 @@ const result = await conn.query(query, params);
     try {
       conn = await pool.getConnection();
       const update = await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
-      return update.affectedRows > 0;
+      if(!update || update.affectedRows === 0) {
+        throw new Error('No rows affected');
+      }
+      return { success: true };
       //await conn.query(`INSERT INTO post_views (postId, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
-      throw new BlogpostError('Error in increasePostViews:', error);
+      throw new BlogpostError(`Error in increasePostViews: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -310,6 +313,12 @@ const result = await conn.query(query, params);
   async updatePost(id, post) {
     let conn;
     try {
+      if(post === null) {
+        throw new BlogpostError('Post is null');
+      }
+      if (typeof post !== 'object' || post === undefined || Object.keys(post).length === 0) {
+        throw new BlogpostError('No fields provided for update');
+      }
       conn = await pool.getConnection();
 
       const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, id]);
@@ -318,7 +327,7 @@ const result = await conn.query(query, params);
       }
       return { success: true };
     } catch (error) {
-      throw new BlogpostError('Error in updatePost:', error);
+      throw new BlogpostError(`Error in updatePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -331,9 +340,9 @@ const result = await conn.query(query, params);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
-      return { id };
+      return { success: true };
     } catch (error) {
-      throw new BlogpostError('Error in deletePost:', error);
+      throw new BlogpostError(`Error in deletePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -341,6 +350,9 @@ const result = await conn.query(query, params);
   async createPost(postData) {
     let conn;
     try {
+      if(postData === null || typeof postData !== 'object' || Object.keys(postData).length === 0) {
+        throw new BlogpostError('Post is null or invalid');
+      }
       conn = await pool.getConnection();
       const result = await conn.query('INSERT INTO posts SET ?', [postData]);
       if(!result || result.affectedRows === 0) {
@@ -348,7 +360,7 @@ const result = await conn.query(query, params);
       }
       return { success: true, id: result.insertId, ...postData };
     } catch (error) {
-      throw new BlogpostError('Error in createPost:', error);
+      throw new BlogpostError(`Error in createPost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
