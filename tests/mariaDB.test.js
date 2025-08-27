@@ -224,4 +224,60 @@ describe("DatabaseService", () => {
       await expect(DatabaseService.createPost({ title: 'New Post', content: 'Post Content' })).rejects.toThrow("Error in createPost: DB error");
     });
   });
+  // Cards
+  describe('createCard', () => {
+    it('createCard creates card without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ insertId: 1 });
+      await expect(DatabaseService.createCard({ title: 'New Card', content: 'Card Content' })).resolves.not.toThrow();
+    });
+    it('createCard throws if no data provided', async () => {
+      await expect(DatabaseService.createCard(null)).rejects.toThrow("Error in createCard: Card is null or invalid");
+    });
+    it('createCard throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.createCard({ title: 'New Card', content: 'Card Content' })).rejects.toThrow("Error in createCard: DB error");
+    });
+  });
+  // Comments
+  describe('createComment', () => {
+    it('createComment creates comment without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ insertId: 1 });
+      await expect(DatabaseService.createComment({ postId: 1, text: 'New Comment' })).resolves.not.toThrow();
+    });
+    it('createComment throws if no data provided', async () => {
+      await expect(DatabaseService.createComment(null)).rejects.toThrow("Error in createComment: Comment is null or invalid");
+    });
+    it('createComment throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.createComment({ postId: 1, text: 'New Comment' })).rejects.toThrow("Error in createComment: DB error");
+    });
+  });
+  // Media
+  describe('addMedia', () => {
+    it('addMedia creates media without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ insertId: 1 });
+      await expect(DatabaseService.addMedia({ postId: 1, original_name: 'image.jpg' })).resolves.not.toThrow();
+    });
+    it('addMedia throws if no data provided', async () => {
+      await expect(DatabaseService.addMedia(null)).rejects.toThrow("Error in addMedia: Media is null or invalid");
+    });
+    it('addMedia throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.addMedia({ postId: 1, original_name: 'image.jpg' })).rejects.toThrow("Error in addMedia: DB error");
+    });
+  });
+  // Admin
+  describe('getAdminByUsername', () => {
+    it('getAdminByUsername returns admin without errors', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: 1, username: 'admin' }]);
+      await expect(DatabaseService.getAdminByUsername('admin')).resolves.not.toThrow();
+    });
+    it('getAdminByUsername throws if no username provided', async () => {
+      await expect(DatabaseService.getAdminByUsername(null)).rejects.toThrow("Error in getAdminByUsername: Username is null or invalid");
+    });
+    it('getAdminByUsername throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.getAdminByUsername('admin')).rejects.toThrow("Error in getAdminByUsername: DB error");
+    });
+  });
 });

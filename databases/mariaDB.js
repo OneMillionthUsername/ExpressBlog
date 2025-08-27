@@ -379,7 +379,7 @@ export const DatabaseService = {
             card: {...cardData, id: Number(result.insertId)}
           };
       } catch (error) {
-          console.error('Error in createCard:', error);
+          console.error(`Error in createCard: ${error.message}`, error);
           throw error;
       } finally {
           if (conn) conn.release();
@@ -443,7 +443,7 @@ export const DatabaseService = {
               }
           };
       } catch (error) {
-        console.error('Error adding comment:', error);
+        console.error(`Error adding comment: ${error.message}`, error);
         throw error;
       } finally {
           if (conn) conn.release();
@@ -499,7 +499,7 @@ export const DatabaseService = {
             mediaId: Number(result.insertId)
         };
     } catch (error) {
-      console.error('Error adding media:', error);
+      console.error(`Error adding media: ${error.message}`, error);
       throw error;
     } finally {
         if (conn) conn.release();
@@ -539,7 +539,7 @@ export const DatabaseService = {
         const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
         return result.length > 0 ? result[0] : null;
     } catch (error) {
-      console.error('Error fetching admin by username:', error);
+      console.error(`Error fetching admin by username: ${error.message}`, error);
       throw error;
     } finally {
         if (conn) conn.release();
