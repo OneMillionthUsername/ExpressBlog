@@ -374,11 +374,41 @@ describe("DatabaseService", () => {
       await expect(DatabaseService.addMedia({ postId: 1, original_name: 'image.jpg' })).resolves.not.toThrow();
     });
     it('addMedia throws if no data provided', async () => {
-      await expect(DatabaseService.addMedia(null)).rejects.toThrow("Error in addMedia: Media is null or invalid");
+      await expect(DatabaseService.addMedia(null)).rejects.toThrow("Error in addMedia: Media data is null or invalid");
     });
     it('addMedia throws if DB error occurs', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
       await expect(DatabaseService.addMedia({ postId: 1, original_name: 'image.jpg' })).rejects.toThrow("Error in addMedia: DB error");
+    });
+  });
+  describe('deleteMedia', () => {
+    it('deleteMedia deletes media without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.deleteMedia(1)).resolves.not.toThrow();
+    });
+    it('deleteMedia throws if no ID provided', async () => {
+      await expect(DatabaseService.deleteMedia(null)).rejects.toThrow("Error in deleteMedia: Media ID is null or invalid");
+    });
+    it('deleteMedia throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.deleteMedia(1)).rejects.toThrow("Error in deleteMedia: DB error");
+    });
+    it('deleteMedia throws if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.deleteMedia(1)).resolves.toBeNull();
+    });
+  });
+  describe('getMediaById', () => {
+    it('getMediaById returns media without errors', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: 1, original_name: 'image.jpg' }]);
+      await expect(DatabaseService.getMediaById(1)).resolves.not.toThrow();
+    });
+    it('getMediaById throws if no ID provided', async () => {
+      await expect(DatabaseService.getMediaById(null)).rejects.toThrow("Error in getMediaById: Media ID is null or invalid");
+    });
+    it('getMediaById throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.getMediaById(1)).rejects.toThrow("Error in getMediaById: DB error");
     });
   });
   // Admin
@@ -393,6 +423,69 @@ describe("DatabaseService", () => {
     it('getAdminByUsername throws if DB error occurs', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
       await expect(DatabaseService.getAdminByUsername('admin')).rejects.toThrow("Error in getAdminByUsername: DB error");
+    });
+  });
+  describe('updateAdminLoginSuccess', () => {
+    it('updateAdminLoginSuccess updates admin without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.updateAdminLoginSuccess(1)).resolves.not.toThrow();
+    });
+    it('updateAdminLoginSuccess returns false if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.updateAdminLoginSuccess(1)).resolves.toBe(false);
+    });
+    it('updateAdminLoginSuccess throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.updateAdminLoginSuccess(1)).rejects.toThrow("Error in updateAdminLoginSuccess: DB error");
+    });
+  });
+  describe('updateAdminLoginFailure', () => {
+    it('updateAdminLoginFailure updates admin without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.updateAdminLoginFailure(1)).resolves.not.toThrow();
+    });
+    it('updateAdminLoginFailure returns false if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.updateAdminLoginFailure(1)).resolves.toBe(false);
+    });
+    it('updateAdminLoginFailure throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.updateAdminLoginFailure(1)).rejects.toThrow("Error in updateAdminLoginFailure: DB error");
+    });
+    it('updateAdminLoginFailure throws if no ID provided', async () => {
+      await expect(DatabaseService.updateAdminLoginFailure(null)).rejects.toThrow("Error in updateAdminLoginFailure: Admin ID is null or invalid");
+    });
+    it('updateAdminLoginFailure sets locked_until after 3 failed attempts', async () => {
+      mockQuery
+        .mockResolvedValueOnce([{ login_attempts: 2 }])
+        .mockResolvedValueOnce({ affectedRows: 1 }); 
+    
+      const adminId = 1;
+      const result = await DatabaseService.updateAdminLoginFailure(adminId);
+    
+      expect(result).toBe(true);
+    
+      const updateArgs = mockQuery.mock.calls[1][1];
+      const currentAttempts = updateArgs[0];         
+      const lockedUntil = updateArgs[1];             
+    
+      expect(currentAttempts).toBe(3);
+      expect(lockedUntil).toBeInstanceOf(Date);
+      expect(lockedUntil.getTime()).toBeGreaterThan(Date.now());
+    });
+  });
+  describe('updateAdminStatus', () => {
+    it('updateAdminStatus updates admin without errors', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      await expect(DatabaseService.updateAdminStatus(1, 'active')).resolves.not.toThrow();
+    });
+    it('updateAdminStatus returns false if no rows affected', async () => {
+      mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
+      await expect(DatabaseService.updateAdminStatus(1, 'active')).resolves.toBe(false);
+    });
+    it('updateAdminStatus throws if DB error occurs', async () => {
+      mockQuery.mockRejectedValueOnce(new Error("DB error"));
+      await expect(DatabaseService.updateAdminStatus(1, 'active')).rejects.toThrow("Error in updateAdminStatus: DB error");
     });
   });
 });

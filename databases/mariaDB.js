@@ -514,15 +514,17 @@ export const DatabaseService = {
   async addMedia(mediaData) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        const result = await conn.query('INSERT INTO media SET ?', [mediaData]);
-        return {
-            success: true,
-            mediaId: Number(result.insertId)
+      if (!mediaData || typeof mediaData !== 'object' || mediaData === null) {
+          throw new databaseError("Media data is null or invalid");
+      }
+      conn = await pool.getConnection();
+      const result = await conn.query('INSERT INTO media SET ?', [mediaData]);
+      return {
+          success: true,
+          mediaId: Number(result.insertId)
         };
     } catch (error) {
-      console.error(`Error adding media: ${error.message}`, error);
-      throw error;
+      throw new databaseError(`Error in addMedia: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -530,12 +532,14 @@ export const DatabaseService = {
   async deleteMedia(mediaId) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        const result = await conn.query('DELETE FROM media WHERE id = ?', [mediaId]);
-        return result.affectedRows > 0;
+      if (!mediaId || isNaN(mediaId) || mediaId === null) {
+          throw new databaseError("Media ID is null or invalid");
+      }
+      conn = await pool.getConnection();
+      const result = await conn.query('DELETE FROM media WHERE id = ?', [mediaId]);
+      return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
-        console.error('Error deleting media:', error);
-        throw error;
+        throw new databaseError(`Error in deleteMedia: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -543,12 +547,14 @@ export const DatabaseService = {
   async getMediaById(mediaId) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        const result = await conn.query('SELECT * FROM media WHERE id = ?', [mediaId]);
-        return result.length > 0 ? convertBigInts(result[0]) : null;
+      if (!mediaId || isNaN(mediaId) || mediaId === null) {
+          throw new databaseError("Media ID is null or invalid");
+      }
+      conn = await pool.getConnection();
+      const result = await conn.query('SELECT * FROM media WHERE id = ?', [mediaId]);
+      return result.length > 0 ? convertBigInts(result[0]) : null;
     } catch (error) {
-        console.error('Error fetching media by ID:', error);
-        throw error;
+        throw new databaseError(`Error in getMediaById: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -557,12 +563,14 @@ export const DatabaseService = {
   async getAdminByUsername(username) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
-        return result.length > 0 ? result[0] : null;
+      if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
+          throw new databaseError("Username is null or invalid");
+      }
+      conn = await pool.getConnection();
+      const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
+      return result.length > 0 ? result[0] : null;
     } catch (error) {
-      console.error(`Error fetching admin by username: ${error.message}`, error);
-      throw error;
+      throw new databaseError(`Error in getAdminByUsername: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -570,12 +578,14 @@ export const DatabaseService = {
   async updateAdminLoginSuccess(adminId) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        const update = await conn.query('UPDATE admins SET last_login = NOW(), login_attempts = 0, locked_until = NULL WHERE id = ?', [adminId]);
-        return update.affectedRows > 0;
-      } catch (error) {
-      console.error('Error updating admin login success:', error);
-      throw error;
+      if (!adminId || isNaN(adminId) || adminId === null) {
+          throw new databaseError("Admin ID is null or invalid");
+      }
+      conn = await pool.getConnection();
+      const update = await conn.query('UPDATE admins SET last_login = NOW(), login_attempts = 0, locked_until = NULL WHERE id = ?', [adminId]);
+      return update.affectedRows > 0 ? true : false;
+    } catch (error) {
+      throw new databaseError(`Error in updateAdminLoginSuccess: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -583,11 +593,14 @@ export const DatabaseService = {
   async updateAdminLoginFailure(adminId) {
     let conn;
     try {
-        conn = await pool.getConnection();
-        // Aktuelle Login-Attempts abrufen
-        const result = await conn.query('SELECT login_attempts FROM admins WHERE id = ?', [adminId]);
-        if (result.length > 0) {
-            const currentAttempts = result[0].login_attempts + 1;
+      if (!adminId || isNaN(adminId) || adminId === null) {
+          throw new databaseError("Admin ID is null or invalid");
+      }
+      conn = await pool.getConnection();
+      // Aktuelle Login-Attempts abrufen
+      const result = await conn.query('SELECT login_attempts FROM admins WHERE id = ?', [adminId]);
+      if (result.length > 0) {
+          const currentAttempts = result[0].login_attempts + 1;
             let locked_until = null;
 
             // Account nach 3 fehlgeschlagenen Versuchen für 30 Minuten sperren
@@ -596,15 +609,14 @@ export const DatabaseService = {
             }
 
           const update = await conn.query('UPDATE admins SET login_attempts = ?, locked_until = ? WHERE id = ?', [currentAttempts, locked_until, adminId]);
-          return update.affectedRows > 0;
+          return update.affectedRows > 0 ? true : false;
         }
         else {
             // Admin not found
             return false;
         }
     } catch (error) {
-        console.error('Error updating admin login failure:', error);
-        throw error;
+        throw new databaseError(`Error in updateAdminLoginFailure: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -612,12 +624,14 @@ export const DatabaseService = {
   async updateAdminStatus(adminId, active) {
     let conn;
     try {
+        if(adminId === null || isNaN(adminId)) {
+            throw new databaseError("Admin ID is null or invalid");
+        }
         conn = await pool.getConnection();
         const result = await conn.query('UPDATE admins SET active = ? WHERE id = ?', [active, adminId]);
-        return result.affectedRows > 0;
+        return result.affectedRows > 0 ? true : false;
     } catch (error) {
-        console.error('Error updating admin status:', error);
-        throw error;
+        throw new databaseError(`Error in updateAdminStatus: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
