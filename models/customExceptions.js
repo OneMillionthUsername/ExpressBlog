@@ -15,3 +15,12 @@ export class CardControllerException extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+
+export class CommentControllerException extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = "CommentControllerException";
+    if (details) this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}

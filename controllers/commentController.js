@@ -1,10 +1,11 @@
 import { DatabaseService } from "../databases/mariaDB.js";
 import Comment from "../models/commentModel.js";
+import { CommentControllerException } from "../models/customExceptions.js";
 
 const createComment = async (postId, commentData) => {
     const { error, value } = Comment.validate(commentData);
     if (error) {
-        throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+        throw new CommentControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
     try {
         const result = await DatabaseService.createComment(postId, value);
@@ -13,8 +14,7 @@ const createComment = async (postId, commentData) => {
         }
         return { success: true, message: 'Comment created successfully' };
     } catch (error) {
-        console.error('Error adding comment:', error);
-        throw error;
+        throw new CommentControllerException(`Error adding comment: ${error.message}`, error);
     }
 }
 const getCommentsByPostId = async (postId) => {
@@ -37,20 +37,18 @@ const getCommentsByPostId = async (postId) => {
         }
         return validComments;
     } catch (error) {
-        console.error('Error getting comments by post id:', error);
-        throw error;
+        throw new CommentControllerException(`Error getting comments by post id: ${error.message}`, error);
     }
 }
 const deleteComment = async (commentId, postId) => {
     try {
         const result = await DatabaseService.deleteComment(commentId, postId);
         if (!result || !result.success) {
-            throw new Error('Comment not found or not deleted');
+            throw new CommentControllerException('Comment not found or not deleted');
         }
         return { success: true, message: 'Comment deleted successfully' };
     } catch (error) {
-        console.error('Error deleting comment:', error);
-        throw error;
+        throw new CommentControllerException(`Error deleting comment: ${error.message}`, error);
     }
 }
 export default {
