@@ -9,61 +9,67 @@
 import { DatabaseService } from '../databases/mariaDB.js';
 import { Admin } from '../models/adminModel.js';
 import bcrypt from 'bcrypt';
+import { AdminControllerException } from '../models/customExceptions.js';
 
 const getAdminByUsername = async (username) => {
     try {
-        if (!username || typeof username !== 'string' || username.trim() === '') {
-            throw new Error('Valid username is required');
+        if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
+            throw new AdminControllerException('Valid username is required');
         }
         const admin = await DatabaseService.getAdminByUsername(username);
         if (!admin) {
-            throw new Error('Admin not found');
+            throw new AdminControllerException('Admin not found');
         }
         const { error, value } = Admin.validate(admin);
         if (error) {
-            throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
+            throw new AdminControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
         }
         return new Admin(value);
     } catch (error) {
-        console.error('Error fetching admin by username:', error);
-        throw error;
+        throw new AdminControllerException(`Error fetching admin by username: ${error.message}`, error);
     }
 }
 const updateAdminLoginSuccess = async (adminId) => {
     try {
         const update = await DatabaseService.updateAdminLoginSuccess(adminId);
+        if (!update) {
+            throw new AdminControllerException('Failed to update admin login success');
+        }
         return update;
     } catch (error) {
-        console.error('Error updating admin login success:', error);
-        throw error;
+        throw new AdminControllerException(`Error updating admin login success: ${error.message}`, error);
     }
 }
 const updateAdminLoginFailure = async (adminId) => {
     try {
         const update = await DatabaseService.updateAdminLoginFailure(adminId);
+        if (!update) {
+            throw new AdminControllerException('Failed to update admin login failure');
+        }
         return update;
     } catch (error) {
-        console.error('Error updating admin login failure:', error);
-        throw error;
+        throw new AdminControllerException(`Error updating admin login failure: ${error.message}`, error);
     }
 }
 const updateAdminStatus = async (adminId, status) => {
     try {
         const update = await DatabaseService.updateAdminStatus(adminId, status);
+        if (!update) {
+            throw new AdminControllerException('Failed to update admin status');
+        }
         return update;
     } catch (error) {
-        console.error('Error updating admin status:', error);
-        throw error;
+        throw new AdminControllerException(`Error updating admin status: ${error.message}`, error);
     }
 }
 // Admin-Login
 const authenticateAdmin = async (username, password) => {
     // 1. Input-Validierung
-    if (!username || typeof username !== 'string' || username.trim() === '') {
-        throw new Error('Username and password are required');
+    if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
+        throw new AdminControllerException('Username and password are required');
     }
-    if (!password || typeof password !== 'string' || password.length < 3) {
-        throw new Error('Username and password are required');
+    if (!password || typeof password !== 'string' || password.length < 3 || password === null) {
+        throw new AdminControllerException('Username and password are required');
     }
     try {
         const adminData = await DatabaseService.getAdminByUsername(username.trim());
@@ -72,13 +78,12 @@ const authenticateAdmin = async (username, password) => {
         // 2. Admin-Objekt validieren
         const { error, value } = Admin.validate(adminData);
         if (error) {
-            console.error('Invalid admin data from database:', error.details.map(d => d.message).join('; '));
-            return null;
+            throw new AdminControllerException('Invalid admin data from database:', error.details.map(d => d.message).join('; '));
         }
         const admin = new Admin(value);
         // 3. Account-Status prüfen
         if (!admin.active || (admin.locked_until && new Date() < new Date(admin.locked_until))) {
-            return null;
+            throw new AdminControllerException('Admin account is inactive or locked');
         }
         
         const isValidPassword = await bcrypt.compare(password, admin.password_hash);
@@ -97,8 +102,7 @@ const authenticateAdmin = async (username, password) => {
             return null;
         }
     } catch (error) {
-        console.error('Error during admin authentication:', error);
-        return null;
+        throw new AdminControllerException(`Error during admin authentication: ${error.message}`, error);
     }
 };
 export default {

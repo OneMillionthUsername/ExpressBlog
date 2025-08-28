@@ -111,19 +111,17 @@ describe('AdminController', () => {
       expect(result).toBeNull();
       expect(DatabaseService.getAdminByUsername).toHaveBeenCalledWith('nonexistent');
     });
-    it('should return null for inactive admin', async () => {
+    it('should throw error for inactive admin', async () => {
       // Arrange
       const inactiveAdmin = { ...mockAdminData, active: false };
       DatabaseService.getAdminByUsername.mockResolvedValue(inactiveAdmin);
       Admin.validate.mockReturnValue({ error: null, value: inactiveAdmin });
 
       // Act
-      const result = await adminController.default.authenticateAdmin('testadmin', 'password123');
-
-      // Assert
-      expect(result).toBeNull();
+      await expect(adminController.default.authenticateAdmin('testadmin', 'password123'))
+        .rejects.toThrow('Admin account is inactive or locked');
     });
-    it('should return null for locked admin', async () => {
+    it('should throw error for locked admin', async () => {
       // Arrange
       const lockedAdmin = { 
         ...mockAdminData, 
@@ -133,12 +131,10 @@ describe('AdminController', () => {
       Admin.validate.mockReturnValue({ error: null, value: lockedAdmin });
 
       // Act
-      const result = await adminController.default.authenticateAdmin('testadmin', 'password123');
-
-      // Assert
-      expect(result).toBeNull();
+      await expect(adminController.default.authenticateAdmin('testadmin', 'password123'))
+        .rejects.toThrow('Admin account is inactive or locked');
     });
-    it('should return null when validation fails', async () => {
+    it('should throw error when validation fails', async () => {
       // Arrange
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       
@@ -154,24 +150,16 @@ describe('AdminController', () => {
       });
 
       // Act
-      const result = await adminController.default.authenticateAdmin('testadmin', 'password123');
-
-      // Assert
-      expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith('Invalid admin data from database:', 'Invalid data; Missing required field');
-      
-      // Cleanup
-      consoleSpy.mockRestore();
+      await expect(adminController.default.getAdminByUsername('testadmin'))
+        .rejects.toThrow('Validation failed: Invalid data; Missing required field');      
     });
-    it('should return null when database error occurs', async () => {
+    it('should throw error when database error occurs', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockRejectedValue(new Error('Database error'));
 
       // Act
-      const result = await adminController.default.authenticateAdmin('testadmin', 'password123');
-
-      // Assert
-      expect(result).toBeNull();
+      await expect(adminController.default.authenticateAdmin('testadmin', 'password123'))
+        .rejects.toThrow('Error during admin authentication: Database error');
     });
   });
   describe('getAdminByUsername', () => {
@@ -192,7 +180,6 @@ describe('AdminController', () => {
       expect(result).toEqual(mockAdminData);
       expect(DatabaseService.getAdminByUsername).toHaveBeenCalledWith('testadmin');
     });
-
     it('should throw error when admin not found', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockResolvedValue(null);
@@ -201,7 +188,6 @@ describe('AdminController', () => {
       await expect(adminController.default.getAdminByUsername('nonexistent'))
         .rejects.toThrow('Admin not found');
     });
-
     it('should throw error when validation fails', async () => {
       // Arrange
       DatabaseService.getAdminByUsername.mockResolvedValue({ invalid: 'data' });
@@ -218,6 +204,44 @@ describe('AdminController', () => {
       // Act & Assert
       await expect(adminController.default.getAdminByUsername('testadmin'))
         .rejects.toThrow('Validation failed: Invalid data; Missing required field');
+    });
+    it('should throw error when database error occurs', async () => {
+      // Arrange
+      DatabaseService.getAdminByUsername.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(adminController.default.getAdminByUsername('testadmin'))
+        .rejects.toThrow('Error fetching admin by username: Database error');
+    });
+  });
+  describe('updateAdminLoginFailure', () => {
+    it('should throw error when database error occurs', async () => {
+      // Arrange
+      DatabaseService.updateAdminLoginFailure.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(adminController.default.updateAdminLoginFailure('testadmin'))
+        .rejects.toThrow('Error updating admin login failure: Database error');
+    });
+  });
+  describe('updateAdminStatus', () => {
+    it('should throw error when database error occurs', async () => {
+      // Arrange
+      DatabaseService.updateAdminStatus.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(adminController.default.updateAdminStatus('testadmin', 'active'))
+        .rejects.toThrow('Error updating admin status: Database error');
+    });
+  });
+  describe('updateAdminLoginSuccess', () => {
+    it('should throw error when database error occurs', async () => {
+      // Arrange
+      DatabaseService.updateAdminLoginSuccess.mockRejectedValue(new Error('Database error'));
+
+      // Act & Assert
+      await expect(adminController.default.updateAdminLoginSuccess('testadmin'))
+        .rejects.toThrow('Error updating admin login success: Database error');
     });
   });
 });
