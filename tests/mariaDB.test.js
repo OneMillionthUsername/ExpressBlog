@@ -177,25 +177,25 @@ describe("DatabaseService", () => {
   describe('updatePost', () => {
     it('updatePost updates post without errors', async () => {
       mockQuery.mockResolvedValueOnce({ affectedRows: 1 });
-      await expect(DatabaseService.updatePost(1, { title: 'Updated Title', content: 'Updated Content' })).resolves.not.toThrow();
+      await expect(DatabaseService.updatePost({ id: 1, title: 'Updated Title', content: 'Updated Content' })).resolves.not.toThrow();
     });
     it('updatePost throws if query fails', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
-      await expect(DatabaseService.updatePost(1, { title: 'Updated Title' })).rejects.toThrow("Error in updatePost: DB error");
+      await expect(DatabaseService.updatePost({ id: 1, title: 'Updated Title' })).rejects.toThrow("Error in updatePost: DB error");
     });
     it('updatePost throws if no rows affected', async () => {
       mockQuery.mockResolvedValueOnce({ affectedRows: 0 });
-      await expect(DatabaseService.updatePost(999, { title: 'Updated Title' })).rejects.toThrow("Error in updatePost: Failed to update post");
+      await expect(DatabaseService.updatePost({ id: 999, title: 'Updated Title' })).rejects.toThrow("Error in updatePost: Failed to update post");
     });
     it('updatePost throws if no fields to update', async () => {
-      await expect(DatabaseService.updatePost(1, {})).rejects.toThrow("Error in updatePost: No fields provided for update");
+      await expect(DatabaseService.updatePost({ id: 1 })).rejects.toThrow("Error in updatePost: No fields provided for update");
     });
     it('updatePost throws if post is null', async () => {
-      await expect(DatabaseService.updatePost(1, null)).rejects.toThrow("Error in updatePost: Post is null");
+      await expect(DatabaseService.updatePost(null)).rejects.toThrow("Error in updatePost: Post is null");
     });
     it('updatePost throws if DB error occurs', async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
-      await expect(DatabaseService.updatePost(1, { title: 'Updated Title' })).rejects.toThrow("Error in updatePost: DB error");
+      await expect(DatabaseService.updatePost({ id: 1, title: 'Updated Title' })).rejects.toThrow("Error in updatePost: DB error");
     });
   });
   describe('deletePost', () => {

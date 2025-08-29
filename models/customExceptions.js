@@ -24,3 +24,21 @@ export class CommentControllerException extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+
+export class PostControllerException extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = "PostControllerException";
+    if (details) this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class MediaControllerException extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = "MediaControllerException";
+    if (details) this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}

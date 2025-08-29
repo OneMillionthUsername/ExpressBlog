@@ -12,6 +12,7 @@ import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
 import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
+import { Post } from '../models/postModel.js';
 
 const pool = mariadb.createPool(dbConfig);
 
@@ -310,18 +311,21 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
-  async updatePost(id, post) {
+  async updatePost(post) {
     let conn;
     try {
-      if(post === null) {
-        throw new databaseError('Post is null');
+      if (!post || typeof post !== 'object' || Array.isArray(post)) {
+        throw new databaseError('Post is null or not an object');
       }
-      if (typeof post !== 'object' || post === undefined || Object.keys(post).length === 0) {
+      const updatableFields = ['title', 'content', 'tags', 'published', 'author'];
+      const hasUpdatableField = updatableFields.some(field => field in post);
+      if (!hasUpdatableField) {
         throw new databaseError('No fields provided for update');
       }
+
       conn = await pool.getConnection();
 
-      const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, id]);
+      const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, post.id]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to update post');
       }

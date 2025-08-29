@@ -36,9 +36,9 @@ export const postSchema = Joi.object({
   title: Joi.string().min(3).max(255).required(),
   content: Joi.string().required(),
   tags: Joi.array().items(Joi.string().max(50)).optional(),
-  author: Joi.string().max(100).required(),
+  author: Joi.string().max(100).optional(),
   views: Joi.number().integer().min(0).optional(),
   published: Joi.boolean().optional(),
-  created_at: Joi.date().required(),
+  created_at: Joi.date().optional(),
   updated_at: Joi.date().optional()
 });
