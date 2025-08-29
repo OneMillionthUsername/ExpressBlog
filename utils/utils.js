@@ -3,6 +3,7 @@ import { JSDOM } from 'jsdom';
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import path from 'path';
 import { DatabaseService } from '../databases/mariaDB.js';
+import { UtilsException } from '../models/customExceptions.js';
 
 // Für Node.js Server-Side
 const window = new JSDOM('').window;
@@ -29,12 +30,15 @@ export async function makeApiRequest(url, options = {}) {
             result = null;
         }
         if (!response.ok) {
-            return { success: false, error: result?.error || response.statusText, status: response.status, data: result };
+            return { 
+              success: false, 
+              error: result?.error || response.statusText, 
+              status: response.status 
+            };
         }
         return result;
     } catch (error) {
-        console.warn('API-Request fehlgeschlagen:', error);
-        return { success: false, error: error.message || 'Netzwerkfehler' };
+        throw new UtilsException(`API-Request fehlgeschlagen: ${error.message}`, error);
     }
 }
 // Utility zum sicheren Escapen von Dateinamen
@@ -110,7 +114,7 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
     }
     return obj;
   }
-  throw new Error("Unsupported input type");
+  throw new UtilsException("Unsupported input type");
 }
 export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
   if (!title) return "";

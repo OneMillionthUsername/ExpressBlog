@@ -42,3 +42,12 @@ export class MediaControllerException extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+
+export class UtilsException extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = "UtilsException";
+    if (details) this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
