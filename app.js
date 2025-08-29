@@ -46,7 +46,7 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const publicDirectoryPath = join(__dirname, '..'); // Ein Ordner nach oben
+const publicDirectoryPath = join(__dirname, 'public'); // Ein Ordner nach oben
 const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 // globals
 //--------------------------------------------
@@ -161,24 +161,11 @@ app.set('view engine', 'ejs');
 // Statische Dateien mit korrekten MIME-Types
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
-    // JavaScript-Dateien
-    if (path.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     }
-    // CSS-Dateien
-    else if (path.endsWith('.css')) {
-            res.setHeader('Content-Type', 'text/css; charset=utf-8');
-          }
-          // JSON-Dateien
-          else if (path.endsWith('.json')) {
-            res.setHeader('Content-Type', 'application/json; charset=utf-8');
-          }
-          // Cache-Control für statische Assets
-          if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
-            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 Jahr
-          }
-        }
-  }));
+  }
+}));
   
   // ===========================================
   // PUBLIC ENDPOINTS
@@ -190,7 +177,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: IS_PRODUCTION ? 'production' : 'development',
+    environment: config.IS_PRODUCTION ? 'production' : 'development',
     version: process.env.npm_package_version || '1.0.0'
   });
 });
@@ -222,11 +209,15 @@ app.use('/comments', routes.commentsRouter);
 // HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen ausgeschlossen
 app.use((req, res, next) => {
     // API-Routen von HTTPS-Redirect ausschließen
-    if (req.url.startsWith('/auth/') || req.url.startsWith('/extension/') || req.url.startsWith('/blogpost') || req.url.startsWith('/comments/') || req.url.startsWith('/upload/')) {
+    if (req.url.startsWith('/auth/') || 
+    req.url.startsWith('/extension/') || 
+    req.url.startsWith('/blogpost') || 
+    req.url.startsWith('/comments/') || 
+    req.url.startsWith('/upload/')) {
         return next(); // Kein Redirect für API-Calls
     }
     // Plesk verwendet x-forwarded-proto Header
-    if (IS_PLESK && req.header('x-forwarded-proto') === 'http') {
+    if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
         // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
         if (req.method === 'GET') {
             return res.redirect(301, `https://${req.header('host')}${req.url}`);
@@ -238,16 +229,16 @@ app.use((req, res, next) => {
         }
     } 
     // Development HTTPS Redirect
-    else if (!IS_PLESK && httpsOptions && req.header('x-forwarded-proto') !== 'https' && !req.secure) {
-        if (req.method === 'GET') {
-            return res.redirect(301, `https://${req.header('host')}${req.url}`);
-        } else {
-            return res.status(400).json({
-                error: 'HTTPS required',
-                message: 'API endpoints require HTTPS connection'
-            });
-        }
-    }
+    // else if (!config.IS_PLESK && httpsOptions && req.header('x-forwarded-proto') !== 'https' && !req.secure) {
+    //     if (req.method === 'GET') {
+    //         return res.redirect(301, `https://${req.header('host')}${req.url}`);
+    //     } else {
+    //         return res.status(400).json({
+    //             error: 'HTTPS required',
+    //             message: 'API endpoints require HTTPS connection'
+    //         });
+    //     }
+    // }
     next();
 });
 // Custom error-handling

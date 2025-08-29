@@ -10,6 +10,7 @@ import * as adminController from "../controllers/adminController.js";
 import * as authService from "../services/authService.js";
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import { celebrate, Joi, Segments } from 'celebrate';
+import { IS_PRODUCTION } from '../config/config.js';
 
 const authRouter = express.Router();
 // authRouter.all('*', requireJsonContent, async (req, res) => {
