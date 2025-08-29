@@ -20,13 +20,23 @@ export function requireJsonContent(req, res, next) {
 export function createEscapeInputMiddleware(whitelist = []) {
   return function escapeInputMiddleware(req, res, next) {
     try {
-      if (req.body) req.body = escapeAllStrings(req.body, whitelist);
-      if (req.query) req.query = escapeAllStrings(req.query, whitelist);
-      if (req.params) req.params = escapeAllStrings(req.params, whitelist);
-      if (req.cookies) req.cookies = escapeAllStrings(req.cookies, whitelist);
+      if (req.body && typeof req.body === 'object') {
+        Object.assign(req.body, escapeAllStrings(req.body, whitelist));
+      }
+      if (req.query && typeof req.query === 'object') {
+        Object.assign(req.query, escapeAllStrings(req.query, whitelist));
+      }
+      if (req.params && typeof req.params === 'object') {
+        Object.assign(req.params, escapeAllStrings(req.params, whitelist));
+      }
+      if (req.cookies && typeof req.cookies === 'object') {
+        Object.assign(req.cookies, escapeAllStrings(req.cookies, whitelist));
+      }
       const safeHeaders = ["user-agent", "referer"];
       safeHeaders.forEach(h => {
-        if (req.headers[h]) {
+        if (req.headers[h] && typeof req.headers[h] === 'object') {
+          Object.assign(req.headers[h], escapeAllStrings(req.headers[h], whitelist));
+        } else if (req.headers[h] && typeof req.headers[h] === 'string') {
           req.headers[h] = escapeAllStrings(req.headers[h], whitelist);
         }
       });

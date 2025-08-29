@@ -6,7 +6,6 @@
 import express from 'express';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { loginLimiter, strictLimiter } from '../utils/limiters.js';
-import { sendLoginResponse, sendLogoutResponse } from '../utils/utils.js';
 import * as adminController from "../controllers/adminController.js";
 import * as authService from "../services/authService.js";
 import { AUTH_COOKIE_NAME } from '../services/authService.js';

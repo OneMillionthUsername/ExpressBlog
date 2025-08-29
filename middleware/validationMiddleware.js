@@ -1,8 +1,8 @@
-import validationService from "../services/validationService";
-import { postSchema } from '../models/postModel';
-import { createSlug } from '../utils/utils';
+import validationService from "../services/validationService.js";
+import { postSchema } from '../models/postModel.js';
+import { createSlug } from '../utils/utils.js';
 import { fileTypeFromBuffer } from 'file-type';
-import { sanitizeFilename } from "../utils/utils";
+import { sanitizeFilename } from "../utils/utils.js";
 
 function validateId(req, res, next) {
   const postId = req.params.postId;

@@ -221,24 +221,13 @@ describe("createEscapeInputMiddleware", () => {
     expect(next).toHaveBeenCalled();
   });
   it("should handle errors gracefully", () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const next = jest.fn();
     // Simuliere einen Fehler in der Middleware
     req.body = 123; // Setze req.body auf eine Zahl, um einen Fehler zu provozieren
     const escapeInputMiddleware = createEscapeInputMiddleware([]);
-
     escapeInputMiddleware(req, res, next);
-
-    // Überprüfe, ob console.error aufgerufen wurde
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Error in escapeInputMiddleware:",
-      expect.any(Error)
-    );
-
     // Überprüfe, ob next() aufgerufen wurde
     expect(next).toHaveBeenCalled();
-
-    consoleSpy.mockRestore(); // Stelle console.error wieder her
   });
   it("should call next middleware", () => {
     const escapeInputMiddleware = createEscapeInputMiddleware([]);

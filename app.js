@@ -150,7 +150,7 @@ app.use(express.urlencoded({
   })
 );
 app.use(cookieParser());
-app.set('trust proxy', true); // Damit Express die korrekte IP-Adresse des Clients hinter einem Reverse Proxy erkennt
+app.set('trust proxy', false); // Damit Express die korrekte IP-Adresse des Clients hinter einem Reverse Proxy erkennt. Lokal muss es false sein!
 app.use(loggerMiddleware);
 
 
