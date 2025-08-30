@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="../assets/js/module-loader.js" defer></script>
+    <script src="../assets/js/page-initializers.js" defer></script>
+    <title>Meistgelesene Posts - Sub specie aeternitatis</title>
+</head>
+<body>
+    <div class="container-fluid header-section">
+        <h1 class="main-title">Meistgelesene Posts</h1>
+        <p class="description">Die beliebtesten Beiträge nach Aufrufen sortiert</p>
+        <hr class="header-divider">
+    </div>
+    
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="content-area">
+                    <div id="mostReadPosts">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Lade Statistiken...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation text-center mt-4">
+            <a href="../index.html" class="btn btn-outline-primary">Zur Startseite</a>
+            <a href="list_posts.html" class="btn btn-outline-secondary ml-2">Alle Posts</a>
+        </div>
+    </div>
+
+    <script src="../assets/js/utils.js" defer></script>
+    <script src="../assets/js/admin.js" defer></script>
+
+</body>
+</html>

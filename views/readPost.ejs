@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <script src="../assets/js/module-loader.js" defer></script>
+    <script src="../assets/js/page-initializers.js" defer></script>
+    <title>Blogpost - Sub specie aeternitatis</title>
+</head>
+<body>
+    <div class="container-fluid header-section no-min-height">
+        <h1 id="main-title" class="main-title">Blogpost lesen</h1>
+        <p id="description" class="description">Gedanken über Philosophie, Wissenschaft und AI</p>
+        <hr class="header-divider">
+    </div>
+    
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="content-area">
+                    <div id="blogpost-content">
+                        <div id="loading" class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Lade Blogpost...</p>
+                        </div>
+                        
+                        <article id="post-article" style="display: none;">
+                            <header class="post-header">
+                                <h2 id="title" class="post-title"></h2>
+                                <div id="meta" class="post-meta-info"></div>
+                            </header>
+                            
+                            <div id="content" class="post-content"></div>
+                            
+                            <footer class="post-footer">
+                                <div id="tags" class="post-tags-container"></div>
+                            </footer>
+                        </article>
+                        
+                        <!-- Kommentarsystem -->
+                        <section id="comments-section" class="comments-section" style="display: none;">
+                            <div class="comments-divider">
+                                <hr>
+                            </div>
+                            
+                            <h3 id="comments-title" class="comments-title">
+                                💬 Kommentare <span class="badge badge-secondary" id="comment-count">0</span>
+                            </h3>
+                            
+                            <!-- Kommentar-Formular -->
+                            <div class="comment-form-container">
+                                <h4 class="mb-3">Kommentar schreiben</h4>
+                                <form id="comment-form" class="comment-form">
+                                    <div class="form-group">
+                                        <label for="comment-username">Name (optional):</label>
+                                        <input type="text" 
+                                               id="comment-username" 
+                                               class="form-control" 
+                                               placeholder="Dein Name oder lasse es leer für 'Anonym'"
+                                               maxlength="50">
+                                        <small class="form-text text-muted">
+                                            Falls leer gelassen, wird "Anonym" angezeigt.
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="comment-text">Kommentar: <span class="text-danger">*</span></label>
+                                        <textarea id="comment-text" 
+                                                  class="form-control" 
+                                                  rows="4" 
+                                                  placeholder="Teile deine Gedanken zu diesem Blogpost..."
+                                                  maxlength="1000"
+                                                  required></textarea>
+                                        <div class="d-flex justify-content-between align-items-center mt-1">
+                                            <small class="form-text text-muted">
+                                                Sei respektvoll und konstruktiv in deinen Kommentaren.
+                                            </small>
+                                            <small id="char-counter" class="char-counter text-muted">0/1000</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-secondary-theme">
+                                        <i class="fas fa-paper-plane"></i> Kommentar senden
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Kommentare anzeigen -->
+                            <div class="comments-list-container">
+                                <h4 class="mb-3">💭 Diskussion</h4>
+                                <div id="comments-list" class="comments-list">
+                                    <!-- Kommentare werden hier dynamisch eingefügt -->
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation text-center mt-4">
+            <a href="list_posts.html" class="btn btn-outline-primary">Alle Blogposts</a>
+            <a href="../index.html" class="btn btn-outline-secondary ml-2">Zur Startseite</a>
+            <a href="create.html" class="btn btn-outline-success ml-2 create-link" style="display: none;">Neuen Post erstellen</a>
+            <div id="admin-controls" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+    <script src="../assets/js/utils.js" defer></script>
+    <script src="../assets/js/admin.js" defer></script>
+    <script src="../assets/js/comments.js" defer></script>
+
+</body>
+</html>
