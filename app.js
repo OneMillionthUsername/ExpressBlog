@@ -154,6 +154,7 @@ app.use(loggerMiddleware);
 app.use(csrfProtection);
 app.use(globalLimiter);
 app.use(middleware.errorHandlerMiddleware);
+app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 // Statische Dateien mit korrekten MIME-Types
 app.use(express.static(publicDirectoryPath, {
