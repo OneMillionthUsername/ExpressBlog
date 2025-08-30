@@ -1,0 +1,186 @@
+<% /* createPost.ejs - Blogpost erstellen/bearbeiten, basiert auf index.ejs Layout */ %>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Blogpost erstellen - Sub specie aeternitatis</title>
+    <link rel="canonical" href="https://speculumx.at/createPost">
+</head>
+<body>
+    <!-- Optional: Navbar einfügen, falls benötigt -->
+
+    <div class="container-fluid header-section">
+        <div class="d-flex justify-content-center align-items-center mb-2">
+            <img src="/assets/ornaments/1131830.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
+            <h1 class="mt-5 main-title mb-0">Neuen Blogpost erstellen</h1>
+            <img src="/assets/ornaments/1131830.svg" alt="Ornament" class="ornament ml-3">
+        </div>
+        <h2 class="mt-3 sub-title">Teile deine Gedanken über Philosophie, Wissenschaft und AI</h2>
+        <hr class="header-divider">
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-md-10">
+                <!-- Admin-Schutz: Inhalt wird nur für Admins angezeigt -->
+                <div id="admin-required" class="content-area" style="display: none;">
+                    <div class="alert alert-warning text-center">
+                        <h4>🔒 Zugriff verweigert</h4>
+                        <p>Sie müssen sich als Administrator anmelden, um Blogposts erstellen zu können.</p>
+                        <button onclick="showAdminLoginModal()" class="btn btn-primary">
+                            👑 Als Admin anmelden
+                        </button>
+                        <a href="/" class="btn btn-outline-secondary ml-2">
+                            Zur Startseite
+                        </a>
+                    </div>
+                </div>
+                <div id="create-content" class="content-area" style="display: none;">
+                    <form id="blogPostForm" class="create-form">
+                        <div class="form-group">
+                            <label for="title" class="form-label">
+                                <span class="label-icon">📝</span>
+                                Titel
+                            </label>
+                            <input type="text" class="form-control create-input" id="title" name="title" 
+                                   placeholder="Gib deinem Blogpost einen aussagekräftigen Titel..." required>
+                            <small class="form-text text-muted">Ein guter Titel macht neugierig und fasst das Thema zusammen</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="content" class="form-label">
+                                <span class="label-icon">✍️</span>
+                                Inhalt
+                            </label>
+                            <div class="editor-toolbar mb-2">
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">📄 Vorlagen:</span>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertTemplate('blog-post')">
+                                        <i class="fas fa-file-alt"></i> Blog
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertTemplate('philosophy')">
+                                        <i class="fas fa-graduation-cap"></i> Philosophie
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertTemplate('science')">
+                                        <i class="fas fa-flask"></i> Wissenschaft
+                                    </button>
+                                </div>
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">AI-Assistent:</span>
+                                    <button type="button" id="ai-improve-btn" class="btn btn-sm btn-outline-primary ai-btn" onclick="improveText()" title="Markierten Text oder ganzen Inhalt verbessern">
+                                        <i class="fas fa-magic"></i> Text verbessern
+                                    </button>
+                                    <button type="button" id="ai-title-btn" class="btn btn-sm btn-outline-primary ai-btn" onclick="generateTitleSuggestions()" title="AI-generierte Titel-Vorschläge">
+                                        <i class="fas fa-lightbulb"></i> Titel vorschlagen
+                                    </button>
+                                    <button type="button" id="ai-tags-btn" class="btn btn-sm btn-outline-primary ai-btn" onclick="generateTags()" title="Automatische Tag-Generierung">
+                                        <i class="fas fa-tags"></i> Tags generieren
+                                    </button>
+                                    <button type="button" id="ai-summary-btn" class="btn btn-sm btn-outline-primary ai-btn" onclick="generateSummary()" title="Zusammenfassung erstellen">
+                                        <i class="fas fa-file-text"></i> Zusammenfassen
+                                    </button>
+                                </div>
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">💾 Entwürfe:</span>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="saveDraft()">
+                                        <i class="fas fa-save"></i> Speichern
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="clearDraft()">
+                                        <i class="fas fa-trash"></i> Löschen
+                                    </button>
+                                </div>
+                                <div class="toolbar-group">
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="showApiKeySetup()" title="Google Gemini API-Schlüssel konfigurieren">
+                                        <i class="fas fa-cog"></i> AI Setup
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="showTinyMceApiKeySetup()" title="TinyMCE Editor API-Schlüssel konfigurieren">
+                                        <i class="fas fa-edit"></i> Editor Setup
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="editor-container">
+                                <textarea class="form-control" id="content" name="content" placeholder="Schreibe hier deinen Blogpost..."></textarea>
+                            </div>
+                            <small class="form-text text-muted">
+                                Nutze die erweiterten Formatierungsoptionen für einen professionellen Text. 
+                                <strong>Tipp:</strong> Verwende Strg+S zum Speichern und Strg+Z zum Rückgängigmachen.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="tags" class="form-label">
+                                <span class="label-icon">🏷️</span>
+                                Tags
+                            </label>
+                            <input type="text" class="form-control create-input" id="tags" name="tags" 
+                                   placeholder="z.B. Philosophie, Wissenschaft, Künstliche Intelligenz">
+                            <small class="form-text text-muted">Trenne mehrere Tags mit Kommas. Sie helfen beim Kategorisieren und Finden deiner Posts</small>
+                            <div class="suggested-tags">
+                                <span class="suggested-label">Beliebte Tags:</span>
+                                <span class="tag-suggestion" onclick="addTag('Philosophie')">Philosophie</span>
+                                <span class="tag-suggestion" onclick="addTag('Wissenschaft')">Wissenschaft</span>
+                                <span class="tag-suggestion" onclick="addTag('Künstliche Intelligenz')">Künstliche Intelligenz</span>
+                                <span class="tag-suggestion" onclick="addTag('Ethik')">Ethik</span>
+                                <span class="tag-suggestion" onclick="addTag('Erkenntnistheorie')">Erkenntnistheorie</span>
+                            </div>
+                        </div>
+                        <div class="form-preview">
+                            <h4 class="preview-title">
+                                <span class="preview-icon">👀</span>
+                                Vorschau
+                            </h4>
+                            <div id="preview-content" class="preview-box">
+                                <p class="preview-placeholder">Die Vorschau wird hier angezeigt, sobald du schreibst...</p>
+                            </div>
+                        </div>
+                        <div class="form-actions text-center">
+                            <button type="submit" class="btn btn-outline-primary btn-lg main-submit-btn">
+                                <span class="btn-icon">🌍</span>
+                                Blogpost veröffentlichen
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg ml-2" onclick="resetForm()">
+                                <span class="btn-icon">🗑️</span>
+                                Zurücksetzen
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-lg ml-2" onclick="togglePreview()">
+                                <span class="btn-icon">👀</span>
+                                Vorschau umschalten
+                            </button>
+                        </div>
+                    </form>
+                    <div id="responseMessage" class="response-message"></div>
+                    <div class="navigation text-center mt-4">
+                        <a href="/" class="btn btn-outline-primary">Zurück zur Startseite</a>
+                        <a href="/pages/list_posts.html" class="btn btn-outline-secondary ml-2">Alle Blogposts</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer mt-5">
+        <div class="container text-center py-4">
+            <span class="footer-title">Sub specie aeternitatis</span>
+            <p class="footer-text mb-2">© 2025 BitQuake Digital &nbsp;|&nbsp; Philosophie, Wissenschaft & KI</p>
+            <div class="footer-links">
+                <a href="/pages/about.html">Kontakt</a> &nbsp;|&nbsp;
+                <a href="/pages/list_posts.html">Blogposts</a> &nbsp;|&nbsp;
+                <a href="/pages/archiv.html">Archiv</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="/assets/js/utils.js" defer></script>
+    <script src="/assets/js/admin.js" defer></script>
+    <script src="/assets/js/ai-assistant.js" defer></script>
+    <script src="/assets/js/tinymce-editor.js" defer></script>
+</body>
+</html>

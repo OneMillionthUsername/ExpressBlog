@@ -11,12 +11,10 @@
 
 
 import express from 'express';
-import { join, dirname, resolve } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { readFileSync } from 'fs';
 import cookieParser from 'cookie-parser';
 //import { unlink as unlinkAsync } from 'fs/promises';
-import { swaggerUiMiddleware, swaggerUiSetup } from "./utils/swagger.js";
 import logger, { loggerMiddleware } from "./middleware/loggerMiddleware.js";
 import helmet from 'helmet';
 import * as config from './config/config.js';
@@ -25,7 +23,6 @@ import * as middleware from './middleware/securityMiddleware.js';
 import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
 import csrfProtection from './utils/csrf.js';
-
 
 // Validating critical vars
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
@@ -172,34 +169,8 @@ app.use(express.static(publicDirectoryPath, {
   // ===========================================
   
   // Health Check Endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: config.IS_PRODUCTION ? 'production' : 'development',
-    version: process.env.npm_package_version || '1.0.0'
-  });
-});
-
-app.get('/', (req, res) => {
-  res.render('index');
-});
-// Prevent open redirects.
-app.get('/redirect', (req, res) => {
-  try {
-    if (new Url(req.query.url).host !== 'speculumx.at') {
-      return res.status(400).end(`Unsupported redirect to host: ${req.query.url}`)
-    }
-  } catch (e) {
-    return res.status(400).end(`Invalid url: ${req.query.url}`)
-  }
-  res.redirect(req.query.url)
-});
-
-app.get('/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
+app.use('/', routes.utilityRouter);
+app.use('/', routes.staticRouter);
 
 app.use('/auth', routes.authRouter);
 app.use('/blogpost', routes.postRouter);
