@@ -37,15 +37,6 @@ async function getTinyMceApiKey() {
     return data.apiKey;
 }
 
-// TinyMCE API-Schlüssel speichern
-// function saveTinyMceApiKey(apiKey) {
-//     if (!apiKey || apiKey.trim() === '') {
-//         throw new Error('API-Schlüssel darf nicht leer sein');
-//     } else {
-//         dotenv.config().parsed.TINYMCE_API_KEY = apiKey.trim();
-//     }
-// }
-
 // TinyMCE API-Schlüssel Setup-Dialog mit verbesserter Benutzerführung
 function showTinyMceApiKeySetup() {
     const currentKey = TINYMCE_CONFIG.apiKey;
@@ -63,14 +54,11 @@ function showTinyMceApiKeySetup() {
         `Aktueller Schlüssel: ${currentKey ? currentKey.substring(0, 10) + '...' : 'Nicht gesetzt'}`;
 
     const modalHtml = `
-        <div id="tinymce-api-key-modal" style="
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center;">
-            <div style="
-                background: #fff; padding: 32px 24px; border-radius: 8px; max-width: 400px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,0.2);">
-                <pre style="white-space:pre-wrap; font-size:1em; margin-bottom:16px;">${message}</pre>
-                <div style="text-align:right;">
-                    <button id="tinymce-api-key-close" class="btn btn-outline-primary btn-sm ml-2" style="background:#3498db;color:#fff;">Schließen</button>
+        <div class="modal-overlay" id="tinymce-api-key-modal">
+            <div class="modal-container">
+                <pre class="modal-content">${message}</pre>
+                <div class="modal-footer">
+                    <button id="tinymce-api-key-close" class="modal-button">Schließen</button>
                 </div>
             </div>
         </div>
@@ -86,7 +74,6 @@ function showTinyMceApiKeySetup() {
     document.getElementById('tinymce-api-key-modal').focus();
     return;
 }
-
 // TinyMCE dynamisch laden mit CDN-First Approach
 async function loadTinyMceScript() {
     // Prüfen ob TinyMCE bereits geladen ist
@@ -126,10 +113,8 @@ async function loadTinyMceScript() {
     if (isLocalDevelopment()) {
         return await tryCloudTinyMCE();
     }
-    
     throw new Error('TinyMCE konnte nicht geladen werden');
 }
-
 // Cloud TinyMCE laden
 async function tryCloudTinyMCE() {
     const apiKey = TINYMCE_CONFIG.apiKey || TINYMCE_CONFIG.defaultKey;
@@ -162,7 +147,6 @@ async function tryCloudTinyMCE() {
         document.head.appendChild(script);
     });
 }
-
 // Lokaler TinyMCE Fallback mit mehreren Pfaden
 async function tryLocalTinyMCE() {
     const localPaths = [
@@ -184,10 +168,8 @@ async function tryLocalTinyMCE() {
             console.error(`Fehler bei ${path}:`, error.message);
         }
     }
-    
     throw new Error('Alle lokalen TinyMCE Pfade fehlgeschlagen');
 }
-
 // Hilfsfunktion zum Laden von Scripts mit Promise
 function loadScriptFromPath(src) {
     return new Promise((resolve, reject) => {
@@ -218,7 +200,6 @@ function loadScriptFromPath(src) {
         document.head.appendChild(script);
     });
 }
-
 // TinyMCE Editor initialisieren
 async function initializeTinyMCE() {
     // Prüfen ob das Element existiert
@@ -349,313 +330,12 @@ async function initializeTinyMCE() {
             content_css: [
                 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap'
             ],
-            content_style: `
-                /* Import CSS variables and match blog styles exactly */
-                :root {
-                    --color-primary: #2c3e50;
-                    --color-secondary: #a27f4d;
-                    --color-accent: #ff9800;
-                    --color-hover: #5d80b2;
-                    --color-text: #2c3e50;
-                    --color-text-light: #7f8c8d;
-                    --color-bg: #fff3e0;
-                    --color-bg-alt: #f0f2f5;
-                    --font-primary: 'Playfair Display', serif;
-                    --font-secondary: 'Crimson Text', serif;
-                    --border-radius: 8px;
-                }
-                
-                /* Dark mode support in TinyMCE */
-                [data-theme="dark"] {
-                    --color-primary: #ffffff;
-                    --color-secondary: #d4af37;
-                    --color-accent: #ffa726;
-                    --color-hover: #81c784;
-                    --color-text: #e0e0e0;
-                    --color-text-light: #b0b0b0;
-                    --color-bg: #121212;
-                    --color-bg-alt: #1e1e1e;
-                }
-                
-                /* Base body styles matching .post-content */
-                body { 
-                    font-family: var(--font-secondary);
-                    font-size: 1.2rem;
-                    line-height: 1.8;
-                    color: var(--color-text);
-                    background-color: #ffffff;
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                }
-                
-                /* Headings matching blog styles */
-                h1, h2, h3, h4, h5, h6 {
-                    font-family: var(--font-primary);
-                    color: var(--color-text);
-                    margin-top: 1.5em;
-                    margin-bottom: 0.8em;
-                    line-height: 1.3;
-                    font-weight: 700;
-                }
-                
-                h1 {
-                    font-size: 2.8rem;
-                    font-weight: 900;
-                    line-height: 1.2;
-                    margin-bottom: 15px;
-                }
-                
-                h2 {
-                    font-size: 2.2rem;
-                    font-weight: 700;
-                }
-                
-                h3 {
-                    font-size: 1.8rem;
-                    font-weight: 600;
-                }
-                
-                h4 {
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                }
-                
-                h5 {
-                    font-size: 1.3rem;
-                    font-weight: 600;
-                }
-                
-                h6 {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                }
-                
-                /* Paragraph styles */
-                p {
-                    margin-bottom: 1.2em;
-                    font-size: 1.2rem;
-                    line-height: 1.8;
-                    color: var(--color-text);
-                }
-                
-                /* Drop Cap - Großer erster Buchstabe */
-                p:first-of-type:first-letter {
-                    font-family: var(--font-primary);
-                    font-size: 4.5rem;
-                    font-weight: 700;
-                    line-height: 0.8;
-                    float: left;
-                    margin: 8px 8px 0 0;
-                    color: var(--color-secondary);
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-                    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                }
-                
-                /* Image styles - EXACTLY matching final post styles */
-                img {
-                    max-width: 100% !important;
-                    height: auto !important;
-                    border-radius: 5px !important;
-                    margin: 10px auto !important;
-                    display: block !important;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    /* Zentriere Bilder automatisch */
-                    margin-left: auto !important;
-                    margin-right: auto !important;
-                }
-                
-                /* Blockquote styles matching blog */
-                blockquote {
-                    quotes: "\\201E" "\\201C" "\\201A" "\\2018";
-                    border-left: 4px solid var(--color-accent);
-                    padding-left: 20px;
-                    margin: 20px 0;
-                    font-style: italic;
-                    color: #555;
-                    font-size: 1.1rem;
-                    background: var(--color-bg-alt);
-                    padding: 15px 20px;
-                    border-radius: var(--border-radius);
-                }
-                
-                blockquote:before {
-                    content: open-quote;
-                }
-                
-                blockquote:after {
-                    content: close-quote;
-                }
-                
-                /* Lists */
-                ul, ol {
-                    margin: 1rem 0;
-                    padding-left: 2rem;
-                    font-size: 1.2rem;
-                    line-height: 1.8;
-                }
-                
-                li {
-                    margin-bottom: 0.5rem;
-                }
-                
-                /* Links */
-                a {
-                    color: var(--color-accent);
-                    text-decoration: none;
-                    transition: color 0.3s ease;
-                }
-                
-                a:hover {
-                    color: var(--color-hover);
-                    text-decoration: underline;
-                }
-                
-                /* Code styles */
-                code {
-                    background: var(--color-bg-alt);
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-family: 'Courier New', monospace;
-                    font-size: 0.9em;
-                    color: var(--color-primary);
-                }
-                
-                pre {
-                    background: var(--color-bg-alt);
-                    padding: 15px;
-                    border-radius: var(--border-radius);
-                    overflow-x: auto;
-                    margin: 1rem 0;
-                    border-left: 4px solid var(--color-accent);
-                }
-                
-                pre code {
-                    background: none;
-                    padding: 0;
-                }
-                
-                /* Tables */
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 1rem 0;
-                    background: #fff;
-                    border-radius: var(--border-radius);
-                    overflow: hidden;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-                
-                th, td {
-                    padding: 12px 15px;
-                    text-align: left;
-                    border-bottom: 1px solid #ddd;
-                }
-                
-                th {
-                    background: var(--color-primary);
-                    color: white;
-                    font-weight: 600;
-                }
-                
-                tr:hover {
-                    background: var(--color-bg-alt);
-                }
-                
-                /* Horizontal rule */
-                hr {
-                    border: none;
-                    height: 2px;
-                    background: linear-gradient(to right, transparent, var(--color-accent), transparent);
-                    margin: 2rem 0;
-                }
-                
-                /* Strong and emphasis */
-                strong, b {
-                    font-weight: 700;
-                    color: var(--color-primary);
-                }
-                
-                em, i {
-                    font-style: italic;
-                    color: var(--color-text);
-                }
-                
-                /* Text alignment utilities */
-                .text-center { text-align: center; }
-                .text-left { text-align: left; }
-                .text-right { text-align: right; }
-                .text-justify { text-align: justify; }
-                
-                /* Dark mode styles for editor */
-                [data-theme="dark"] body {
-                    background-color: var(--color-bg);
-                    color: var(--color-text);
-                }
-                
-                [data-theme="dark"] h1,
-                [data-theme="dark"] h2,
-                [data-theme="dark"] h3,
-                [data-theme="dark"] h4,
-                [data-theme="dark"] h5,
-                [data-theme="dark"] h6 {
-                    color: var(--color-primary);
-                }
-                
-                [data-theme="dark"] p {
-                    color: var(--color-text);
-                }
-                
-                [data-theme="dark"] blockquote {
-                    background: var(--color-bg);
-                    color: var(--color-text);
-                }
-                
-                [data-theme="dark"] code {
-                    background: var(--color-bg-alt);
-                    color: var(--color-text);
-                }
-                
-                [data-theme="dark"] pre {
-                    background: var(--color-bg-alt);
-                }
-                
-                [data-theme="dark"] table {
-                    background: var(--color-bg-alt);
-                }
-                
-                [data-theme="dark"] th {
-                    background: var(--color-primary);
-                }
-                
-                [data-theme="dark"] tr:hover {
-                    background: var(--color-bg);
-                }
-                
-                [data-theme="dark"] td {
-                    border-bottom-color: #444;
-                }
-                
-                /* Dark Mode Drop Cap */
-                [data-theme="dark"] p:first-of-type:first-letter {
-                    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    color: var(--color-secondary);
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-                }
-            `,
-            
+            content_css: [
+                '/assets/css/tinymce-content.css'
+            ],            
             // Upload-Konfiguration (mit Fallback-Option)
             images_upload_handler: function(blobInfo, success, failure, progress) {
-                
-                // Verwende einfachen Upload bei kleineren Bildern oder als Fallback
+                // Fallback-Option: Verwende einfachen Upload bei kleineren Bildern
                 const blob = blobInfo.blob();
                 const sizeInMB = blob.size / 1024 / 1024;
                 
@@ -728,55 +408,46 @@ async function initializeTinyMCE() {
 }
 
 // TinyMCE Theme Management for Dark Mode
-function applyTinyMCETheme(editor) {
-    if (!editor || !editor.getBody) return;
+// function applyTinyMCETheme(editor) {
+//     if (!editor || !editor.getBody) return;
     
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const editorBody = editor.getBody();
+//     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+//     const editorBody = editor.getBody();
     
-    if (editorBody) {
-        if (isDarkMode) {
-            editorBody.setAttribute('data-theme', 'dark');
-            // Apply dark mode styles to editor frame
-            editorBody.style.backgroundColor = '#121212';
-            editorBody.style.color = '#e0e0e0';
-        } else {
-            editorBody.removeAttribute('data-theme');
-            // Apply light mode styles to editor frame
-            editorBody.style.backgroundColor = '#ffffff';
-            editorBody.style.color = '#2c3e50';
-        }
-    }
-}
+//     if (editorBody) {
+//         if (isDarkMode) {
+//             editorBody.setAttribute('data-theme', 'dark');
+//             // Apply dark mode styles to editor frame
+//             editorBody.style.backgroundColor = '#121212';
+//             editorBody.style.color = '#e0e0e0';
+//         } else {
+//             editorBody.removeAttribute('data-theme');
+//             // Apply light mode styles to editor frame
+//             editorBody.style.backgroundColor = '#ffffff';
+//             editorBody.style.color = '#2c3e50';
+//         }
+//     }
+// }
 
 // Global function to update TinyMCE theme when dark mode toggles
-function updateTinyMCETheme() {
-    if (typeof tinymce !== 'undefined') {
-        const editor = tinymce.get('content');
-        if (editor) {
-            applyTinyMCETheme(editor);
-        }
-    }
-}
+// function updateTinyMCETheme() {
+//     if (typeof tinymce !== 'undefined') {
+//         const editor = tinymce.get('content');
+//         if (editor) {
+//             applyTinyMCETheme(editor);
+//         }
+//     }
+// }
 
 // Export functions globally
-window.applyTinyMCETheme = applyTinyMCETheme;
-window.updateTinyMCETheme = updateTinyMCETheme;
+// window.applyTinyMCETheme = applyTinyMCETheme;
+// window.updateTinyMCETheme = updateTinyMCETheme;
 
 // Textarea Fallback aktivieren
 function enableTextareaFallback(contentElement) {
-    contentElement.style.display = 'block';
-    contentElement.style.height = '400px';
-    contentElement.style.resize = 'vertical';
-    contentElement.style.border = '1px solid #ccc';
-    contentElement.style.borderRadius = '4px';
-    contentElement.style.padding = '10px';
-    contentElement.style.fontFamily = 'Crimson Text, serif';
-    contentElement.style.fontSize = '16px';
-    contentElement.style.lineHeight = '1.6';
-    
+    contentElement.className = 'textarea-fallback';
     showNotification('Verwende einfachen Textbereich', 'info');
-    
+
     // Event Listener für Preview-Update hinzufügen
     contentElement.addEventListener('input', updatePreview);
 }
@@ -822,7 +493,6 @@ function checkForDrafts() {
         }
     }
 }
-
 function saveDraft() {
     const title = document.getElementById('title').value;
     let content = '';
@@ -851,7 +521,6 @@ function saveDraft() {
     localStorage.setItem('blogpost_draft_content', JSON.stringify(draftData));
     //showNotification('Entwurf gespeichert', 'success');
 }
-
 function clearDraft() {
     localStorage.removeItem('blogpost_draft_content');
     const tinymceEditor = tinymce.get('content');
@@ -1230,7 +899,6 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
         }
     });
 }
-
 // Vereinfachter TinyMCE Upload-Handler (verwendet /upload/image ohne Komprimierung)
 function simpleImageUploadHandler(blobInfo, success, failure, progress) {
     return new Promise((resolve, reject) => {
@@ -1300,7 +968,6 @@ function simpleImageUploadHandler(blobInfo, success, failure, progress) {
         }
     });
 }
-
 // Sicherer Success-Wrapper für TinyMCE Upload-Handler
 function safeSuccess(success, imageUrl, context = 'Upload') {
     if (!success || typeof success !== 'function') {
@@ -1313,7 +980,6 @@ function safeSuccess(success, imageUrl, context = 'Upload') {
     if (!imageUrl || imageUrl.trim() === '') {
         throw new Error('Leere URL erhalten');
     }
-    
     success(imageUrl);
 }
 
@@ -1341,50 +1007,29 @@ async function handleUploadError(error, blobInfo, success, failure) {
         showNotification('Upload-Fehler: ' + error.message, 'error');
     }
 }
-
 // Upload-Fortschritts-Anzeige
 function showUploadProgress(filename, progress) {
     let progressContainer = document.getElementById('upload-progress');
-    
+
     if (!progressContainer) {
         progressContainer = document.createElement('div');
         progressContainer.id = 'upload-progress';
-        progressContainer.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            z-index: 10000;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            min-width: 300px;
-        `;
         document.body.appendChild(progressContainer);
     }
-    
+
     progressContainer.innerHTML = `
         <div class="upload-item">
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <i class="fas fa-upload" style="margin-right: 10px; color: #3498db;"></i>
-                <span style="font-weight: 500;">${filename}</span>
-            </div>
-            <div class="progress" style="height: 8px; background-color: #f0f0f0; border-radius: 4px;">
-                <div class="progress-bar" style="
-                    width: ${progress}%; 
-                    height: 100%; 
-                    background-color: #3498db; 
-                    border-radius: 4px;
-                    transition: width 0.3s ease;
-                "></div>
-            </div>
-            <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #666;">
-                ${progress}% hochgeladen
-            </div>
+            <i class="fas fa-upload upload-item-icon"></i>
+            <span class="upload-item-text">${filename}</span>
+        </div>
+        <div class="progress">
+            <div class="progress-bar" style="width: ${progress}%;"></div>
+        </div>
+        <div class="upload-progress-text">
+            ${progress}% hochgeladen
         </div>
     `;
-    
+
     if (progress >= 100) {
         setTimeout(() => {
             if (progressContainer.parentNode) {
@@ -1393,7 +1038,6 @@ function showUploadProgress(filename, progress) {
         }, 2000);
     }
 }
-
 // Bild-Komprimierungsfunktion
 function compressImage(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
     return new Promise((resolve, reject) => {
@@ -1442,7 +1086,6 @@ function compressImage(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
         reader.readAsDataURL(file);
     });
 }
-
 // Upload mit Retry-Logik und progressiver Komprimierung
 async function uploadWithRetry(base64Data, filename, originalBlob, success, failure, progress, attempt = 1) {
     const maxAttempts = 3;
@@ -1543,7 +1186,6 @@ async function uploadWithRetry(base64Data, filename, originalBlob, success, fail
         }
     }
 }
-
 // Bildvalidierung vor dem Upload
 function validateImageBeforeUpload(file) {
     const maxSize = 100 * 1024 * 1024; // 100MB absolutes Maximum
@@ -1559,24 +1201,19 @@ function validateImageBeforeUpload(file) {
     
     return true;
 }
-
 // Initialisierung und Event Listener
 async function initializeBlogEditor() {
     // Prüfe Admin Status
     if (!await checkAdminStatusCached()) {
         return;
     }
-
     // API-Schlüssel laden
     await loadTinyMceApiKey();
-    
     // TinyMCE initialisieren
     await initializeTinyMCE();
-    
     // Event Listener für Titel und Tags
     const titleElement = document.getElementById('title');
     const tagsElement = document.getElementById('tags');
-    
     if (titleElement) {
         titleElement.addEventListener('input', function() {
             updatePreview();
@@ -1585,7 +1222,6 @@ async function initializeBlogEditor() {
     } else {
         console.error('Title-Element nicht gefunden');
     }
-    
     if (tagsElement) {
         tagsElement.addEventListener('input', function() {
             updatePreview();
@@ -1595,6 +1231,7 @@ async function initializeBlogEditor() {
         console.error('Tags-Element nicht gefunden');
     }
 }
+
 
 // Debug-Funktion für Upload-Response (für Troubleshooting)
 function debugUploadResponse(result, context = 'Upload') {
@@ -1612,14 +1249,8 @@ function debugUploadResponse(result, context = 'Upload') {
     }
     return imageUrl;
 }
-
-// Globale Funktionen für TinyMCE Setup verfügbar machen
-//window.showTinyMceApiKeySetup = showTinyMceApiKeySetup;
-window.initializeBlogEditor = initializeBlogEditor;
-
-// // Test-Funktion für Upload-Handler (für Debugging)
+// Test-Funktion für Upload-Handler (für Debugging)
 function testImageUploadHandler() {
-    
     // Erstelle ein Test-Blob
     const canvas = document.createElement('canvas');
     canvas.width = 100;
@@ -1666,9 +1297,6 @@ function testImageUploadHandler() {
             });
     }, 'image/jpeg', 0.8);
 }
-
-// Globale Test-Funktion verfügbar machen
-window.testImageUploadHandler = testImageUploadHandler;
 
 // TinyMCE Connection Diagnostics
 function runTinyMCEDiagnostics() {
@@ -1722,7 +1350,10 @@ function runTinyMCEDiagnostics() {
     
     return diagnostics;
 }
-
+// Globale Test-Funktion verfügbar machen
+window.testImageUploadHandler = testImageUploadHandler;
+// Globale Funktionen für TinyMCE Setup verfügbar machen
+window.initializeBlogEditor = initializeBlogEditor;
 // Global verfügbar machen
 window.runTinyMCEDiagnostics = runTinyMCEDiagnostics;
 
