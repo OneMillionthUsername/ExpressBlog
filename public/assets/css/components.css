@@ -76,3 +76,187 @@
     background-color: #ffffff;
     outline: none;
 }
+
+/* ========================================
+   AI ASSISTANT
+   ======================================== */
+/* Animation für das Einblenden */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Animation für das Ausblenden */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+.ai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+.ai-modal-overlay.hidden {
+    animation: fadeOut 0.3s ease-out;
+}
+/* Modal Container */
+.ai-modal-container {
+    max-width: 600px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+/* Modal Header */
+.ai-modal-header {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+/* Modal Content */
+.ai-modal-content {
+    color: #666;
+    margin-bottom: 20px;
+}
+/* Modal Footer */
+.ai-modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+/* Modal Button */
+.ai-modal-button {
+    background: #3498db;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.ai-modal-button:hover {
+    background: #2980b9;
+}
+/* Titel-Vorschläge */
+.ai-title-suggestion {
+    margin: 10px 0;
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+    background: white;
+}
+.ai-title-suggestion:hover {
+    background: #f8f9fa;
+}
+/* Modal Container für Zusammenfassung */
+.ai-summary-modal-container {
+    max-width: 500px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+/* Header für Zusammenfassung */
+.ai-summary-modal-header {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+/* Inhalt der Zusammenfassung */
+.ai-summary-modal-content {
+    line-height: 1.6;
+    color: #555;
+}
+/* Footer für Zusammenfassung */
+.ai-summary-modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+/* Buttons für Zusammenfassung */
+.ai-summary-modal-button-primary {
+    background: #3498db;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.ai-summary-modal-button-primary:hover {
+    background: #2980b9;
+}
+.ai-summary-modal-button-secondary {
+    background: #6c757d;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.ai-summary-modal-button-secondary:hover {
+    background: #5a6268;
+}
+.ai-summary-modal-button-icon {
+    margin-right: 5px;
+}
+/* Modal Overlay für Google API Key */
+.google-api-key-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Modal Container für Google API Key */
+.google-api-key-modal-container {
+    background: #fff;
+    padding: 32px 24px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+}
+/* Inhalt des Modals */
+.google-api-key-modal-content {
+    white-space: pre-wrap;
+    font-size: 1em;
+    margin-bottom: 16px;
+}
+/* Footer des Modals */
+.google-api-key-modal-footer {
+    text-align: right;
+}
+/* Button für Google API Key Modal */
+.google-api-key-modal-button {
+    background: #3498db;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.google-api-key-modal-button:hover {
+    background: #2980b9;
+}

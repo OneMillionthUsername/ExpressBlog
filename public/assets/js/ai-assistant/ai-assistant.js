@@ -34,13 +34,6 @@ async function loadGeminiApiKey() {
     }
 }
 
-// API-Schlüssel speichern
-// function saveGeminiApiKey(apiKey) {
-//     dotenv.config().parsed.GEMINI_API_KEY = apiKey;
-//     GEMINI_CONFIG.apiKey = apiKey;
-//     updateAIButtons();
-// }
-
 // API-Schlüssel Setup-Dialog
 function showApiKeySetup() {
     const currentKey = GEMINI_CONFIG.apiKey;
@@ -50,17 +43,12 @@ function showApiKeySetup() {
         `2. Erstelle einen kostenlosen API-Schlüssel\n` +
         `3. Kopiere den Schlüssel in die .env Datei\n\n` +
         `Aktueller Schlüssel: ${currentKey ? currentKey.substring(0, 10) + '...' : 'Nicht gesetzt'}`;
-
-    
     const modalHtml = `
-        <div id="google-api-key-modal" style="
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.5); z-index: 99999; display: flex; align-items: center; justify-content: center;">
-            <div style="
-                background: #fff; padding: 32px 24px; border-radius: 8px; max-width: 400px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,0.2);">
-                <pre style="white-space:pre-wrap; font-size:1em; margin-bottom:16px;">${message}</pre>
-                <div style="text-align:right;">
-                    <button id="google-api-key-close" class="btn btn-outline-primary btn-sm ml-2" style="background:#3498db;color:#fff;">Schließen</button>
+        <div class="google-api-key-modal-overlay" id="google-api-key-modal">
+            <div class="google-api-key-modal-container">
+                <pre class="google-api-key-modal-content">${message}</pre>
+                <div class="google-api-key-modal-footer">
+                    <button id="google-api-key-close" class="google-api-key-modal-button">Schließen</button>
                 </div>
             </div>
         </div>
@@ -71,9 +59,7 @@ function showApiKeySetup() {
     document.getElementById('google-api-key-close').addEventListener('click', () => {
         document.getElementById('google-api-key-modal').remove();
     });
-    // Fokus auf das Modal setzen
-    document.getElementById('google-api-key-modal').focus();
-    return;
+    document.getElementById('google-api-key-close').focus();
 }
 
 // Gemini API-Aufruf
@@ -294,14 +280,14 @@ Regeln:
         
         // Zusammenfassung in einem Modal oder Alert anzeigen
         const summaryModal = `
-            <div style="max-width: 500px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <h4 style="color: #2c3e50; margin-bottom: 15px;">AI-Zusammenfassung</h4>
-                <p style="line-height: 1.6; color: #555;">${summary}</p>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="copyToClipboard('${summary.replace(/'/g, "\\'")}'); closeModal();" class="btn btn-primary btn-sm">
-                        <i class="fas fa-copy"></i> Kopieren
+            <div class="ai-summary-modal-container">
+                <h4 class="ai-summary-modal-header">AI-Zusammenfassung</h4>
+                <p class="ai-summary-modal-content">${summary}</p>
+                <div class="ai-summary-modal-footer">
+                    <button onclick="copyToClipboard('${summary.replace(/'/g, "\\'")}'); closeModal();" class="ai-summary-modal-button-primary">
+                        <i class="fas fa-copy ai-summary-modal-button-icon"></i> Kopieren
                     </button>
-                    <button onclick="closeModal();" class="btn btn-secondary btn-sm ml-2">Schließen</button>
+                    <button onclick="closeModal();" class="ai-summary-modal-button-secondary ml-2">Schließen</button>
                 </div>
             </div>
         `;
@@ -353,21 +339,19 @@ Regeln:
         const titlesArray = titleSuggestions.split('\n').filter(line => line.trim());
         const titlesHtml = titlesArray.map(title => {
             const cleanTitle = title.replace(/^\d+\.\s*/, '').trim();
-            return `<div style="margin: 10px 0; cursor: pointer; padding: 10px; border: 1px solid #e9ecef; border-radius: 5px; transition: all 0.3s;" 
-                         onclick="selectTitle('${cleanTitle.replace(/'/g, "\\'")}');" 
-                         onmouseover="this.style.background='#f8f9fa'" 
-                         onmouseout="this.style.background='white'">
-                        ${cleanTitle}
-                    </div>`;
+            return `<div class="ai-title-suggestion" onclick="selectTitle('${cleanTitle.replace(/'/g, "\\'")}');">
+                    ${cleanTitle}
+                </div>`;
         }).join('');
         
         const titleModal = `
-            <div style="max-width: 600px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <h4 style="color: #2c3e50; margin-bottom: 15px;">AI-Titel-Vorschläge</h4>
-                <p style="color: #666; margin-bottom: 20px;">Klicke auf einen Titel, um ihn zu übernehmen:</p>
-                ${titlesHtml}
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="closeModal();" class="btn btn-secondary">Schließen</button>
+            <div class="ai-modal-overlay" id="ai-modal-overlay">
+                <div class="ai-modal-container">
+                    <h4 class="ai-modal-header">AI-Titel-Vorschläge</h4>
+                    <p class="ai-modal-content">Klicke auf einen Titel, um ihn zu übernehmen:</p>
+                    <div class="ai-modal-footer">
+                        <button onclick="closeModal();" class="ai-modal-button">Schließen</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -386,7 +370,6 @@ Regeln:
 }
 
 // Hilfsfunktionen
-
 // Titel auswählen
 function selectTitle(title) {
     const titleInput = document.getElementById('title');
@@ -397,57 +380,53 @@ function selectTitle(title) {
     }
     closeModal();
 }
-
 // Text in Zwischenablage kopieren
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('In Zwischenablage kopiert!', 'success');
-    }).catch(err => {
-        console.error('Fehler beim Kopieren:', err);
-        // Fallback für ältere Browser
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification('In Zwischenablage kopiert!', 'success');
-    });
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Copied to clipboard!', 'success');
+        }).catch(err => {
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
 }
-
+function fallbackCopy(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showNotification('Copied to clipboard!', 'success');
+    } catch (err) {
+        showNotification('Copy failed!', 'error');
+    }
+    document.body.removeChild(textArea);
+}
 // Modal anzeigen
 function showModal(content) {
     const modalOverlay = document.createElement('div');
-    modalOverlay.id = 'ai-modal-overlay';
-    modalOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 10001;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        animation: fadeIn 0.3s ease-out;
-    `;
-    
-    modalOverlay.innerHTML = content;
+    modalOverlay.className = 'ai-modal-overlay';
+
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'ai-modal-container';
+    modalContainer.innerHTML = content;
+
     modalOverlay.onclick = function(e) {
         if (e.target === modalOverlay) {
             closeModal();
         }
     };
-    
+    modalOverlay.appendChild(modalContainer);
     document.body.appendChild(modalOverlay);
 }
-
 // Modal schließen
 function closeModal() {
-    const modal = document.getElementById('ai-modal-overlay');
+    const modal = document.querySelector('.ai-modal-overlay');
     if (modal) {
-        modal.style.animation = 'fadeOut 0.3s ease-out';
+        modal.classList.add('hidden');
         setTimeout(() => {
             if (modal.parentNode) {
                 modal.parentNode.removeChild(modal);
@@ -455,7 +434,6 @@ function closeModal() {
         }, 300);
     }
 }
-
 // AI-Button-Status aktualisieren
 function updateAIButtons() {
     const hasApiKey = !!GEMINI_CONFIG.apiKey;
@@ -474,10 +452,8 @@ function updateAIButtons() {
 
 // AI-System initialisieren
 async function initializeAISystem() {
-    
     // API-Schlüssel laden
     await loadGeminiApiKey();
-    
     // Button-Status aktualisieren
     updateAIButtons();
 }
