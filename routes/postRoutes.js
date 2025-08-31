@@ -67,6 +67,15 @@ postRouter.get('/by-id/:postId',
     res.status(500).json({ error: 'Server failed to load the blogpost' });
   }
 });
+postRouter.get('/archive', globalLimiter, async (req, res) => {
+  try {
+    const posts = await postController.getArchivedPosts();
+    res.json(convertBigInts(posts) || posts);
+  } catch (error) {
+    console.error('Error loading archived blog posts', error);
+    res.status(500).json({ error: 'Server failed to load archived blog posts' });
+  }
+});
 postRouter.post('/create', 
   strictLimiter,
   requireJsonContent,

@@ -267,6 +267,25 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getArchivedPosts() {
+    let conn;
+    try {
+      conn = await pool.getConnection();
+      const result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH');
+      if (!result || result.length === 0) {
+        return [];
+      }
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getArchivedPosts: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getPostsByTag(tag) {
     let conn;
     try {

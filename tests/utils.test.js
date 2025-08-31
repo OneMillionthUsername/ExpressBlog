@@ -20,9 +20,9 @@ import {
   convertBigInts,
 } from "../utils/utils.js";
 import { createEscapeInputMiddleware } from "../middleware/securityMiddleware.js";
-import { sanitizeFilename, escapeHtml, unescapeHtml } from '../utils/utils.js';
+import { sanitizeFilename, escapeHtml, unescapeHtml, escapeAllStrings } from '../utils/utils.js';
 
-const { escapeAllStrings, makeApiRequest } = await import('../utils/utils.js');
+const { makeApiRequest } = await import('../public/assets/js/api.js');
 let req, res, next, mockSanitize;
 
 beforeEach(() => {

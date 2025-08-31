@@ -4,13 +4,13 @@
  * adminController: Für die Logik hinter Admin-Funktionen
  */
 import express from 'express';
-import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { loginLimiter, strictLimiter } from '../utils/limiters.js';
 import * as adminController from "../controllers/adminController.js";
 import * as authService from "../services/authService.js";
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import { celebrate, Joi, Segments } from 'celebrate';
 import { IS_PRODUCTION } from '../config/config.js';
+import logger from '../utils/logger.js';
 
 const authRouter = express.Router();
 // authRouter.all('*', requireJsonContent, async (req, res) => {
@@ -59,7 +59,7 @@ authRouter.post('/login',
         // Authentication
         const admin = await Promise.race([authPromise, timeoutPromise]);
         if (!admin) {
-            console.warn(`[AUTH AUDIT] Failed login for username: ${req.body.username}`);
+            logger.warn(`[AUTH AUDIT] Failed login for username: ${req.body.username}`);
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
         // Token generation
@@ -72,7 +72,7 @@ authRouter.post('/login',
             maxAge: 24 * 60 * 60 * 1000, // 24h
             path: '/'                 // Für ganze Domain
         });
-        console.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
+        logger.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
         res.json({
             success: true,
             message: 'Login successful',
@@ -83,7 +83,7 @@ authRouter.post('/login',
             }
         });
     } catch (error) {
-        console.error(`[AUTH AUDIT] Login error for username: ${req.body.username}`, error);
+        logger.error(`[AUTH AUDIT] Login error for username: ${req.body.username}`, error);
         res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
@@ -109,7 +109,7 @@ authRouter.post('/verify',
             tokenSource = 'request body';
         }
         if (!token) {
-            console.warn(`[AUTH AUDIT] Token verification failed: No token found (source: ${tokenSource})`);
+            logger.warn(`[AUTH AUDIT] Token verification failed: No token found (source: ${tokenSource})`);
             return res.status(401).json({ 
                 success: false,
                 data: {
@@ -121,7 +121,7 @@ authRouter.post('/verify',
         let admin;
         admin = authService.verifyToken(token);
         if (!admin) {
-            console.warn(`[AUTH AUDIT] Token verification failed: Invalid or expired token (source: ${tokenSource})`);
+            logger.warn(`[AUTH AUDIT] Token verification failed: Invalid or expired token (source: ${tokenSource})`);
             return res.status(403).json({ 
                 success: false,
                 data: {
@@ -142,7 +142,7 @@ authRouter.post('/verify',
             }
         });
     } catch (error) {
-        console.error(`[AUTH AUDIT] Error during token verification (source: ${tokenSource}):`, err);
+        logger.error(`[AUTH AUDIT] Error during token verification (source: ${tokenSource}):`, error);
         return res.status(403).json({ 
             success: false,
             data: {

@@ -52,6 +52,8 @@ logger.info(`JSON body limit: ${config.JSON_BODY_LIMIT}`);
 logger.info(`URL-encoded body limit: ${config.URLENCODED_BODY_LIMIT}`);
 logger.debug('Logger system initialized - DEBUG level active');
 logger.debug('Test debug message - if you see this, debug logging works!');
+logger.debug(`__dirname: ${__dirname}`);
+logger.debug(`publicDirectoryPath: ${publicDirectoryPath}`);
 
 const app = express();
 
@@ -153,8 +155,8 @@ app.use(loggerMiddleware);
 app.use(csrfProtection);
 app.use(globalLimiter);
 app.use(middleware.errorHandlerMiddleware);
-app.set('views', join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+app.set('views', join(__dirname, 'views'));
 // Statische Dateien mit korrekten MIME-Types
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {

@@ -13,7 +13,8 @@ jest.unstable_mockModule("../databases/mariaDB.js", () => ({
     createPost: jest.fn(),
     updatePost: jest.fn(),
     getMostReadPosts: jest.fn(),
-    deletePost: jest.fn()
+    deletePost: jest.fn(),
+    getArchivedPosts: jest.fn()
   }
 }));
 
@@ -286,6 +287,43 @@ describe('PostController', () => {
         tags: ["test", "blog"],
         author: "Test Author"
       })).rejects.toThrow("Validation failed: ");
+    });
+  });
+describe('getArchivedPosts', () => {
+    it("returns only posts older than 3 months", async () => {
+      DatabaseService.getArchivedPosts.mockResolvedValueOnce([
+        {
+          id: 1,
+          slug: "archived-post",
+          title: "Archived Post",
+          content: "Archived content",
+          published: true,
+          created_at: new Date(Date.now() - 4 * 30 * 24 * 60 * 60 * 1000), // 4 Monate alt
+          updated_at: new Date(),
+          views: 0,
+          tags: ["archived"],
+          author: "Test Author"
+        }
+      ]);
+
+      // Aufruf der Methode
+      const result = await postController.default.getArchivedPosts();
+
+      // Erwartung: Nur der ältere Post wird zurückgegeben
+      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        id: 1,
+        slug: "archived-post",
+        title: "Archived Post",
+        content: "Archived content",
+        published: true,
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+        views: 0,
+        tags: ["archived"],
+        author: "Test Author"
+      });
     });
   });
   describe('getAllPosts', () => {

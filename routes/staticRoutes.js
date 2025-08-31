@@ -14,7 +14,7 @@ staticRouter.get('/createPost', (req, res) => {
 });
 
 staticRouter.get('/about.html', (req, res) => {
-  res.redirect('/pages/about.html');
+  res.redirect('/about');
 });
 
 export default staticRouter;

@@ -123,6 +123,32 @@ const getMostReadPosts = async () => {
     throw new PostControllerException(`Error fetching most read posts: ${error.message}`, error);
   }
 }
+const getArchivedPosts = async () => {
+  try {
+    const posts = await DatabaseService.getArchivedPosts();
+    if (!posts) {
+      throw new PostControllerException('No posts found');
+    }
+    const validPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      if (!value.published) {
+        continue;
+      }
+      validPosts.push(new Post(value));
+    }
+    if (validPosts.length === 0) {
+      throw new PostControllerException('No valid published posts found');
+    }
+    return validPosts;
+  } catch (error) {
+    throw new PostControllerException(`Error fetching archived posts: ${error.message}`, error);
+  }
+}
 const deletePost = async (postId) => {
   try {
     const result = await DatabaseService.deletePost(postId);
@@ -138,6 +164,7 @@ export default {
   getPostBySlug,
   createPost,
   getPostById,
+  getArchivedPosts,
   updatePost,
   getAllPosts,
   getMostReadPosts,

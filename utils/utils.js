@@ -15,32 +15,7 @@ const FORBIDDEN_KEYS = new Set([
   'constructor',
   'prototype'
 ]);
-export async function makeApiRequest(url, options = {}) {
-    try {
-        const response = await fetch(url, {
-            credentials: 'include', // sendet Cookies mit
-            headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-            ...options
-        });
-        // Versuche, JSON zu parsen, falls vorhanden
-        let result;
-        try {
-            result = await response.json();
-        } catch {
-            result = null;
-        }
-        if (!response.ok) {
-            return { 
-              success: false, 
-              error: result?.error || response.statusText, 
-              status: response.status 
-            };
-        }
-        return result;
-    } catch (error) {
-        throw new UtilsException(`API-Request fehlgeschlagen: ${error.message}`, error);
-    }
-}
+
 // Utility zum sicheren Escapen von Dateinamen
 export function sanitizeFilename(name) {
   return path.basename(name)                // Pfadbestandteile entfernen
@@ -194,49 +169,4 @@ export function incrementViews(req, postId) {
   DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
     console.error('Fehler beim Tracking:', err);
   });
-}
-// Feedback-Nachrichten anzeigen
-export function showFeedback(message, type = 'info') {
-    const feedbackContainer = document.getElementById('comment-feedback');
-    if (!feedbackContainer) {
-        // Falls kein Container vorhanden ist, erstelle einen
-        const container = document.createElement('div');
-        container.id = 'comment-feedback';
-        container.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 10000;
-            max-width: 400px;
-        `;
-        document.body.appendChild(container);
-    }
-    
-    const alertClass = type === 'success' ? 'alert-success' : 
-                      type === 'error' ? 'alert-danger' : 'alert-info';
-    
-    const feedback = document.createElement('div');
-    feedback.className = `alert ${alertClass} alert-dismissible fade show`;
-    feedback.innerHTML = `
-        ${message}
-        <button type="button" class="close" data-dismiss="alert">
-            <span>&times;</span>
-        </button>
-    `;
-    feedback.style.animation = 'slideInRight 0.3s ease-out';
-    
-    const container = document.getElementById('comment-feedback');
-    container.appendChild(feedback);
-    
-    // Auto-remove nach 4 Sekunden
-    setTimeout(() => {
-        if (feedback.parentNode) {
-            feedback.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => {
-                if (feedback.parentNode) {
-                    feedback.parentNode.removeChild(feedback);
-                }
-            }, 300);
-        }
-    }, 4000);
 }

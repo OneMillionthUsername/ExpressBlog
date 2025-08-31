@@ -6,7 +6,6 @@ const csrfProtection = csrf({
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
     }
-
 });
 
 export default csrfProtection;

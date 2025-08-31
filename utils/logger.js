@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // Log-Verzeichnis erstellen
-const LOG_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'logs');
+const LOG_DIR = join(__dirname, '..', 'logs');
 if (!existsSync(LOG_DIR)) {
     mkdirSync(LOG_DIR, { recursive: true });
 }

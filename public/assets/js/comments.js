@@ -1,4 +1,4 @@
-import { getUrlParameter, escapeHtml, showFeedback } from './utils.js';
+import { getUrlParameter, escapeHtml, showFeedback } from './api.js';
 import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema} from '../../../services/validationService.js';
 
 async function loadComments(postId) {
