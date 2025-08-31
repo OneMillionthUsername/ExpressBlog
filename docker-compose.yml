@@ -1,5 +1,7 @@
 services:
   app:
+    networks:
+      - expressblog_db
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,6 +19,8 @@ services:
       - /app/node_modules
 
   db:
+    networks:
+      - expressblog_db
     image: mariadb:latest
     container_name: expressblog_db
     restart: always
@@ -29,3 +33,7 @@ services:
 
 volumes:
   db_data:
+
+networks:
+  expressblog_db:
+    driver: bridge
