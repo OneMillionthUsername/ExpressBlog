@@ -16,7 +16,7 @@ class ModuleLoader {
     markLoaded(moduleName) {
         if (this.modules.hasOwnProperty(moduleName)) {
             this.modules[moduleName] = true;
-            //console.log(`Modul ${moduleName} geladen`);
+            console.log(`Modul ${moduleName} geladen`);
             
             if (this.allModulesLoaded()) {
                 this.executeCallbacks();

@@ -12,10 +12,25 @@ import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
 import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
-import { Post } from '../models/postModel.js';
 
-const pool = mariadb.createPool(dbConfig);
-
+let pool;
+try {
+    pool = mariadb.createPool(dbConfig);
+} catch (error) {
+    throw new databaseError(`Error creating MariaDB pool: ${error.message}`, error);
+}
+try {
+    pool.getConnection()
+        .then(conn => {
+            console.log('Connection successful');
+            conn.release();
+        })
+    .catch(err => {
+      console.error('Error getting connection:', err.message);
+    });
+} catch (error) {
+  throw new databaseError(`Error creating pool connection: ${error.message}`, error);
+}
 // Datenbankverbindung testen
 export async function testConnection() {
     let conn;
@@ -25,8 +40,7 @@ export async function testConnection() {
         console.log('MariaDB connection successful, Version:', result[0].version);
         return true;
     } catch (error) {
-        console.error('MariaDB connection failed:', error.message);
-        return false;
+        throw new databaseError(`MariaDB connection failed: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -105,27 +119,27 @@ export async function initializeDatabase() {
         `);
 
         // Analytics/Views-Tabelle
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS post_analytics (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                postId BIGINT NOT NULL,
-                event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
-                ip_address VARCHAR(45) DEFAULT NULL,
-                user_agent TEXT DEFAULT NULL,
-                referer VARCHAR(500) DEFAULT NULL,
-                country VARCHAR(50) DEFAULT NULL,
-                city VARCHAR(100) DEFAULT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        // await conn.query(`
+        //     CREATE TABLE IF NOT EXISTS post_analytics (
+        //         id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        //         postId BIGINT NOT NULL,
+        //         event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
+        //         ip_address VARCHAR(45) DEFAULT NULL,
+        //         user_agent TEXT DEFAULT NULL,
+        //         referer VARCHAR(500) DEFAULT NULL,
+        //         country VARCHAR(50) DEFAULT NULL,
+        //         city VARCHAR(100) DEFAULT NULL,
+        //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-                INDEX idx_analytics_postId (postId),
-                INDEX idx_analytics_event_type (event_type),
-                INDEX idx_analytics_created_at (created_at DESC),
-                INDEX idx_analytics_ip (ip_address),
+        //         INDEX idx_analytics_postId (postId),
+        //         INDEX idx_analytics_event_type (event_type),
+        //         INDEX idx_analytics_created_at (created_at DESC),
+        //         INDEX idx_analytics_ip (ip_address),
 
-                FOREIGN KEY (postId) REFERENCES posts(id)
-                    ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+        //         FOREIGN KEY (postId) REFERENCES posts(id)
+        //             ON DELETE CASCADE ON UPDATE CASCADE
+        //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        // `);
 
         // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
         await conn.query(`
@@ -187,8 +201,7 @@ export async function initializeDatabase() {
         console.log('MariaDB schema created/verified successfully');
         return true;
     } catch (error) {
-        console.error('Error creating MariaDB schema:', error);
-        return false;
+        throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }

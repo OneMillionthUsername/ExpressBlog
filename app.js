@@ -37,8 +37,7 @@ if (missingVars.length > 0) {
 // Database-integration
 import { 
     testConnection, 
-    initializeDatabase, 
-    DatabaseService 
+    initializeDatabase,  
 } from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -165,11 +164,11 @@ app.use(express.static(publicDirectoryPath, {
   }
 }));
   
-  // ===========================================
-  // PUBLIC ENDPOINTS
-  // ===========================================
-  
-  // Health Check Endpoint
+// ===========================================
+// PUBLIC ENDPOINTS
+// ===========================================
+
+// Health Check Endpoint
 app.use('/', routes.utilityRouter);
 app.use('/', routes.staticRouter);
 
