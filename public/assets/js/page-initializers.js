@@ -1,29 +1,3 @@
-// Create Navbar Initialisierung
-function renderNavbar() {
-    const navbarHTML = `
-    <nav class="navbar">
-      <div class="navbar-container">
-        <input type="checkbox" id="menu-toggle"/>
-        <div class="hamburger-lines">
-          <span class="line line1"></span>
-          <span class="line line2"></span>
-          <span class="line line3"></span>
-        </div>
-        <ul class="menu-items" id="navbar-menu-items">
-            <li class="menu-home"><a href="/index.html">Home</a></li>
-            <li><a href="/pages/list_posts.html">Posts</a></li>
-            <li><a href="/pages/most_read.html">Meistgelesen</a></li>
-            <li><a href="/pages/archiv.html">Archiv</a></li>
-            <li><a href="/pages/about.html">Kontakt</a></li>
-        </ul>
-        <a href="/index.html"><span class="logo">Sub specie aeternitatis</span></a>
-      </div>
-    </nav>
-    `;
-    document.body.insertAdjacentHTML('afterbegin', navbarHTML);
-}
-
-
 // Create Page Initialisierung
 async function initializeCreatePageComplete() {
     try {        
@@ -171,7 +145,6 @@ window.pageInitializers = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    renderNavbar();
     if (typeof addAdminMenuItemToNavbar === 'function') {
         addAdminMenuItemToNavbar();
     }

@@ -182,12 +182,9 @@ export function updateBlogPostUI(post) {
 export function initializeBlogPostForm() {
     const form = document.getElementById('blogPostForm');
     if (!form) return; // Element existiert nicht auf dieser Seite
-    
-    
     // Event-Listener für das Formular - create blogpost
     form.addEventListener('submit', async function(event) {
         event.preventDefault(); // Verhindert das Standard-Formular-Senden
-        
         // TinyMCE: Klasse zu allen Bildern hinzufügen
         if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
             const editor = tinymce.get('content');
@@ -196,9 +193,8 @@ export function initializeBlogPostForm() {
                 editor.dom.addClass(img, 'blogpost-content-img');
             });
         }
-        
         const postId = getUrlParameter('post');
-        const url = postId ? `/blogpost/update/${postId}` : '/blogpost';
+        const url = postId ? `/blogpost/update/${postId}` : '/create';
         const method = postId ? 'PUT' : 'POST';
 
         const title = document.getElementById('title').value;
