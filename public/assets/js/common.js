@@ -1,3 +1,7 @@
+import { checkAdminStatusCached } from "./admin.js";
+import logger from "../../../utils/logger.js"
+import e from "express";
+
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
 export function showElement(id) {
     const element = document.getElementById(id);
@@ -113,72 +117,66 @@ export function formatContent(content) {
         .replace(/\n/g, '<br>');
 }
 // Funktion zum Aktualisieren der UI mit Blogpost-Daten
-export function updateBlogPostUI(post) {
-    // TITLE: Titel setzen
-    document.getElementById('title').textContent = '';
-    document.title = `${post.title} - Sub specie aeternitatis`;
-    
+export function updateBlogPostUI(post) {    
     // META: Datum und Meta-Informationen
     const { postDate, postTime } = formatPostDate(post.created_at);
     const readingTime = calculateReadingTime(post.content);
     
-    // Prüfen ob ein Update-Datum existiert und neuer ist
+    // display dates
     let metaHtml = `<div class="post-date">Erstellt am ${postDate} um ${postTime}`;
-    
     if (post.updated_at && post.updated_at !== post.created_at) {
-        const updatedDate = new Date(post.updated_at);
-        const createdDate = new Date(post.created_at);
-        
-        if (updatedDate > createdDate) {
-            const { postDate: updateDate, postTime: updateTime } = formatPostDate(post.updated_at);
-            metaHtml += `<br><span class="post-updated">Zuletzt aktualisiert am ${updateDate} um ${updateTime}</span>`;
-        }
+        const { postDate: updateDate, postTime: updateTime } = formatPostDate(post.updated_at);
+        metaHtml += `<br><span class="post-updated">Zuletzt aktualisiert am ${updateDate} um ${updateTime}</span>`;
     }
-    
     metaHtml += `</div>`;
     
-    document.getElementById('meta').innerHTML = `
+    // display readingtime
+    const meta = document.getElementById('meta');
+    if(meta) meta.innerHTML = `
         ${metaHtml}
         <div class="post-reading-time">Lesezeit: ca. ${readingTime} min.</div>
     `;
-    
+    else {
+        console.warn('Meta element not found, skipping meta update');
+    }
+
     // CONTENT: Inhalt formatieren und einfügen
     const formattedContent = formatContent(post.content);
-    document.getElementById('content').innerHTML = `<p>${formattedContent}</p>`;
-    
+    const content = document.getElementById('content');
+    if (content) content.innerHTML = `<p>${formattedContent}</p>`;
+    else {
+        console.warn('Content element not found, skipping content update');
+    }
     // TAGS: Tags anzeigen
     if (post.tags && post.tags.length > 0) {
         const tagsHtml = post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ');
-        document.getElementById('tags').innerHTML = `
-            <div class="tags-label">Tags:</div>
-            <div class="tags-list">${tagsHtml}</div>
-        `;
-        document.getElementById('tags').style.display = 'block';
+        const tags = document.getElementById('tags');
+        if (tags) {
+            tags.innerHTML = `
+                <div class="tags-label">Tags:</div>
+                <div class="tags-list">${tagsHtml}</div>
+            `;
+            tags.style.display = 'block';
+        }
+        else {
+            tags.style.display = 'none';
+        }
     }
-    
     // Elemente sichtbar machen
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('post-article').style.display = 'block';
+    const loading = document.getElementById('loading');
+    if (loading) loading.style.display = 'none';
+    const postArticle = document.getElementById('post-article');
+    if (postArticle) postArticle.style.display = 'block';
     const mainTitle = document.getElementById('main-title');
-    if (mainTitle) {
-        mainTitle.textContent = post.title;
-    }
-    else {
-        console.warn('Main title element not found, using document title instead');
-    }
+    if (mainTitle) mainTitle.textContent = post.title || 'Untitled';
     const description = document.getElementById('description');
-    if (description) {
-        description.textContent = post.description || '';
-    }
-    else {
-        console.warn('Description element not found, skipping description update');
-    }
+    if (description) description.textContent = post.description || '';
 }
 // ===========================================
 // BLOG POST FORM HANDLING
 // ===========================================
 
-// Blog Post Form Handler (wird nur ausgeführt wenn das Element existiert)
+// Blog Post Form Handler
 export function initializeBlogPostForm() {
     const form = document.getElementById('blogPostForm');
     if (!form) return; // Element existiert nicht auf dieser Seite
@@ -193,11 +191,15 @@ export function initializeBlogPostForm() {
                 editor.dom.addClass(img, 'blogpost-content-img');
             });
         }
-        const postId = getUrlParameter('post');
+        const postId = getPostIdFromPath();
         const url = postId ? `/blogpost/update/${postId}` : '/create';
         const method = postId ? 'PUT' : 'POST';
 
         const title = document.getElementById('title').value;
+        if(!title || title.trim().length === 0) {
+            showNotification('Bitte geben Sie einen Titel ein.', 'error');
+            return;
+        }
         let content = '';
         if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
             content = tinymce.get('content').getContent();
@@ -217,11 +219,9 @@ export function initializeBlogPostForm() {
         };
 
         try {
-            
             const headers = {
                 'Content-Type': 'application/json'
             };
-
             // API-Request senden
             const response = await fetch(url, {
                 method: method,
@@ -229,22 +229,18 @@ export function initializeBlogPostForm() {
                 credentials: 'include',
                 body: JSON.stringify(postData)
             });
-
             // Erst prüfen, ob Response parsebar ist
             let result;
-            try {
-                result = await response.json();
-            } catch (parseError) {
-                console.error('Response ist kein gültiges JSON:', parseError);
+            result = await response.json();
+            if (!result) {
                 document.getElementById('responseMessage').textContent = 'Serverfehler: Ungültige Antwort';
                 return;
             }
-
             // Erfolgreiche Antwort
             if (response.ok) {
                 showNotification('Post erfolgreich gespeichert!', 'success');
                 setTimeout(() => {
-                    window.location.href = '/pages/list_posts.html';
+                    window.location.href = '/blogpost/all';
                 }, 1000);
                 return;
             }
@@ -265,14 +261,13 @@ export function initializeBlogPostForm() {
 
             if (response.ok) {
                 setTimeout(() => {
-                    window.location.href = 'list_posts.html'; // Weiterleitung zur Liste der Posts
+                    window.location.href = '/blogpost/all'; // Weiterleitung zur Liste der Posts
                 }, 1000); // 1 Sekunde warten
             } else {
-                console.error('Error creating blogpost:', result);
+                showNotification('Fehler beim Erstellen des Blogposts: ' + errorMessage, 'error');
             }
 
         } catch (error) {
-            console.error('Network or unexpected error:', error);
             document.getElementById('responseMessage').textContent = `Fehler: ${error.message}`;
         }
     });
@@ -371,7 +366,7 @@ export function showCreateCardModal() {
                 showNotification('Card konnte nicht erstellt werden', 'error');
             }
         } catch (error) {
-            console.error('Fehler im Endpunkt /cards:', error);
+            logger.error('Fehler im Endpunkt /cards:', error);
             showNotification('Fehler im Endpunkt /cards: ' + error.message, 'error');
         }
     };
@@ -480,68 +475,6 @@ export async function loadAndDisplayBlogPost() {
         document.getElementById('loading').innerHTML = '<p class="error-message">Error loading blogpost.</p>';
     }
 }
-// Funktion zum Aktualisieren der UI mit Blogpost-Daten
-export function updateBlogPostUI(post) {
-    // TITLE: Titel setzen
-    document.getElementById('title').textContent = '';
-    document.title = `${post.title} - Sub specie aeternitatis`;
-    
-    // META: Datum und Meta-Informationen
-    const { postDate, postTime } = formatPostDate(post.created_at);
-    const readingTime = calculateReadingTime(post.content);
-    
-    // Prüfen ob ein Update-Datum existiert und neuer ist
-    let metaHtml = `<div class="post-date">Erstellt am ${postDate} um ${postTime}`;
-    
-    if (post.updated_at && post.updated_at !== post.created_at) {
-        const updatedDate = new Date(post.updated_at);
-        const createdDate = new Date(post.created_at);
-        
-        if (updatedDate > createdDate) {
-            const { postDate: updateDate, postTime: updateTime } = formatPostDate(post.updated_at);
-            metaHtml += `<br><span class="post-updated">Zuletzt aktualisiert am ${updateDate} um ${updateTime}</span>`;
-        }
-    }
-    
-    metaHtml += `</div>`;
-    
-    document.getElementById('meta').innerHTML = `
-        ${metaHtml}
-        <div class="post-reading-time">Lesezeit: ca. ${readingTime} min.</div>
-    `;
-    
-    // CONTENT: Inhalt formatieren und einfügen
-    const formattedContent = formatContent(post.content);
-    document.getElementById('content').innerHTML = `<p>${formattedContent}</p>`;
-    
-    // TAGS: Tags anzeigen
-    if (post.tags && post.tags.length > 0) {
-        const tagsHtml = post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ');
-        document.getElementById('tags').innerHTML = `
-            <div class="tags-label">Tags:</div>
-            <div class="tags-list">${tagsHtml}</div>
-        `;
-        document.getElementById('tags').style.display = 'block';
-    }
-    
-    // Elemente sichtbar machen
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('post-article').style.display = 'block';
-    const mainTitle = document.getElementById('main-title');
-    if (mainTitle) {
-        mainTitle.textContent = post.title;
-    }
-    else {
-        console.warn('Main title element not found, using document title instead');
-    }
-    const description = document.getElementById('description');
-    if (description) {
-        description.textContent = post.description || '';
-    }
-    else {
-        console.warn('Description element not found, skipping description update');
-    }
-}
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)
 async function loadAndDisplayArchivePosts() {
     try {
@@ -589,7 +522,7 @@ async function loadAndDisplayArchivePosts() {
             const postDate = new Date(post.created_at).toLocaleDateString('de-DE');
             html += `
                 <div class="archive-post-item">
-                    <h3><a class="post-link-style" href="read_post.html?post=${post.id}">${post.title}</a></h3>
+                    <h3><a class="post-link-style" href="/blogpost/${post.id}0">${post.title}</a></h3>
                     <p class="post-meta">${postDate}</p>
                 </div>
             `;
@@ -704,7 +637,7 @@ async function loadAndDisplayRecentPosts() {
             html += `
                 <article class="post-card ${isNew ? 'post-card-new' : ''} ${isVeryNew ? 'post-card-very-new' : ''} ${isHot ? 'post-card-hot' : ''}">
                         <h3 class="post-card-title">
-                            <a class="post-link-style" href="/pages/read_post.html?post=${post.id}">${post.title}</a>
+                            <a class="post-link-style" href="/blogpost/${post.id}">${post.title}</a>
                         </h3>
                         <div class="post-card-meta">
                             <span class="post-date">${formattedDate}</span>
@@ -813,7 +746,7 @@ async function loadAndDisplayMostReadPosts() {
                 <div class="most-read-item">
                     <span class="rank">#${rank}</span>
                     <div class="most-read-content">
-                        <h3><a class="post-link-style" href="read_post.html?post=${Number(post.id)}">${post.title}</a></h3>
+                        <h3><a class="post-link-style" href="/blogpost/${post.id}">${post.title}</a></h3>
                         <p>${Number(post.views)} views | ${postDate}</p>
                     </div>
                 </div>
@@ -872,7 +805,7 @@ function reloadPageWithDelay(delay = 1000) {
 }
 // Blog Utilities initialisieren
 async function initializeBlogUtilities() {
-    // Blog Post Form initialisieren (nur wenn vorhanden)
+    // Blog Post Form initialisieren
     if (document.getElementById('blogPostForm')) {
         initializeBlogPostForm();
     }
@@ -880,13 +813,23 @@ async function initializeBlogUtilities() {
     return;
 }
 // Utility-Funktion zum Abrufen von URL-Parametern
-function getUrlParameter(paramName) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(paramName);
+// function getUrlParameter(paramName) {
+//     const urlParams = new URLSearchParams(window.location.search);
+//     return urlParams.get(paramName);
+// }
+export function getPostIdFromPath() {
+    const match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
+    const postId = match ? match[1] : null;
+    return postId;
+}
+export function getPostSlugFromPath() {
+    const match = window.location.pathname.match(/\/blogpost\/([^\/]+)/);
+    const slug = match ? match[1] : null;
+    return slug;
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
 async function checkAndPrefillEditPostForm() {
-    const postId = getUrlParameter('post');
+    const postId = getPostIdFromPath();
     if (!postId) return;
 
     // Postdaten laden
@@ -895,7 +838,7 @@ async function checkAndPrefillEditPostForm() {
     const post = await response.json();
 
     if (!post || !post.id) {
-        console.error('Post not found or invalid:', post);
+        showNotification('Blogpost nicht gefunden', 'error');
         return;
     }
     // Prüfen ob TinyMCE geladen ist
@@ -923,6 +866,7 @@ async function checkAndPrefillEditPostForm() {
             setTimeout(() => prefillWhenReady(retries - 1), 200); // 200ms warten, dann nochmal versuchen
         } else {
             console.warn('TinyMCE Editor nicht bereit, Prefill abgebrochen.');
+            return;
         }
     }
     prefillWhenReady();
@@ -938,10 +882,10 @@ async function addDeleteButtonsToPosts() {
         if (card.querySelector('.admin-delete-btn')) return;
 
         // Hole die Post-ID (passe an, falls du sie anders speicherst)
-        const link = card.querySelector('a[href*="read_post.html?post="]');
+        const link = card.querySelector('a[href*="/blogpost/${post.id}"]');
         if (!link) return;
         const url = new URL(link.href, window.location.origin);
-        const postId = url.searchParams.get('post');
+        const postId = url.pathname.split('/').pop();
         if (!postId) return;
 
         // Button erstellen
@@ -1019,7 +963,7 @@ async function renderPopularPostsSidebar(posts) {
     if (!list) return;
     list.innerHTML = '';
     popular.forEach(post => {
-        const li = createElement('li', {}, `<a class="featured-post-title" href="pages/read_post.html?post=${post.id}">${post.title}</a>`);
+        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${post.id}">${post.title}</a>`);
         list.appendChild(li);
     });
 }
@@ -1336,7 +1280,7 @@ function showNewPostNotification(newPosts) {
     // Add click event to navigate to first new post
     modal.addEventListener('click', (e) => {
         if (e.target.tagName !== 'BUTTON') {
-            window.location.href = `read_post.html?post=${newPosts[0].id}`;
+            window.location.href = `/blogpost/${newPosts[0].id}`;
         }
     });
     
@@ -1359,15 +1303,6 @@ if (document.readyState === 'loading') {
 }
 
 // Export functions globally
-window.initializeDarkMode = initializeDarkMode;
-window.toggleDarkMode = toggleDarkMode;
-window.applyTheme = applyTheme;
-window.addDeleteButtonsToPosts = addDeleteButtonsToPosts;
-
-window.escapeHtml = escapeHtml;
-window.unescapeHtml = unescapeHtml;
-window.showCreateCardModal = showCreateCardModal;
-window.showNotification = showNotification;
 
 // mark module as loaded
 if (window.moduleLoader) window.moduleLoader.markLoaded('utils');

@@ -8,7 +8,7 @@ import { URL } from 'url';
  * @param {*} id - Die zu prüfende ID.
  * @returns {boolean} - Ob die ID gültig ist.
  */
-function isValidIdSchema(id) {
+export function isValidIdSchema(id) {
     // Prüft, ob die ID existiert, ein String ist, nur Ziffern enthält und positiv ist
     if (typeof id !== 'string') return false;
     const trimmed = id.trim();
@@ -20,7 +20,7 @@ function isValidIdSchema(id) {
     if (parseInt(trimmed, 10) <= 0) return false;
     return true;
 }
-function isValidStringSchema(str, { min = 1, max = 1000, pattern = null, blacklist = [] } = {}) {
+export function isValidStringSchema(str, { min = 1, max = 1000, pattern = null, blacklist = [] } = {}) {
     if (typeof str !== 'string') return false;
     const trimmed = str.trim();
     if (trimmed.length < min || trimmed.length > max) return false;
@@ -28,7 +28,7 @@ function isValidStringSchema(str, { min = 1, max = 1000, pattern = null, blackli
     if (blacklist.some(word => trimmed.includes(word))) return false;
     return true;
 }
-function isValidUrlSchema(url) {
+export function isValidUrlSchema(url) {
     try {
         const u = new URL(url);
         // Nur http/https erlauben
@@ -40,7 +40,7 @@ function isValidUrlSchema(url) {
         return false;
     }
 }
-function isValidDateSchema(dateStr, { notPast = false, notFuture = false } = {}) {
+export function isValidDateSchema(dateStr, { notPast = false, notFuture = false } = {}) {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return false;
     const now = new Date();
@@ -48,12 +48,12 @@ function isValidDateSchema(dateStr, { notPast = false, notFuture = false } = {})
     if (notFuture && date > now) return false;
     return true;
 }
-function containsVisibleCharSchema(str) {
+export function containsVisibleCharSchema(str) {
     // Entfernt alle Whitespace- und unsichtbaren Unicode-Zeichen
     // und prüft, ob mindestens ein sichtbares Zeichen übrig bleibt
     return /[^\s\u200B-\u200D\uFEFF]/.test(str);
 }
-function isValidUsernameSchema(username) {
+export function isValidUsernameSchema(username) {
     if (typeof username !== 'string') return false;
     const trimmed = username.trim();
     if (trimmed.length === 0) return false;
@@ -61,7 +61,7 @@ function isValidUsernameSchema(username) {
     if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) return false;
     return true;
 }
-function isValidCommentSchema(commentText) {
+export function isValidCommentSchema(commentText) {
     if (typeof commentText !== 'string') return false;
     const trimmed = commentText.trim();
     if (trimmed.length < 1 || trimmed.length > 1000) return false;
@@ -74,7 +74,7 @@ function isValidCommentSchema(commentText) {
  * @param {string} password
  * @returns {boolean}
  */
-function isValidPasswordSchema(password) {
+export function isValidPasswordSchema(password) {
     if (typeof password !== 'string') return false;
     const trimmed = password.trim();
     if (trimmed.length < 8) return false; // Mindestlänge
@@ -96,4 +96,4 @@ const validationService = {
     isValidPasswordSchema
 };
 
-export default validationService;
+export { validationService };

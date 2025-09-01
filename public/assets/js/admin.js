@@ -1,6 +1,7 @@
 // Admin-System für den Blog
 // Alle admin-bezogenen Funktionen sind hier zentralisiert
-import { makeApiRequest, showFeedback } from "../../../utils/utils";
+import { makeApiRequest } from "../js/api.js";
+import { showFeedback } from "../js/feedback.js";
 import { isValidIdSchema, isValidPasswordSchema, isValidUsernameSchema} from '../../../services/validationService.js';
 
 // Admin-Status Variable (muss vor allen Funktionen stehen)
