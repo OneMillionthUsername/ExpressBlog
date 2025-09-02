@@ -172,6 +172,11 @@ export function updateBlogPostUI(post) {
     const description = document.getElementById('description');
     if (description) description.textContent = post.description || '';
 }
+function handleFormError(message, error = null) {
+    document.getElementById('responseMessage').textContent = message;
+    showNotification(message, 'error');
+    if (error) console.error(message, error);
+}
 // ===========================================
 // BLOG POST FORM HANDLING
 // ===========================================
@@ -179,10 +184,10 @@ export function updateBlogPostUI(post) {
 // Blog Post Form Handler
 export function initializeBlogPostForm() {
     const form = document.getElementById('blogPostForm');
-    if (!form) return; // Element existiert nicht auf dieser Seite
-    // Event-Listener für das Formular - create blogpost
+    if (!form) return;
     form.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Verhindert das Standard-Formular-Senden
+        event.preventDefault();
+
         // TinyMCE: Klasse zu allen Bildern hinzufügen
         if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
             const editor = tinymce.get('content');
@@ -191,84 +196,69 @@ export function initializeBlogPostForm() {
                 editor.dom.addClass(img, 'blogpost-content-img');
             });
         }
-        const postId = getPostIdFromPath();
+
+        const postId = window.getPostIdFromPath();
         const url = postId ? `/blogpost/update/${postId}` : '/create';
         const method = postId ? 'PUT' : 'POST';
 
         const title = document.getElementById('title').value;
-        if(!title || title.trim().length === 0) {
-            showNotification('Bitte geben Sie einen Titel ein.', 'error');
+        if (!title || title.trim().length === 0) {
+            window.showNotification('Bitte geben Sie einen Titel ein.', 'error');
             return;
         }
-        let content = '';
+
+        let content = document.getElementById('content').value;
         if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
             content = tinymce.get('content').getContent();
-        } else {
-            content = document.getElementById('content').value;
+        }
+        if(!content || content.trim().length === 0) {
+            window.showNotification('Bitte geben Sie einen Inhalt ein.', 'error');
+            return;
         }
         const tagsInput = document.getElementById('tags').value;
-
-        // Tags in ein Array umwandeln (optional, falls Tags als Array erwartet werden)
         const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
 
         const postData = {
-            title: title,
-            content: content,
-            tags: tags,
-            author: 'admin'  // Backend erwartet das author Feld
+            title,
+            content,
+            tags,
+            author: 'admin'
         };
 
         try {
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-            // API-Request senden
+            const headers = { 'Content-Type': 'application/json' };
             const response = await fetch(url, {
-                method: method,
-                headers: headers,
+                method,
+                headers,
                 credentials: 'include',
                 body: JSON.stringify(postData)
             });
-            // Erst prüfen, ob Response parsebar ist
+
             let result;
-            result = await response.json();
-            if (!result) {
-                document.getElementById('responseMessage').textContent = 'Serverfehler: Ungültige Antwort';
-                return;
-            }
-            // Erfolgreiche Antwort
-            if (response.ok) {
-                showNotification('Post erfolgreich gespeichert!', 'success');
-                setTimeout(() => {
-                    window.location.href = '/blogpost/all';
-                }, 1000);
+            try {
+                result = await response.json();
+            } catch (err) {
+                handleFormError('Serverfehler: Antwort konnte nicht gelesen werden.', err);
                 return;
             }
 
-            // Fehlerbehandlung
-            const errorMessage = result.error || result.message || 'Unbekannter Fehler';
-            
-            if (response.status === 401 || response.status === 403) {
-                document.getElementById('responseMessage').textContent = 'Session abgelaufen. Bitte melden Sie sich erneut an.';
-                if (typeof adminLogout === 'function') {
-                    await adminLogout();
+            if (!response.ok) {
+                const errorMessage = result?.error || result?.message || 'Unbekannter Fehler';
+                handleFormError(`Fehler beim Erstellen des Blogposts: ${errorMessage}`);
+                if (response.status === 401 || response.status === 403) {
+                    handleFormError('Session abgelaufen. Bitte melden Sie sich erneut an.');
+                    if (typeof adminLogout === 'function') await adminLogout();
                 }
                 return;
             }
-            
-            // Erfolgreiche Antwort
-            //document.getElementById('responseMessage').textContent = `Status: ${response.status} - ${result.message || result.error}`;
 
-            if (response.ok) {
-                setTimeout(() => {
-                    window.location.href = '/blogpost/all'; // Weiterleitung zur Liste der Posts
-                }, 1000); // 1 Sekunde warten
-            } else {
-                showNotification('Fehler beim Erstellen des Blogposts: ' + errorMessage, 'error');
-            }
+            window.showNotification('Post erfolgreich gespeichert!', 'success');
+            setTimeout(() => {
+                window.location.href = '/blogpost/all';
+            }, 1000);
 
         } catch (error) {
-            document.getElementById('responseMessage').textContent = `Fehler: ${error.message}`;
+            handleFormError(`Fehler: ${error.message}`, error);
         }
     });
 }
