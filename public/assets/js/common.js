@@ -106,7 +106,7 @@ export function formatPostDate(dateString) {
 // Funktion zur Berechnung der Lesezeit
 export function calculateReadingTime(content) {
     const wordsPerMinute = 200;
-    const words = content.split(' ').length;
+    const words = content.split(' ').filter(Boolean).length;
     return Math.ceil(words / wordsPerMinute);
 }
 // Funktion zum Formatieren von HTML-Content
