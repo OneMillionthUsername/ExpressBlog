@@ -466,7 +466,7 @@ export async function loadAndDisplayBlogPost() {
     }
 }
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)
-async function loadAndDisplayArchivePosts() {
+export async function loadAndDisplayArchivePosts() {
     try {
         const response = await fetch('/blogposts');
         const posts = await response.json();
@@ -532,7 +532,7 @@ async function loadAndDisplayArchivePosts() {
     }
 }
 // Funktion zum Laden und Anzeigen von aktuellen Posts (für list_posts.html)
-async function loadAndDisplayRecentPosts() {
+export async function loadAndDisplayRecentPosts() {
     try {
         const response = await fetch('/blogposts');
         if (!response.ok) {
@@ -680,7 +680,7 @@ async function loadAndDisplayRecentPosts() {
     }
 }
 // Funktion zum Laden und Anzeigen der meistgelesenen Posts (für most_read.html)
-async function loadAndDisplayMostReadPosts() {
+export async function loadAndDisplayMostReadPosts() {
     try {
         const response = await fetch('/most-read');
         const posts = await response.json();
@@ -765,7 +765,7 @@ async function loadAndDisplayMostReadPosts() {
 }
 // Post bearbeiten (spezifisch für read_post.html)
 // Edit Funktionen
-async function redirectEditPost(postId) {
+export async function redirectEditPost(postId) {
     if(!isAdminLoggedIn) {
         alert(ADMIN_MESSAGES.login.required);
         return;
@@ -776,7 +776,7 @@ async function redirectEditPost(postId) {
     window.location.href = createUrl.toString();
 }
 // Post löschen und zur Post-Liste weiterleiten (spezifisch für read_post.html)
-async function deletePostAndRedirect(postId) {
+export async function deletePostAndRedirect(postId) {
     if(!isAdminLoggedIn) {
         alert(ADMIN_MESSAGES.login.required);
         return;
@@ -785,17 +785,15 @@ async function deletePostAndRedirect(postId) {
     if (deleted) {
         // Nach dem Löschen zur Post-Liste weiterleiten
         window.location.href = 'list_posts.html';
-    }
-    else {
+    } else {
         console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
     }
 }
-function reloadPageWithDelay(delay = 1000) {
+export function reloadPageWithDelay(delay = 1000) {
     setTimeout(() => location.reload(), delay);
 }
 // Blog Utilities initialisieren
-async function initializeBlogUtilities() {
-    // Blog Post Form initialisieren
+export async function initializeBlogUtilities() {
     if (document.getElementById('blogPostForm')) {
         initializeBlogPostForm();
     }
@@ -818,7 +816,7 @@ export function getPostSlugFromPath() {
     return slug;
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
-async function checkAndPrefillEditPostForm() {
+export async function checkAndPrefillEditPostForm() {
     const postId = getPostIdFromPath();
     if (!postId) return;
 
@@ -862,7 +860,7 @@ async function checkAndPrefillEditPostForm() {
     prefillWhenReady();
 }
 // Fügt Delete-Buttons zu allen Posts hinzu (nur für Admins)
-async function addDeleteButtonsToPosts() {
+export async function addDeleteButtonsToPosts() {
     // Prüfe, ob Admin eingeloggt ist (passe ggf. an deine Logik an)
     if (!await checkAdminStatusCached()) return;
 
@@ -899,7 +897,7 @@ async function addDeleteButtonsToPosts() {
     });
 }
 // Funktion zum Rendern des Seitenleisten-Archivs
-async function renderSidebarArchive(posts) {
+export async function renderSidebarArchive(posts) {
     const archive = {};
     posts.forEach(post => {
         const year = new Date(post.created_at).getFullYear();
@@ -919,7 +917,7 @@ async function renderSidebarArchive(posts) {
 }
 // Funktion zum Rendern der Sidebar mit den beliebtesten Posts
 // Diese Funktion lädt alle Blogposts, filtert die letzten 3 Monate und sortiert sie
-async function renderPopularPostsSidebar(posts) {
+export async function renderPopularPostsSidebar(posts) {
     if (!Array.isArray(posts)) return;
 
     const now = new Date();
@@ -958,7 +956,7 @@ async function renderPopularPostsSidebar(posts) {
     });
 }
 // Hover-Effekte für Buttons (wiederverwendbar)
-function addHoverEffects(element, scaleUp = 1.1, scaleDown = 1) {
+export function addHoverEffects(element, scaleUp = 1.1, scaleDown = 1) {
     element.addEventListener('mouseenter', () => {
         element.style.transform = `scale(${scaleUp})`;
     });
@@ -1007,7 +1005,7 @@ function addHoverEffects(element, scaleUp = 1.1, scaleDown = 1) {
 // Dark Mode State Management
 let isDarkMode = false;
 // Dark Mode initialization
-function initializeDarkMode() {
+export function initializeDarkMode() {
     // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem('blog-theme');
     

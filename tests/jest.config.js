@@ -1,8 +1,12 @@
 // jest.config.js
 export default {
-  testEnvironment: 'node',
-  extensionsToTreatAsEsm: [".js"], 
+  testEnvironment: 'jsdom',
   transform: {}, // keine Babel/ts-jest Transformation
+  setupFilesAfterEnv: ['./setup.js'],
   //silent: true,
-  maxWorkes: 1
+  maxWorkers: 1,
+  moduleFileExtensions: ['js', 'json'],
+  testMatch: [
+    '**/*.test.js'
+  ]
 };
