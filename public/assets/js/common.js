@@ -25,14 +25,14 @@ export function toggleElementVisibility(id, show) {
 // Seiten-Refresh-Utilities (zentralisiert)
 export function refreshCurrentPage() {
     // Intelligenter Refresh basierend auf verfügbaren Funktionen
-    if (typeof loadAndDisplayRecentPosts === 'function') {
-        loadAndDisplayRecentPosts();
-    } else if (typeof loadAndDisplayArchivePosts === 'function') {
-        loadAndDisplayArchivePosts();
-    } else if (typeof loadAndDisplayMostReadPosts === 'function') {
-        loadAndDisplayMostReadPosts();
-    } else if (typeof loadAndDisplayBlogPost === 'function') {
-        loadAndDisplayBlogPost();
+    if (typeof window.loadAndDisplayRecentPosts === 'function') {
+        window.loadAndDisplayRecentPosts();
+    } else if (typeof window.loadAndDisplayArchivePosts === 'function') {
+        window.loadAndDisplayArchivePosts();
+    } else if (typeof window.loadAndDisplayMostReadPosts === 'function') {
+        window.loadAndDisplayMostReadPosts();
+    } else if (typeof window.loadAndDisplayBlogPost === 'function') {
+        window.loadAndDisplayBlogPost();
     } else {
         location.reload();
     }

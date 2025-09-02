@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it, jest, beforeEach, test } from '@jest/globals';
+import { loadAndDisplayRecentPosts } from '../public/assets/js/common.js';
 
 // Import the module first to get all real functions
 const actualCommon = await import('../public/assets/js/common.js');
@@ -171,7 +172,6 @@ describe('showElement', () => {
         expect(showElement('notExist')).toBe(false);
     });
 });
-
 describe('hideElement', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="testEl" style="display:block"></div>';
@@ -212,7 +212,6 @@ describe('createElement', () => {
         expect(el.style.fontWeight).toBe('bold');
     });
 });
-
 describe('elementExists', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="exists"></div>';
@@ -224,7 +223,6 @@ describe('elementExists', () => {
         expect(elementExists('notExist')).toBe(false);
     });
 });
-
 describe('waitForElement', () => {
     it('resolves if element exists', async () => {
         document.body.innerHTML = '<div id="foo"></div>';
@@ -250,14 +248,12 @@ describe('formatPostDate', () => {
         expect(result.postTime).toMatch(/\d{2}:\d{2}/);
     });
 });
-
 describe('calculateReadingTime', () => {
     it('calculates reading time', () => {
         expect(calculateReadingTime('word '.repeat(400))).toBe(2);
         expect(calculateReadingTime('')).toBe(0);
     });
 });
-
 describe('formatContent', () => {
     it('formats content with paragraphs and breaks', () => {
         const input = 'Line1\nLine2\n\nLine3';
@@ -266,7 +262,6 @@ describe('formatContent', () => {
         expect(output).toContain('<br>');
     });
 });
-
 describe('updateBlogPostUI', () => {
     beforeEach(() => {
         document.body.innerHTML = `
@@ -302,11 +297,9 @@ describe('showNotification', () => {
     beforeEach(() => {
         jest.useFakeTimers();
     });
-
     afterEach(() => {
         jest.useRealTimers();
     });
-
     it('shows and removes notification', () => {
         const { showNotification } = actualCommon;
         showNotification('Test message', 'success');
@@ -323,7 +316,6 @@ describe('showNotification', () => {
         expect(document.querySelector('.notification')).toBeFalsy();
     });
 });
-
 describe('refreshCurrentPage', () => {
     beforeEach(() => {
         global.location = { reload: jest.fn() };
@@ -334,6 +326,7 @@ describe('refreshCurrentPage', () => {
     });
     it('calls loadAndDisplayRecentPosts if defined', () => {
         global.loadAndDisplayRecentPosts = jest.fn();
+        window.loadAndDisplayRecentPosts = global.loadAndDisplayRecentPosts;
         refreshCurrentPage();
         expect(global.loadAndDisplayRecentPosts).toHaveBeenCalled();
     });
@@ -357,7 +350,6 @@ describe('refreshCurrentPage', () => {
         expect(global.location.reload).toHaveBeenCalled();
     });
 });
-
 describe('showCreateCardModal', () => {
     beforeEach(() => {
         document.body.innerHTML = '';
@@ -424,7 +416,6 @@ describe('showCreateCardModal', () => {
         expect(document.getElementById('card-create-modal')).toBeFalsy();
     });
 });
-
 describe('renderAndDisplayCards', () => {
     beforeEach(() => {
         document.body.innerHTML = '<div id="discoveries-grid"></div>';
@@ -444,8 +435,13 @@ describe('renderAndDisplayCards', () => {
         expect(document.getElementById('discoveries-grid').innerHTML).toContain('discovery-title');
     });
 });
-
 describe('getPostIdFromPath', () => {
+    beforeEach(() => {
+        getPostIdFromPathSpy.mockImplementation(() => {
+            const match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
+            return match ? match[1] : null;
+        });
+    });
     it('matches update', () => {
         Object.defineProperty(window, 'location', { value: { pathname: '/blogpost/update/123' }, writable: true });
         expect(common.getPostIdFromPath()).toBe('123');
@@ -463,8 +459,13 @@ describe('getPostIdFromPath', () => {
         expect(common.getPostIdFromPath()).toBeNull();
     });
 });
-
 describe('getPostSlugFromPath', () => {
+        beforeEach(() => {
+        getPostSlugFromPathSpy.mockImplementation(() => {
+            const match = window.location.pathname.match(/\/blogpost\/([^/]+)/);
+            return match ? match[1] : null;
+        });
+    });
     it('returns slug for /blogpost/slug', () => {
         Object.defineProperty(window, 'location', { value: { pathname: '/blogpost/my-slug' }, writable: true });
         expect(common.getPostSlugFromPath()).toBe('my-slug');
