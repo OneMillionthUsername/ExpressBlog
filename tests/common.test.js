@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { describe, expect, it, jest, beforeEach, test } from '@jest/globals';
+import { describe, expect, it, jest, beforeEach, test, afterAll } from '@jest/globals';
 import { loadAndDisplayRecentPosts } from '../public/assets/js/common.js';
 
 // Import the module first to get all real functions
@@ -23,6 +23,13 @@ jest.unstable_mockModule('../public/assets/js/common.js', () => ({
 
 // Import the module after mocking
 const common = await import('../public/assets/js/common.js');
+
+// Global cleanup to ensure Jest exits properly
+afterAll(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.clearAllMocks();
+});
 
 // Destructure the functions from the imported module
 const {
@@ -224,18 +231,30 @@ describe('elementExists', () => {
     });
 });
 describe('waitForElement', () => {
+    afterEach(() => {
+        // Clean up any pending timers
+        jest.clearAllTimers();
+    });
+    
     it('resolves if element exists', async () => {
         document.body.innerHTML = '<div id="foo"></div>';
         await expect(waitForElement('foo')).resolves.toBeInstanceOf(HTMLElement);
     });
+    
     it('waits for element to appear', async () => {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
             const el = document.createElement('div');
             el.id = 'bar';
             document.body.appendChild(el);
         }, 100);
-        await expect(waitForElement('bar', 500)).resolves.toBeInstanceOf(HTMLElement);
+        
+        try {
+            await expect(waitForElement('bar', 500)).resolves.toBeInstanceOf(HTMLElement);
+        } finally {
+            clearTimeout(timeoutId);
+        }
     });
+    
     it('rejects if element does not appear', async () => {
         await expect(waitForElement('never', 100)).rejects.toThrow();
     });
@@ -297,22 +316,25 @@ describe('showNotification', () => {
     beforeEach(() => {
         jest.useFakeTimers();
     });
+    
     afterEach(() => {
+        jest.runOnlyPendingTimers();
         jest.useRealTimers();
     });
+    
     it('shows and removes notification', () => {
         const { showNotification } = actualCommon;
         showNotification('Test message', 'success');
         const notif = document.querySelector('.notification');
         expect(notif).toBeTruthy();
         expect(notif.innerHTML).toContain('Test message');
-
+        
         // Fast-forward time
         jest.advanceTimersByTime(3000);
-
+        
         // Wait for animation
         jest.advanceTimersByTime(300);
-
+        
         expect(document.querySelector('.notification')).toBeFalsy();
     });
 });
@@ -363,6 +385,13 @@ describe('showCreateCardModal', () => {
         // Also add it to window object
         window.showNotification = showNotificationSpy;
     });
+    
+    afterEach(() => {
+        // Clean up any pending timers and DOM elements
+        jest.clearAllTimers();
+        document.body.innerHTML = '';
+    });
+    
     it('renders modal and handles submit success', async () => {
         showCreateCardModal();
         const modal = document.getElementById('card-create-modal');
@@ -376,8 +405,8 @@ describe('showCreateCardModal', () => {
         // Trigger the submit event
         form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-        // Wait for async operations to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Use microtask instead of setTimeout to avoid hanging timers
+        await Promise.resolve();
 
         // Check that the modal was removed (indicating success)
         expect(document.getElementById('card-create-modal')).toBeFalsy();
@@ -400,8 +429,8 @@ describe('showCreateCardModal', () => {
         // Trigger the submit event
         form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-        // Wait for async operations to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Use microtask instead of setTimeout to avoid hanging timers
+        await Promise.resolve();
 
         // Check that a notification was added to the DOM
         const notification = document.querySelector('.notification');
