@@ -10,140 +10,201 @@
 //server.js
 import http from 'http';
 import https from 'https';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import * as config from './config/config.js';
 import app from './app.js'; 
 import logger from './utils/logger.js';
 import { readFileSync } from 'fs';
+import { initializeDatabase } from './databases/mariaDB.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ===========================================
-// SERVER STARTEN
+// SERVER CONFIGURATION & STARTUP
 // ===========================================
-// Plesk-Environment-Erkennung
 
-console.log(`Server configuration:`);
-console.log(`HTTP Port: ${config.PORT}`);
-console.log(`HTTPS Port: ${config.HTTPS_PORT}`);
-console.log(`Host: ${config.HOST}`);
-console.log(`Domain: ${config.DOMAIN || 'not set'}`);
+// Global server references for graceful shutdown
+let httpServer = null;
+let httpsServer = null;
 
-// SSL-Zertifikate nur in Development laden (Plesk übernimmt SSL in Production)
-let httpsOptions = null;
-if (!config.IS_PLESK && !config.IS_PRODUCTION) {
-    logger.info('Loading SSL certificates for development...');
+// SSL Configuration
+function loadSSLCertificates() {
+    if (config.IS_PLESK || config.IS_PRODUCTION) {
+        return null; // SSL handled by Plesk/webserver
+    }
+    
     try {
-        const sslPath = join(__dirname, '..', 'ssl');
-        httpsOptions = {
+        const sslPath = join(__dirname, 'ssl');
+        const httpsOptions = {
             key: readFileSync(join(sslPath, 'private-key.pem')),
             cert: readFileSync(join(sslPath, 'certificate.pem'))
         };
-        console.log('SSL certificates loaded successfully (Development)');
         logger.info('SSL certificates loaded successfully (Development)');
+        return httpsOptions;
     } catch (error) {
-        console.warn('SSL certificates not found - HTTP only available');
-        console.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
         logger.warn('SSL certificates not found - HTTP only available');
         logger.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
+        return null;
     }
-} else {
-    logger.info('Production mode: SSL handled by Plesk/webserver');
 }
-
-// HTTP Server (für Entwicklung und Redirects)
-const httpServer = http.createServer(app);
-
-// Server-Timeouts konfigurieren
-httpServer.setTimeout(30000); // 30 Sekunden
-httpServer.headersTimeout = 31000; // Etwas höher als setTimeout
-
-httpServer.listen(config.PORT, config.HOST, () => {
-    const protocol = config.IS_PRODUCTION || httpsOptions ? 'https' : 'http';
-    const domain = process.env.DOMAIN || 'localhost';
-    const displayPort = (protocol === 'http' && config.PORT === 80) || (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
-
-    console.log(`HTTP Server running on ${config.HOST}:${config.PORT}`);
-    console.log(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
-    logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
-    logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
-
-    if(config.IS_PRODUCTION) {
-        logger.info('Production mode: SSL handled by Plesk/webserver');
-    }
-    else if (httpsOptions) {
-        logger.info('Development mode: SSL enabled with self-signed certificates');
-    }
-    else {
-        logger.info('Development mode: HTTP only - run "node ssl/generate-certs.js" to enable HTTPS');
-    }
-
-    if (config.IS_PLESK) {
-        logger.info('Plesk mode: SSL handled by Plesk');
-    } else if (!httpsOptions) {
-        console.warn('HTTP only available - run "node ssl/generate-certs.js" for HTTPS')
-        logger.warn('HTTP only available - run "node ssl/generate-certs.js" for HTTPS');
-    }
-}).on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} bereits in Verwendung!`);
-        console.error(`Tipp: Verwende einen anderen Port mit PORT=xxxx`);
-        logger.error(`${PORT} bereits in Verwendung!`);
-        logger.error(`Tipp: Verwende einen anderen Port mit PORT=xxxx`);
-    } else {
-        logger.error('Server-Fehler:', error);
-    }
-    process.exit(1);
-});
-
-// Graceful Shutdown Handler
-function gracefulShutdown(signal) {
-    console.log(`${signal} erhalten - starte Graceful Shutdown...`);
-    logger.info(`${signal} erhalten - starte Graceful Shutdown...`);
-    httpServer.close((err) => {
-        if (err) {
-            console.error('Fehler beim Schließen des HTTP-Servers:', err);
-            logger.error('Fehler beim Schließen des HTTP-Servers:', err);
-            process.exit(1);
+// Main server startup function
+async function startServer() {
+    try {
+        // Initialize database first
+        await initializeDatabase();
+        logger.info('Database initialized successfully');
+        
+        // Load SSL certificates if needed
+        const httpsOptions = loadSSLCertificates();
+        
+        // Log server configuration
+        logServerConfiguration();
+        
+        // Start HTTP server
+        await startHTTPServer();
+        
+        // Start HTTPS server if certificates are available
+        if (!config.IS_PLESK && httpsOptions) {
+            await startHTTPSServer(httpsOptions);
         }
-
-        logger.info('HTTP-Server geschlossen');
-        logger.info('Server erfolgreich beendet');
-        process.exit(0);
-    });
+        
+        // Setup graceful shutdown handlers
+        setupGracefulShutdown();
+        
+        logger.info('Server startup completed successfully');
+        
+    } catch (error) {
+        logger.error(`Error starting server: ${error.message}`, error);
+        console.error(`Error starting server: ${error.message}`);
+        process.exit(1);
+    }
 }
+// Start HTTP server
+function startHTTPServer() {
+    return new Promise((resolve, reject) => {
+        httpServer = http.createServer(app);
+        
+        // Configure server timeouts
+        httpServer.setTimeout(30000);
+        httpServer.headersTimeout = 31000;
+        
+        httpServer.listen(config.PORT, config.HOST, () => {
+            const protocol = config.IS_PRODUCTION ? 'https' : 'http';
+            const domain = config.DOMAIN || 'localhost';
+            const displayPort = (protocol === 'http' && config.PORT === 80) || 
+                              (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
 
-// HTTPS Server nur in Development starten
-if (!config.IS_PLESK && httpsOptions) {
-    logger.info('Loading SSL certificates for development...');
-    const httpsServer = https.createServer(httpsOptions, app);
-    httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
-        logger.info(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
-        logger.info('SSL/TLS enabled - secure connection available');
-        logger.info('Certificate: Self-signed for development (browser warning normal)');
-        logger.info('JWT authentication enabled');
-    });
-    
-    // Graceful shutdown für beide Server
-    ['SIGTERM', 'SIGINT', 'SIGUSR2'].forEach(signal => {
-        process.on(signal, () => {
-            logger.info(`${signal} erhalten - starte Graceful Shutdown...`);
-            httpServer.close((httpErr) => {
-                httpsServer.close((httpsErr) => {
-                    if (httpErr || httpsErr) {
-                        logger.error('Fehler beim Schließen der Server:', httpErr || httpsErr);
-                        process.exit(1);
-                    }
-                    logger.info('Beide Server geschlossen');
-                    logger.info('Server erfolgreich beendet');
-                    process.exit(0);
-                });
-            });
+            logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
+            logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
+            
+            if (config.IS_PRODUCTION || config.IS_PLESK) {
+                logger.info('Production mode: SSL handled by Plesk/webserver');
+            } else {
+                logger.info('Development mode: HTTP server started');
+            }
+            
+            resolve();
+        });
+        
+        httpServer.on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                const errorMsg = `Port ${config.PORT} bereits in Verwendung! Tipp: Verwende einen anderen Port mit PORT=xxxx`;
+                logger.error(errorMsg);
+                console.error(errorMsg);
+            } else {
+                logger.error('HTTP Server error:', error);
+            }
+            reject(error);
         });
     });
-} else {
-    // Graceful shutdown nur für HTTP
+}
+// Start HTTPS server (development only)
+function startHTTPSServer(httpsOptions) {
+    return new Promise((resolve, reject) => {
+        httpsServer = https.createServer(httpsOptions, app);
+        
+        httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
+            logger.info(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
+            logger.info('SSL/TLS enabled - secure connection available');
+            logger.info('Certificate: Self-signed for development (browser warning normal)');
+            resolve();
+        });
+        
+        httpsServer.on('error', (error) => {
+            logger.error('HTTPS Server error:', error);
+            reject(error);
+        });
+    });
+}
+// Log server configuration
+function logServerConfiguration() {
+    logger.info('=== Server Configuration ===');
+    logger.info(`Environment: ${config.IS_PRODUCTION ? 'Production' : 'Development'}`);
+    logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
+    logger.info(`HTTP Port: ${config.PORT}`);
+    logger.info(`HTTPS Port: ${config.HTTPS_PORT}`);
+    logger.info(`Host: ${config.HOST}`);
+    logger.info(`Domain: ${config.DOMAIN || 'not set'}`);
+}// Graceful shutdown setup
+function setupGracefulShutdown() {
     ['SIGTERM', 'SIGINT', 'SIGUSR2'].forEach(signal => {
         process.on(signal, () => gracefulShutdown(signal));
     });
 }
+// Graceful Shutdown Handler
+function gracefulShutdown(signal) {
+    logger.info(`${signal} received - starting graceful shutdown...`);
+    
+    const shutdownPromises = [];
+    
+    if (httpServer) {
+        shutdownPromises.push(
+            new Promise((resolve) => {
+                httpServer.close((err) => {
+                    if (err) {
+                        logger.error('Error closing HTTP server:', err);
+                    } else {
+                        logger.info('HTTP server closed');
+                    }
+                    resolve();
+                });
+            })
+        );
+    }
+    
+    if (httpsServer) {
+        shutdownPromises.push(
+            new Promise((resolve) => {
+                httpsServer.close((err) => {
+                    if (err) {
+                        logger.error('Error closing HTTPS server:', err);
+                    } else {
+                        logger.info('HTTPS server closed');
+                    }
+                    resolve();
+                });
+            })
+        );
+    }
+    
+    Promise.all(shutdownPromises).then(() => {
+        logger.info('All servers closed successfully');
+        process.exit(0);
+    }).catch((error) => {
+        logger.error('Error during graceful shutdown:', error);
+        process.exit(1);
+    });
+    
+    // Force exit after 10 seconds
+    setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+}
+// Start the server
+startServer();
 /**
 Keep routes modular: Separate routes based on features or entities (e.g., userRoutes, productRoutes).
 

@@ -1,6 +1,5 @@
 import { checkAdminStatusCached } from "./admin.js";
-import logger from "../../../utils/logger.js"
-import e from "express";
+import logger from "../../utils/logger.js"
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
 export function showElement(id) {
@@ -1024,8 +1023,8 @@ export function initializeDarkMode() {
     //     window.applyTinyMCETheme(isDarkMode);
     // }
     
-    // Create dark mode toggle button
-    createDarkModeToggle();
+    // Create floating menu with dark mode toggle
+    createFloatingMenu();
     
     // Listen for system theme changes
     if (window.matchMedia) {
@@ -1074,18 +1073,7 @@ function createFloatingMenu() {
     const clippyImg = document.createElement('img');
     clippyImg.src = '/assets/media/clippy.png';
     clippyImg.alt = 'Clippy';
-    clippyImg.style.width = '28px';
-    clippyImg.style.height = '28px';
-    clippyImg.style.verticalAlign = 'middle';
-
     menuToggle.appendChild(clippyImg);
-    
-    // Create minimalistic bars for toggle button
-    // for (let i = 0; i < 3; i++) {
-    //     const bar = document.createElement('div');
-    //     bar.className = `menu-bar bar-${i + 1}`;
-    //     menuToggle.appendChild(bar);
-    // }
     
     // Create menu options container
     const menuOptions = document.createElement('div');
@@ -1137,9 +1125,9 @@ function createFloatingMenu() {
     menuOptions.appendChild(darkModeBtn);
     menuOptions.appendChild(adminBtn);
     
-    // Add elements to menu - toggle button first (bottom), then options (above)
-    floatingMenu.appendChild(menuToggle);
+    // Add elements to menu - options first (above), then toggle button (bottom)
     floatingMenu.appendChild(menuOptions);
+    floatingMenu.appendChild(menuToggle);
     
     // Menu toggle functionality
     let isMenuOpen = false;
@@ -1171,10 +1159,6 @@ function updateDarkModeButtonIcon(button) {
     if (!button) return;
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     button.innerHTML = isDark ? '○' : '●';
-}
-// Legacy function for backward compatibility
-function createDarkModeToggle() {
-    createFloatingMenu();
 }
 // Update toggle button icon
 function updateToggleButtonIcon(button = null) {

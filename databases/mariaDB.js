@@ -12,207 +12,219 @@ import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
 import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
+import logger from '../utils/logger.js';
 
 let pool;
-try {
+
+export async function initializeDatabase() {
+  if (process.env.NODE_ENV === 'development' && !process.env.DB_HOST) {
+    logger.warn('Keine lokale Datenbank konfiguriert. Überspringe Datenbank-Initialisierung.');
+    return;
+  }
+  
+  try {
     pool = mariadb.createPool(dbConfig);
-} catch (error) {
-    throw new databaseError(`Error creating MariaDB pool: ${error.message}`, error);
+
+    const connection = await pool.getConnection();
+    connection.release();
+  } catch (error) {
+    logger.error(`Error creating MariaDB pool connection: ${error.message}`);
+    console.error(`Error creating MariaDB pool connection: ${error.message}`);
+    throw new databaseError(`Error creating pool connection: ${error.message}`, error);
+  }
 }
-try {
-    pool.getConnection()
-        .then(conn => {
-            console.log('Connection successful');
-            conn.release();
-        })
-    .catch(err => {
-      console.error('Error getting connection:', err.message);
-    });
-} catch (error) {
-  throw new databaseError(`Error creating pool connection: ${error.message}`, error);
+export function getDatabasePool() {
+    if (!pool) {
+        logger.error('Kein Pool oder Datenbank wurde nicht initialisiert. Rufen Sie initializeDatabase() auf.');
+        throw new databaseError('Datenbank wurde nicht initialisiert. Rufen Sie initializeDatabase() auf.');
+    }
+    return pool;
 }
 // Datenbankverbindung testen
 export async function testConnection() {
     let conn;
     try {
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query('SELECT VERSION() as version');
         console.log('MariaDB connection successful, Version:', result[0].version);
+        logger.info('MariaDB connection successful, Version: ' + result[0].version);
         return true;
     } catch (error) {
-        throw new databaseError(`MariaDB connection failed: ${error.message}`, error);
+      logger.error(`MariaDB connection failed: ${error.message}`);
+      throw new databaseError(`MariaDB connection failed: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
 }
-export async function initializeDatabase() {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        console.log('Initializing MariaDB schema...');
+export async function initializeDatabaseSchema() {
+  let conn;
+  try {
+      conn = await getDatabasePool().getConnection();
+      console.log('Initializing MariaDB schema...');
+      logger.info('Initializing MariaDB schema...');
+      // Posts-Tabelle
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS posts (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              title VARCHAR(255) NOT NULL,
+              content LONGTEXT NOT NULL,
+              slug VARCHAR(50) NOT NULL UNIQUE,
+              tags JSON DEFAULT NULL,
+              author VARCHAR(100) DEFAULT 'admin',
+              views BIGINT DEFAULT 0,
+              published BOOLEAN DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              
+              INDEX idx_posts_created_at (created_at DESC),
+              INDEX idx_posts_views (views DESC),
+              INDEX idx_posts_author (author),
+              INDEX idx_posts_published (published)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-        // Posts-Tabelle
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS posts (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                content LONGTEXT NOT NULL,
-                slug VARCHAR(50) NOT NULL UNIQUE,
-                tags JSON DEFAULT NULL,
-                author VARCHAR(100) DEFAULT 'admin',
-                views BIGINT DEFAULT 0,
-                published BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                
-                INDEX idx_posts_created_at (created_at DESC),
-                INDEX idx_posts_views (views DESC),
-                INDEX idx_posts_author (author),
-                INDEX idx_posts_published (published)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+      // Comments-Tabelle
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS comments (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              postId BIGINT NOT NULL,
+              username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
+              text VARCHAR(1000) NOT NULL,
+              ip_address VARCHAR(45) DEFAULT NULL,
+              approved BOOLEAN DEFAULT 1,
+              published BOOLEAN DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-        // Comments-Tabelle
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS comments (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                postId BIGINT NOT NULL,
-                username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
-                text VARCHAR(1000) NOT NULL,
-                ip_address VARCHAR(45) DEFAULT NULL,
-                approved BOOLEAN DEFAULT 1,
-                published BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              INDEX idx_comments_postId (postId),
+              INDEX idx_comments_created_at (created_at DESC),
+              INDEX idx_comments_approved (approved),
 
-                INDEX idx_comments_postId (postId),
-                INDEX idx_comments_created_at (created_at DESC),
-                INDEX idx_comments_approved (approved),
+              FOREIGN KEY (postId) REFERENCES posts(id)
+                  ON DELETE CASCADE ON UPDATE CASCADE
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-                FOREIGN KEY (postId) REFERENCES posts(id)
-                    ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+      // Uploads/Media-Tabelle
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS media (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              postId BIGINT NOT NULL,
+              original_name VARCHAR(255) NOT NULL,
+              file_size BIGINT DEFAULT NULL,
+              mime_type VARCHAR(100) DEFAULT NULL,
+              uploaded_by VARCHAR(100) DEFAULT NULL,
+              upload_path VARCHAR(500) DEFAULT NULL,
+              alt_text VARCHAR(255) DEFAULT NULL,
+              used_in_posts JSON DEFAULT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              
+              INDEX idx_media_uploaded_by (uploaded_by),
+              INDEX idx_media_created_at (created_at DESC),
+              INDEX idx_media_mime_type (mime_type),
+              INDEX idx_media_original_name(original_name),
 
-        // Uploads/Media-Tabelle
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS media (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                postId BIGINT NOT NULL,
-                original_name VARCHAR(255) NOT NULL,
-                file_size BIGINT DEFAULT NULL,
-                mime_type VARCHAR(100) DEFAULT NULL,
-                uploaded_by VARCHAR(100) DEFAULT NULL,
-                upload_path VARCHAR(500) DEFAULT NULL,
-                alt_text VARCHAR(255) DEFAULT NULL,
-                used_in_posts JSON DEFAULT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                
-                INDEX idx_media_uploaded_by (uploaded_by),
-                INDEX idx_media_created_at (created_at DESC),
-                INDEX idx_media_mime_type (mime_type),
-                INDEX idx_media_original_name(original_name),
+              FOREIGN KEY (postId) REFERENCES posts(id)
+                  ON DELETE CASCADE ON UPDATE CASCADE
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-                FOREIGN KEY (postId) REFERENCES posts(id)
-                    ON DELETE CASCADE ON UPDATE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+      // Analytics/Views-Tabelle
+      // await conn.query(`
+      //     CREATE TABLE IF NOT EXISTS post_analytics (
+      //         id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      //         postId BIGINT NOT NULL,
+      //         event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
+      //         ip_address VARCHAR(45) DEFAULT NULL,
+      //         user_agent TEXT DEFAULT NULL,
+      //         referer VARCHAR(500) DEFAULT NULL,
+      //         country VARCHAR(50) DEFAULT NULL,
+      //         city VARCHAR(100) DEFAULT NULL,
+      //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-        // Analytics/Views-Tabelle
-        // await conn.query(`
-        //     CREATE TABLE IF NOT EXISTS post_analytics (
-        //         id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        //         postId BIGINT NOT NULL,
-        //         event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
-        //         ip_address VARCHAR(45) DEFAULT NULL,
-        //         user_agent TEXT DEFAULT NULL,
-        //         referer VARCHAR(500) DEFAULT NULL,
-        //         country VARCHAR(50) DEFAULT NULL,
-        //         city VARCHAR(100) DEFAULT NULL,
-        //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      //         INDEX idx_analytics_postId (postId),
+      //         INDEX idx_analytics_event_type (event_type),
+      //         INDEX idx_analytics_created_at (created_at DESC),
+      //         INDEX idx_analytics_ip (ip_address),
 
-        //         INDEX idx_analytics_postId (postId),
-        //         INDEX idx_analytics_event_type (event_type),
-        //         INDEX idx_analytics_created_at (created_at DESC),
-        //         INDEX idx_analytics_ip (ip_address),
+      //         FOREIGN KEY (postId) REFERENCES posts(id)
+      //             ON DELETE CASCADE ON UPDATE CASCADE
+      //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      // `);
 
-        //         FOREIGN KEY (postId) REFERENCES posts(id)
-        //             ON DELETE CASCADE ON UPDATE CASCADE
-        //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        // `);
+      // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS admins (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              username VARCHAR(100) UNIQUE NOT NULL,
+              password_hash VARCHAR(255) NOT NULL,
+              email VARCHAR(255) DEFAULT NULL,
+              full_name VARCHAR(255) DEFAULT NULL,
+              role ENUM('admin', 'editor', 'viewer') DEFAULT 'admin',
+              active BOOLEAN DEFAULT 1,
+              last_login DATETIME DEFAULT NULL,
+              login_attempts INT DEFAULT 0,
+              locked_until DATETIME DEFAULT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              
+              INDEX idx_admins_username (username),
+              INDEX idx_admins_active (active),
+              INDEX idx_admins_role (role),
+              INDEX idx_admins_last_login (last_login)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-        // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS admins (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(100) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                email VARCHAR(255) DEFAULT NULL,
-                full_name VARCHAR(255) DEFAULT NULL,
-                role ENUM('admin', 'editor', 'viewer') DEFAULT 'admin',
-                active BOOLEAN DEFAULT 1,
-                last_login DATETIME DEFAULT NULL,
-                login_attempts INT DEFAULT 0,
-                locked_until DATETIME DEFAULT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                
-                INDEX idx_admins_username (username),
-                INDEX idx_admins_active (active),
-                INDEX idx_admins_role (role),
-                INDEX idx_admins_last_login (last_login)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+      // Backup-Tabelle für gelöschte Posts (Wiederherstellung)
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS deleted_posts (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              original_id BIGINT NOT NULL,
+              title VARCHAR(500) NOT NULL,
+              content LONGTEXT NOT NULL,
+              tags JSON DEFAULT NULL,
+              author VARCHAR(100) DEFAULT NULL,
+              views BIGINT DEFAULT 0,
+              original_created_at DATETIME NOT NULL,
+              deleted_by VARCHAR(100) NOT NULL,
+              deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              reason TEXT DEFAULT NULL,
 
-        // Backup-Tabelle für gelöschte Posts (Wiederherstellung)
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS deleted_posts (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                original_id BIGINT NOT NULL,
-                title VARCHAR(500) NOT NULL,
-                content LONGTEXT NOT NULL,
-                tags JSON DEFAULT NULL,
-                author VARCHAR(100) DEFAULT NULL,
-                views BIGINT DEFAULT 0,
-                original_created_at DATETIME NOT NULL,
-                deleted_by VARCHAR(100) NOT NULL,
-                deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                reason TEXT DEFAULT NULL,
+              INDEX idx_deleted_posts_original_id (original_id),
+              INDEX idx_deleted_posts_deleted_at (deleted_at DESC),
+              INDEX idx_deleted_posts_author (author),
+              INDEX idx_deleted_posts_deleted_by (deleted_by)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-                INDEX idx_deleted_posts_original_id (original_id),
-                INDEX idx_deleted_posts_deleted_at (deleted_at DESC),
-                INDEX idx_deleted_posts_author (author),
-                INDEX idx_deleted_posts_deleted_by (deleted_by)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
+      // Karten-Tabelle
+      await conn.query(`
+          CREATE TABLE IF NOT EXISTS cards (
+              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+              title VARCHAR(200) NOT NULL,
+              subtitle VARCHAR(200) DEFAULT NULL,
+              link VARCHAR(500) NOT NULL,
+              img VARCHAR(500) NOT NULL,
+              published BOOLEAN DEFAULT 0
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
 
-        // Karten-Tabelle
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS cards (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(200) NOT NULL,
-                subtitle VARCHAR(200) DEFAULT NULL,
-                link VARCHAR(500) NOT NULL,
-                img VARCHAR(500) NOT NULL,
-                published BOOLEAN DEFAULT 0
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        console.log('MariaDB schema created/verified successfully');
-        return true;
+      console.log('MariaDB schema created/verified successfully');
+      logger.info('MariaDB schema created/verified successfully');
+      return true;
     } catch (error) {
+        logger.error(`Error creating MariaDB schema: ${error.message}`);
         throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
-    }
+      if (conn) conn.release();
+  }
 }
-
 export const DatabaseService = {
   // Posts
   async getPostBySlug(slug) {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       //const { query, params } = queryBuilder('get', 'posts', { slug });
       //const result = await conn.query(query, params);
       const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
@@ -221,6 +233,7 @@ export const DatabaseService = {
       if (!result[0].published) return null;
       return convertBigInts(result[0]);
     } catch (error) {
+      logger.error(`Error in getPostBySlug: ${error.message}`);
       throw new databaseError(`Error in getPostBySlug: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -229,11 +242,12 @@ export const DatabaseService = {
   async getPostById(id) {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const { query, params } = queryBuilder('get', 'posts', { id });
       const result = await conn.query(query, params);
       //const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
       if(!result || result.length === 0) {
+        logger.warn(`Post with ID ${id} not found`);
         throw new Error('Post not found');
       }
       const post = result[0];
@@ -241,6 +255,7 @@ export const DatabaseService = {
       post.tags = parseTags(post.tags);
       return post;
     } catch (error) {
+      logger.error(`Error in getPostById: ${error.message}`);
       throw new databaseError(`Error in getPostById: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -249,7 +264,7 @@ export const DatabaseService = {
   async getAllPosts() {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const { query, params } = queryBuilder('get', 'posts');
       const result = await conn.query(query, params);
       //const result = await conn.query('SELECT * FROM posts');
@@ -262,6 +277,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
+      logger.error(`Error in getAllPosts: ${error.message}`);
       throw new databaseError(`Error in getAllPosts: ${error.message}`);
     } finally {
       if (conn) conn.release();
@@ -270,7 +286,7 @@ export const DatabaseService = {
   async getArchivedPosts() {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH');
       if (!result || result.length === 0) {
         return [];
@@ -281,6 +297,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
+      logger.error(`Error in getArchivedPosts: ${error.message}`);
       throw new databaseError(`Error in getArchivedPosts: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -289,7 +306,7 @@ export const DatabaseService = {
   async getPostsByTag(tag) {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const { query, params } = queryBuilder('read', 'posts', { tags: { like: `%${tag}%` } });
       const result = await conn.query(query, params);
       //const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
@@ -302,7 +319,8 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
-      throw new databaseError('Error in getPostsByTag:', error);
+      logger.error(`Error in getPostsByTag: ${error.message}`);
+      throw new databaseError(`Error in getPostsByTag: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -310,7 +328,7 @@ export const DatabaseService = {
   async getMostReadPosts() {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM posts ORDER BY views DESC LIMIT 5');
       if(!result || result.length === 0) {
         throw new Error('No posts found');
@@ -321,6 +339,7 @@ export const DatabaseService = {
         return post;
       });
     } catch (error) {
+      logger.error(`Error in getMostReadPosts: ${error.message}`);
       throw new databaseError(`Error in getMostReadPosts: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -330,7 +349,7 @@ export const DatabaseService = {
     // TODO: Implement tracking of post views
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const update = await conn.query('UPDATE posts SET views = views + 1 WHERE id = ?', [postId]);
       if(!update || update.affectedRows === 0) {
         throw new Error('No rows affected');
@@ -338,6 +357,7 @@ export const DatabaseService = {
       return { success: true };
       //await conn.query(`INSERT INTO post_views (postId, event_type, ip_address, user_agent, referer) VALUES (?, 'view', ?, ?, ?)`, [postId, ipAddress, userAgent, referer]);
     } catch (error) {
+      logger.error(`Error in increasePostViews: ${error.message}`);
       throw new databaseError(`Error in increasePostViews: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -355,7 +375,7 @@ export const DatabaseService = {
         throw new databaseError('No fields provided for update');
       }
 
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
 
       const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, post.id]);
       if(!result || result.affectedRows === 0) {
@@ -363,6 +383,7 @@ export const DatabaseService = {
       }
       return { success: true };
     } catch (error) {
+      logger.error(`Error in updatePost: ${error.message}`);
       throw new databaseError(`Error in updatePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -371,13 +392,14 @@ export const DatabaseService = {
   async deletePost(id) {
     let conn;
     try {
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
       return { success: true };
     } catch (error) {
+      logger.error(`Error in deletePost: ${error.message}`);
       throw new databaseError(`Error in deletePost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -389,13 +411,14 @@ export const DatabaseService = {
       if(postData === null || typeof postData !== 'object' || Object.keys(postData).length === 0) {
         throw new databaseError('Post is null or invalid');
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('INSERT INTO posts SET ?', [postData]);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to create post');
       }
       return { success: true, id: result.insertId, ...postData };
     } catch (error) {
+      logger.error(`Error in createPost: ${error.message}`);
       throw new databaseError(`Error in createPost: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
@@ -408,7 +431,7 @@ export const DatabaseService = {
           if (!cardData || typeof cardData !== 'object') {
             throw new databaseError("Card is null or invalid");
           }
-          conn = await pool.getConnection();
+          conn = await getDatabasePool().getConnection();
           const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
           if (result.affectedRows === 0) {
               throw new Error('No rows affected');
@@ -418,7 +441,8 @@ export const DatabaseService = {
             card: {...cardData, id: Number(result.insertId)}
           };
       } catch (error) {
-          throw new databaseError(`Error in createCard: ${error.message}`, error);
+        logger.error(`Error in createCard: ${error.message}`);
+        throw new databaseError(`Error in createCard: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
       }
@@ -426,7 +450,7 @@ export const DatabaseService = {
   async getAllCards() {
       let conn;
       try {
-          conn = await pool.getConnection();
+          conn = await getDatabasePool().getConnection();
           const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
           if (!result || result.length === 0) {
               throw new Error('No cards found');
@@ -435,7 +459,8 @@ export const DatabaseService = {
               ...convertBigInts(card)
           }));
       } catch (error) {
-          throw new databaseError(`Error in getAllCards: ${error.message}`, error);
+        logger.error(`Error in getAllCards: ${error.message}`);
+        throw new databaseError(`Error in getAllCards: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
       }
@@ -446,13 +471,14 @@ export const DatabaseService = {
         if(cardId === null || isNaN(cardId)) {
             throw new databaseError("ID is null or invalid");
         }
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
         return result.length > 0 ? {
             ...convertBigInts(result[0])
         } : null;
     } catch (error) {
-        throw new databaseError(`Error in getCardById: ${error.message}`, error);
+      logger.error(`Error in getCardById: ${error.message}`);
+      throw new databaseError(`Error in getCardById: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -463,7 +489,7 @@ export const DatabaseService = {
         if(cardId === null || isNaN(cardId)) {
             throw new databaseError("ID is null or invalid");
         }
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query('DELETE FROM cards WHERE id = ?', [cardId]);
         if (result.affectedRows > 0) {
             return { success: true };
@@ -471,6 +497,7 @@ export const DatabaseService = {
             throw new databaseError("No rows affected");
         }
     } catch (error) {
+      logger.error(`Error in deleteCard: ${error.message}`);
       throw new databaseError(`Error in deleteCard: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -486,7 +513,7 @@ export const DatabaseService = {
         if (!commentData || typeof commentData !== 'object' || commentData === null) {
             throw new databaseError("Comment data is null or invalid");
         }
-          conn = await pool.getConnection();
+          conn = await getDatabasePool().getConnection();
           const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
 
           return {
@@ -498,6 +525,7 @@ export const DatabaseService = {
               }
           };
       } catch (error) {
+        logger.error(`Error in createComment: ${error.message}`);
         throw new databaseError(`Error in createComment: ${error.message}`, error);
       } finally {
           if (conn) conn.release();
@@ -509,7 +537,7 @@ export const DatabaseService = {
         if (!postId || isNaN(postId) || postId === null) {
             throw new databaseError("Post ID is null or invalid");
         }
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query(`
             SELECT id, username, text, created_at
             FROM comments 
@@ -523,6 +551,7 @@ export const DatabaseService = {
             created_at: comment.created_at
         }));
     } catch (error) {
+      logger.error(`Error in getCommentsByPostId: ${error.message}`);
        throw new databaseError(`Error in getCommentsByPostId: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -534,13 +563,14 @@ export const DatabaseService = {
         if (!commentId || isNaN(commentId) || commentId === null) {
             throw new databaseError("Comment ID is null or invalid");
         }
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query(
             'DELETE FROM comments WHERE id = ? AND postId = ?',
             [commentId, postId]
         );
         return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
+      logger.error(`Error in deleteComment: ${error.message}`);
       throw new databaseError(`Error in deleteComment: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -553,13 +583,14 @@ export const DatabaseService = {
       if (!mediaData || typeof mediaData !== 'object' || mediaData === null) {
           throw new databaseError("Media data is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('INSERT INTO media SET ?', [mediaData]);
       return {
           success: true,
           mediaId: Number(result.insertId)
         };
     } catch (error) {
+      logger.error(`Error in addMedia: ${error.message}`);
       throw new databaseError(`Error in addMedia: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -571,10 +602,11 @@ export const DatabaseService = {
       if (!mediaId || isNaN(mediaId) || mediaId === null) {
           throw new databaseError("Media ID is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('DELETE FROM media WHERE id = ?', [mediaId]);
       return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
+      logger.error(`Error in deleteMedia: ${error.message}`);
         throw new databaseError(`Error in deleteMedia: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -586,11 +618,12 @@ export const DatabaseService = {
       if (!mediaId || isNaN(mediaId) || mediaId === null) {
           throw new databaseError("Media ID is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM media WHERE id = ?', [mediaId]);
       return result.length > 0 ? convertBigInts(result[0]) : null;
     } catch (error) {
-        throw new databaseError(`Error in getMediaById: ${error.message}`, error);
+      logger.error(`Error in getMediaById: ${error.message}`);
+      throw new databaseError(`Error in getMediaById: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -602,10 +635,11 @@ export const DatabaseService = {
       if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
           throw new databaseError("Username is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
       return result.length > 0 ? result[0] : null;
     } catch (error) {
+      logger.error(`Error in getAdminByUsername: ${error.message}`);
       throw new databaseError(`Error in getAdminByUsername: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -617,10 +651,11 @@ export const DatabaseService = {
       if (!adminId || isNaN(adminId) || adminId === null) {
           throw new databaseError("Admin ID is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       const update = await conn.query('UPDATE admins SET last_login = NOW(), login_attempts = 0, locked_until = NULL WHERE id = ?', [adminId]);
       return update.affectedRows > 0 ? true : false;
     } catch (error) {
+      logger.error(`Error in updateAdminLoginSuccess: ${error.message}`);
       throw new databaseError(`Error in updateAdminLoginSuccess: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
@@ -632,7 +667,7 @@ export const DatabaseService = {
       if (!adminId || isNaN(adminId) || adminId === null) {
           throw new databaseError("Admin ID is null or invalid");
       }
-      conn = await pool.getConnection();
+      conn = await getDatabasePool().getConnection();
       // Aktuelle Login-Attempts abrufen
       const result = await conn.query('SELECT login_attempts FROM admins WHERE id = ?', [adminId]);
       if (result.length > 0) {
@@ -652,7 +687,8 @@ export const DatabaseService = {
             return false;
         }
     } catch (error) {
-        throw new databaseError(`Error in updateAdminLoginFailure: ${error.message}`, error);
+      logger.error(`Error in updateAdminLoginFailure: ${error.message}`);
+      throw new databaseError(`Error in updateAdminLoginFailure: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
@@ -663,29 +699,25 @@ export const DatabaseService = {
         if(adminId === null || isNaN(adminId)) {
             throw new databaseError("Admin ID is null or invalid");
         }
-        conn = await pool.getConnection();
+        conn = await getDatabasePool().getConnection();
         const result = await conn.query('UPDATE admins SET active = ? WHERE id = ?', [active, adminId]);
         return result.affectedRows > 0 ? true : false;
     } catch (error) {
-        throw new databaseError(`Error in updateAdminStatus: ${error.message}`, error);
+      logger.error(`Error in updateAdminStatus: ${error.message}`);
+      throw new databaseError(`Error in updateAdminStatus: ${error.message}`, error);
     } finally {
         if (conn) conn.release();
     }
   } 
 }
-
 // Graceful Shutdown
 process.on('SIGINT', async () => {
     console.log('Closing MariaDB connections...');
-    await pool.end();
+    await getDatabasePool().end();
     process.exit(0);
 });
-
 process.on('SIGTERM', async () => {
     console.log('Closing MariaDB connections...');
-    await pool.end();
+    await getDatabasePool().end();
     process.exit(0);
 });
-
-export { pool };
-export default pool;

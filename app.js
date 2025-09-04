@@ -37,7 +37,7 @@ if (missingVars.length > 0) {
 // Database-integration
 import { 
     testConnection, 
-    initializeDatabase,  
+    initializeDatabaseSchema,  
 } from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -68,7 +68,7 @@ async function initializeApp() {
       process.exit(1);
   }
   // Schema erstellen
-  const schemaCreated = await initializeDatabase();
+  const schemaCreated = await initializeDatabaseSchema();
   if (!schemaCreated) {
       console.error('Database schema could not be created! Server will exit.');
       process.exit(1);
