@@ -96,4 +96,4 @@ const validationService = {
     isValidPasswordSchema
 };
 
-export { validationService };
+export default validationService;

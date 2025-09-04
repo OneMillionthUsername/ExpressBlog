@@ -437,8 +437,8 @@ export async function renderAndDisplayCards(cards) {
 // Hauptfunktion zum Laden und Anzeigen eines Blogposts (für read_post.html)
 export async function loadAndDisplayBlogPost() {
     // URL-Parameter auslesen
-    const urlParams = new URLSearchParams(window.location.search);
-    const postId = urlParams.get('post');
+    const urlParams = new URLSearchParams(window.location.search); //  unsicher ob ich das brauche
+    const postId = getPostIdFromPath() || urlParams.get('post');
     
     // Prüfen, ob ein Post-Parameter in der URL vorhanden ist
     if (!postId) {
@@ -448,21 +448,21 @@ export async function loadAndDisplayBlogPost() {
 
     try {
         // Blogpost laden
-        const post = await loadBlogPost(postId);
-        
-        if (!post) {
+        const response = await fetch(`/blogpost/by-id/${postId}`);
+        if (!response.ok) {
             throw new Error('Blogpost konnte nicht geladen werden');
         }
-        
+        const post = await response.json();
         // UI aktualisieren
         updateBlogPostUI(post);
         
         // Set canonical URL for the specific blog post
-        setCanonicalUrl();
+        // unklar ob ich das auch brauche
+        //setCanonicalUrl();
         
     } catch (error) {
         console.error('Fehler beim Laden des Blogposts:', error);
-        document.getElementById('loading').innerHTML = '<p class="error-message">Error loading blogpost.</p>';
+        document.getElementById('loading').innerHTML = `<p class="error-message">Error loading blogpost. ${error.message}</p>`;
     }
 }
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)

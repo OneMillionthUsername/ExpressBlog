@@ -2,7 +2,6 @@
 // Alle admin-bezogenen Funktionen sind hier zentralisiert
 import { makeApiRequest } from "../js/api.js";
 import { showFeedback } from "../js/feedback.js";
-import { isValidIdSchema, isValidPasswordSchema, isValidUsernameSchema} from '../../../services/validationService.js';
 
 // Admin-Status Variable (muss vor allen Funktionen stehen)
 let isAdminLoggedIn = false;
@@ -271,7 +270,7 @@ async function addReadPostAdminControls() {
     
     const postId = getUrlParameter('post');
     //Error handling
-    if (!isValidIdSchema(postId)) return;
+    if (!postId) return;
     else {
         const adminControls = document.getElementById('admin-controls');
         if (adminControls) {

@@ -1,6 +1,4 @@
 
-import { UtilsException } from "../../../models/customExceptions";
-
 export async function makeApiRequest(url, options = {}) {
     try {
         const response = await fetch(url, {
@@ -24,6 +22,6 @@ export async function makeApiRequest(url, options = {}) {
         }
         return result;
     } catch (error) {
-        throw new UtilsException(`API-Request fehlgeschlagen: ${error.message}`, error);
+        throw new Error(`API-Request fehlgeschlagen: ${error.message}`, error);
     }
 }

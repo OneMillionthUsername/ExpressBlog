@@ -6,7 +6,7 @@ import { sanitizeFilename } from "../utils/utils.js";
 
 function validateId(req, res, next) {
   const postId = req.params.postId;
-  if (!validationService.validateIdSchema(postId)) {
+  if (!validationService.isValidIdSchema(postId)) {
     return res.status(400).json({ error: 'Invalid post ID' });
   }
   next();
