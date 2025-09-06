@@ -1358,4 +1358,4 @@ window.initializeBlogEditor = initializeBlogEditor;
 window.runTinyMCEDiagnostics = runTinyMCEDiagnostics;
 
 // mark module as loaded
-if (window.moduleLoader) window.moduleLoader.markLoaded('tinymce-editor');
+// TinyMCE Editor module loaded

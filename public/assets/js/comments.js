@@ -359,4 +359,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // mark module as loaded
-if (window.moduleLoader) window.moduleLoader.markLoaded('comments');
+// Comments module loaded

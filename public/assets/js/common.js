@@ -1,8 +1,9 @@
+// Import dependencies as ES6 modules
 import { checkAdminStatusCached } from "./admin.js";
-import logger from "../../utils/logger.js"
+// Logger not available in frontend - use console instead
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
-export function showElement(id) {
+function showElement(id) {
     const element = document.getElementById(id);
     if (element) {
         element.style.display = 'block';
@@ -10,7 +11,7 @@ export function showElement(id) {
     }
     return false;
 }
-export function hideElement(id) {
+function hideElement(id) {
     const element = document.getElementById(id);
     if (element) {
         element.style.display = 'none';
@@ -18,7 +19,7 @@ export function hideElement(id) {
     }
     return false;
 }
-export function toggleElementVisibility(id, show) {
+function toggleElementVisibility(id, show) {
     return show ? showElement(id) : hideElement(id);
 }
 // Seiten-Refresh-Utilities (zentralisiert)
@@ -1273,8 +1274,3 @@ if (document.readyState === 'loading') {
 } else {
     initializeDarkMode();
 }
-
-// Export functions globally
-
-// mark module as loaded
-if (window.moduleLoader) window.moduleLoader.markLoaded('utils');

@@ -465,4 +465,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 //mark module as loaded
-if (window.moduleLoader) window.moduleLoader.markLoaded('ai-assistant');
+// AI Assistant module loaded

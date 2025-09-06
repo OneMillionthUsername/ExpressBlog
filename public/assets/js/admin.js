@@ -343,6 +343,5 @@ const ADMIN_CONFIG = {
     TOOLBAR_HEIGHT: '30px',
     ELEMENT_WAIT_TIMEOUT: 5000
 };
+
 export { addAdminMenuItemToNavbar, checkAdminStatusCached, ADMIN_CONFIG };
-// mark module as loaded
-if (window.moduleLoader) window.moduleLoader.markLoaded('admin');

@@ -16,7 +16,6 @@ import * as config from './config/config.js';
 import app from './app.js'; 
 import logger from './utils/logger.js';
 import { readFileSync } from 'fs';
-import { initializeDatabase } from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,14 +51,11 @@ function loadSSLCertificates() {
 // Main server startup function
 async function startServer() {
     try {
-        await initializeDatabase();
-        logger.info('Database initialized successfully');
-        
-        // Load SSL certificates if needed
-        const httpsOptions = loadSSLCertificates();
-        
         // Log server configuration
         logServerConfiguration();
+
+        // Load SSL certificates if needed
+        const httpsOptions = loadSSLCertificates();
         
         // Start HTTP server
         await startHTTPServer();

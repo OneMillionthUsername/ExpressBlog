@@ -46,11 +46,7 @@ const __dirname = dirname(__filename);
 const publicDirectoryPath = join(__dirname, 'public'); // Ein Ordner nach oben
 const expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 // globals
-//--------------------------------------------
-logger.info(`Server mode: ${config.IS_PRODUCTION ? 'Production' : 'Development'}`);
-logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
-logger.info(`JSON body limit: ${config.JSON_BODY_LIMIT}`);
-logger.info(`URL-encoded body limit: ${config.URLENCODED_BODY_LIMIT}`);
+//--------------------------------------------  
 logger.debug('Logger system initialized - DEBUG level active');
 logger.debug('Test debug message - if you see this, debug logging works!');
 logger.debug(`__dirname: ${__dirname}`);
@@ -70,6 +66,7 @@ async function initializeApp() {
       logger.error('Database connection failed! Server will exit.');
       process.exit(1);
   }
+  logger.log('Database connection established');
   // Schema erstellen
   const schemaCreated = await initializeDatabaseSchema();
   if (!schemaCreated) {
