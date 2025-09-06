@@ -57,37 +57,60 @@ const app = express();
 //const commentsRouter = express.Router();
 // Datenbank initialisieren
 async function initializeApp() {
-  logger.log('Initializing database...');
-  await initializeDatabase();
-  logger.log('Database pool initialized');
-  // Datenbankverbindung testen
-  const dbConnected = await testConnection();
-  if (!dbConnected) {
-      logger.error('Database connection failed! Server will exit.');
-      process.exit(1);
+  try {
+    logger.info('Initializing database...');
+    await initializeDatabase();
+    logger.info('Database pool initialized');
+    
+    // Datenbankverbindung testen
+    logger.info('Testing database connection...');
+    const dbConnected = await testConnection();
+    if (!dbConnected) {
+        logger.error('Database connection failed! Server will exit.');
+        process.exit(1);
+    }
+    logger.info('Database connection established');
+    
+    // Schema erstellen
+    logger.info('Initializing database schema...');
+    const schemaCreated = await initializeDatabaseSchema();
+    if (!schemaCreated) {
+        logger.error('Database schema could not be created! Server will exit.');
+        process.exit(1);
+    }
+    logger.info('Database schema initialized');
+    
+    // Info über DB-Modus
+    if (isMockDatabase()) {
+        logger.info('Datenbank im Mock-Modus - keine echte Verbindung');
+    } else {
+        logger.info('Echte Datenbankverbindung aktiv');
+    }
+    logger.info('Database successfully initialized');
+  } catch (error) {
+    logger.error('Error in initializeApp:', error);
+    throw error; // Re-throw the error so it can be caught by the caller
   }
-  logger.log('Database connection established');
-  // Schema erstellen
-  const schemaCreated = await initializeDatabaseSchema();
-  if (!schemaCreated) {
-      logger.error('Database schema could not be created! Server will exit.');
-      process.exit(1);
-  }
-  // Info über DB-Modus
-  if (isMockDatabase()) {
-      logger.log('Datenbank im Mock-Modus - keine echte Verbindung');
-  } else {
-      logger.log('Echte Datenbankverbindung aktiv');
-  }
-  logger.log('Database successfully initialized');
 }
 
 // App initialisieren (asynchron)
-initializeApp().then(() => {
-    logger.log('Server initialized successfully');
+const appInitializationPromise = initializeApp().then(() => {
+    logger.info('App initialization completed successfully');
 }).catch((error) => {
-    logger.error('Server initialization failed:', error);
+    logger.error('App initialization failed:', error);
+    logger.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+    });
+    console.error('Full error object:', error);
+    process.exit(1);
 });
+
+// Export eine Funktion, die auf die Initialisierung wartet
+export async function waitForAppInitialization() {
+    return appInitializationPromise;
+}
 
 // ===========================================
 // MIDDLEWARE

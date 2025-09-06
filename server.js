@@ -13,7 +13,7 @@ import https from 'https';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as config from './config/config.js';
-import app from './app.js'; 
+import app, { waitForAppInitialization } from './app.js'; 
 import logger from './utils/logger.js';
 import { readFileSync } from 'fs';
 
@@ -51,6 +51,10 @@ function loadSSLCertificates() {
 // Main server startup function
 async function startServer() {
     try {
+        // Wait for app initialization to complete
+        await waitForAppInitialization();
+        logger.info('App ready, starting servers...');
+        
         // Log server configuration
         logServerConfiguration();
 
