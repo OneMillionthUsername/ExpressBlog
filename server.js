@@ -52,7 +52,6 @@ function loadSSLCertificates() {
 // Main server startup function
 async function startServer() {
     try {
-        // Initialize database first
         await initializeDatabase();
         logger.info('Database initialized successfully');
         
@@ -77,7 +76,6 @@ async function startServer() {
         
     } catch (error) {
         logger.error(`Error starting server: ${error.message}`, error);
-        console.error(`Error starting server: ${error.message}`);
         process.exit(1);
     }
 }

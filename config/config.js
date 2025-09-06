@@ -1,7 +1,9 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config.js';
 
-export const IS_PLESK = process.env.PLESK_ENV === 'true' || process.env.NODE_ENV === 'production';
+// config/config.js
+
+export const NODE_ENV = process.env.NODE_ENV || 'development';
+export const IS_PLESK = process.env.PLESK_ENV === 'true';
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 export const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '2mb';
 export const URLENCODED_BODY_LIMIT = process.env.URLENCODED_BODY_LIMIT || '2mb';

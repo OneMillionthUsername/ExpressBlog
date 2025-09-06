@@ -9,7 +9,6 @@
 
 // app.js
 
-
 import express from 'express';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -36,8 +35,10 @@ if (missingVars.length > 0) {
 
 // Database-integration
 import { 
+    initializeDatabase,
     testConnection, 
-    initializeDatabaseSchema,  
+    initializeDatabaseSchema,
+    isMockDatabase
 } from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,27 +61,35 @@ const app = express();
 //const commentsRouter = express.Router();
 // Datenbank initialisieren
 async function initializeApp() {
-  console.log('Initializing database...');
+  logger.log('Initializing database...');
+  await initializeDatabase();
+  logger.log('Database pool initialized');
   // Datenbankverbindung testen
   const dbConnected = await testConnection();
   if (!dbConnected) {
-      console.error('Database connection failed! Server will exit.');
+      logger.error('Database connection failed! Server will exit.');
       process.exit(1);
   }
   // Schema erstellen
   const schemaCreated = await initializeDatabaseSchema();
   if (!schemaCreated) {
-      console.error('Database schema could not be created! Server will exit.');
+      logger.error('Database schema could not be created! Server will exit.');
       process.exit(1);
   }
-  console.log('Database successfully initialized');
+  // Info über DB-Modus
+  if (isMockDatabase()) {
+      logger.log('Datenbank im Mock-Modus - keine echte Verbindung');
+  } else {
+      logger.log('Echte Datenbankverbindung aktiv');
+  }
+  logger.log('Database successfully initialized');
 }
 
 // App initialisieren (asynchron)
 initializeApp().then(() => {
-    console.log('Server initialized successfully');
+    logger.log('Server initialized successfully');
 }).catch((error) => {
-    console.error('Server initialization failed:', error);
+    logger.error('Server initialization failed:', error);
 });
 
 // ===========================================

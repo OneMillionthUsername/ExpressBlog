@@ -4,16 +4,15 @@
 - authService.js: Handles user authentication logic.
 - productService.js: Contains logic related to products, like fetching product data.
  */
-import dotenv from 'dotenv';
-dotenv.config();
 import jwt from 'jsonwebtoken';
 import { Admin } from '../models/adminModel.js';
+import { JWT_SECRET, NODE_ENV } from '../config/config.js';
 
 
 export const AUTH_COOKIE_NAME = 'authToken';
 // JWT-Konfiguration
 const JWT_CONFIG = {
-    SECRET_KEY: process.env.JWT_SECRET,
+    SECRET_KEY: JWT_SECRET,
     EXPIRES_IN: '24h', // Token-Lebensdauer
     ALGORITHM: 'HS256',
     ISSUER: 'blog-app',
@@ -21,10 +20,10 @@ const JWT_CONFIG = {
 };
 
 // JWT-Secret Validation
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-    if (process.env.NODE_ENV === 'test') {
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    if (NODE_ENV === 'test') {
         console.warn('WARNING: JWT_SECRET not set in test environment');
-        process.env.JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
+        JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
     } else {
         console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
         console.error('Please add JWT_SECRET to your .env file');

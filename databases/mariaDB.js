@@ -6,19 +6,66 @@
 - Environment Setup: Makes it easy to configure different databases for different environments (development, production).
 */
 
-class databaseError extends Error {}
+
 
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
 import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
 import logger from '../utils/logger.js';
+import { databaseError } from '../models/customExceptions.js';
 
 let pool;
+let isMockMode = false;
+
+function createMockPool() {
+  logger.warn('Using mock database pool for testing');
+  return {
+    getConnection: async () => {
+      return {
+        query: async (Sql, params = []) => {
+          logger.debug(`[MOCK DB] SQL: ${Sql}, Params: ${JSON.stringify(params)}`);
+          if(Sql.toLowerCase().includes('select version()')) {
+            return [{ version: '10.5.9-MariaDB-1:10.5.9+maria~focal' }];
+          }
+          else if (Sql.toLowerCase().includes('select') && Sql.toLowerCase().includes('posts')) {
+            return [];
+          }
+          else if (Sql.toLowerCase().includes('insert')) {
+            return { insertId: 1, affectedRows: 1 };
+          }
+          else if (Sql.toLowerCase().includes('update') || Sql.toLowerCase().includes('delete')) {
+            return { affectedRows: 1 };
+          } else if (Sql.toLowerCase().includes('create table')) {
+            return { warningStatus: 0 };
+          }
+          return [];
+        },
+        release: () => {
+          logger.debug('[MOCK DB] Connection released');
+        },
+        end: () => Promise.resolve()
+      };
+    },
+    end: async () => {
+      if (isMockMode) {
+        logger.warn('Mock database pool does not need to be closed');
+      }
+      return Promise.resolve();
+    }
+  };
+}
+
+// Prüfen ob Mock-Modus aktiv ist
+export function isMockDatabase() {
+    return isMockMode;
+}
 
 export async function initializeDatabase() {
-  if (process.env.NODE_ENV === 'development' && !process.env.DB_HOST) {
+  if (process.env.NODE_ENV === 'development') {
     logger.warn('Keine lokale Datenbank konfiguriert. Überspringe Datenbank-Initialisierung.');
+    pool = createMockPool();
+    isMockMode = true;
     return;
   }
   
@@ -29,29 +76,47 @@ export async function initializeDatabase() {
     connection.release();
   } catch (error) {
     logger.error(`Error creating MariaDB pool connection: ${error.message}`);
-    console.error(`Error creating MariaDB pool connection: ${error.message}`);
     throw new databaseError(`Error creating pool connection: ${error.message}`, error);
   }
 }
+
+/**
+ * Returns the current MariaDB pool instance.
+ * @returns {{ pool: typeof mariadb.Pool }} The database pool object.
+ * @throws {databaseError} If the pool is not initialized.
+ */
 export function getDatabasePool() {
     if (!pool) {
-        logger.error('Kein Pool oder Datenbank wurde nicht initialisiert. Rufen Sie initializeDatabase() auf.');
-        throw new databaseError('Datenbank wurde nicht initialisiert. Rufen Sie initializeDatabase() auf.');
+        logger.error('No pool or database has been initialized. Call initializeDatabase() first.');
+        throw new databaseError('Database has not been initialized. Call initializeDatabase() first.');
     }
     return pool;
 }
 // Datenbankverbindung testen
+/**
+ * Tests the connection to the MariaDB database (or mock database in development mode).
+ * Logs the database version if successful, or logs an error if the connection fails.
+ * @returns {Promise<boolean>} Returns true if the connection is successful, otherwise throws an error.
+ * @throws {databaseError} If the connection fails.
+ */
 export async function testConnection() {
     let conn;
     try {
         conn = await getDatabasePool().getConnection();
         const result = await conn.query('SELECT VERSION() as version');
-        console.log('MariaDB connection successful, Version:', result[0].version);
-        logger.info('MariaDB connection successful, Version: ' + result[0].version);
+        if (isMockMode) {
+          logger.info('Mock MariaDB connection successful, Version: ' + result[0].version);
+        } else {
+          logger.info('MariaDB connection successful, Version: ' + result[0].version);
+        }
         return true;
     } catch (error) {
-      logger.error(`MariaDB connection failed: ${error.message}`);
-      throw new databaseError(`MariaDB connection failed: ${error.message}`, error);
+      if (isMockMode) {
+        logger.error(`Mock MariaDB connection failed: ${error.message}`);
+      } else {
+        logger.error(`MariaDB connection failed: ${error.message}`);
+      }
+      throw new databaseError(`${isMockMode ? 'Mock MariaDB' : 'MariaDB'} connection failed: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }
@@ -59,175 +124,188 @@ export async function testConnection() {
 export async function initializeDatabaseSchema() {
   let conn;
   try {
-      conn = await getDatabasePool().getConnection();
-      console.log('Initializing MariaDB schema...');
-      logger.info('Initializing MariaDB schema...');
-      // Posts-Tabelle
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS posts (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              title VARCHAR(255) NOT NULL,
-              content LONGTEXT NOT NULL,
-              slug VARCHAR(50) NOT NULL UNIQUE,
-              tags JSON DEFAULT NULL,
-              author VARCHAR(100) DEFAULT 'admin',
-              views BIGINT DEFAULT 0,
-              published BOOLEAN DEFAULT 0,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-              
-              INDEX idx_posts_created_at (created_at DESC),
-              INDEX idx_posts_views (views DESC),
-              INDEX idx_posts_author (author),
-              INDEX idx_posts_published (published)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+    if(isMockMode) {
+      logger.info('Mock mode - skipping actual database schema initialization.');
+      return true; 
+    }
+    conn = await getDatabasePool().getConnection();
+    logger.info('Initializing MariaDB schema...');
+    // Posts-Tabelle
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS posts (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            content LONGTEXT NOT NULL,
+            slug VARCHAR(50) NOT NULL UNIQUE,
+            tags JSON DEFAULT NULL,
+            author VARCHAR(100) DEFAULT 'admin',
+            views BIGINT DEFAULT 0,
+            published BOOLEAN DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            INDEX idx_posts_created_at (created_at DESC),
+            INDEX idx_posts_views (views DESC),
+            INDEX idx_posts_author (author),
+            INDEX idx_posts_published (published)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      // Comments-Tabelle
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS comments (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              postId BIGINT NOT NULL,
-              username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
-              text VARCHAR(1000) NOT NULL,
-              ip_address VARCHAR(45) DEFAULT NULL,
-              approved BOOLEAN DEFAULT 1,
-              published BOOLEAN DEFAULT 0,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    // Comments-Tabelle
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS comments (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            postId BIGINT NOT NULL,
+            username VARCHAR(100) NOT NULL DEFAULT 'Anonym',
+            text VARCHAR(1000) NOT NULL,
+            ip_address VARCHAR(45) DEFAULT NULL,
+            approved BOOLEAN DEFAULT 1,
+            published BOOLEAN DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-              INDEX idx_comments_postId (postId),
-              INDEX idx_comments_created_at (created_at DESC),
-              INDEX idx_comments_approved (approved),
+            INDEX idx_comments_postId (postId),
+            INDEX idx_comments_created_at (created_at DESC),
+            INDEX idx_comments_approved (approved),
 
-              FOREIGN KEY (postId) REFERENCES posts(id)
-                  ON DELETE CASCADE ON UPDATE CASCADE
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+            FOREIGN KEY (postId) REFERENCES posts(id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      // Uploads/Media-Tabelle
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS media (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              postId BIGINT NOT NULL,
-              original_name VARCHAR(255) NOT NULL,
-              file_size BIGINT DEFAULT NULL,
-              mime_type VARCHAR(100) DEFAULT NULL,
-              uploaded_by VARCHAR(100) DEFAULT NULL,
-              upload_path VARCHAR(500) DEFAULT NULL,
-              alt_text VARCHAR(255) DEFAULT NULL,
-              used_in_posts JSON DEFAULT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              
-              INDEX idx_media_uploaded_by (uploaded_by),
-              INDEX idx_media_created_at (created_at DESC),
-              INDEX idx_media_mime_type (mime_type),
-              INDEX idx_media_original_name(original_name),
+    // Uploads/Media-Tabelle
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS media (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            postId BIGINT NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            file_size BIGINT DEFAULT NULL,
+            mime_type VARCHAR(100) DEFAULT NULL,
+            uploaded_by VARCHAR(100) DEFAULT NULL,
+            upload_path VARCHAR(500) DEFAULT NULL,
+            alt_text VARCHAR(255) DEFAULT NULL,
+            used_in_posts JSON DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            
+            INDEX idx_media_uploaded_by (uploaded_by),
+            INDEX idx_media_created_at (created_at DESC),
+            INDEX idx_media_mime_type (mime_type),
+            INDEX idx_media_original_name(original_name),
 
-              FOREIGN KEY (postId) REFERENCES posts(id)
-                  ON DELETE CASCADE ON UPDATE CASCADE
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+            FOREIGN KEY (postId) REFERENCES posts(id)
+                ON DELETE CASCADE ON UPDATE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      // Analytics/Views-Tabelle
-      // await conn.query(`
-      //     CREATE TABLE IF NOT EXISTS post_analytics (
-      //         id BIGINT AUTO_INCREMENT PRIMARY KEY,
-      //         postId BIGINT NOT NULL,
-      //         event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
-      //         ip_address VARCHAR(45) DEFAULT NULL,
-      //         user_agent TEXT DEFAULT NULL,
-      //         referer VARCHAR(500) DEFAULT NULL,
-      //         country VARCHAR(50) DEFAULT NULL,
-      //         city VARCHAR(100) DEFAULT NULL,
-      //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    // Analytics/Views-Tabelle
+    // await conn.query(`
+    //     CREATE TABLE IF NOT EXISTS post_analytics (
+    //         id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    //         postId BIGINT NOT NULL,
+    //         event_type ENUM('view', 'comment', 'share', 'download') DEFAULT 'view',
+    //         ip_address VARCHAR(45) DEFAULT NULL,
+    //         user_agent TEXT DEFAULT NULL,
+    //         referer VARCHAR(500) DEFAULT NULL,
+    //         country VARCHAR(50) DEFAULT NULL,
+    //         city VARCHAR(100) DEFAULT NULL,
+    //         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-      //         INDEX idx_analytics_postId (postId),
-      //         INDEX idx_analytics_event_type (event_type),
-      //         INDEX idx_analytics_created_at (created_at DESC),
-      //         INDEX idx_analytics_ip (ip_address),
+    //         INDEX idx_analytics_postId (postId),
+    //         INDEX idx_analytics_event_type (event_type),
+    //         INDEX idx_analytics_created_at (created_at DESC),
+    //         INDEX idx_analytics_ip (ip_address),
 
-      //         FOREIGN KEY (postId) REFERENCES posts(id)
-      //             ON DELETE CASCADE ON UPDATE CASCADE
-      //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      // `);
+    //         FOREIGN KEY (postId) REFERENCES posts(id)
+    //             ON DELETE CASCADE ON UPDATE CASCADE
+    //     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    // `);
 
-      // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS admins (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              username VARCHAR(100) UNIQUE NOT NULL,
-              password_hash VARCHAR(255) NOT NULL,
-              email VARCHAR(255) DEFAULT NULL,
-              full_name VARCHAR(255) DEFAULT NULL,
-              role ENUM('admin', 'editor', 'viewer') DEFAULT 'admin',
-              active BOOLEAN DEFAULT 1,
-              last_login DATETIME DEFAULT NULL,
-              login_attempts INT DEFAULT 0,
-              locked_until DATETIME DEFAULT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-              
-              INDEX idx_admins_username (username),
-              INDEX idx_admins_active (active),
-              INDEX idx_admins_role (role),
-              INDEX idx_admins_last_login (last_login)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+    // Admin-Benutzer Tabelle (für zukünftige Multi-Admin-Unterstützung)
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS admins (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(100) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            email VARCHAR(255) DEFAULT NULL,
+            full_name VARCHAR(255) DEFAULT NULL,
+            role ENUM('admin', 'editor', 'viewer') DEFAULT 'admin',
+            active BOOLEAN DEFAULT 1,
+            last_login DATETIME DEFAULT NULL,
+            login_attempts INT DEFAULT 0,
+            locked_until DATETIME DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            INDEX idx_admins_username (username),
+            INDEX idx_admins_active (active),
+            INDEX idx_admins_role (role),
+            INDEX idx_admins_last_login (last_login)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      // Backup-Tabelle für gelöschte Posts (Wiederherstellung)
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS deleted_posts (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              original_id BIGINT NOT NULL,
-              title VARCHAR(500) NOT NULL,
-              content LONGTEXT NOT NULL,
-              tags JSON DEFAULT NULL,
-              author VARCHAR(100) DEFAULT NULL,
-              views BIGINT DEFAULT 0,
-              original_created_at DATETIME NOT NULL,
-              deleted_by VARCHAR(100) NOT NULL,
-              deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              reason TEXT DEFAULT NULL,
+    // Backup-Tabelle für gelöschte Posts (Wiederherstellung)
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS deleted_posts (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            original_id BIGINT NOT NULL,
+            title VARCHAR(500) NOT NULL,
+            content LONGTEXT NOT NULL,
+            tags JSON DEFAULT NULL,
+            author VARCHAR(100) DEFAULT NULL,
+            views BIGINT DEFAULT 0,
+            original_created_at DATETIME NOT NULL,
+            deleted_by VARCHAR(100) NOT NULL,
+            deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            reason TEXT DEFAULT NULL,
 
-              INDEX idx_deleted_posts_original_id (original_id),
-              INDEX idx_deleted_posts_deleted_at (deleted_at DESC),
-              INDEX idx_deleted_posts_author (author),
-              INDEX idx_deleted_posts_deleted_by (deleted_by)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+            INDEX idx_deleted_posts_original_id (original_id),
+            INDEX idx_deleted_posts_deleted_at (deleted_at DESC),
+            INDEX idx_deleted_posts_author (author),
+            INDEX idx_deleted_posts_deleted_by (deleted_by)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      // Karten-Tabelle
-      await conn.query(`
-          CREATE TABLE IF NOT EXISTS cards (
-              id BIGINT AUTO_INCREMENT PRIMARY KEY,
-              title VARCHAR(200) NOT NULL,
-              subtitle VARCHAR(200) DEFAULT NULL,
-              link VARCHAR(500) NOT NULL,
-              img VARCHAR(500) NOT NULL,
-              published BOOLEAN DEFAULT 0
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-      `);
+    // Karten-Tabelle
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS cards (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(200) NOT NULL,
+            subtitle VARCHAR(200) DEFAULT NULL,
+            link VARCHAR(500) NOT NULL,
+            img VARCHAR(500) NOT NULL,
+            published BOOLEAN DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-      console.log('MariaDB schema created/verified successfully');
-      logger.info('MariaDB schema created/verified successfully');
-      return true;
+    console.log('MariaDB schema created/verified successfully');
+    logger.info('MariaDB schema created/verified successfully');
+    return true;
     } catch (error) {
-        logger.error(`Error creating MariaDB schema: ${error.message}`);
-        throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
+      if(isMockMode) {
+        logger.log('Mock-Schema erstellt');
+        return true;
+      }
+      logger.error(`Error creating MariaDB schema: ${error.message}`);
+      throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
   }
 }
 export const DatabaseService = {
   // Posts
+  /**
+   * Retrieves a published post by its slug.
+   * @param {string} slug - The slug of the post to retrieve.
+   * @returns {Promise<object|null>} Resolves with the post object if found and published, otherwise null.
+   * @throws {databaseError} If a database error occurs during the query.
+   */
   async getPostBySlug(slug) {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
       //const { query, params } = queryBuilder('get', 'posts', { slug });
       //const result = await conn.query(query, params);
-      const result = await conn.query('SELECT * FROM posts WHERE slug = ?', [slug]);
+      const result = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [slug]);
       if (!result || result.length === 0) return null;
       if (result.length > 1) return null;
       if (!result[0].published) return null;

@@ -51,3 +51,13 @@ export class UtilsException extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+
+export class databaseError extends Error {
+  constructor(message, originalError) {
+    super(message);
+    this.name = 'databaseError';
+    if (originalError) {
+      this.originalError = originalError;
+    }
+  }
+}
