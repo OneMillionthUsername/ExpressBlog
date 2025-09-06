@@ -13,7 +13,7 @@ import https from 'https';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as config from './config/config.js';
-import app, { waitForAppInitialization } from './app.js'; 
+import app, { waitForApp, getAppStatus } from './app.js'; 
 import logger from './utils/logger.js';
 import { readFileSync } from 'fs';
 
@@ -52,7 +52,7 @@ function loadSSLCertificates() {
 async function startServer() {
     try {
         // Wait for app initialization to complete
-        await waitForAppInitialization();
+        await waitForApp();
         logger.info('App ready, starting servers...');
         
         // Log server configuration
@@ -75,7 +75,30 @@ async function startServer() {
         logger.info('Server startup completed successfully');
         
     } catch (error) {
-        logger.error(`Error starting server: ${error.message}`, error);
+        const appStatus = getAppStatus();
+        logger.error(`Server startup failed: ${error.message}`);
+        logger.error(`App Status:`, {
+            appReady: appStatus.ready,
+            databaseReady: appStatus.database,
+            timestamp: appStatus.timestamp
+        });
+        if (config.IS_PRODUCTION) {
+            logger.error(`Error type: ${error.name}, code: ${error.code || 'unknown'}`);
+        } else {
+            logger.error(`Error details:`, error);
+        }
+        
+        // Specific error handling for common issues
+        if (error.code === 'EADDRINUSE') {
+            logger.error(`Port ${config.PORT} is already in use!`);
+            logger.error(`Try: PORT=3001 node server.js`);
+        } else if (error.code === 'EACCES') {
+            logger.error(`Permission denied for port ${config.PORT}`);
+            logger.error(`Try using a port > 1024 or run with elevated privileges`);
+        } else if (error.message.includes('app initialization')) {
+            logger.error(`App initialization failed - check database connection`);
+        }
+        
         process.exit(1);
     }
 }
@@ -84,9 +107,11 @@ function startHTTPServer() {
     return new Promise((resolve, reject) => {
         httpServer = http.createServer(app);
         
-        // Configure server timeouts
-        httpServer.setTimeout(30000);
-        httpServer.headersTimeout = 31000;
+        // Configure server timeouts for better performance
+        httpServer.setTimeout(30000);           // 30 seconds for socket timeout
+        httpServer.headersTimeout = 31000;      // 31 seconds for headers timeout
+        httpServer.keepAliveTimeout = 5000;     // 5 seconds keep-alive
+        httpServer.requestTimeout = 20000;      // 20 seconds for request timeout
         
         httpServer.listen(config.PORT, config.HOST, () => {
             const protocol = config.IS_PRODUCTION ? 'https' : 'http';
@@ -96,6 +121,7 @@ function startHTTPServer() {
 
             logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
             logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
+            logger.info(`Health Check: ${protocol}://${domain}${displayPort}/health`);
             
             if (config.IS_PRODUCTION || config.IS_PLESK) {
                 logger.info('Production mode: SSL handled by Plesk/webserver');
@@ -203,14 +229,3 @@ function gracefulShutdown(signal) {
 }
 // Start the server
 startServer();
-/**
-Keep routes modular: Separate routes based on features or entities (e.g., userRoutes, productRoutes).
-
-Use environment variables: Store sensitive information like API keys or database credentials in .env files and access them via process.env.
-
-Error Handling: Implement centralized error handling middleware to catch and respond to errors.
-
-Write Tests: Maintain a separate folder (tests/) for unit and integration tests to ensure your app works as expected.
-
-Follow REST principles: If you're building an API, ensure your routes follow RESTful conventions (e.g., GET /users, POST /users). 
-*/

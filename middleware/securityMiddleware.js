@@ -30,7 +30,13 @@ export function createEscapeInputMiddleware(whitelist = []) {
         Object.assign(req.params, escapeAllStrings(req.params, whitelist));
       }
       if (req.cookies && typeof req.cookies === 'object') {
-        Object.assign(req.cookies, escapeAllStrings(req.cookies, whitelist));
+        // Exclude CSRF tokens from sanitization to prevent loops
+        const csrfKeys = ['_csrf'];
+        const cookiesToSanitize = Object.fromEntries(
+          Object.entries(req.cookies).filter(([key]) => !csrfKeys.includes(key))
+        );
+        const sanitizedCookies = escapeAllStrings(cookiesToSanitize, whitelist);
+        Object.assign(req.cookies, sanitizedCookies);
       }
       const safeHeaders = ["user-agent", "referer"];
       safeHeaders.forEach(h => {
