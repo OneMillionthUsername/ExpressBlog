@@ -206,15 +206,27 @@ function showAdminLoginModal() {
         </div>
     `;
     document.body.appendChild(modal);
+    
     // Event-Handler
     document.getElementById('admin-login-cancel').onclick = () => modal.remove();
+    
+    // Close modal when clicking outside (on overlay)
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    
     document.getElementById('admin-login-submit').onclick = async () => {
         const username = document.getElementById('admin-username').value;
         const password = document.getElementById('admin-password').value;
-        if (!isValidUsernameSchema(username) || !isValidPasswordSchema(password)) {
-            showError('Benutzername oder Passwort falsch!');
+        
+        // Simple validation
+        if (!username || username.length < 3 || !password || password.length < 8) {
+            showError('Benutzername und Passwort müssen mindestens 3 bzw. 8 Zeichen lang sein!');
             return;
         }
+        
         const success = await adminLogin(username, password);
         if (success) modal.remove();
         else showError('Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben.');
@@ -344,4 +356,7 @@ const ADMIN_CONFIG = {
     ELEMENT_WAIT_TIMEOUT: 5000
 };
 
-export { addAdminMenuItemToNavbar, checkAdminStatusCached, ADMIN_CONFIG };
+// Make showAdminLoginModal globally available for cross-module access
+window.showAdminLoginModal = showAdminLoginModal;
+
+export { addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG };

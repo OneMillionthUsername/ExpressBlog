@@ -260,10 +260,10 @@ function registerDatabaseRoutes() {
     logger.info('Registering database-dependent routes...');
     
     // Alle DB-abhängigen Routes mit DB-Check (Reihenfolge wichtig!)
-    app.use('/', routes.staticRouter);    // TEMP: Ohne requireDatabase!
-    
-    app.use('/', routes.utilityRouter);   // TEMP: Ohne requireDatabase!
-    
+    app.use('/', requireDatabase, routes.staticRouter);
+
+    app.use('/', requireDatabase, routes.utilityRouter);
+
     app.use('/auth', requireDatabase, routes.authRouter);
     app.use('/blogpost', requireDatabase, routes.postRouter);
     app.use('/upload', requireDatabase, routes.uploadRouter);

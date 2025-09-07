@@ -1,5 +1,5 @@
 // Import dependencies as ES6 modules
-import { checkAdminStatusCached } from "./admin.js";
+import { checkAdminStatusCached, showAdminLoginModal } from "./admin.js";
 // Logger not available in frontend - use console instead
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
