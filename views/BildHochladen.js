@@ -7,13 +7,13 @@ formData.append('alt_text', 'Beschreibung des Bildes');
 fetch('/api/upload/image', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`
+    'Authorization': `Bearer ${token}`,
   },
-  body: formData
+  body: formData,
 })
-.then(response => response.json())
-.then(data => {
-  if (data.success) {
-    console.log('Upload erfolgreich:', data.media);
-  }
-});
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      console.log('Upload erfolgreich:', data.media);
+    }
+  });

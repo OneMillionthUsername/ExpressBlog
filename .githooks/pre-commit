@@ -1,0 +1,23 @@
+#!/bin/sh
+
+echo "Running pre-commit hooks..."
+
+# Run linting
+echo "Running ESLint..."
+npm run lint
+
+if [ $? -ne 0 ]; then
+  echo "Linting failed. Please fix the issues before committing."
+  exit 1
+fi
+
+# Run tests
+echo "Running tests..."
+npm test
+
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Please fix the issues before committing."
+  exit 1
+fi
+
+echo "All checks passed! Ready to commit."

@@ -13,13 +13,13 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const FORBIDDEN_KEYS = new Set([
   '__proto__',
   'constructor',
-  'prototype'
+  'prototype',
 ]);
 
 // Utility zum sicheren Escapen von Dateinamen
 export function sanitizeFilename(name) {
   return path.basename(name)                // Pfadbestandteile entfernen
-    .replace(/[^a-zA-Z0-9._-]/g, "_")      // nur erlaubte Zeichen
+    .replace(/[^a-zA-Z0-9._-]/g, '_')      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
 export function escapeHtml(str) {
@@ -38,7 +38,7 @@ export function unescapeHtml(str) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, '\'');
 }
 /**
  * Escape strings recursively but:
@@ -50,21 +50,21 @@ export function unescapeHtml(str) {
  * @param {string[]} path
  */
 export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstance = DOMPurifyServer) {
-  if(!obj) throw new Error("Invalid input: Object is null or undefined"); // null, undefined, false, 0
+  if(!obj) throw new Error('Invalid input: Object is null or undefined'); // null, undefined, false, 0
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
     if (currentKey && whitelist.includes(currentKey)) {
-      console.log("Sanitizing:", obj, "key:", currentKey);
+      console.log('Sanitizing:', obj, 'key:', currentKey);
       // SANITIZE allowed HTML server-side (not raw)
       try {
         return domPurifyInstance.sanitize(obj, {
           ALLOWED_TAGS: [
             'p','br','b','i','strong','em','u',
-            'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3'
+            'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3',
           ],
           ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
-          ALLOW_DATA_ATTR: false
+          ALLOW_DATA_ATTR: false,
         });
       } catch (error) {
         throw new Error(`Sanitization failed for key "${currentKey}": ${error.message}`);
@@ -79,7 +79,7 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
   // objects
   if (obj && typeof obj === 'object') {
     for (const key of Object.keys(obj)) {
-      console.log("Processing key:", key); // Debugging
+      console.log('Processing key:', key); // Debugging
       if (FORBIDDEN_KEYS.has(key)) {
         // skip to prevent prototype pollution
         throw new Error(`Forbidden key detected: "${key}"`);
@@ -89,31 +89,31 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
     }
     return obj;
   }
-  throw new UtilsException("Unsupported input type");
+  throw new UtilsException('Unsupported input type');
 }
 export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
-  if (!title) return "";
+  if (!title) return '';
 
   // Kleinbuchstaben
   let slug = title.toLowerCase();
   // Umlaute ersetzen
-  const map = { ä: "ae", ö: "oe", ü: "ue", ß: "ss" };
+  const map = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
   slug = slug.replace(/[äöüß]/g, m => map[m]);
   // Akzente entfernen
-  slug = slug.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  slug = slug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Sonderzeichen entfernen
-  slug = slug.replace(/[^a-z0-9\s-]/g, "");
+  slug = slug.replace(/[^a-z0-9\s-]/g, '');
   // Leerzeichen und Bindestriche vereinfachen
-  slug = slug.replace(/\s+/g, "-").replace(/-+/g, "-");
+  slug = slug.replace(/\s+/g, '-').replace(/-+/g, '-');
   // Bindestriche entfernen
-  slug = slug.replace(/^-+|-+$/g, "");
+  slug = slug.replace(/^-+|-+$/g, '');
   slug = truncateSlug(slug, maxLength);
 
   // 8. Optional Hash anhängen
-//   if (addHash) {
-//     const hash = crypto.createHash("md5").update(title).digest("hex").slice(0, 6);
-//     slug = `${slug}-${hash}`;
-//   }
+  //   if (addHash) {
+  //     const hash = crypto.createHash("md5").update(title).digest("hex").slice(0, 6);
+  //     slug = `${slug}-${hash}`;
+  //   }
 
   return slug;
 }
@@ -150,7 +150,7 @@ export function parseTags(tags) {
       const parsed = JSON.parse(tags);
       if (Array.isArray(parsed)) return parsed;
     } catch {
-      return tags.split(",").map(tag => tag.trim()).filter(Boolean);
+      return tags.split(',').map(tag => tag.trim()).filter(Boolean);
     }
   }
   return [];
@@ -158,7 +158,7 @@ export function parseTags(tags) {
 export function truncateSlug(slug, maxLength = 50) {
   if (slug.length <= maxLength) return slug;
   const truncated = slug.slice(0, maxLength);
-  const lastDash = truncated.lastIndexOf("-");
+  const lastDash = truncated.lastIndexOf('-');
   return lastDash > 0 ? truncated.slice(0, lastDash) : truncated;
 }
 export function incrementViews(req, postId) {

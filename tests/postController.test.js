@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // JWT_SECRET für Tests setzen
 process.env.JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
@@ -14,7 +14,7 @@ const mockDeletePost = jest.fn();
 const mockGetArchivedPosts = jest.fn();
 
 // Mock DatabaseService
-jest.mock("../databases/mariaDB.js", () => ({
+jest.mock('../databases/mariaDB.js', () => ({
   DatabaseService: {
     getPostBySlug: mockGetPostBySlug,
     getAllPosts: mockGetAllPosts,
@@ -23,20 +23,20 @@ jest.mock("../databases/mariaDB.js", () => ({
     updatePost: mockUpdatePost,
     getMostReadPosts: mockGetMostReadPosts,
     deletePost: mockDeletePost,
-    getArchivedPosts: mockGetArchivedPosts
-  }
+    getArchivedPosts: mockGetArchivedPosts,
+  },
 }));
 
 // Mock utils
 const mockCreateSlug = jest.fn();
-jest.mock("../utils/utils.js", () => ({
-  createSlug: mockCreateSlug
+jest.mock('../utils/utils.js', () => ({
+  createSlug: mockCreateSlug,
 }));
 
 // 2. Imports nach den Mocks
-import { createSlug } from "../utils/utils.js";
-import { DatabaseService } from "../databases/mariaDB.js";
-import * as postController from "../controllers/postController.js";
+import { createSlug } from '../utils/utils.js';
+import { DatabaseService } from '../databases/mariaDB.js';
+import * as postController from '../controllers/postController.js';
 
 // Mock DatabaseService methods after import
 const originalGetPostBySlug = DatabaseService.getPostBySlug;
@@ -75,281 +75,281 @@ beforeEach(() => {
   mockGetArchivedPosts.mockResolvedValue([]);
 
   // Set up createSlug mock
-  mockCreateSlug.mockReturnValue("test-post");
+  mockCreateSlug.mockReturnValue('test-post');
 });
 
 describe('PostController', () => {
   describe('getPostBySlug', () => {
-    it("throws if the post is not found", async () => {
+    it('throws if the post is not found', async () => {
       mockGetPostBySlug.mockResolvedValueOnce(null);
-      await expect(postController.default.getPostBySlug("notfound"))
-        .rejects.toThrow("Post not found");
+      await expect(postController.default.getPostBySlug('notfound'))
+        .rejects.toThrow('Post not found');
     });
-    it("getPostBySlug throws if the post is not published", async () => {
+    it('getPostBySlug throws if the post is not published', async () => {
       // Mock: DatabaseService gibt unpublished post zurück
       mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
-        slug: "test",
+        slug: 'test',
         published: false,
         // ... andere Felder
       });
       
-      await expect(postController.default.getPostBySlug("test"))
-        .rejects.toThrow("Post not found or not published");
+      await expect(postController.default.getPostBySlug('test'))
+        .rejects.toThrow('Post not found or not published');
     });
-    it("getPostBySlug returns the post if it is valid", async () => {
+    it('getPostBySlug returns the post if it is valid', async () => {
       // Mock: DatabaseService gibt validen post zurück
       mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
-        slug: "test",
-        title: "Test Post",
-        content: "Test content",
+        slug: 'test',
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 10,
-        tags: ["test","blog"],
-        author: "Test Author"
+        tags: ['test','blog'],
+        author: 'Test Author',
       });
       
-      const result = await postController.default.getPostBySlug("test");
+      const result = await postController.default.getPostBySlug('test');
       expect(result).toBeDefined();
-      expect(result.slug).toBe("test");
+      expect(result.slug).toBe('test');
       expect(result).toEqual({
         id: 1,
-        slug: "test",
-        title: "Test Post",
-        content: "Test content",
+        slug: 'test',
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
     });
-    it("getPostBySlug throws if slug is invalid", async () => {
-      await expect(postController.default.getPostBySlug("")).rejects.toThrow("Post not found or not published");
-      await expect(postController.default.getPostBySlug("!@#$")).rejects.toThrow("Post not found or not published");
+    it('getPostBySlug throws if slug is invalid', async () => {
+      await expect(postController.default.getPostBySlug('')).rejects.toThrow('Post not found or not published');
+      await expect(postController.default.getPostBySlug('!@#$')).rejects.toThrow('Post not found or not published');
     });
-    it("getPostBySlug throws if the post is deleted", async () => {
+    it('getPostBySlug throws if the post is deleted', async () => {
       mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
-        slug: "test",
+        slug: 'test',
         published: false,
       });
       
-      await expect(postController.default.getPostBySlug("test"))
-        .rejects.toThrow("Post not found or not published");
+      await expect(postController.default.getPostBySlug('test'))
+        .rejects.toThrow('Post not found or not published');
     });
   });
   describe('createPost', () => {
-    it("throws if validation fails", async () => {
-      await expect(postController.default.createPost({ title: "", content: "Test content" }))
-        .rejects.toThrow("Validation failed: ");
+    it('throws if validation fails', async () => {
+      await expect(postController.default.createPost({ title: '', content: 'Test content' }))
+        .rejects.toThrow('Validation failed: ');
     });
-    it("creates a post successfully", async () => {
+    it('creates a post successfully', async () => {
       mockCreatePost.mockResolvedValueOnce({
         id: 1,
-        slug: createSlug("Test Post"),
-        title: "Test Post",
-        content: "Test content",
+        slug: createSlug('Test Post'),
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 0,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       const result = await postController.default.createPost({
-        title: "Test Post",
-        slug: "test-post",
-        content: "Test content",
+        title: 'Test Post',
+        slug: 'test-post',
+        content: 'Test content',
         published: true,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       expect(result).toBeDefined();
       expect(result.slug).toBe(createSlug(result.title));
       expect(result).toEqual({
         id: 1,
-        slug: createSlug("Test Post"),
-        title: "Test Post",
-        content: "Test content",
+        slug: createSlug('Test Post'),
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 0,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
     });
-    it("throws if DatabaseService.createPost fails", async () => {
-      mockCreatePost.mockRejectedValueOnce(new Error("Database error"));
+    it('throws if DatabaseService.createPost fails', async () => {
+      mockCreatePost.mockRejectedValueOnce(new Error('Database error'));
       await expect(postController.default.createPost({
-        title: "Test Post",
-        slug: createSlug("Test Post"),
-        content: "Test content",
+        title: 'Test Post',
+        slug: createSlug('Test Post'),
+        content: 'Test content',
         published: true,
-        tags: ["test", "blog"],
-        author: "Test Author"
-      })).rejects.toThrow("Database error");
+        tags: ['test', 'blog'],
+        author: 'Test Author',
+      })).rejects.toThrow('Database error');
     });
   });
   describe('getPostById', () => {
-    it("returns the post if it exists", async () => {
+    it('returns the post if it exists', async () => {
       mockGetPostById.mockResolvedValueOnce({
         id: 1,
-        slug: createSlug("Test Post"),
-        title: "Test Post",
-        content: "Test content",
+        slug: createSlug('Test Post'),
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       const result = await postController.default.getPostById(1);
       expect(result).toBeDefined();
       expect(result.id).toBe(1);
       expect(result).toEqual({
         id: 1,
-        slug: createSlug("Test Post"),
-        title: "Test Post",
-        content: "Test content",
+        slug: createSlug('Test Post'),
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
     });
-    it("throws if the post does not exist", async () => {
+    it('throws if the post does not exist', async () => {
       mockGetPostById.mockResolvedValueOnce(null);
-      await expect(postController.default.getPostById(1)).rejects.toThrow("Post not found");
+      await expect(postController.default.getPostById(1)).rejects.toThrow('Post not found');
     });
-    it("throws if the post is deleted", async () => {
+    it('throws if the post is deleted', async () => {
       mockGetPostById.mockResolvedValueOnce({
         id: 1,
-        slug: createSlug("Test Post"),
-        title: "Test Post",
-        content: "Test content",
+        slug: createSlug('Test Post'),
+        title: 'Test Post',
+        content: 'Test content',
         published: false,
         created_at: new Date(),
         updated_at: new Date(),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author",
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
-      await expect(postController.default.getPostById(1)).rejects.toThrow("Blogpost deleted/not published");
+      await expect(postController.default.getPostById(1)).rejects.toThrow('Blogpost deleted/not published');
     });
-    it("throws if validation fails", async () => {
-        mockGetPostById.mockResolvedValueOnce({
+    it('throws if validation fails', async () => {
+      mockGetPostById.mockResolvedValueOnce({
         id: 1,
-        slug: "test-post",
-        title: "", // ungültig
-        content: "Test content",
+        slug: 'test-post',
+        title: '', // ungültig
+        content: 'Test content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
-      await expect(postController.default.getPostById(null)).rejects.toThrow("Validation failed: ");
+      await expect(postController.default.getPostById(null)).rejects.toThrow('Validation failed: ');
     });
   });
   describe('updatePost', () => {
-    it("updates a post successfully", async () => {
+    it('updates a post successfully', async () => {
       DatabaseService.updatePost.mockResolvedValueOnce({
         id: 1,
-        slug: "updated-post",
-        title: "Updated Post",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: 'Updated Post',
+        content: 'Updated content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 0,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       DatabaseService.getPostById.mockResolvedValueOnce({
         id: 1,
-        slug: "updated-post",
-        title: "Updated Post",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: 'Updated Post',
+        content: 'Updated content',
         published: true,
         created_at: new Date(),
         updated_at: new Date(),
         views: 0,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       const result = await postController.default.updatePost({
         id: 1,
-        slug: "updated-post",
-        title: "Updated Post",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: 'Updated Post',
+        content: 'Updated content',
         published: true,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
       expect(result).toBeDefined();
       expect(result.id).toBe(1);
       expect(result).toEqual({
         id: 1,
-        slug: "updated-post",
-        title: "Updated Post",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: 'Updated Post',
+        content: 'Updated content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 0,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
     });
-    it("throws if the post does not exist", async () => {
+    it('throws if the post does not exist', async () => {
       DatabaseService.updatePost.mockResolvedValueOnce(null);
       await expect(postController.default.updatePost({
         id: 1,
-        slug: "updated-post",
-        title: "Updated Post",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: 'Updated Post',
+        content: 'Updated content',
         published: true,
-        tags: ["test", "blog"],
-        author: "Test Author"
-      })).rejects.toThrow("Post not found or not updated");
+        tags: ['test', 'blog'],
+        author: 'Test Author',
+      })).rejects.toThrow('Post not found or not updated');
     });
-    it("throws if validation fails", async () => {
+    it('throws if validation fails', async () => {
       await expect(postController.default.updatePost({
         id: 1,
-        slug: "updated-post",
-        title: "",
-        content: "Updated content",
+        slug: 'updated-post',
+        title: '',
+        content: 'Updated content',
         published: true,
-        tags: ["test", "blog"],
-        author: "Test Author"
-      })).rejects.toThrow("Validation failed: ");
+        tags: ['test', 'blog'],
+        author: 'Test Author',
+      })).rejects.toThrow('Validation failed: ');
     });
   });
-describe('getArchivedPosts', () => {
-    it("returns only posts older than 3 months", async () => {
+  describe('getArchivedPosts', () => {
+    it('returns only posts older than 3 months', async () => {
       DatabaseService.getArchivedPosts.mockResolvedValueOnce([
         {
           id: 1,
-          slug: "archived-post",
-          title: "Archived Post",
-          content: "Archived content",
+          slug: 'archived-post',
+          title: 'Archived Post',
+          content: 'Archived content',
           published: true,
           created_at: new Date(Date.now() - 4 * 30 * 24 * 60 * 60 * 1000), // 4 Monate alt
           updated_at: new Date(),
           views: 0,
-          tags: ["archived"],
-          author: "Test Author"
-        }
+          tags: ['archived'],
+          author: 'Test Author',
+        },
       ]);
 
       // Aufruf der Methode
@@ -360,113 +360,113 @@ describe('getArchivedPosts', () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: 1,
-        slug: "archived-post",
-        title: "Archived Post",
-        content: "Archived content",
+        slug: 'archived-post',
+        title: 'Archived Post',
+        content: 'Archived content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 0,
-        tags: ["archived"],
-        author: "Test Author"
+        tags: ['archived'],
+        author: 'Test Author',
       });
     });
   });
   describe('getAllPosts', () => {
-    it("returns all published posts", async () => {
+    it('returns all published posts', async () => {
       DatabaseService.getAllPosts.mockResolvedValueOnce([
         {
           id: 1,
-          slug: "test-post",
-          title: "Test Post",
-          content: "Test content",
+          slug: 'test-post',
+          title: 'Test Post',
+          content: 'Test content',
           published: true,
           created_at: new Date(),
           updated_at: new Date(),
           views: 10,
-          tags: ["test", "blog"],
-          author: "Test Author"
+          tags: ['test', 'blog'],
+          author: 'Test Author',
         },
         {
           id: 2,
-          slug: "draft-post",
-          title: "Draft Post",
-          content: "Draft content",
+          slug: 'draft-post',
+          title: 'Draft Post',
+          content: 'Draft content',
           published: false,
           created_at: new Date(),
           updated_at: new Date(),
           views: 5,
-          tags: ["draft"],
-          author: "Test Author"
-        }
+          tags: ['draft'],
+          author: 'Test Author',
+        },
       ]);
       const result = await postController.default.getAllPosts();
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: 1,
-        slug: "test-post",
-        title: "Test Post",
-        content: "Test content",
+        slug: 'test-post',
+        title: 'Test Post',
+        content: 'Test content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 10,
-        tags: ["test", "blog"],
-        author: "Test Author"
+        tags: ['test', 'blog'],
+        author: 'Test Author',
       });
     });
-    it("throws if no posts are found", async () => {
+    it('throws if no posts are found', async () => {
       DatabaseService.getAllPosts.mockResolvedValueOnce([]);
-      await expect(postController.default.getAllPosts()).rejects.toThrow("No valid published posts found");
+      await expect(postController.default.getAllPosts()).rejects.toThrow('No valid published posts found');
     });
   });
   describe('getMostReadPosts', () => {
-    it("returns the most read posts", async () => {
+    it('returns the most read posts', async () => {
       DatabaseService.getMostReadPosts.mockResolvedValueOnce([
         {
           id: 1,
-          slug: "most-read-post",
-          title: "Most Read Post",
-          content: "Most read content",
+          slug: 'most-read-post',
+          title: 'Most Read Post',
+          content: 'Most read content',
           published: true,
           created_at: new Date(),
           updated_at: new Date(),
           views: 100,
-          tags: ["most-read"],
-          author: "Test Author"
-        }
+          tags: ['most-read'],
+          author: 'Test Author',
+        },
       ]);
       const result = await postController.default.getMostReadPosts();
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: 1,
-        slug: "most-read-post",
-        title: "Most Read Post",
-        content: "Most read content",
+        slug: 'most-read-post',
+        title: 'Most Read Post',
+        content: 'Most read content',
         published: true,
         created_at: expect.any(Date),
         updated_at: expect.any(Date),
         views: 100,
-        tags: ["most-read"],
-        author: "Test Author"
+        tags: ['most-read'],
+        author: 'Test Author',
       });
     });
-    it("throws if no posts are found", async () => {
+    it('throws if no posts are found', async () => {
       DatabaseService.getMostReadPosts.mockResolvedValueOnce([]);
-      await expect(postController.default.getMostReadPosts()).rejects.toThrow("No valid published posts found");
+      await expect(postController.default.getMostReadPosts()).rejects.toThrow('No valid published posts found');
     });
   });
   describe('deletePost', () => {
-    it("deletes a post", async () => {
+    it('deletes a post', async () => {
       DatabaseService.deletePost.mockResolvedValueOnce(true);
       const result = await postController.default.deletePost(1);
       expect(result).toEqual({ success: true, message: 'Post deleted successfully' });
     });
-    it("throws if the post does not exist", async () => {
+    it('throws if the post does not exist', async () => {
       DatabaseService.deletePost.mockResolvedValueOnce(false);
-      await expect(postController.default.deletePost(1)).rejects.toThrow("Post not found or not deleted");
+      await expect(postController.default.deletePost(1)).rejects.toThrow('Post not found or not deleted');
     });
   });
 });

@@ -1,11 +1,11 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 export default class Comment {
   constructor({
     id = null,
     postId = null,
-    username = "Anonym",
-    text = "",
+    username = 'Anonym',
+    text = '',
     ip_address = null,
     approved = true,
     published = false,
@@ -37,6 +37,6 @@ export const commentSchema = Joi.object({
   approved: Joi.boolean().optional(),
   published: Joi.boolean().optional(),
   created_at: Joi.date().required(),
-  updated_at: Joi.date().optional()
+  updated_at: Joi.date().optional(),
 });
 

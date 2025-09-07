@@ -12,65 +12,65 @@ import { JWT_SECRET, NODE_ENV } from '../config/config.js';
 export const AUTH_COOKIE_NAME = 'authToken';
 // JWT-Konfiguration
 const JWT_CONFIG = {
-    SECRET_KEY: JWT_SECRET,
-    EXPIRES_IN: '24h', // Token-Lebensdauer
-    ALGORITHM: 'HS256',
-    ISSUER: 'blog-app',
-    AUDIENCE: 'blog-users'
+  SECRET_KEY: JWT_SECRET,
+  EXPIRES_IN: '24h', // Token-Lebensdauer
+  ALGORITHM: 'HS256',
+  ISSUER: 'blog-app',
+  AUDIENCE: 'blog-users',
 };
 
 // JWT-Secret Validation
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
-    if (NODE_ENV === 'test') {
-        console.warn('WARNING: JWT_SECRET not set in test environment');
-        JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
-    } else {
-        console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
-        console.error('Please add JWT_SECRET to your .env file');
-        console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
-        process.exit(1);
-    }
+  if (NODE_ENV === 'test') {
+    console.warn('WARNING: JWT_SECRET not set in test environment');
+    JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
+  } else {
+    console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
+    console.error('Please add JWT_SECRET to your .env file');
+    console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
+    process.exit(1);
+  }
 }
 // Generate JWT token
 export function generateToken(user) {
-    if(user && !(user instanceof Admin)) {
-        throw new Error('Invalid user data for token generation');
-    }
+  if(user && !(user instanceof Admin)) {
+    throw new Error('Invalid user data for token generation');
+  }
  
-    const payload = {
-        id: Number(user.id), // BigInt to Number
-        username: user.username,
-        role: user.role,
-        iss: JWT_CONFIG.ISSUER,
-        aud: JWT_CONFIG.AUDIENCE
-    };
+  const payload = {
+    id: Number(user.id), // BigInt to Number
+    username: user.username,
+    role: user.role,
+    iss: JWT_CONFIG.ISSUER,
+    aud: JWT_CONFIG.AUDIENCE,
+  };
     
-    try {
-        const token = jwt.sign(payload, JWT_CONFIG.SECRET_KEY, {
-            expiresIn: JWT_CONFIG.EXPIRES_IN,
-            algorithm: JWT_CONFIG.ALGORITHM
-        });
+  try {
+    const token = jwt.sign(payload, JWT_CONFIG.SECRET_KEY, {
+      expiresIn: JWT_CONFIG.EXPIRES_IN,
+      algorithm: JWT_CONFIG.ALGORITHM,
+    });
         
-        return token;
-    } catch (error) {
-        console.error('Token generation failed:', error);
-        throw new Error('Token generation failed');
-    }
+    return token;
+  } catch (error) {
+    console.error('Token generation failed:', error);
+    throw new Error('Token generation failed');
+  }
 }
 // verifyToken
 export function verifyToken(token) {   
-    try {        
-        const decoded = jwt.verify(token, JWT_CONFIG.SECRET_KEY, {
-            algorithms: [JWT_CONFIG.ALGORITHM],
-            issuer: JWT_CONFIG.ISSUER,
-            audience: JWT_CONFIG.AUDIENCE
-        });
-        return decoded;
-    } catch (error) {
-        console.error('JWT verification failed');
-        console.error('Error details:', error.message);
-        return null;
-    }
+  try {        
+    const decoded = jwt.verify(token, JWT_CONFIG.SECRET_KEY, {
+      algorithms: [JWT_CONFIG.ALGORITHM],
+      issuer: JWT_CONFIG.ISSUER,
+      audience: JWT_CONFIG.AUDIENCE,
+    });
+    return decoded;
+  } catch (error) {
+    console.error('JWT verification failed');
+    console.error('Error details:', error.message);
+    return null;
+  }
 }
 // Token aus Request extrahieren
 /**
@@ -80,18 +80,18 @@ export function verifyToken(token) {
  * @returns {string|null} The extracted JWT token, or null if not found.
  */
 export function extractTokenFromRequest(req) {    
-    // Prüfe Authorization Header
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const headerToken = authHeader.substring(7);
-        return headerToken;
-    }
-    // Prüfe Cookies (fallback)
-    if (req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
-        const cookieToken = req.cookies[AUTH_COOKIE_NAME];
-        return cookieToken;
-    }
-    return null;
+  // Prüfe Authorization Header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const headerToken = authHeader.substring(7);
+    return headerToken;
+  }
+  // Prüfe Cookies (fallback)
+  if (req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
+    const cookieToken = req.cookies[AUTH_COOKIE_NAME];
+    return cookieToken;
+  }
+  return null;
 }
 
 // Passwort hashen (für Admin-Passwort-Update)
@@ -106,7 +106,7 @@ export function extractTokenFromRequest(req) {
 // }
 
 export default {
-    generateToken,
-    verifyToken,
-    extractTokenFromRequest
+  generateToken,
+  verifyToken,
+  extractTokenFromRequest,
 };

@@ -18,16 +18,16 @@
  */
 export default function queryBuilder(method, table, conditions = {}, options = {}) {
   switch (method.toLowerCase()) {
-    case 'create':
-      return buildInsertQuery(table, conditions);
-    case 'get':
-      return buildSelectQuery(table, conditions, options);
-    case 'update':
-      return buildUpdateQuery(table, conditions, options.conditions || {});
-    case 'delete':
-      return buildDeleteQuery(table, conditions);
-    default:
-      throw new Error(`Unsupported query method: ${method}`);
+  case 'create':
+    return buildInsertQuery(table, conditions);
+  case 'get':
+    return buildSelectQuery(table, conditions, options);
+  case 'update':
+    return buildUpdateQuery(table, conditions, options.conditions || {});
+  case 'delete':
+    return buildDeleteQuery(table, conditions);
+  default:
+    throw new Error(`Unsupported query method: ${method}`);
   }
 }
 
@@ -55,12 +55,12 @@ function buildSelectQuery(table, conditions, options) {
     query += ` ORDER BY ${options.orderBy}`;
   }
   if (options.limit) {
-    query += ` LIMIT ?`;
+    query += ' LIMIT ?';
     params.push(options.limit);
   }
 
   if (options.offset) {
-    query += ` OFFSET ?`;
+    query += ' OFFSET ?';
     params.push(options.offset);
   }
 

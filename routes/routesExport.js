@@ -6,10 +6,10 @@ import utilityRouter from './utilityRoutes.js';
 import staticRouter from './staticRoutes.js';
 
 export default {
-    postRouter,
-    uploadRouter,
-    authRouter,
-    commentsRouter,
-    utilityRouter,
-    staticRouter
+  postRouter,
+  uploadRouter,
+  authRouter,
+  commentsRouter,
+  utilityRouter,
+  staticRouter,
 };

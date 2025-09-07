@@ -14,7 +14,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import { EventEmitter } from 'events';
-import logger, { loggerMiddleware } from "./middleware/loggerMiddleware.js";
+import logger, { loggerMiddleware } from './middleware/loggerMiddleware.js';
 import helmet from 'helmet';
 import * as config from './config/config.js';
 import * as middleware from './middleware/securityMiddleware.js';
@@ -25,42 +25,42 @@ import csrfProtection from './utils/csrf.js';
 
 // App-Status Management
 class AppStatus extends EventEmitter {
-    constructor() {
-        super();
-        this.dbReady = false;
-        this.appReady = false;
-    }
+  constructor() {
+    super();
+    this.dbReady = false;
+    this.appReady = false;
+  }
 
-    setDatabaseReady() {
-        this.dbReady = true;
-        this.checkAppReady();
-    }
+  setDatabaseReady() {
+    this.dbReady = true;
+    this.checkAppReady();
+  }
 
-    checkAppReady() {
-        if (this.dbReady && !this.appReady) {
-            this.appReady = true;
-            this.emit('ready');
-            logger.info('App is fully ready and operational');
-        }
+  checkAppReady() {
+    if (this.dbReady && !this.appReady) {
+      this.appReady = true;
+      this.emit('ready');
+      logger.info('App is fully ready and operational');
     }
+  }
 
-    isReady() {
-        return this.appReady;
-    }
+  isReady() {
+    return this.appReady;
+  }
 
-    isDatabaseReady() {
-        return this.dbReady;
-    }
+  isDatabaseReady() {
+    return this.dbReady;
+  }
 
-    waitForReady() {
-        return new Promise((resolve) => {
-            if (this.appReady) {
-                resolve();
-            } else {
-                this.once('ready', resolve);
-            }
-        });
-    }
+  waitForReady() {
+    return new Promise((resolve) => {
+      if (this.appReady) {
+        resolve();
+      } else {
+        this.once('ready', resolve);
+      }
+    });
+  }
 }
 
 const appStatus = new AppStatus();
@@ -70,17 +70,17 @@ const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SE
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
-    logger.error('Missing required environment variables', { missingVars });
-    logger.error('Create .env file with these variables before starting the server');
-    process.exit(1);
+  logger.error('Missing required environment variables', { missingVars });
+  logger.error('Create .env file with these variables before starting the server');
+  process.exit(1);
 }
 
 // Database-integration
 import { 
-    initializeDatabase,
-    testConnection, 
-    initializeDatabaseSchema,
-    isMockDatabase
+  initializeDatabase,
+  testConnection, 
+  initializeDatabaseSchema,
+  isMockDatabase,
 } from './databases/mariaDB.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -103,57 +103,57 @@ const app = express();
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
+      defaultSrc: ['\'self\''],
       scriptSrc: [
-        "'self'",
-        "https://cdn.tiny.cloud",
-        "https://cdn.jsdelivr.net",
-        "https://cdnjs.cloudflare.com",
-        "https://generativelanguage.googleapis.com"
+        '\'self\'',
+        'https://cdn.tiny.cloud',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com',
+        'https://generativelanguage.googleapis.com',
         // Note: 'unsafe-inline' intentionally excluded for security
       ],
       styleSrc: [
-        "'self'",
-        "https://fonts.googleapis.com",
-        "https://cdn.jsdelivr.net",
-        "https://cdnjs.cloudflare.com",
-        "https://cdn.tiny.cloud"
+        '\'self\'',
+        'https://fonts.googleapis.com',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com',
+        'https://cdn.tiny.cloud',
         // Note: 'unsafe-inline' avoided when possible
       ],
       fontSrc: [
-        "'self'",
-        "https://fonts.gstatic.com",
-        "https://cdnjs.cloudflare.com"
+        '\'self\'',
+        'https://fonts.gstatic.com',
+        'https://cdnjs.cloudflare.com',
       ],
       imgSrc: [
-        "'self'", 
-        "data:", 
-        "blob:",
-        "https://images.unsplash.com",
-        "https://cdn.tiny.cloud",
-        "https://avatars.githubusercontent.com",
-        "https://cdn.jsdelivr.net"
+        '\'self\'', 
+        'data:', 
+        'blob:',
+        'https://images.unsplash.com',
+        'https://cdn.tiny.cloud',
+        'https://avatars.githubusercontent.com',
+        'https://cdn.jsdelivr.net',
       ],
       connectSrc: [
-        "'self'",
-        "https://generativelanguage.googleapis.com/v1beta/",
-        "https://cdn.tiny.cloud/1/"
+        '\'self\'',
+        'https://generativelanguage.googleapis.com/v1beta/',
+        'https://cdn.tiny.cloud/1/',
       ],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      frameAncestors: ["'none'"]
-    }
+      frameSrc: ['\'none\''],
+      objectSrc: ['\'none\''],
+      baseUri: ['\'self\''],
+      formAction: ['\'self\''],
+      frameAncestors: ['\'none\''],
+    },
   },
   hsts: config.IS_PRODUCTION ? {
     maxAge: 31536000,
     includeSubDomains: true,
-    preload: true
+    preload: true,
   } : false,
   noSniff: true,
   frameguard: { action: 'deny' },
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" }
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
 // 2. Cookie Parser (required BEFORE CSRF!)
@@ -165,12 +165,12 @@ app.use(csrfProtection);
 // 4. Request-Parsing (with security limits)
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
 app.use(express.urlencoded({
-    extended: true,
-    inflate: true,
-    limit: config.URLENCODED_BODY_LIMIT,  // Configurable limit for DoS protection
-    parameterLimit: 1000,  // Reduced from 5000
-    type: "application/x-www-form-urlencoded",
-  })
+  extended: true,
+  inflate: true,
+  limit: config.URLENCODED_BODY_LIMIT,  // Configurable limit for DoS protection
+  parameterLimit: 1000,  // Reduced from 5000
+  type: 'application/x-www-form-urlencoded',
+}),
 );
 
 // 5. Input-Sanitization (NACH json parsing!)
@@ -191,17 +191,17 @@ app.use(express.static(publicDirectoryPath, {
     if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
       res.setHeader('Cache-Control', 'public, max-age=31536000');
     }
-  }
+  },
 }));
 
 // 9. Health Check (funktioniert IMMER, auch ohne DB)
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        database: appStatus.isDatabaseReady() ? 'ready' : 'initializing',
-        app: appStatus.isReady() ? 'ready' : 'initializing'
-    });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    database: appStatus.isDatabaseReady() ? 'ready' : 'initializing',
+    app: appStatus.isReady() ? 'ready' : 'initializing',
+  });
 });
 
 // Datenbank initialisieren
@@ -215,31 +215,31 @@ async function initializeApp() {
     logger.info('Testing database connection...');
     const dbConnected = await testConnection();
     if (!dbConnected) {
-        logger.warn('Database connection failed! Continuing in MOCK mode for development.');
-        logger.warn('Note: Database-dependent features will not work properly.');
-        // DON'T exit - continue with mock mode
+      logger.warn('Database connection failed! Continuing in MOCK mode for development.');
+      logger.warn('Note: Database-dependent features will not work properly.');
+      // DON'T exit - continue with mock mode
     } else {
-        logger.info('Database connection established');
+      logger.info('Database connection established');
     }
     
     // Schema erstellen (nur wenn DB verbunden)
     if (dbConnected) {
-        logger.info('Initializing database schema...');
-        const schemaCreated = await initializeDatabaseSchema();
-        if (!schemaCreated) {
-            logger.error('Database schema could not be created! Server will exit.');
-            process.exit(1);
-        }
-        logger.info('Database schema initialized');
+      logger.info('Initializing database schema...');
+      const schemaCreated = await initializeDatabaseSchema();
+      if (!schemaCreated) {
+        logger.error('Database schema could not be created! Server will exit.');
+        process.exit(1);
+      }
+      logger.info('Database schema initialized');
     } else {
-        logger.warn('Skipping schema initialization - using mock mode');
+      logger.warn('Skipping schema initialization - using mock mode');
     }
     
     // Info über DB-Modus
     if (isMockDatabase()) {
-        logger.info('Datenbank im Mock-Modus - keine echte Verbindung');
+      logger.info('Datenbank im Mock-Modus - keine echte Verbindung');
     } else {
-        logger.info('Echte Datenbankverbindung aktiv');
+      logger.info('Echte Datenbankverbindung aktiv');
     }
     
     // WICHTIG: DB ist bereit - Status updaten
@@ -257,43 +257,43 @@ async function initializeApp() {
 
 // DB-abhängige Routes (werden erst nach DB-Init registriert)
 function registerDatabaseRoutes() {
-    logger.info('Registering database-dependent routes...');
+  logger.info('Registering database-dependent routes...');
     
-    // Alle DB-abhängigen Routes mit DB-Check (Reihenfolge wichtig!)
-    app.use('/', requireDatabase, routes.staticRouter);
+  // Alle DB-abhängigen Routes mit DB-Check (Reihenfolge wichtig!)
+  app.use('/', requireDatabase, routes.staticRouter);
 
-    app.use('/', requireDatabase, routes.utilityRouter);
+  app.use('/', requireDatabase, routes.utilityRouter);
 
-    app.use('/auth', requireDatabase, routes.authRouter);
-    app.use('/blogpost', requireDatabase, routes.postRouter);
-    app.use('/upload', requireDatabase, routes.uploadRouter);
-    app.use('/comments', requireDatabase, routes.commentsRouter);
+  app.use('/auth', requireDatabase, routes.authRouter);
+  app.use('/blogpost', requireDatabase, routes.postRouter);
+  app.use('/upload', requireDatabase, routes.uploadRouter);
+  app.use('/comments', requireDatabase, routes.commentsRouter);
     
-    // 404 handler MUST be registered AFTER all routes
-    app.use((req, res, next) => {
-        res.status(404).send("Sorry, can't find that!");
-    });
+  // 404 handler MUST be registered AFTER all routes
+  app.use((req, res, _next) => {
+    res.status(404).send('Sorry, can\'t find that!');
+  });
     
-    // Error handler MUST be registered AFTER 404 handler
-    app.use((err, req, res, next) => {
-        res.status(500).json({ message: err.message });
-    });
+  // Error handler MUST be registered AFTER 404 handler
+  app.use((err, req, res, _next) => {
+    res.status(500).json({ message: err.message });
+  });
     
-    logger.info('Database-dependent routes registered');
+  logger.info('Database-dependent routes registered');
 }
 
 // App initialisieren (asynchron)
 initializeApp().then(() => {
-    logger.info('App initialization completed successfully');
+  logger.info('App initialization completed successfully');
 }).catch((error) => {
-    logger.error('App initialization failed:', error);
-    logger.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-    });
-    console.error('Full error object:', error);
-    process.exit(1);
+  logger.error('App initialization failed:', error);
+  logger.error('Error details:', {
+    message: error.message,
+    stack: error.stack,
+    name: error.name,
+  });
+  console.error('Full error object:', error);
+  process.exit(1);
 });
 
 // ===========================================
@@ -302,23 +302,23 @@ initializeApp().then(() => {
 
 // Nur sichere, öffentliche APIs exportieren
 export function isAppReady() {
-    return appStatus.isReady();
+  return appStatus.isReady();
 }
 
 export function isDatabaseReady() {
-    return appStatus.isDatabaseReady();
+  return appStatus.isDatabaseReady();
 }
 
 export function waitForApp() {
-    return appStatus.waitForReady();
+  return appStatus.waitForReady();
 }
 
 export function getAppStatus() {
-    return {
-        ready: appStatus.isReady(),
-        database: appStatus.isDatabaseReady(),
-        timestamp: new Date().toISOString()
-    };
+  return {
+    ready: appStatus.isReady(),
+    database: appStatus.isDatabaseReady(),
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // Export appStatus for middleware usage
@@ -330,27 +330,27 @@ export { appStatus };
 
 // HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen ausgeschlossen
 app.use((req, res, next) => {
-    // API-Routen von HTTPS-Redirect ausschließen
-    if (req.url.startsWith('/auth/') || 
+  // API-Routen von HTTPS-Redirect ausschließen
+  if (req.url.startsWith('/auth/') || 
     req.url.startsWith('/extension/') || 
     req.url.startsWith('/blogpost') || 
     req.url.startsWith('/comments/') || 
     req.url.startsWith('/upload/')) {
-        return next(); // Kein Redirect für API-Calls
+    return next(); // Kein Redirect für API-Calls
+  }
+  // Plesk verwendet x-forwarded-proto Header
+  if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
+    // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
+    if (req.method === 'GET') {
+      return res.redirect(301, `https://${req.header('host')}${req.url}`);
+    } else {
+      return res.status(400).json({
+        error: 'HTTPS required',
+        message: 'API endpoints require HTTPS connection',
+      });
     }
-    // Plesk verwendet x-forwarded-proto Header
-    if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
-        // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
-        if (req.method === 'GET') {
-            return res.redirect(301, `https://${req.header('host')}${req.url}`);
-        } else {
-            return res.status(400).json({
-                error: 'HTTPS required',
-                message: 'API endpoints require HTTPS connection'
-            });
-        }
-    } 
-    next();
+  } 
+  next();
 });
 
 // Error-Handling Middleware (MUSS am Ende stehen!)

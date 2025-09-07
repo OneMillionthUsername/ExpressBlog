@@ -1,13 +1,13 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 export class Post {
   constructor({
     id = null,
-    slug = "",
-    title = "",
-    content = "",
+    slug = '',
+    title = '',
+    content = '',
     tags = [],
-    author = "admin",
+    author = 'admin',
     views = 0,
     published = true,
     created_at = new Date(),
@@ -40,5 +40,5 @@ export const postSchema = Joi.object({
   views: Joi.number().integer().min(0).optional(),
   published: Joi.boolean().optional(),
   created_at: Joi.date().optional(),
-  updated_at: Joi.date().optional()
+  updated_at: Joi.date().optional(),
 });

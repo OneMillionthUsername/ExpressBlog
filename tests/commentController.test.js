@@ -12,16 +12,16 @@ jest.mock('../models/commentModel.js', () => ({
       Object.assign(this, data);
     }
     static validate = jest.fn();
-  }
+  },
 }));
 
 // Mock DatabaseService
 jest.mock('../databases/mariaDB.js', () => ({
-    DatabaseService: {
-        createComment: mockCreateComment,
-        getCommentsByPostId: mockGetCommentsByPostId,
-        deleteComment: mockDeleteComment,
-    }
+  DatabaseService: {
+    createComment: mockCreateComment,
+    getCommentsByPostId: mockGetCommentsByPostId,
+    deleteComment: mockDeleteComment,
+  },
 }));
 
 // 2. Imports nach den Mocks
@@ -51,35 +51,35 @@ beforeEach(() => {
   Comment.validate.mockImplementation((data) => ({ error: null, value: data }));
   mockCreateComment.mockResolvedValue({ success: true, comment: { id: 1, postId: 1, username: 'Test User', text: 'Test comment', created_at: new Date() } });
   mockGetCommentsByPostId.mockResolvedValue([{
-      approved: true,
-      id: 1,
-      postId: 1,
-      username: 'Test User',
-      text: 'Test comment',
-      created_at: new Date('2025-08-26T12:00:00.000Z'),
-      updated_at: new Date('2025-08-26T13:00:00.000Z'),
-      published: true,
-      ip_address: '127.0.0.1'
+    approved: true,
+    id: 1,
+    postId: 1,
+    username: 'Test User',
+    text: 'Test comment',
+    created_at: new Date('2025-08-26T12:00:00.000Z'),
+    updated_at: new Date('2025-08-26T13:00:00.000Z'),
+    published: true,
+    ip_address: '127.0.0.1',
   }, {
-      approved: true,
-      id: 2,
-      postId: 1,
-      username: 'Test Muser',
-      text: 'Test bomment',
-      created_at: new Date('2025-07-26T12:00:00.000Z'),
-      updated_at: new Date('2025-08-12T13:00:00.000Z'),
-      published: true,
-      ip_address: '127.0.0.1'
+    approved: true,
+    id: 2,
+    postId: 1,
+    username: 'Test Muser',
+    text: 'Test bomment',
+    created_at: new Date('2025-07-26T12:00:00.000Z'),
+    updated_at: new Date('2025-08-12T13:00:00.000Z'),
+    published: true,
+    ip_address: '127.0.0.1',
   }, {
-      approved: false,
-      id: 3,
-      postId: 1,
-      username: 'Test Muser',
-      text: 'Test bomment',
-      created_at: new Date('2025-07-26T12:00:00.000Z'),
-      updated_at: new Date('2025-08-12T13:00:00.000Z'),
-      published: true,
-      ip_address: '127.0.0.1'
+    approved: false,
+    id: 3,
+    postId: 1,
+    username: 'Test Muser',
+    text: 'Test bomment',
+    created_at: new Date('2025-07-26T12:00:00.000Z'),
+    updated_at: new Date('2025-08-12T13:00:00.000Z'),
+    published: true,
+    ip_address: '127.0.0.1',
   }]);
   mockDeleteComment.mockResolvedValue({ success: true, message: 'Comment deleted successfully' });
 });

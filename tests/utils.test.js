@@ -1,25 +1,25 @@
 jest.unstable_mockModule('dompurify', () => ({
   default: () => ({
-    sanitize: jest.fn(() => { throw new Error("Sanitization failed"); })
-  })
+    sanitize: jest.fn(() => { throw new Error('Sanitization failed'); }),
+  }),
 }));
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
     status: 200,
-    json: () => Promise.resolve({ success: true, data: "test" })
-  })
+    json: () => Promise.resolve({ success: true, data: 'test' }),
+  }),
 );
 
 const DOMPurifyServer = (await import('dompurify')).default;
 
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { 
   createSlug, 
   truncateSlug, 
   convertBigInts,
-} from "../utils/utils.js";
-import { createEscapeInputMiddleware } from "../middleware/securityMiddleware.js";
+} from '../utils/utils.js';
+import { createEscapeInputMiddleware } from '../middleware/securityMiddleware.js';
 import { sanitizeFilename, escapeHtml, unescapeHtml, escapeAllStrings } from '../utils/utils.js';
 
 const { makeApiRequest } = await import('../public/assets/js/api.js');
@@ -27,18 +27,18 @@ let req, res, next, mockSanitize;
 
 beforeEach(() => {
   req = {
-    body: { title: "<b>abc</b> Das Gewitter kommmt, wenn es dunkel wird!", content: "<b>test</b>" },
-    query: { q: "<script>" },
-    params: { id: "<img>" },
-    cookies: { session: "<cookie>" },
-    headers: { "user-agent": "<us>", referer: "<ref>" },
-    file: { originalname: "file<>:\"|?*.txt" },
+    body: { title: '<b>abc</b> Das Gewitter kommmt, wenn es dunkel wird!', content: '<b>test</b>' },
+    query: { q: '<script>' },
+    params: { id: '<img>' },
+    cookies: { session: '<cookie>' },
+    headers: { 'user-agent': '<us>', referer: '<ref>' },
+    file: { originalname: 'file<>:"|?*.txt' },
     files: [
-      { originalname: "C:\\Windows\\system32\\file.exe" },
-      { originalname: "../../../etc/passwd" },
-      { originalname: "my file & data!.txt" },
-      { originalname: "document.pdf" }
-    ]
+      { originalname: 'C:\\Windows\\system32\\file.exe' },
+      { originalname: '../../../etc/passwd' },
+      { originalname: 'my file & data!.txt' },
+      { originalname: 'document.pdf' },
+    ],
   };
   res = {};
   next = jest.fn();
@@ -59,158 +59,158 @@ describe('makeApiRequest', () => {
       Promise.resolve({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ success: true, data: "test" })
-      })
+        json: () => Promise.resolve({ success: true, data: 'test' }),
+      }),
     );
   });
 
-  it("should make a GET request", async () => {
-    const result = await makeApiRequest("https://api.example.com/data", { method: "GET" });
-    expect(result).toEqual({ success: true, data: "test" });
+  it('should make a GET request', async () => {
+    const result = await makeApiRequest('https://api.example.com/data', { method: 'GET' });
+    expect(result).toEqual({ success: true, data: 'test' });
   });
-  it("should make a POST request", async () => {
-    const result = await makeApiRequest("https://api.example.com/data", { 
-      method: "POST", 
-      body: JSON.stringify({ key: "value" }) 
+  it('should make a POST request', async () => {
+    const result = await makeApiRequest('https://api.example.com/data', { 
+      method: 'POST', 
+      body: JSON.stringify({ key: 'value' }), 
     });
-    expect(result).toEqual({ success: true, data: "test" });
+    expect(result).toEqual({ success: true, data: 'test' });
   });
-  it("should handle non-OK responses", async () => {
+  it('should handle non-OK responses', async () => {
     global.fetch.mockImplementationOnce(() =>
       Promise.resolve({
         ok: false,
         status: 404,
-        json: () => Promise.resolve({ success: false, error: "Not found" })
-      })
+        json: () => Promise.resolve({ success: false, error: 'Not found' }),
+      }),
     );
-    const result = await makeApiRequest("https://api.example.com/data", { method: "GET" });
-    expect(result).toEqual({ success: false, error: "Not found", status: 404 });
+    const result = await makeApiRequest('https://api.example.com/data', { method: 'GET' });
+    expect(result).toEqual({ success: false, error: 'Not found', status: 404 });
   });
-  it("should handle network errors", async () => {
-    global.fetch = jest.fn(() => Promise.reject(new Error("Network error")));
+  it('should handle network errors', async () => {
+    global.fetch = jest.fn(() => Promise.reject(new Error('Network error')));
     
-    await expect(makeApiRequest("https://api.example.com/data", { method: "GET" }))
+    await expect(makeApiRequest('https://api.example.com/data', { method: 'GET' }))
       .rejects
-      .toThrow("API-Request fehlgeschlagen: Network error");  
+      .toThrow('API-Request fehlgeschlagen: Network error');  
   });
-  it("should handle other errors", async () => {
-    global.fetch = jest.fn(() => Promise.reject(new Error("Other error")));
+  it('should handle other errors', async () => {
+    global.fetch = jest.fn(() => Promise.reject(new Error('Other error')));
 
-    await expect(makeApiRequest("https://api.example.com/data", { method: "GET" }))
+    await expect(makeApiRequest('https://api.example.com/data', { method: 'GET' }))
       .rejects
-      .toThrow("API-Request fehlgeschlagen: Other error");
+      .toThrow('API-Request fehlgeschlagen: Other error');
   });
-  it("should include custom headers", async () => {
-    const customHeaders = { Authorization: "Bearer testtoken" };
+  it('should include custom headers', async () => {
+    const customHeaders = { Authorization: 'Bearer testtoken' };
     
     global.fetch = jest.fn((url, options) => {
-      expect(options.headers.Authorization).toBe("Bearer testtoken");
+      expect(options.headers.Authorization).toBe('Bearer testtoken');
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ success: true })
+        json: () => Promise.resolve({ success: true }),
       });
     });
     
-    const result = await makeApiRequest("https://api.example.com/data", { headers: customHeaders });
+    const result = await makeApiRequest('https://api.example.com/data', { headers: customHeaders });
     expect(result).toEqual({ success: true });
   });
-  it("should handle other HTTP methods", async () => {
-    const customHeaders = { Authorization: "Bearer testtoken" };
+  it('should handle other HTTP methods', async () => {
+    const customHeaders = { Authorization: 'Bearer testtoken' };
 
     global.fetch = jest.fn((url, options) => {
-      expect(options.headers.Authorization).toBe("Bearer testtoken");
+      expect(options.headers.Authorization).toBe('Bearer testtoken');
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ success: true })
+        json: () => Promise.resolve({ success: true }),
       });
     });
 
-    const result = await makeApiRequest("https://api.example.com/data", { method: "UPDATE", headers: customHeaders });
+    const result = await makeApiRequest('https://api.example.com/data', { method: 'UPDATE', headers: customHeaders });
     expect(result).toEqual({ success: true });
   });
-  it("should make a DELETE request", async () => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ success: true, deleted: true })
-    })
-  );
-  const result = await makeApiRequest("https://api.example.com/data", { method: "DELETE" });
-  expect(result).toEqual({ success: true, deleted: true });
-  });
-  it("should make an UPDATE request", async () => {
+  it('should make a DELETE request', async () => {
     global.fetch = jest.fn(() =>
       Promise.resolve({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ success: true, updated: true })
-      })
+        json: () => Promise.resolve({ success: true, deleted: true }),
+      }),
     );
-    const result = await makeApiRequest("https://api.example.com/data", { method: "UPDATE", body: JSON.stringify({ key: "value" }) });
+    const result = await makeApiRequest('https://api.example.com/data', { method: 'DELETE' });
+    expect(result).toEqual({ success: true, deleted: true });
+  });
+  it('should make an UPDATE request', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ success: true, updated: true }),
+      }),
+    );
+    const result = await makeApiRequest('https://api.example.com/data', { method: 'UPDATE', body: JSON.stringify({ key: 'value' }) });
     expect(result).toEqual({ success: true, updated: true });
   });
 });
 describe('escapeAllStrings', () => {
-  it("should throw an error for undefined input", () => {
-    expect(() => escapeAllStrings(undefined)).toThrow("Invalid input: Object is null or undefined");
+  it('should throw an error for undefined input', () => {
+    expect(() => escapeAllStrings(undefined)).toThrow('Invalid input: Object is null or undefined');
   });
-  it("should throw an error for unsupported input types", () => {
-    expect(() => escapeAllStrings(123)).toThrow("Unsupported input type");
-    expect(() => escapeAllStrings(true)).toThrow("Unsupported input type");
-    expect(() => escapeAllStrings(() => {})).toThrow("Unsupported input type");
+  it('should throw an error for unsupported input types', () => {
+    expect(() => escapeAllStrings(123)).toThrow('Unsupported input type');
+    expect(() => escapeAllStrings(true)).toThrow('Unsupported input type');
+    expect(() => escapeAllStrings(() => {})).toThrow('Unsupported input type');
   });
-  it("should throw an error for forbidden keys", () => {
+  it('should throw an error for forbidden keys', () => {
     const obj = {};
-    Object.defineProperty(obj, "__proto__", {
-      value: "malicious",
+    Object.defineProperty(obj, '__proto__', {
+      value: 'malicious',
       enumerable: true,
       writable: true,
-      configurable: true
+      configurable: true,
     });
-    expect(() => escapeAllStrings(obj)).toThrow("Forbidden key detected: \"__proto__\"");
+    expect(() => escapeAllStrings(obj)).toThrow('Forbidden key detected: "__proto__"');
   });
-  it("should throw an error when DOMPurify fails", () => {
+  it('should throw an error when DOMPurify fails', () => {
     const obj = { content: '<script>alert("xss")</script>' };
-    const whitelist = ["content"];
+    const whitelist = ['content'];
     const mockDomPurify = {
-  sanitize: jest.fn(() => { throw new Error("Sanitization failed"); })
-};
-    expect(() => escapeAllStrings(obj, whitelist, [], mockDomPurify)).toThrow("Sanitization failed");
+      sanitize: jest.fn(() => { throw new Error('Sanitization failed'); }),
+    };
+    expect(() => escapeAllStrings(obj, whitelist, [], mockDomPurify)).toThrow('Sanitization failed');
   });
-  it("should sanitize content with DOMPurify when in whitelist", () => {
-    const whitelist = ["content"];
-    const obj = { content: "<script>alert('XSS')</script>" };
+  it('should sanitize content with DOMPurify when in whitelist', () => {
+    const whitelist = ['content'];
+    const obj = { content: '<script>alert(\'XSS\')</script>' };
 
-    const mockSanitize = jest.fn().mockReturnValue("Clean content");
+    const mockSanitize = jest.fn().mockReturnValue('Clean content');
     const mockDomPurify = { sanitize: mockSanitize };
 
     const result = escapeAllStrings(obj, whitelist, [], mockDomPurify);
 
-    expect(result.content).toBe("Clean content");
+    expect(result.content).toBe('Clean content');
     expect(mockSanitize).toHaveBeenCalledWith(
-      "<script>alert('XSS')</script>",
+      '<script>alert(\'XSS\')</script>',
       expect.objectContaining({
         ALLOWED_TAGS: expect.any(Array),
         ALLOWED_ATTR: expect.any(Array),
-        ALLOW_DATA_ATTR: false
-      })
+        ALLOW_DATA_ATTR: false,
+      }),
     );
   });
 });
-describe("createEscapeInputMiddleware", () => {
-  it("should escape body fields except whitelisted ones", () => {
-    const whitelist = ["content"];
+describe('createEscapeInputMiddleware', () => {
+  it('should escape body fields except whitelisted ones', () => {
+    const whitelist = ['content'];
     const escapeInputMiddleware = createEscapeInputMiddleware(whitelist);
     
     escapeInputMiddleware(req, res, next);
     
     expect(req.body.title).toBe('&lt;b&gt;abc&lt;/b&gt; Das Gewitter kommmt, wenn es dunkel wird!');
-    expect(req.body.content).toBe("<b>test</b>"); // Whitelisted
+    expect(req.body.content).toBe('<b>test</b>'); // Whitelisted
     expect(next).toHaveBeenCalled();
   });
 
-  it("should escape query, params, and cookies", () => {
+  it('should escape query, params, and cookies', () => {
     const escapeInputMiddleware = createEscapeInputMiddleware([]);
     
     escapeInputMiddleware(req, res, next);
@@ -221,19 +221,19 @@ describe("createEscapeInputMiddleware", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should sanitize file names", () => {
+  it('should sanitize file names', () => {
     const escapeInputMiddleware = createEscapeInputMiddleware([]);
     
     escapeInputMiddleware(req, res, next);
     
-    expect(req.file.safeFilename).toBe("file_______.txt");
-    expect(req.files[0].safeFilename).toBe("file.exe");
-    expect(req.files[1].safeFilename).toBe("passwd");
-    expect(req.files[2].safeFilename).toBe("my_file___data_.txt");
-    expect(req.files[3].safeFilename).toBe("document.pdf");
+    expect(req.file.safeFilename).toBe('file_______.txt');
+    expect(req.files[0].safeFilename).toBe('file.exe');
+    expect(req.files[1].safeFilename).toBe('passwd');
+    expect(req.files[2].safeFilename).toBe('my_file___data_.txt');
+    expect(req.files[3].safeFilename).toBe('document.pdf');
     expect(next).toHaveBeenCalled();
   });
-  it("should handle errors gracefully", () => {
+  it('should handle errors gracefully', () => {
     const next = jest.fn();
     // Simuliere einen Fehler in der Middleware
     req.body = 123; // Setze req.body auf eine Zahl, um einen Fehler zu provozieren
@@ -242,7 +242,7 @@ describe("createEscapeInputMiddleware", () => {
     // Überprüfe, ob next() aufgerufen wurde
     expect(next).toHaveBeenCalled();
   });
-  it("should call next middleware", () => {
+  it('should call next middleware', () => {
     const escapeInputMiddleware = createEscapeInputMiddleware([]);
     
     escapeInputMiddleware(req, res, next);
@@ -257,9 +257,9 @@ describe('createSlug', () => {
       ['Hällo! > Das ist ein sehr langer Titööl, mit Sönderzeichen <.', 'haello-das-ist-ein-sehr-langer-titoeoel-mit'],
       ['', ''],
       ['../../..', ''],
-      ["..\\..\\..", ''],
-      ["..\\..\\..TitelName", 'titelname'],
-      ['something.exe', 'somethingexe']
+      ['..\\..\\..', ''],
+      ['..\\..\\..TitelName', 'titelname'],
+      ['something.exe', 'somethingexe'],
     ];
     
     testCases.forEach(([input, expected]) => {
@@ -278,7 +278,7 @@ describe('convertBigInts', () => {
       id: 3n,
       views: 1235213n,
       name: 'test',
-      count: 42
+      count: 42,
     };
     convertBigInts(input);
     
@@ -312,7 +312,7 @@ describe('escapeHtml', () => {
     expect(escapeHtml('<div>"Test"&\'</div>')).toBe('&lt;div&gt;&quot;Test&quot;&amp;&#39;&lt;/div&gt;');
     expect(escapeHtml('&')).toBe('&amp;');
     expect(escapeHtml('"')).toBe('&quot;');
-    expect(escapeHtml("'")).toBe('&#39;');
+    expect(escapeHtml('\'')).toBe('&#39;');
   });
   it('returns non-string unchanged', () => {
     expect(escapeHtml(123)).toBe(123);
@@ -324,7 +324,7 @@ describe('unescapeHtml', () => {
     expect(unescapeHtml('&lt;div&gt;&quot;Test&quot;&amp;&#39;&lt;/div&gt;')).toBe('<div>"Test"&\'</div>');
     expect(unescapeHtml('&amp;')).toBe('&');
     expect(unescapeHtml('&quot;')).toBe('"');
-    expect(unescapeHtml('&#39;')).toBe("'");
+    expect(unescapeHtml('&#39;')).toBe('\'');
   });
   it('returns non-string unchanged', () => {
     expect(unescapeHtml(123)).toBe(123);

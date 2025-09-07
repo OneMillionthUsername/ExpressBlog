@@ -1,10 +1,10 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 export class PostAnalytics {
   constructor({
     id = null,
     postId = null,
-    event_type = "view",
+    event_type = 'view',
     ip_address = null,
     user_agent = null,
     referer = null,
@@ -31,12 +31,12 @@ export class PostAnalytics {
 export const postAnalyticsSchema = Joi.object({
   id: Joi.number().integer().optional(),
   postId: Joi.number().integer().min(1).required(),
-  event_type: Joi.string().valid("view", "click", "share").required(),
+  event_type: Joi.string().valid('view', 'click', 'share').required(),
   ip_address: Joi.string().ip().required(),
   user_agent: Joi.string().max(200).required(),
   referer: Joi.string().uri().optional(),
   country: Joi.string().max(100).optional(),
   city: Joi.string().max(100).optional(),
-  created_at: Joi.date().required()
+  created_at: Joi.date().required(),
 });
 

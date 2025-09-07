@@ -19,7 +19,7 @@ utilityRouter.get('/redirect', (req, res) => {
       return res.status(400).end(`Unsupported redirect to host: ${req.query.url}`);
     }
     res.redirect(req.query.url);
-  } catch (e) {
+  } catch (_e) {
     return res.status(400).end(`Invalid url: ${req.query.url}`);
   }
 });

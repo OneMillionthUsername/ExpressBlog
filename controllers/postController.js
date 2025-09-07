@@ -19,7 +19,7 @@ const getPostBySlug = async (slug) => {
   } catch (error) {
     throw new PostControllerException(`Error fetching post by slug: ${error.message}`, error);
   }
-}
+};
 const createPost = async (postData) => {
   const { error, value } = Post.validate(postData);
   if (error) {
@@ -36,7 +36,7 @@ const createPost = async (postData) => {
   } catch (error) {
     throw new PostControllerException(`Error creating post: ${error.message}`, error);
   }
-}
+};
 const getPostById = async (postId) => {
   try {
     const post = await DatabaseService.getPostById(postId);
@@ -52,13 +52,13 @@ const getPostById = async (postId) => {
   } catch (error) {
     throw new PostControllerException(`Error fetching post by id: ${error.message}`, error);
   }
-}
+};
 const updatePost = async (postData) => {
   const { error, value } = Post.validate(postData);
   if (error) {
     throw new PostControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
   }
-try {
+  try {
     const updated = await DatabaseService.updatePost(value);
     if (!updated) {
       throw new PostControllerException('Post not found or not updated');
@@ -71,7 +71,7 @@ try {
   } catch (error) {
     throw new PostControllerException(`Error in updatePost: ${error.message}`, error);
   }
-}
+};
 const getAllPosts = async () => {
   try {
     const posts = await DatabaseService.getAllPosts();
@@ -96,7 +96,7 @@ const getAllPosts = async () => {
   } catch (error) {
     throw new PostControllerException(`Error fetching all posts: ${error.message}`, error);
   }
-}
+};
 const getMostReadPosts = async () => {
   try {
     const posts = await DatabaseService.getMostReadPosts();
@@ -122,7 +122,7 @@ const getMostReadPosts = async () => {
   } catch (error) {
     throw new PostControllerException(`Error fetching most read posts: ${error.message}`, error);
   }
-}
+};
 const getArchivedPosts = async () => {
   try {
     const posts = await DatabaseService.getArchivedPosts();
@@ -148,7 +148,7 @@ const getArchivedPosts = async () => {
   } catch (error) {
     throw new PostControllerException(`Error fetching archived posts: ${error.message}`, error);
   }
-}
+};
 const deletePost = async (postId) => {
   try {
     const result = await DatabaseService.deletePost(postId);
@@ -159,7 +159,7 @@ const deletePost = async (postId) => {
   } catch (error) {
     throw new PostControllerException(`Error deleting post: ${error.message}`, error);
   }
-}
+};
 export default {
   getPostBySlug,
   createPost,
@@ -168,5 +168,5 @@ export default {
   updatePost,
   getAllPosts,
   getMostReadPosts,
-  deletePost
+  deletePost,
 };

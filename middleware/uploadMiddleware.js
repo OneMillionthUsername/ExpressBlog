@@ -19,11 +19,11 @@ const imageFilter = (req, file, cb) => {
     'image/png',
     'image/gif',
     'image/webp',
-    'image/svg+xml'
+    'image/svg+xml',
   ];
   
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-    const fileExt = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+  const fileExt = path.extname(file.originalname).toLowerCase();
 
   if (allowedMimes.includes(file.mimetype) && allowedExtensions.includes(fileExt)) {
     cb(null, true);
@@ -43,7 +43,7 @@ const storage = multer.diskStorage({
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
     cb(null, `${timestamp}-${randomString}-${safeName}`);
-  }
+  },
 });
 
 export const imageUpload = multer({
@@ -51,6 +51,6 @@ export const imageUpload = multer({
   fileFilter: imageFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1 // Nur eine Datei pro Upload
-  }
+    files: 1, // Nur eine Datei pro Upload
+  },
 });

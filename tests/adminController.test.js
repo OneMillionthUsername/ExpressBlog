@@ -12,8 +12,8 @@ jest.mock('../databases/mariaDB.js', () => ({
     getAdminByUsername: mockGetAdminByUsername,
     updateAdminLoginSuccess: mockUpdateAdminLoginSuccess,
     updateAdminLoginFailure: mockUpdateAdminLoginFailure,
-    updateAdminStatus: mockUpdateAdminStatus
-  }
+    updateAdminStatus: mockUpdateAdminStatus,
+  },
 }));
 
 // Mock Admin model
@@ -22,7 +22,7 @@ jest.mock('../models/adminModel.js', () => ({
     constructor(data) {
       Object.assign(this, data);
     }
-  }
+  },
 }));
 
 // Add the validate method to the mocked Admin class
@@ -30,7 +30,7 @@ Admin.validate = jest.fn();
 
 // Mock bcrypt
 jest.mock('bcrypt', () => ({
-  compare: jest.fn()
+  compare: jest.fn(),
 }));
 
 // 2. Imports nach den Mocks
@@ -91,7 +91,7 @@ describe('AdminController', () => {
       email: 'test@example.com',
       full_name: 'Test Admin',
       active: true,
-      locked_until: null
+      locked_until: null,
     };
     it('should throw error when username or password is empty', async () => {
       await expect(adminController.default.authenticateAdmin('', 'password123'))
@@ -119,7 +119,7 @@ describe('AdminController', () => {
         username: 'testadmin',
         role: 'admin',
         email: 'test@example.com',
-        full_name: 'Test Admin'
+        full_name: 'Test Admin',
       });
       expect(mockGetAdminByUsername).toHaveBeenCalledWith('testadmin');
       expect(mockBcryptCompare).toHaveBeenCalledWith('password123', '$2b$10$hashedpassword');
@@ -167,7 +167,7 @@ describe('AdminController', () => {
       // Arrange
       const lockedAdmin = {
         ...mockAdminData,
-        locked_until: new Date(Date.now() + 3600000).toISOString() // 1 hour in future
+        locked_until: new Date(Date.now() + 3600000).toISOString(), // 1 hour in future
       };
       mockGetAdminByUsername.mockResolvedValue(lockedAdmin);
       Admin.validate.mockReturnValue({ error: null, value: lockedAdmin });
@@ -186,10 +186,10 @@ describe('AdminController', () => {
         error: {
           details: [
             { message: 'Invalid data' },
-            { message: 'Missing required field' }
-          ]
+            { message: 'Missing required field' },
+          ],
         },
-        value: null
+        value: null,
       });
 
       // Act
@@ -212,7 +212,7 @@ describe('AdminController', () => {
       const mockAdminData = {
         id: 1,
         username: 'testadmin',
-        email: 'test@example.com'
+        email: 'test@example.com',
       };
       mockGetAdminByUsername.mockResolvedValue(mockAdminData);
       Admin.validate.mockReturnValue({ error: null, value: mockAdminData });
@@ -246,10 +246,10 @@ describe('AdminController', () => {
         error: {
           details: [
             { message: 'Invalid data' },
-            { message: 'Missing required field' }
-          ]
+            { message: 'Missing required field' },
+          ],
         },
-        value: null
+        value: null,
       });
 
       // Act & Assert

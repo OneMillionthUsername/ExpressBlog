@@ -1,7 +1,7 @@
 export class AdminControllerException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "AdminControllerException";
+    this.name = 'AdminControllerException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -10,7 +10,7 @@ export class AdminControllerException extends Error {
 export class CardControllerException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "CardControllerException";
+    this.name = 'CardControllerException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -19,7 +19,7 @@ export class CardControllerException extends Error {
 export class CommentControllerException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "CommentControllerException";
+    this.name = 'CommentControllerException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -28,7 +28,7 @@ export class CommentControllerException extends Error {
 export class PostControllerException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "PostControllerException";
+    this.name = 'PostControllerException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -37,7 +37,7 @@ export class PostControllerException extends Error {
 export class MediaControllerException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "MediaControllerException";
+    this.name = 'MediaControllerException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }
@@ -46,7 +46,7 @@ export class MediaControllerException extends Error {
 export class UtilsException extends Error {
   constructor(message, details = null) {
     super(message);
-    this.name = "UtilsException";
+    this.name = 'UtilsException';
     if (details) this.details = details;
     Error.captureStackTrace(this, this.constructor);
   }

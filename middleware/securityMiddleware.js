@@ -1,15 +1,16 @@
-import path from "path";
-import { escapeAllStrings } from "../utils/utils.js";
-import * as utils from "../utils/utils.js";
+import _path from 'path';
+import { escapeAllStrings } from '../utils/utils.js';
+import * as utils from '../utils/utils.js';
+import logger from '../utils/logger.js';
 
 // --- Helper: safer content-type check ---
 export function requireJsonContent(req, res, next) {
-  const contentType = (req.get("content-type") || "").toLowerCase();
+  const contentType = (req.get('content-type') || '').toLowerCase();
 
-  if (!contentType.startsWith("application/json")) {
+  if (!contentType.startsWith('application/json')) {
     return res
       .status(415)
-      .json({ error: "Content-Type muss application/json sein" });
+      .json({ error: 'Content-Type muss application/json sein' });
   }
   next(); // alles ok → nächste Middleware / Route
 }
@@ -33,12 +34,12 @@ export function createEscapeInputMiddleware(whitelist = []) {
         // Exclude CSRF tokens from sanitization to prevent loops
         const csrfKeys = ['_csrf'];
         const cookiesToSanitize = Object.fromEntries(
-          Object.entries(req.cookies).filter(([key]) => !csrfKeys.includes(key))
+          Object.entries(req.cookies).filter(([key]) => !csrfKeys.includes(key)),
         );
         const sanitizedCookies = escapeAllStrings(cookiesToSanitize, whitelist);
         Object.assign(req.cookies, sanitizedCookies);
       }
-      const safeHeaders = ["user-agent", "referer"];
+      const safeHeaders = ['user-agent', 'referer'];
       safeHeaders.forEach(h => {
         if (req.headers[h] && typeof req.headers[h] === 'object') {
           Object.assign(req.headers[h], escapeAllStrings(req.headers[h], whitelist));
@@ -64,7 +65,7 @@ export function createEscapeInputMiddleware(whitelist = []) {
   };
 }
 // --- error handler (production-safe) ---
-export function errorHandlerMiddleware(err, req, res, next) {
+export function errorHandlerMiddleware(err, req, res, _next) {
   logger.error(err); // internal logging only
   res.status(500).json({ error: 'Internal Server Error' });
 }

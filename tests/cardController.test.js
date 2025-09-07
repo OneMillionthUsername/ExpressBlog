@@ -11,8 +11,8 @@ jest.mock('../databases/mariaDB.js', () => ({
     createCard: mockCreateCard,
     getAllCards: mockGetAllCards,
     getCardById: mockGetCardById,
-    deleteCard: mockDeleteCard
-  }
+    deleteCard: mockDeleteCard,
+  },
 }));
 
 jest.mock('../models/cardModel.js', () => {
@@ -66,7 +66,7 @@ describe('CardController', () => {
       const cardData = { title: '' };
       Card.validate.mockReturnValue({ 
         error: { details: [{ message: 'Title required' }, { message: 'Link required' }] }, 
-        value: null 
+        value: null, 
       });
 
       await expect(cardController.default.createCard(cardData))
@@ -84,7 +84,7 @@ describe('CardController', () => {
       const cardData = { title: 'Test' }; // Fehlender Link und Bild
       Card.validate.mockReturnValue({ 
         error: { details: [{ message: 'Link required' }, { message: 'Image required' }] }, 
-        value: null 
+        value: null, 
       });
     
       await expect(cardController.default.createCard(cardData))
@@ -120,7 +120,7 @@ describe('CardController', () => {
       const cards = [
         { id: 1, title: 'Valid Card' },
         { id: 2, title: '' }, // Invalid
-        { id: 3, title: 'Another Valid' }
+        { id: 3, title: 'Another Valid' },
       ];
       
       mockGetAllCards.mockResolvedValue(cards);
@@ -149,7 +149,7 @@ describe('CardController', () => {
     it('should return valid cards', async () => {
       const cards = [
         { id: 1, title: 'Valid Card', link: 'http://valid.com', img: 'http://valid.jpg' },
-        { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' }
+        { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' },
       ];
       
       mockGetAllCards.mockResolvedValue(cards);
@@ -192,7 +192,7 @@ describe('CardController', () => {
       mockGetCardById.mockResolvedValue(card);
       Card.validate.mockReturnValue({ 
         error: { details: [{ message: 'Invalid card' }] }, 
-        value: null 
+        value: null, 
       });
 
       await expect(cardController.default.getCardById(1))
@@ -219,7 +219,7 @@ describe('CardController', () => {
       
       expect(result).toEqual({
         success: true,
-        message: 'Card deleted successfully'
+        message: 'Card deleted successfully',
       });
     });
     it('should throw error when card not found', async () => {

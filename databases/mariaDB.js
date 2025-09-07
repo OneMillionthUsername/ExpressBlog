@@ -11,7 +11,7 @@
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
 //import queryBuilder from '../utils/queryBuilder.js';
-import { dbConfig } from "../config/dbConfig.js";
+import { dbConfig } from '../config/dbConfig.js';
 import logger from '../utils/logger.js';
 import { databaseError } from '../models/customExceptions.js';
 
@@ -44,7 +44,7 @@ function createMockPool() {
         release: () => {
           logger.debug('[MOCK DB] Connection released');
         },
-        end: () => Promise.resolve()
+        end: () => Promise.resolve(),
       };
     },
     end: async () => {
@@ -52,13 +52,13 @@ function createMockPool() {
         logger.warn('Mock database pool does not need to be closed');
       }
       return Promise.resolve();
-    }
+    },
   };
 }
 
 // Prüfen ob Mock-Modus aktiv ist
 export function isMockDatabase() {
-    return isMockMode;
+  return isMockMode;
 }
 
 export async function initializeDatabase() {
@@ -86,11 +86,11 @@ export async function initializeDatabase() {
  * @throws {databaseError} If the pool is not initialized.
  */
 export function getDatabasePool() {
-    if (!pool) {
-        logger.error('No pool or database has been initialized. Call initializeDatabase() first.');
-        throw new databaseError('Database has not been initialized. Call initializeDatabase() first.');
-    }
-    return pool;
+  if (!pool) {
+    logger.error('No pool or database has been initialized. Call initializeDatabase() first.');
+    throw new databaseError('Database has not been initialized. Call initializeDatabase() first.');
+  }
+  return pool;
 }
 // Datenbankverbindung testen
 /**
@@ -100,26 +100,26 @@ export function getDatabasePool() {
  * @throws {databaseError} If the connection fails.
  */
 export async function testConnection() {
-    let conn;
-    try {
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query('SELECT VERSION() as version');
-        if (isMockMode) {
-          logger.info('Mock MariaDB connection successful, Version: ' + result[0].version);
-        } else {
-          logger.info('MariaDB connection successful, Version: ' + result[0].version);
-        }
-        return true;
-    } catch (error) {
-      if (isMockMode) {
-        logger.error(`Mock MariaDB connection failed: ${error.message}`);
-      } else {
-        logger.error(`MariaDB connection failed: ${error.message}`);
-      }
-      throw new databaseError(`${isMockMode ? 'Mock MariaDB' : 'MariaDB'} connection failed: ${error.message}`, error);
-    } finally {
-      if (conn) conn.release();
+  let conn;
+  try {
+    conn = await getDatabasePool().getConnection();
+    const result = await conn.query('SELECT VERSION() as version');
+    if (isMockMode) {
+      logger.info('Mock MariaDB connection successful, Version: ' + result[0].version);
+    } else {
+      logger.info('MariaDB connection successful, Version: ' + result[0].version);
     }
+    return true;
+  } catch (error) {
+    if (isMockMode) {
+      logger.error(`Mock MariaDB connection failed: ${error.message}`);
+    } else {
+      logger.error(`MariaDB connection failed: ${error.message}`);
+    }
+    throw new databaseError(`${isMockMode ? 'Mock MariaDB' : 'MariaDB'} connection failed: ${error.message}`, error);
+  } finally {
+    if (conn) conn.release();
+  }
 }
 export async function initializeDatabaseSchema() {
   let conn;
@@ -280,15 +280,15 @@ export async function initializeDatabaseSchema() {
     console.log('MariaDB schema created/verified successfully');
     logger.info('MariaDB schema created/verified successfully');
     return true;
-    } catch (error) {
-      if(isMockMode) {
-        logger.log('Mock-Schema erstellt');
-        return true;
-      }
-      logger.error(`Error creating MariaDB schema: ${error.message}`);
-      throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
-    } finally {
-      if (conn) conn.release();
+  } catch (error) {
+    if(isMockMode) {
+      logger.log('Mock-Schema erstellt');
+      return true;
+    }
+    logger.error(`Error creating MariaDB schema: ${error.message}`);
+    throw new databaseError(`Error creating MariaDB schema: ${error.message}`, error);
+  } finally {
+    if (conn) conn.release();
   }
 }
 export const DatabaseService = {
@@ -423,7 +423,7 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
-  async increasePostViews(postId, ipAddress, userAgent, referer) {
+  async increasePostViews(postId, _ipAddress, _userAgent, _referer) {
     // TODO: Implement tracking of post views
     let conn;
     try {
@@ -506,152 +506,152 @@ export const DatabaseService = {
   async createCard(cardData) {
     let conn;
     try {
-          if (!cardData || typeof cardData !== 'object') {
-            throw new databaseError("Card is null or invalid");
-          }
-          conn = await getDatabasePool().getConnection();
-          const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
-          if (result.affectedRows === 0) {
-              throw new Error('No rows affected');
-          }
-          return {
-            success: true,
-            card: {...cardData, id: Number(result.insertId)}
-          };
-      } catch (error) {
-        logger.error(`Error in createCard: ${error.message}`);
-        throw new databaseError(`Error in createCard: ${error.message}`, error);
-      } finally {
-          if (conn) conn.release();
+      if (!cardData || typeof cardData !== 'object') {
+        throw new databaseError('Card is null or invalid');
       }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
+      if (result.affectedRows === 0) {
+        throw new Error('No rows affected');
+      }
+      return {
+        success: true,
+        card: {...cardData, id: Number(result.insertId)},
+      };
+    } catch (error) {
+      logger.error(`Error in createCard: ${error.message}`);
+      throw new databaseError(`Error in createCard: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
   },
   async getAllCards() {
-      let conn;
-      try {
-          conn = await getDatabasePool().getConnection();
-          const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
-          if (!result || result.length === 0) {
-              throw new Error('No cards found');
-          }
-          return result.map(card => ({
-              ...convertBigInts(card)
-          }));
-      } catch (error) {
-        logger.error(`Error in getAllCards: ${error.message}`);
-        throw new databaseError(`Error in getAllCards: ${error.message}`, error);
-      } finally {
-          if (conn) conn.release();
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+      if (!result || result.length === 0) {
+        throw new Error('No cards found');
       }
+      return result.map(card => ({
+        ...convertBigInts(card),
+      }));
+    } catch (error) {
+      logger.error(`Error in getAllCards: ${error.message}`);
+      throw new databaseError(`Error in getAllCards: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
   },
   async getCardById(cardId) {
     let conn;
     try {
-        if(cardId === null || isNaN(cardId)) {
-            throw new databaseError("ID is null or invalid");
-        }
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
-        return result.length > 0 ? {
-            ...convertBigInts(result[0])
-        } : null;
+      if(cardId === null || isNaN(cardId)) {
+        throw new databaseError('ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
+      return result.length > 0 ? {
+        ...convertBigInts(result[0]),
+      } : null;
     } catch (error) {
       logger.error(`Error in getCardById: ${error.message}`);
       throw new databaseError(`Error in getCardById: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async deleteCard(cardId) {
     let conn;
     try {
-        if(cardId === null || isNaN(cardId)) {
-            throw new databaseError("ID is null or invalid");
-        }
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query('DELETE FROM cards WHERE id = ?', [cardId]);
-        if (result.affectedRows > 0) {
-            return { success: true };
-        } else {
-            throw new databaseError("No rows affected");
-        }
+      if(cardId === null || isNaN(cardId)) {
+        throw new databaseError('ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('DELETE FROM cards WHERE id = ?', [cardId]);
+      if (result.affectedRows > 0) {
+        return { success: true };
+      } else {
+        throw new databaseError('No rows affected');
+      }
     } catch (error) {
       logger.error(`Error in deleteCard: ${error.message}`);
       throw new databaseError(`Error in deleteCard: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   // Comments
   async createComment(postId, commentData) {
-      let conn;
-      try {
-        if (!postId || isNaN(postId) || postId === null) {
-            throw new databaseError("Post ID is null or invalid");
-        }
-        if (!commentData || typeof commentData !== 'object' || commentData === null) {
-            throw new databaseError("Comment data is null or invalid");
-        }
-          conn = await getDatabasePool().getConnection();
-          const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
-
-          return {
-              success: true,
-              comment: {
-                  id: Number(result.insertId),
-                  postId: Number(postId),
-                  ...commentData
-              }
-          };
-      } catch (error) {
-        logger.error(`Error in createComment: ${error.message}`);
-        throw new databaseError(`Error in createComment: ${error.message}`, error);
-      } finally {
-          if (conn) conn.release();
+    let conn;
+    try {
+      if (!postId || isNaN(postId) || postId === null) {
+        throw new databaseError('Post ID is null or invalid');
       }
+      if (!commentData || typeof commentData !== 'object' || commentData === null) {
+        throw new databaseError('Comment data is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
+
+      return {
+        success: true,
+        comment: {
+          id: Number(result.insertId),
+          postId: Number(postId),
+          ...commentData,
+        },
+      };
+    } catch (error) {
+      logger.error(`Error in createComment: ${error.message}`);
+      throw new databaseError(`Error in createComment: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
   },
   async getCommentsByPostId(postId) {
     let conn;
     try {
-        if (!postId || isNaN(postId) || postId === null) {
-            throw new databaseError("Post ID is null or invalid");
-        }
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query(`
+      if (!postId || isNaN(postId) || postId === null) {
+        throw new databaseError('Post ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(`
             SELECT id, username, text, created_at
             FROM comments 
             WHERE postId = ? AND approved = 1
             ORDER BY created_at ASC
         `, [postId]);
-        return result.map(comment => ({
-            id: Number(comment.id),
-            username: comment.username,
-            text: comment.text,
-            created_at: comment.created_at
-        }));
+      return result.map(comment => ({
+        id: Number(comment.id),
+        username: comment.username,
+        text: comment.text,
+        created_at: comment.created_at,
+      }));
     } catch (error) {
       logger.error(`Error in getCommentsByPostId: ${error.message}`);
-       throw new databaseError(`Error in getCommentsByPostId: ${error.message}`, error);
+      throw new databaseError(`Error in getCommentsByPostId: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async deleteComment(commentId, postId) {
     let conn;
     try {
-        if (!commentId || isNaN(commentId) || commentId === null) {
-            throw new databaseError("Comment ID is null or invalid");
-        }
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query(
-            'DELETE FROM comments WHERE id = ? AND postId = ?',
-            [commentId, postId]
-        );
-        return result.affectedRows > 0 ? { success: true } : null;
+      if (!commentId || isNaN(commentId) || commentId === null) {
+        throw new databaseError('Comment ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'DELETE FROM comments WHERE id = ? AND postId = ?',
+        [commentId, postId],
+      );
+      return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
       logger.error(`Error in deleteComment: ${error.message}`);
       throw new databaseError(`Error in deleteComment: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   }, 
   // Media
@@ -659,42 +659,42 @@ export const DatabaseService = {
     let conn;
     try {
       if (!mediaData || typeof mediaData !== 'object' || mediaData === null) {
-          throw new databaseError("Media data is null or invalid");
+        throw new databaseError('Media data is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('INSERT INTO media SET ?', [mediaData]);
       return {
-          success: true,
-          mediaId: Number(result.insertId)
-        };
+        success: true,
+        mediaId: Number(result.insertId),
+      };
     } catch (error) {
       logger.error(`Error in addMedia: ${error.message}`);
       throw new databaseError(`Error in addMedia: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async deleteMedia(mediaId) {
     let conn;
     try {
       if (!mediaId || isNaN(mediaId) || mediaId === null) {
-          throw new databaseError("Media ID is null or invalid");
+        throw new databaseError('Media ID is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('DELETE FROM media WHERE id = ?', [mediaId]);
       return result.affectedRows > 0 ? { success: true } : null;
     } catch (error) {
       logger.error(`Error in deleteMedia: ${error.message}`);
-        throw new databaseError(`Error in deleteMedia: ${error.message}`, error);
+      throw new databaseError(`Error in deleteMedia: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async getMediaById(mediaId) {
     let conn;
     try {
       if (!mediaId || isNaN(mediaId) || mediaId === null) {
-          throw new databaseError("Media ID is null or invalid");
+        throw new databaseError('Media ID is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM media WHERE id = ?', [mediaId]);
@@ -703,7 +703,7 @@ export const DatabaseService = {
       logger.error(`Error in getMediaById: ${error.message}`);
       throw new databaseError(`Error in getMediaById: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   // Admin
@@ -711,7 +711,7 @@ export const DatabaseService = {
     let conn;
     try {
       if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
-          throw new databaseError("Username is null or invalid");
+        throw new databaseError('Username is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
@@ -720,14 +720,14 @@ export const DatabaseService = {
       logger.error(`Error in getAdminByUsername: ${error.message}`);
       throw new databaseError(`Error in getAdminByUsername: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async updateAdminLoginSuccess(adminId) {
     let conn;
     try {
       if (!adminId || isNaN(adminId) || adminId === null) {
-          throw new databaseError("Admin ID is null or invalid");
+        throw new databaseError('Admin ID is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       const update = await conn.query('UPDATE admins SET last_login = NOW(), login_attempts = 0, locked_until = NULL WHERE id = ?', [adminId]);
@@ -736,66 +736,66 @@ export const DatabaseService = {
       logger.error(`Error in updateAdminLoginSuccess: ${error.message}`);
       throw new databaseError(`Error in updateAdminLoginSuccess: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async updateAdminLoginFailure(adminId) {
     let conn;
     try {
       if (!adminId || isNaN(adminId) || adminId === null) {
-          throw new databaseError("Admin ID is null or invalid");
+        throw new databaseError('Admin ID is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
       // Aktuelle Login-Attempts abrufen
       const result = await conn.query('SELECT login_attempts FROM admins WHERE id = ?', [adminId]);
       if (result.length > 0) {
-          const currentAttempts = result[0].login_attempts + 1;
-            let locked_until = null;
+        const currentAttempts = result[0].login_attempts + 1;
+        let locked_until = null;
 
-            // Account nach 3 fehlgeschlagenen Versuchen für 30 Minuten sperren
-            if (currentAttempts >= 3) {
-                locked_until = new Date(Date.now() + 30 * 60 * 1000); // 30 Minuten
-            }
+        // Account nach 3 fehlgeschlagenen Versuchen für 30 Minuten sperren
+        if (currentAttempts >= 3) {
+          locked_until = new Date(Date.now() + 30 * 60 * 1000); // 30 Minuten
+        }
 
-          const update = await conn.query('UPDATE admins SET login_attempts = ?, locked_until = ? WHERE id = ?', [currentAttempts, locked_until, adminId]);
-          return update.affectedRows > 0 ? true : false;
-        }
-        else {
-            // Admin not found
-            return false;
-        }
+        const update = await conn.query('UPDATE admins SET login_attempts = ?, locked_until = ? WHERE id = ?', [currentAttempts, locked_until, adminId]);
+        return update.affectedRows > 0 ? true : false;
+      }
+      else {
+        // Admin not found
+        return false;
+      }
     } catch (error) {
       logger.error(`Error in updateAdminLoginFailure: ${error.message}`);
       throw new databaseError(`Error in updateAdminLoginFailure: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
   },
   async updateAdminStatus(adminId, active) {
     let conn;
     try {
-        if(adminId === null || isNaN(adminId)) {
-            throw new databaseError("Admin ID is null or invalid");
-        }
-        conn = await getDatabasePool().getConnection();
-        const result = await conn.query('UPDATE admins SET active = ? WHERE id = ?', [active, adminId]);
-        return result.affectedRows > 0 ? true : false;
+      if(adminId === null || isNaN(adminId)) {
+        throw new databaseError('Admin ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('UPDATE admins SET active = ? WHERE id = ?', [active, adminId]);
+      return result.affectedRows > 0 ? true : false;
     } catch (error) {
       logger.error(`Error in updateAdminStatus: ${error.message}`);
       throw new databaseError(`Error in updateAdminStatus: ${error.message}`, error);
     } finally {
-        if (conn) conn.release();
+      if (conn) conn.release();
     }
-  } 
-}
+  }, 
+};
 // Graceful Shutdown
 process.on('SIGINT', async () => {
-    console.log('Closing MariaDB connections...');
-    await getDatabasePool().end();
-    process.exit(0);
+  console.log('Closing MariaDB connections...');
+  await getDatabasePool().end();
+  process.exit(0);
 });
 process.on('SIGTERM', async () => {
-    console.log('Closing MariaDB connections...');
-    await getDatabasePool().end();
-    process.exit(0);
+  console.log('Closing MariaDB connections...');
+  await getDatabasePool().end();
+  process.exit(0);
 });
