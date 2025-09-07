@@ -163,11 +163,11 @@ app.use(cookieParser());
 app.use(csrfProtection);
 
 // 4. Request-Parsing (with security limits)
-app.use(express.json({ limit: "100kb" }));  // Reduced from default for DoS protection
+app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
 app.use(express.urlencoded({
     extended: true,
     inflate: true,
-    limit: "100kb",  // Reduced from 1mb for DoS protection
+    limit: config.URLENCODED_BODY_LIMIT,  // Configurable limit for DoS protection
     parameterLimit: 1000,  // Reduced from 5000
     type: "application/x-www-form-urlencoded",
   })

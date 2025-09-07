@@ -10,7 +10,7 @@
 
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags } from '../utils/utils.js';
-import queryBuilder from '../utils/queryBuilder.js';
+//import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from "../config/dbConfig.js";
 import logger from '../utils/logger.js';
 import { databaseError } from '../models/customExceptions.js';
@@ -321,9 +321,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const { query, params } = queryBuilder('get', 'posts', { id });
-      const result = await conn.query(query, params);
-      //const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
+      //const { query, params } = queryBuilder('get', 'posts', { id });
+      //const result = await conn.query(query, params);
+      const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
       if(!result || result.length === 0) {
         logger.warn(`Post with ID ${id} not found`);
         throw new Error('Post not found');
@@ -343,9 +343,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const { query, params } = queryBuilder('get', 'posts');
-      const result = await conn.query(query, params);
-      //const result = await conn.query('SELECT * FROM posts');
+      //const { query, params } = queryBuilder('get', 'posts');
+      //const result = await conn.query(query, params);
+      const result = await conn.query('SELECT * FROM posts');
       if(!result || result.length === 0) {
         throw new Error('No posts found');
       }
@@ -385,9 +385,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const { query, params } = queryBuilder('read', 'posts', { tags: { like: `%${tag}%` } });
-      const result = await conn.query(query, params);
-      //const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
+      //const { query, params } = queryBuilder('read', 'posts', { tags: { like: `%${tag}%` } });
+      //const result = await conn.query(query, params);
+      const result = await conn.query('SELECT * FROM posts WHERE tags LIKE ?', [`%${tag}%`]);
       if(!result || result.length === 0) {
         throw new Error('No posts found for this tag');
       }

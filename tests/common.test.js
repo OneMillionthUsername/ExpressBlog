@@ -3,33 +3,9 @@
  */
 
 import { describe, expect, it, jest, beforeEach, test, afterAll } from '@jest/globals';
-import { loadAndDisplayRecentPosts } from '../public/assets/js/common.js';
 
-// Import the module first to get all real functions
-const actualCommon = await import('../public/assets/js/common.js');
-
-// Create spies for functions we want to monitor
-const showNotificationSpy = jest.fn();
-const getPostIdFromPathSpy = jest.fn().mockReturnValue(null);
-const getPostSlugFromPathSpy = jest.fn().mockReturnValue(null);
-
-// Mock specific functions while keeping the rest real
-jest.unstable_mockModule('../public/assets/js/common.js', () => ({
-    ...actualCommon,
-    showNotification: showNotificationSpy,
-    getPostIdFromPath: getPostIdFromPathSpy,
-    getPostSlugFromPath: getPostSlugFromPathSpy
-}));
-
-// Import the module after mocking
+// Import the module - no mocking needed since we'll mock globals instead
 const common = await import('../public/assets/js/common.js');
-
-// Global cleanup to ensure Jest exits properly
-afterAll(() => {
-    jest.clearAllTimers();
-    jest.useRealTimers();
-    jest.clearAllMocks();
-});
 
 // Destructure the functions from the imported module
 const {
@@ -47,9 +23,76 @@ const {
     refreshCurrentPage,
     showCreateCardModal,
     renderAndDisplayCards,
+    showNotification,
     getPostIdFromPath,
     getPostSlugFromPath
 } = common;
+
+// Create spies for global functions that the module uses
+const showNotificationSpy = jest.fn();
+const getPostIdFromPathSpy = jest.fn().mockReturnValue(null);
+const getPostSlugFromPathSpy = jest.fn().mockReturnValue(null);
+
+// Helper function to setup global mocks consistently
+const setupGlobalMocks = () => {
+    // Mock global functions used by the module
+    global.fetch = jest.fn();
+    global.makeApiRequest = jest.fn().mockResolvedValue({ message: 'OK' });
+    global.showNotification = showNotificationSpy;
+
+    // Also set them on window object for jsdom environment
+    window.fetch = global.fetch;
+    window.makeApiRequest = global.makeApiRequest;
+    window.showNotification = global.showNotification;
+    window.getPostIdFromPath = getPostIdFromPathSpy;
+    window.getPostSlugFromPath = getPostSlugFromPathSpy;
+
+    // Mock location
+    Object.defineProperty(window, 'location', {
+        value: { reload: jest.fn(), pathname: '/test' },
+        writable: true
+    });
+};
+
+// Helper function to flush promises
+const flushPromises = () => new Promise(resolve => setImmediate(resolve));
+
+// Global cleanup to ensure Jest exits properly
+afterAll(async () => {
+    // Clear all timers
+    jest.clearAllTimers();
+    jest.useRealTimers();
+
+    // Clear all mocks
+    jest.clearAllMocks();
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
+
+    // Clear document body completely
+    document.body.innerHTML = '';
+
+    // Clear any global variables that might have been set
+    delete global.fetch;
+    delete global.makeApiRequest;
+    delete global.showNotification;
+    delete global.getPostIdFromPath;
+    delete global.getPostSlugFromPath;
+
+    // Clear window properties
+    if (typeof window !== 'undefined') {
+        delete window.fetch;
+        delete window.makeApiRequest;
+        delete window.showNotification;
+        delete window.getPostIdFromPath;
+        delete window.getPostSlugFromPath;
+        delete window.location;
+    }
+
+    // Force garbage collection if available
+    if (global.gc) {
+        global.gc();
+    }
+});
 
 describe('initializeBlogPostForm', () => {
     let form, titleInput, contentInput, tagsInput, responseMessage;
@@ -61,20 +104,8 @@ describe('initializeBlogPostForm', () => {
         getPostIdFromPathSpy.mockClear();
         getPostSlugFromPathSpy.mockClear();
 
-        // Mock global functions
-        global.fetch = jest.fn();
-        global.makeApiRequest = jest.fn().mockResolvedValue({ message: 'OK' });
-        global.showNotification = showNotificationSpy;
-
-        // Add spies to window object as well
-        window.getPostIdFromPath = getPostIdFromPathSpy;
-        window.getPostSlugFromPath = getPostSlugFromPathSpy;
-
-        // Mock location
-        Object.defineProperty(window, 'location', {
-            value: { reload: jest.fn(), pathname: '/test' },
-            writable: true
-        });
+        // Setup global mocks
+        setupGlobalMocks();
 
         document.body.innerHTML = `
       <form id="blogPostForm"></form>
@@ -91,6 +122,30 @@ describe('initializeBlogPostForm', () => {
         tagsInput = document.getElementById('tags');
         responseMessage = document.getElementById('responseMessage');
         window.fetch = jest.fn();
+    });
+
+    afterEach(() => {
+        // Clean up timers and mocks after each test
+        jest.clearAllTimers();
+        jest.clearAllMocks();
+
+        // Clear document body to remove any event listeners
+        document.body.innerHTML = '';
+
+        // Clear any remaining DOM elements
+        const elements = document.querySelectorAll('*');
+        elements.forEach(element => {
+            // Remove all event listeners by cloning and replacing
+            const cloned = element.cloneNode(true);
+            element.parentNode?.replaceChild(cloned, element);
+        });
+
+        // Clear window properties that might have been set
+        delete window.fetch;
+        delete window.makeApiRequest;
+        delete window.showNotification;
+        delete window.getPostIdFromPath;
+        delete window.getPostSlugFromPath;
     });
     it('should not initialize if form does not exist', () => {
         document.body.innerHTML = '';
@@ -283,6 +338,7 @@ describe('formatContent', () => {
 });
 describe('updateBlogPostUI', () => {
     beforeEach(() => {
+        setupGlobalMocks();
         document.body.innerHTML = `
             <div id="meta"></div>
             <div id="content"></div>
@@ -315,31 +371,32 @@ describe('updateBlogPostUI', () => {
 describe('showNotification', () => {
     beforeEach(() => {
         jest.useFakeTimers();
+        setupGlobalMocks();
     });
-    
+
     afterEach(() => {
         jest.runOnlyPendingTimers();
         jest.useRealTimers();
     });
-    
+
     it('shows and removes notification', () => {
-        const { showNotification } = actualCommon;
         showNotification('Test message', 'success');
         const notif = document.querySelector('.notification');
         expect(notif).toBeTruthy();
         expect(notif.innerHTML).toContain('Test message');
-        
+
         // Fast-forward time
         jest.advanceTimersByTime(3000);
-        
+
         // Wait for animation
         jest.advanceTimersByTime(300);
-        
+
         expect(document.querySelector('.notification')).toBeFalsy();
     });
 });
 describe('refreshCurrentPage', () => {
     beforeEach(() => {
+        setupGlobalMocks();
         global.location = { reload: jest.fn() };
         global.loadAndDisplayRecentPosts = undefined;
         global.loadAndDisplayArchivePosts = undefined;

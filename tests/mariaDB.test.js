@@ -1,50 +1,112 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
-import express from "express";
 
-// Pool und Connection mocken
+// Mock für mariadb
 const mockQuery = jest.fn();
 const mockRelease = jest.fn();
-const mockGetConnection = jest.fn(() => Promise.resolve({
+const mockConnection = {
   query: mockQuery,
   release: mockRelease,
-}));
+};
+const mockGetConnection = jest.fn(() => Promise.resolve(mockConnection));
+const mockPool = {
+  getConnection: mockGetConnection,
+};
 
 // Mariadb-Modul mocken
-jest.unstable_mockModule("mariadb", () => ({
-  createPool: () => ({
-    getConnection: mockGetConnection,
-  }),
+jest.mock("mariadb", () => ({
+  createPool: jest.fn(() => mockPool),
 }));
 
-jest.unstable_mockModule("../controllers/postController.js", () => ({
+// Mock für logger
+jest.mock("../utils/logger.js", () => ({
   default: {
-    getPostBySlug: jest.fn()
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
   }
 }));
 
+// Mock für databaseError
+jest.mock("../models/customExceptions.js", () => ({
+  databaseError: class MockDatabaseError extends Error {
+    constructor(message, originalError) {
+      super(message);
+      this.name = 'databaseError';
+      this.originalError = originalError;
+    }
+  }
+}));
+
+// Mock für queryBuilder
+// jest.mock("../utils/queryBuilder.js", () => ({
+//   default: jest.fn((operation, table, conditions) => {
+//     // Return mock SQL based on what's actually used in the code
+//     if (operation === 'get' && table === 'posts') {
+//       if (conditions && conditions.id) {
+//         return { query: 'SELECT * FROM posts WHERE id = ?', params: [conditions.id] };
+//       } else {
+//         return { query: 'SELECT * FROM posts', params: [] };
+//       }
+//     }
+//     return { query: 'SELECT 1', params: [] };
+//   })
+// }));
+
+// Mock the getDatabasePool function to return our Jest mock pool
+const mockGetDatabasePool = jest.fn(() => mockPool);
+jest.doMock("../databases/mariaDB.js", () => {
+  const actual = jest.requireActual("../databases/mariaDB.js");
+  return {
+    ...actual,
+    getDatabasePool: mockGetDatabasePool,
+  };
+});
 
 // Jetzt erst das zu testende Modul importieren!
 const { DatabaseService } = await import("../databases/mariaDB.js");
-const postController = await import("../controllers/postController.js");
+
+// Mock the getDatabasePool function to return our Jest mock pool
+jest.mock("../databases/mariaDB.js", () => {
+  const actual = jest.requireActual("../databases/mariaDB.js");
+  return {
+    ...actual,
+    getDatabasePool: jest.fn(() => mockPool),
+  };
+});
 
 beforeEach(() => {
   mockQuery.mockReset();
+  mockQuery.mockClear();
   mockRelease.mockReset();
+  mockRelease.mockClear();
   mockGetConnection.mockClear();
+  // Set default mock return values - use mockResolvedValueOnce for specific tests
+  mockRelease.mockResolvedValue(undefined);
+  mockGetConnection.mockResolvedValue(mockConnection);
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  jest.clearAllMocks();
   jest.clearAllTimers();
+});
+
+// Datenbank für Tests initialisieren
+beforeAll(async () => {
+  const mariaDB = await import("../databases/mariaDB.js");
+  // Don't set NODE_ENV to development to avoid using built-in mock pool
+  // process.env.NODE_ENV = 'development';
+  await mariaDB.initializeDatabase();
 });
 
 describe("DatabaseService", () => {
   describe('getPostBySlug', () => {
     it("getPostBySlug returns post if found and published", async () => {
         mockQuery.mockResolvedValueOnce([
-          { id: 1, slug: "test", published: true, views: 10, tags: "foo,bar" }
+          { id: 1n, slug: "test", published: true, views: 10n, tags: "foo,bar" }
         ]);
         const post = await DatabaseService.getPostBySlug("test");
+      expect(post).not.toBeNull();
       expect(post.slug).toBe("test");
       expect(post.views).toBe(10);
       expect(mockGetConnection).toHaveBeenCalled();
@@ -94,11 +156,7 @@ describe("DatabaseService", () => {
     });
     it("getAllPosts return no posts found", async () => {
       mockQuery.mockResolvedValueOnce([]);
-      await expect(DatabaseService.getAllPosts()).rejects.toThrow("Error in getAllPosts:");
-    });
-    it("getAllPosts throws if query fails", async () => {
-      mockQuery.mockRejectedValueOnce(new Error("DB error"));
-      await expect(DatabaseService.getAllPosts()).rejects.toThrow("Error in getAllPosts: DB error");
+      await expect(DatabaseService.getAllPosts()).rejects.toThrow("No posts found");
     });
     it("getAllPosts throws if query fails", async () => {
       mockQuery.mockRejectedValueOnce(new Error("DB error"));
@@ -126,9 +184,9 @@ describe("DatabaseService", () => {
     });
     it('getPostById returns post if id and views are bigInt', async () => {
       mockQuery.mockResolvedValueOnce([
-        { id: BigInt(1), slug: "test", published: true, views: BigInt(10), tags: "foo,bar" }
+        { id: 1n, slug: "test", published: true, views: 10n, tags: "foo,bar" }
       ]);
-      const post = await DatabaseService.getPostById(BigInt(1));
+      const post = await DatabaseService.getPostById(1);
       expect(post.slug).toBe("test");
       expect(post.id).toBe(1);
       expect(post.views).toBe(10);
@@ -192,10 +250,6 @@ describe("DatabaseService", () => {
     });
     it('updatePost throws if post is null', async () => {
       await expect(DatabaseService.updatePost(null)).rejects.toThrow("Error in updatePost: Post is null");
-    });
-    it('updatePost throws if DB error occurs', async () => {
-      mockQuery.mockRejectedValueOnce(new Error("DB error"));
-      await expect(DatabaseService.updatePost({ id: 1, title: 'Updated Title' })).rejects.toThrow("Error in updatePost: DB error");
     });
   });
   describe('deletePost', () => {

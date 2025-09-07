@@ -1,31 +1,58 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 
 // 1. Module mocken BEVOR sie importiert werden
-jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+const mockCreateCard = jest.fn();
+const mockGetAllCards = jest.fn();
+const mockGetCardById = jest.fn();
+const mockDeleteCard = jest.fn();
+
+jest.mock('../databases/mariaDB.js', () => ({
   DatabaseService: {
-    createCard: jest.fn(),
-    getAllCards: jest.fn(),
-    getCardById: jest.fn(),
-    deleteCard: jest.fn()
+    createCard: mockCreateCard,
+    getAllCards: mockGetAllCards,
+    getCardById: mockGetCardById,
+    deleteCard: mockDeleteCard
   }
 }));
 
-jest.unstable_mockModule('../models/cardModel.js', () => {
+jest.mock('../models/cardModel.js', () => {
   const CardMock = jest.fn().mockImplementation((data) => data);
   CardMock.validate = jest.fn();
   return { Card: CardMock }; // ← Named export Card mocken
 });
 
 // 2. NACH dem Mocken importieren
-const { DatabaseService } = await import('../databases/mariaDB.js');
-const { Card } = await import('../models/cardModel.js');
-const cardController = await import('../controllers/cardController.js');
+import { DatabaseService } from '../databases/mariaDB.js';
+import { Card } from '../models/cardModel.js';
+import * as cardController from '../controllers/cardController.js';
+
+// Mock Card.validate after import
+const originalCardValidate = Card.validate;
+Card.validate = jest.fn();
+
+// Mock DatabaseService methods after import
+const originalCreateCard = DatabaseService.createCard;
+const originalGetAllCards = DatabaseService.getAllCards;
+const originalGetCardById = DatabaseService.getCardById;
+const originalDeleteCard = DatabaseService.deleteCard;
+
+DatabaseService.createCard = mockCreateCard;
+DatabaseService.getAllCards = mockGetAllCards;
+DatabaseService.getCardById = mockGetCardById;
+DatabaseService.deleteCard = mockDeleteCard;
 
 let consoleSpy;
 
 beforeEach(() => {
   jest.clearAllMocks();
   consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  jest.clearAllTimers();
+
+  // Set up default mock implementations
+  mockCreateCard.mockResolvedValue({ success: true, card: { id: 1 } });
+  mockGetAllCards.mockResolvedValue([]);
+  mockGetCardById.mockResolvedValue(null);
+  mockDeleteCard.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -48,7 +75,7 @@ describe('CardController', () => {
     it('should throw error when database fails', async () => {
       const cardData = { title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
       Card.validate.mockReturnValue({ error: null, value: cardData });
-      DatabaseService.createCard.mockRejectedValue(new Error('Database error'));
+      mockCreateCard.mockRejectedValue(new Error('Database error'));
 
       await expect(cardController.default.createCard(cardData))
         .rejects.toThrow('Database error');
@@ -65,22 +92,27 @@ describe('CardController', () => {
     });
     it('should create and return card when data is valid', async () => {
       const cardData = { title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
+      const dbResult = { id: 1, ...cardData };
       Card.validate.mockReturnValue({ error: null, value: cardData });
-      DatabaseService.createCard.mockResolvedValue(cardData);
+      mockCreateCard.mockResolvedValue(dbResult);
 
       const result = await cardController.default.createCard(cardData);
 
-      expect(result).toEqual(cardData);
+      expect(result).toBeInstanceOf(Card);
+      expect(result.id).toBe(1);
+      expect(result.title).toBe('Test');
+      expect(result.link).toBe('http://test.com');
+      expect(result.img).toBe('http://test.jpg');
     });
   });
   describe('getAllCards', () => {
     it('should return empty array when no cards', async () => {
-      DatabaseService.getAllCards.mockResolvedValue([]);
+      mockGetAllCards.mockResolvedValue([]);
       const result = await cardController.default.getAllCards();
       expect(result).toEqual([]);
     });
     it('should return empty array when cards is null', async () => {
-      DatabaseService.getAllCards.mockResolvedValue(null);
+      mockGetAllCards.mockResolvedValue(null);
       const result = await cardController.default.getAllCards();
       expect(result).toEqual([]);
     });
@@ -91,7 +123,7 @@ describe('CardController', () => {
         { id: 3, title: 'Another Valid' }
       ];
       
-      DatabaseService.getAllCards.mockResolvedValue(cards);
+      mockGetAllCards.mockResolvedValue(cards);
       Card.validate
         .mockReturnValueOnce({ error: null, value: cards[0] })
         .mockReturnValueOnce({ error: { details: [{ message: 'Invalid' }] }, value: null })
@@ -100,12 +132,16 @@ describe('CardController', () => {
       const result = await cardController.default.getAllCards();
       
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual(cards[0]);
-      expect(result[1]).toEqual(cards[2]);
+      expect(result[0]).toBeInstanceOf(Card);
+      expect(result[0].id).toBe(1);
+      expect(result[0].title).toBe('Valid Card');
+      expect(result[1]).toBeInstanceOf(Card);
+      expect(result[1].id).toBe(3);
+      expect(result[1].title).toBe('Another Valid');
       expect(consoleSpy).toHaveBeenCalledWith('Validation failed for card:', 'Invalid');
     });
     it('should throw error when database fails', async () => {
-      DatabaseService.getAllCards.mockRejectedValue(new Error('DB Error'));
+      mockGetAllCards.mockRejectedValue(new Error('DB Error'));
       
       await expect(cardController.default.getAllCards())
         .rejects.toThrow('DB Error');
@@ -116,39 +152,44 @@ describe('CardController', () => {
         { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' }
       ];
       
-      DatabaseService.getAllCards.mockResolvedValue(cards);
+      mockGetAllCards.mockResolvedValue(cards);
       Card.validate
         .mockReturnValueOnce({ error: null, value: cards[0] })
         .mockReturnValueOnce({ error: null, value: cards[1] });
 
       const result = await cardController.default.getAllCards();
-      
-      expect(result).toEqual([
-        { id: 1, title: 'Valid Card', link: 'http://valid.com', img: 'http://valid.jpg' },
-        { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' }
-      ]);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBeInstanceOf(Card);
+      expect(result[0].id).toBe(1);
+      expect(result[0].title).toBe('Valid Card');
+      expect(result[1]).toBeInstanceOf(Card);
+      expect(result[1].id).toBe(2);
+      expect(result[1].title).toBe('Another Valid');
     });
   });
   describe('getCardById', () => {
     it('should return card when found', async () => {
-      const card = { id: 1, title: 'Test' };
-      DatabaseService.getCardById.mockResolvedValue(card);
+      const card = { id: 1, title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
+      mockGetCardById.mockResolvedValue(card);
       Card.validate.mockReturnValue({ error: null, value: card });
 
       const result = await cardController.default.getCardById(1);
-      
-      expect(result).toEqual(card);
-      expect(DatabaseService.getCardById).toHaveBeenCalledWith(1);
+
+      expect(result).toBeInstanceOf(Card);
+      expect(result.id).toBe(1);
+      expect(result.title).toBe('Test');
+      expect(mockGetCardById).toHaveBeenCalledWith(1);
     });
     it('should throw error when card not found', async () => {
-      DatabaseService.getCardById.mockResolvedValue(null);
+      mockGetCardById.mockResolvedValue(null);
 
       await expect(cardController.default.getCardById(999))
         .rejects.toThrow('Card not found');
     });
     it('should throw error when validation fails', async () => {
       const card = { id: 1, title: '' };
-      DatabaseService.getCardById.mockResolvedValue(card);
+      mockGetCardById.mockResolvedValue(card);
       Card.validate.mockReturnValue({ 
         error: { details: [{ message: 'Invalid card' }] }, 
         value: null 
@@ -158,7 +199,7 @@ describe('CardController', () => {
         .rejects.toThrow('Validation failed: Invalid card');
     });
     it('should throw error when database fails', async () => {
-      DatabaseService.getCardById.mockRejectedValue(new Error('DB timeout'));
+      mockGetCardById.mockRejectedValue(new Error('DB timeout'));
 
       await expect(cardController.default.getCardById(1))
         .rejects.toThrow('DB timeout');
@@ -172,7 +213,7 @@ describe('CardController', () => {
   });
   describe('deleteCard', () => {
     it('should delete card successfully', async () => {
-      DatabaseService.deleteCard.mockResolvedValue(true);
+      mockDeleteCard.mockResolvedValue(true);
 
       const result = await cardController.default.deleteCard(1);
       
@@ -182,13 +223,13 @@ describe('CardController', () => {
       });
     });
     it('should throw error when card not found', async () => {
-      DatabaseService.deleteCard.mockResolvedValue(false);
+      mockDeleteCard.mockResolvedValue(false);
 
       await expect(cardController.default.deleteCard(999))
         .rejects.toThrow('Card not found or not deleted');
     });
     it('should throw error when database fails', async () => {
-      DatabaseService.deleteCard.mockRejectedValue(new Error('Delete failed'));
+      mockDeleteCard.mockRejectedValue(new Error('Delete failed'));
 
       await expect(cardController.default.deleteCard(1))
         .rejects.toThrow('Delete failed');

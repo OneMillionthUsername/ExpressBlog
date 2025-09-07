@@ -54,12 +54,25 @@ afterEach(() => {
 });
 
 describe('makeApiRequest', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ success: true, data: "test" })
+      })
+    );
+  });
+
   it("should make a GET request", async () => {
-    const result = await makeApiRequest("https://api.example.com/data", "GET");
+    const result = await makeApiRequest("https://api.example.com/data", { method: "GET" });
     expect(result).toEqual({ success: true, data: "test" });
   });
   it("should make a POST request", async () => {
-    const result = await makeApiRequest("https://api.example.com/data", "POST", { body: { key: "value" } });
+    const result = await makeApiRequest("https://api.example.com/data", { 
+      method: "POST", 
+      body: JSON.stringify({ key: "value" }) 
+    });
     expect(result).toEqual({ success: true, data: "test" });
   });
   it("should handle non-OK responses", async () => {
@@ -70,20 +83,20 @@ describe('makeApiRequest', () => {
         json: () => Promise.resolve({ success: false, error: "Not found" })
       })
     );
-    const result = await makeApiRequest("https://api.example.com/data", "GET");
+    const result = await makeApiRequest("https://api.example.com/data", { method: "GET" });
     expect(result).toEqual({ success: false, error: "Not found", status: 404 });
   });
   it("should handle network errors", async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error("Network error")));
     
-    await expect(makeApiRequest("https://api.example.com/data", "GET"))
+    await expect(makeApiRequest("https://api.example.com/data", { method: "GET" }))
       .rejects
       .toThrow("API-Request fehlgeschlagen: Network error");  
   });
   it("should handle other errors", async () => {
     global.fetch = jest.fn(() => Promise.reject(new Error("Other error")));
 
-    await expect(makeApiRequest("https://api.example.com/data", "GET"))
+    await expect(makeApiRequest("https://api.example.com/data", { method: "GET" }))
       .rejects
       .toThrow("API-Request fehlgeschlagen: Other error");
   });

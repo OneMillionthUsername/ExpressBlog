@@ -3,7 +3,7 @@ import { checkAdminStatusCached, showAdminLoginModal } from "./admin.js";
 // Logger not available in frontend - use console instead
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
-function showElement(id) {
+export function showElement(id) {
     const element = document.getElementById(id);
     if (element) {
         element.style.display = 'block';
@@ -11,7 +11,7 @@ function showElement(id) {
     }
     return false;
 }
-function hideElement(id) {
+export function hideElement(id) {
     const element = document.getElementById(id);
     if (element) {
         element.style.display = 'none';
@@ -19,7 +19,7 @@ function hideElement(id) {
     }
     return false;
 }
-function toggleElementVisibility(id, show) {
+export function toggleElementVisibility(id, show) {
     return show ? showElement(id) : hideElement(id);
 }
 // Seiten-Refresh-Utilities (zentralisiert)
@@ -356,7 +356,7 @@ export function showCreateCardModal() {
                 showNotification('Card konnte nicht erstellt werden', 'error');
             }
         } catch (error) {
-            logger.error('Fehler im Endpunkt /cards:', error);
+            console.error('Fehler im Endpunkt /cards:', error);
             showNotification('Fehler im Endpunkt /cards: ' + error.message, 'error');
         }
     };

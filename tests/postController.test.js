@@ -1,47 +1,93 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { createTestScheduler } from "jest";
 
 // JWT_SECRET für Tests setzen
 process.env.JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
 
-// DatabaseService mocken für Controller-Tests
-jest.unstable_mockModule("../databases/mariaDB.js", () => ({
+// Mocks müssen vor den dynamischen Imports kommen
+const mockGetPostBySlug = jest.fn();
+const mockGetAllPosts = jest.fn();
+const mockGetPostById = jest.fn();
+const mockCreatePost = jest.fn();
+const mockUpdatePost = jest.fn();
+const mockGetMostReadPosts = jest.fn();
+const mockDeletePost = jest.fn();
+const mockGetArchivedPosts = jest.fn();
+
+// Mock DatabaseService
+jest.mock("../databases/mariaDB.js", () => ({
   DatabaseService: {
-    getPostBySlug: jest.fn(),
-    getAllPosts: jest.fn(),
-    getPostById: jest.fn(),
-    createPost: jest.fn(),
-    updatePost: jest.fn(),
-    getMostReadPosts: jest.fn(),
-    deletePost: jest.fn(),
-    getArchivedPosts: jest.fn()
+    getPostBySlug: mockGetPostBySlug,
+    getAllPosts: mockGetAllPosts,
+    getPostById: mockGetPostById,
+    createPost: mockCreatePost,
+    updatePost: mockUpdatePost,
+    getMostReadPosts: mockGetMostReadPosts,
+    deletePost: mockDeletePost,
+    getArchivedPosts: mockGetArchivedPosts
   }
 }));
 
-jest.unstable_mockModule("../utils/utils.js", () => ({
-  createSlug: jest.fn()
+// Mock utils
+const mockCreateSlug = jest.fn();
+jest.mock("../utils/utils.js", () => ({
+  createSlug: mockCreateSlug
 }));
-const { createSlug } = await import("../utils/utils.js");
 
-const { DatabaseService } = await import("../databases/mariaDB.js");
-const postController = await import("../controllers/postController.js");
+// 2. Imports nach den Mocks
+import { createSlug } from "../utils/utils.js";
+import { DatabaseService } from "../databases/mariaDB.js";
+import * as postController from "../controllers/postController.js";
+
+// Mock DatabaseService methods after import
+const originalGetPostBySlug = DatabaseService.getPostBySlug;
+const originalGetAllPosts = DatabaseService.getAllPosts;
+const originalGetPostById = DatabaseService.getPostById;
+const originalCreatePost = DatabaseService.createPost;
+const originalUpdatePost = DatabaseService.updatePost;
+const originalGetMostReadPosts = DatabaseService.getMostReadPosts;
+const originalDeletePost = DatabaseService.deletePost;
+const originalGetArchivedPosts = DatabaseService.getArchivedPosts;
+
+DatabaseService.getPostBySlug = mockGetPostBySlug;
+DatabaseService.getAllPosts = mockGetAllPosts;
+DatabaseService.getPostById = mockGetPostById;
+DatabaseService.createPost = mockCreatePost;
+DatabaseService.updatePost = mockUpdatePost;
+DatabaseService.getMostReadPosts = mockGetMostReadPosts;
+DatabaseService.deletePost = mockDeletePost;
+DatabaseService.getArchivedPosts = mockGetArchivedPosts;
+
+let consoleSpy;
 
 beforeEach(() => {
-  jest.restoreAllMocks();
+  jest.clearAllMocks();
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
   jest.clearAllTimers();
+
+  // Set up default mock implementations
+  mockGetPostBySlug.mockResolvedValue(null);
+  mockGetAllPosts.mockResolvedValue([]);
+  mockGetPostById.mockResolvedValue(null);
+  mockCreatePost.mockResolvedValue({ success: true, post: { id: 1 } });
+  mockUpdatePost.mockResolvedValue({ success: true });
+  mockGetMostReadPosts.mockResolvedValue([]);
+  mockDeletePost.mockResolvedValue({ success: true });
+  mockGetArchivedPosts.mockResolvedValue([]);
+
+  // Set up createSlug mock
+  mockCreateSlug.mockReturnValue("test-post");
 });
 
 describe('PostController', () => {
   describe('getPostBySlug', () => {
-    createSlug.mockReturnValue("test-post");
     it("throws if the post is not found", async () => {
-      DatabaseService.getPostBySlug.mockResolvedValueOnce(null);
+      mockGetPostBySlug.mockResolvedValueOnce(null);
       await expect(postController.default.getPostBySlug("notfound"))
         .rejects.toThrow("Post not found");
     });
     it("getPostBySlug throws if the post is not published", async () => {
       // Mock: DatabaseService gibt unpublished post zurück
-      DatabaseService.getPostBySlug.mockResolvedValueOnce({
+      mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
         slug: "test",
         published: false,
@@ -53,7 +99,7 @@ describe('PostController', () => {
     });
     it("getPostBySlug returns the post if it is valid", async () => {
       // Mock: DatabaseService gibt validen post zurück
-      DatabaseService.getPostBySlug.mockResolvedValueOnce({
+      mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
         slug: "test",
         title: "Test Post",
@@ -87,7 +133,7 @@ describe('PostController', () => {
       await expect(postController.default.getPostBySlug("!@#$")).rejects.toThrow("Post not found or not published");
     });
     it("getPostBySlug throws if the post is deleted", async () => {
-      DatabaseService.getPostBySlug.mockResolvedValueOnce({
+      mockGetPostBySlug.mockResolvedValueOnce({
         id: 1,
         slug: "test",
         published: false,
@@ -103,7 +149,7 @@ describe('PostController', () => {
         .rejects.toThrow("Validation failed: ");
     });
     it("creates a post successfully", async () => {
-      DatabaseService.createPost.mockResolvedValueOnce({
+      mockCreatePost.mockResolvedValueOnce({
         id: 1,
         slug: createSlug("Test Post"),
         title: "Test Post",
@@ -117,7 +163,7 @@ describe('PostController', () => {
       });
       const result = await postController.default.createPost({
         title: "Test Post",
-        slug: createSlug("Test Post"),
+        slug: "test-post",
         content: "Test content",
         published: true,
         tags: ["test", "blog"],
@@ -139,7 +185,7 @@ describe('PostController', () => {
       });
     });
     it("throws if DatabaseService.createPost fails", async () => {
-      DatabaseService.createPost.mockRejectedValueOnce(new Error("Database error"));
+      mockCreatePost.mockRejectedValueOnce(new Error("Database error"));
       await expect(postController.default.createPost({
         title: "Test Post",
         slug: createSlug("Test Post"),
@@ -152,7 +198,7 @@ describe('PostController', () => {
   });
   describe('getPostById', () => {
     it("returns the post if it exists", async () => {
-      DatabaseService.getPostById.mockResolvedValueOnce({
+      mockGetPostById.mockResolvedValueOnce({
         id: 1,
         slug: createSlug("Test Post"),
         title: "Test Post",
@@ -181,11 +227,11 @@ describe('PostController', () => {
       });
     });
     it("throws if the post does not exist", async () => {
-      DatabaseService.getPostById.mockResolvedValueOnce(null);
+      mockGetPostById.mockResolvedValueOnce(null);
       await expect(postController.default.getPostById(1)).rejects.toThrow("Post not found");
     });
     it("throws if the post is deleted", async () => {
-      DatabaseService.getPostById.mockResolvedValueOnce({
+      mockGetPostById.mockResolvedValueOnce({
         id: 1,
         slug: createSlug("Test Post"),
         title: "Test Post",
@@ -200,7 +246,7 @@ describe('PostController', () => {
       await expect(postController.default.getPostById(1)).rejects.toThrow("Blogpost deleted/not published");
     });
     it("throws if validation fails", async () => {
-        DatabaseService.getPostById.mockResolvedValueOnce({
+        mockGetPostById.mockResolvedValueOnce({
         id: 1,
         slug: "test-post",
         title: "", // ungültig
