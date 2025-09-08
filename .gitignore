@@ -3,6 +3,7 @@ node_modules/
 *.log
 *.backup
 *.md
+*.sql
 ssl/
 BildHochladen.js
 
