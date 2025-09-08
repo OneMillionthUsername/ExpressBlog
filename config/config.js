@@ -3,8 +3,7 @@ import 'dotenv/config.js';
 // config/config.js
 
 export const NODE_ENV = process.env.NODE_ENV || 'development';
-export const IS_PLESK = process.env.PLESK_ENV === 'true';
-export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+export const IS_PLESK = Boolean(process.env.PLESK_ENV && process.env.PLESK_ENV === 'true');export const IS_PRODUCTION = NODE_ENV === 'production';
 export const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '100kb';
 export const URLENCODED_BODY_LIMIT = process.env.URLENCODED_BODY_LIMIT || '100kb';
 export const PORT = process.env.PORT || (IS_PLESK ? 8080 : 3000);

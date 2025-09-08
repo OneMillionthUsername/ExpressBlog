@@ -1,6 +1,5 @@
 import DOMPurify from 'dompurify'; // npm install dompurify
 import { JSDOM } from 'jsdom';
-import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import path from 'path';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { UtilsException } from '../models/customExceptions.js';
@@ -8,7 +7,6 @@ import { UtilsException } from '../models/customExceptions.js';
 // Für Node.js Server-Side
 const window = new JSDOM('').window;
 const DOMPurifyServer = DOMPurify(window);
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 const FORBIDDEN_KEYS = new Set([
   '__proto__',
@@ -91,7 +89,7 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
   }
   throw new UtilsException('Unsupported input type');
 }
-export function createSlug(title, { maxLength = 50, addHash = true } = {}) {
+export function createSlug(title, { maxLength = 50 /*, addHash = true */ } = {}) {
   if (!title) return '';
 
   // Kleinbuchstaben

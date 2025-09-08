@@ -4,6 +4,7 @@ node_modules/
 *.backup
 *.md
 ssl/
+BildHochladen.js
 
 # Test Coverage
 coverage/

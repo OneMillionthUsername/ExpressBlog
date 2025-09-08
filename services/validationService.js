@@ -65,7 +65,7 @@ export function isValidCommentSchema(commentText) {
   if (typeof commentText !== 'string') return false;
   const trimmed = commentText.trim();
   if (trimmed.length < 1 || trimmed.length > 1000) return false;
-  if (!containsVisibleChar(trimmed)) return false;
+  if (!containsVisibleCharSchema(trimmed)) return false;
   return true;
 }
 /**

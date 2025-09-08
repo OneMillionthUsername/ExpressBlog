@@ -98,9 +98,9 @@ authRouter.post('/verify',
     }),
   }),
   (req, res) => {
+    let tokenSource = 'unknown';
     try {
       const token = authService.extractTokenFromRequest(req);
-      let tokenSource = 'unknown';
       if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
         tokenSource = 'Authorization header';
       } else if (req.cookies && req.cookies[AUTH_COOKIE_NAME]) {
@@ -118,8 +118,7 @@ authRouter.post('/verify',
           },
         });
       }
-      let admin;
-      admin = authService.verifyToken(token);
+      const admin = authService.verifyToken(token);
       if (!admin) {
         logger.warn(`[AUTH AUDIT] Token verification failed: Invalid or expired token (source: ${tokenSource})`);
         return res.status(403).json({ 

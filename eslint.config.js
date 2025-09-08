@@ -29,7 +29,8 @@ export default [
     rules: {
       'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
       }],
       'no-console': 'off',
       'no-undef': 'error',
@@ -48,7 +49,8 @@ export default [
       '*.config.js',
       'jest.config.js',
       'babel.config.js',
-      'public/' // Ignore frontend files
+      'public/', // Ignore frontend files
+      'views/BildHochladen.js' // Platzhalter-Datei
     ]
   },
   // Separate config for test files
