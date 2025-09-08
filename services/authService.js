@@ -7,6 +7,7 @@
 import jwt from 'jsonwebtoken';
 import { Admin } from '../models/adminModel.js';
 import { JWT_SECRET, NODE_ENV } from '../config/config.js';
+import bcrypt from 'bcrypt';
 
 
 export const AUTH_COOKIE_NAME = 'authToken';
@@ -95,18 +96,19 @@ export function extractTokenFromRequest(req) {
 }
 
 // Passwort hashen (für Admin-Passwort-Update)
-// export async function hashPassword(password) {
-//     try {
-//         const saltRounds = 12; // Höhere Sicherheit
-//         return await bcrypt.hash(password, saltRounds);
-//     } catch (error) {
-//         console.error('Fehler beim Passwort-Hashing:', error);
-//         throw error;
-//     }
-// }
+export async function hashPassword(password) {
+  try {
+    const saltRounds = 12; // Höhere Sicherheit
+    return await bcrypt.hash(password, saltRounds);
+  } catch (error) {
+    console.error('Fehler beim Passwort-Hashing:', error);
+    throw error;
+  }
+}
 
 export default {
   generateToken,
   verifyToken,
   extractTokenFromRequest,
+  hashPassword,
 };

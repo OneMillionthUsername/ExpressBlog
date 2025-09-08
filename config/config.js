@@ -15,3 +15,5 @@ export const DB_USER = process.env.DB_USER;
 export const DB_PASSWORD = process.env.DB_PASSWORD;
 export const DB_NAME = process.env.DB_NAME;
 export const JWT_SECRET = process.env.JWT_SECRET;
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'your_gemini_api_key_here';
+export const TINY_MCE_API_KEY = process.env.TINY_MCE_API_KEY || 'your_tiny_mce_api_key_here';

@@ -1,10 +1,12 @@
 // TinyMCE Editor Konfiguration und Funktionen
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
+import { TINY_MCE_API_KEY } from "../../../../config/config";
+
 // TinyMCE API-Schlüssel Konfiguration
 const defaultTinyMceKey = 'no-api-key';
 const TINYMCE_CONFIG = {
-  apiKey: defaultTinyMceKey,
+  apiKey: TINY_MCE_API_KEY || defaultTinyMceKey,
   defaultKey: defaultTinyMceKey,
 };
 

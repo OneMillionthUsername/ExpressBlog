@@ -1,9 +1,11 @@
 // AI-Unterstützung für den Blog mit Google Gemini
 // Kostenlose AI-Integration für Schreibhilfe und Content-Verbesserung
 
+import { GEMINI_API_KEY } from "../../../../config/config";
+
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
-  apiKey: '', // Wird vom Admin gesetzt
+  apiKey: GEMINI_API_KEY || '', // Wird vom Admin gesetzt
   model: 'gemini-1.5-flash', // Kostenloses Modell
   maxTokens: 2048,
   temperature: 0.7,
