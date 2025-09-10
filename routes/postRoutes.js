@@ -17,22 +17,62 @@ const postRouter = express.Router();
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {
-  logger.debug('GET /all: Received request for all blog posts');
+  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  logger.debug(`[${requestId}] GET /all: Request received`, {
+    headers: {
+      'user-agent': req.get('User-Agent'),
+      'referer': req.get('Referer'),
+      'x-forwarded-for': req.get('X-Forwarded-For'),
+      'host': req.get('Host'),
+    },
+    query: req.query,
+    ip: req.ip,
+    method: req.method,
+    url: req.originalUrl,
+  });
+  
   try {
-    logger.debug('GET /all: Calling postController.getAllPosts()');
+    logger.debug(`[${requestId}] GET /all: Calling postController.getAllPosts()`);
+    const controllerStartTime = Date.now();
+    
     const posts = await postController.getAllPosts();
     
-    logger.debug(`GET /all: Controller returned ${posts ? posts.length : 'null'} posts`);
+    const controllerEndTime = Date.now();
+    const controllerDuration = controllerEndTime - controllerStartTime;
+    
+    logger.debug(`[${requestId}] GET /all: Controller returned data`, {
+      posts_count: posts ? posts.length : 'null',
+      posts_type: typeof posts,
+      posts_is_array: Array.isArray(posts),
+      controller_duration_ms: controllerDuration,
+      first_post_sample: posts && posts.length > 0 ? {
+        id: posts[0].id,
+        title: posts[0].title?.substring(0, 50),
+        slug: posts[0].slug,
+      } : null,
+    });
     
     // Auch leere Arrays sind gültige Antworten
     const response = convertBigInts(posts) || [];
-    logger.debug(`GET /all: Sending response with ${response.length} posts`);
+    logger.debug(`[${requestId}] GET /all: Prepared response`, {
+      response_length: response.length,
+      response_type: typeof response,
+      response_is_array: Array.isArray(response),
+      conversion_applied: 'convertBigInts',
+    });
     
+    logger.debug(`[${requestId}] GET /all: Sending successful response`);
     res.json(response);
+    
   } catch (error) {
-    logger.debug(`GET /all: Error occurred: ${error.message}`, { stack: error.stack });
+    logger.debug(`[${requestId}] GET /all: Error occurred`, {
+      error_message: error.message,
+      error_name: error.name,
+      error_stack: error.stack,
+      error_type: typeof error,
+    });
     console.error('Error loading blog posts', error);
-    logger.error(`GET /all route error: ${error.message}`);
+    logger.error(`[${requestId}] GET /all route error: ${error.message}`);
     res.status(500).json({ error: 'Server failed to load blog posts' });
   }
 });
