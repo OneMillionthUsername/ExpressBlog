@@ -2,7 +2,7 @@
 // EINFACHES & ROBUSTES PAGE INITIALISIERUNGSSYSTEM
 // ===========================================
 
-import { loadAllBlogPosts } from './api.js';
+import { loadAllBlogPosts, loadCards } from './api.js';
 
 // Globale Initialisierung - einmalig beim DOM-Ready
 document.addEventListener('DOMContentLoaded', async function() {

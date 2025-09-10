@@ -81,7 +81,7 @@ export async function loadAllBlogPosts() {
       throw new Error(`Failed to load blog posts: ${result.error}`);
     }
 
-    const posts = result;
+    const posts = result.data;
 
     if (!Array.isArray(posts)) {
       throw new Error('Response is not an array');
@@ -109,6 +109,18 @@ export async function loadAllBlogPosts() {
     console.error('Fehler beim Laden der Blog-Posts:', error);
     // Bei Fehlern ein leeres Array zurückgeben statt zu re-throwen
     // So können andere Teile der Seite trotzdem laden
+    return [];
+  }
+}
+
+// Cards laden (placeholder - keine API-Route implementiert)
+export async function loadCards() {
+  try {
+    // TODO: Implementiere /cards API-Route im Backend
+    console.info('Cards API not implemented yet - returning empty array');
+    return [];
+  } catch (error) {
+    console.error('Fehler beim Laden der Cards:', error);
     return [];
   }
 }
