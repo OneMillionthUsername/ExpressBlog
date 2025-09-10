@@ -3,6 +3,16 @@
 // ===========================================
 
 import { loadAllBlogPosts, loadCards } from './api.js';
+import { 
+  loadAndDisplayAllPosts, 
+  loadAndDisplayRecentPosts, 
+  loadAndDisplayArchivePosts, 
+  loadAndDisplayMostReadPosts,
+  loadAndDisplayBlogPost
+} from './common.js';
+
+// Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
+// da sie aus separaten Modulen kommen können
 
 // Globale Initialisierung - einmalig beim DOM-Ready
 document.addEventListener('DOMContentLoaded', async function() {
@@ -153,9 +163,7 @@ async function initializeArchivePage() {
   console.log('Initialisiere Archiv Page...');
 
   try {
-    if (typeof loadAndDisplayArchivePosts === 'function') {
-      await loadAndDisplayArchivePosts();
-    }
+    await loadAndDisplayArchivePosts();
   } catch (error) {
     console.error('Archiv Page Initialisierung fehlgeschlagen:', error);
   }
@@ -167,17 +175,9 @@ async function initializeRecentPostsPage() {
   console.log('initializeRecentPostsPage: Current URL:', window.location.href);
 
   try {
-    console.log('initializeRecentPostsPage: Checking for loadAndDisplayAllPosts function...');
-    if (typeof loadAndDisplayAllPosts === 'function') {
-      console.log('initializeRecentPostsPage: Found loadAndDisplayAllPosts, calling it...');
-      await loadAndDisplayAllPosts();
-      console.log('initializeRecentPostsPage: loadAndDisplayAllPosts completed');
-    } else if (typeof loadAndDisplayRecentPosts === 'function') {
-      console.log('initializeRecentPostsPage: Fallback to loadAndDisplayRecentPosts...');
-      await loadAndDisplayRecentPosts();
-    } else {
-      console.error('initializeRecentPostsPage: No suitable function found!');
-    }
+    console.log('initializeRecentPostsPage: Calling loadAndDisplayRecentPosts...');
+    await loadAndDisplayRecentPosts();
+    console.log('initializeRecentPostsPage: loadAndDisplayRecentPosts completed');
   } catch (error) {
     console.error('initializeRecentPostsPage: Error occurred:', error);
     console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
@@ -189,9 +189,7 @@ async function initializeMostReadPostsPage() {
   console.log('Initialisiere Most Read Posts Page...');
 
   try {
-    if (typeof loadAndDisplayMostReadPosts === 'function') {
-      await loadAndDisplayMostReadPosts();
-    }
+    await loadAndDisplayMostReadPosts();
   } catch (error) {
     console.error('Most Read Posts Initialisierung fehlgeschlagen:', error);
   }
@@ -203,9 +201,7 @@ async function initializeReadPostPage() {
 
   try {
     // Post laden
-    if (typeof loadAndDisplayBlogPost === 'function') {
-      await loadAndDisplayBlogPost();
-    }
+    await loadAndDisplayBlogPost();
 
     // Admin-Controls hinzufügen (vereinfacht)
     setTimeout(() => {
