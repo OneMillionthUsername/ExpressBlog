@@ -66,14 +66,22 @@ describe('makeApiRequest', () => {
 
   it('should make a GET request', async () => {
     const result = await makeApiRequest('https://api.example.com/data', { method: 'GET' });
-    expect(result).toEqual({ success: true, data: 'test' });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true, data: 'test' },
+      status: 200, 
+    });
   });
   it('should make a POST request', async () => {
     const result = await makeApiRequest('https://api.example.com/data', { 
       method: 'POST', 
       body: JSON.stringify({ key: 'value' }), 
     });
-    expect(result).toEqual({ success: true, data: 'test' });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true, data: 'test' },
+      status: 200, 
+    });
   });
   it('should handle non-OK responses', async () => {
     global.fetch.mockImplementationOnce(() =>
@@ -107,12 +115,17 @@ describe('makeApiRequest', () => {
       expect(options.headers.Authorization).toBe('Bearer testtoken');
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: () => Promise.resolve({ success: true }),
       });
     });
     
     const result = await makeApiRequest('https://api.example.com/data', { headers: customHeaders });
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true },
+      status: 200, 
+    });
   });
   it('should handle other HTTP methods', async () => {
     const customHeaders = { Authorization: 'Bearer testtoken' };
@@ -121,12 +134,17 @@ describe('makeApiRequest', () => {
       expect(options.headers.Authorization).toBe('Bearer testtoken');
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: () => Promise.resolve({ success: true }),
       });
     });
 
     const result = await makeApiRequest('https://api.example.com/data', { method: 'UPDATE', headers: customHeaders });
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true },
+      status: 200, 
+    });
   });
   it('should make a DELETE request', async () => {
     global.fetch = jest.fn(() =>
@@ -137,7 +155,11 @@ describe('makeApiRequest', () => {
       }),
     );
     const result = await makeApiRequest('https://api.example.com/data', { method: 'DELETE' });
-    expect(result).toEqual({ success: true, deleted: true });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true, deleted: true },
+      status: 200, 
+    });
   });
   it('should make an UPDATE request', async () => {
     global.fetch = jest.fn(() =>
@@ -148,7 +170,11 @@ describe('makeApiRequest', () => {
       }),
     );
     const result = await makeApiRequest('https://api.example.com/data', { method: 'UPDATE', body: JSON.stringify({ key: 'value' }) });
-    expect(result).toEqual({ success: true, updated: true });
+    expect(result).toEqual({ 
+      success: true, 
+      data: { success: true, updated: true },
+      status: 200, 
+    });
   });
 });
 describe('escapeAllStrings', () => {

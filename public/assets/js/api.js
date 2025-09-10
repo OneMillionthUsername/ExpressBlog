@@ -1,4 +1,3 @@
-
 // Cache für CSRF-Token
 let csrfToken = null;
 
@@ -21,7 +20,6 @@ async function getCsrfToken() {
 
 export async function makeApiRequest(url, options = {}) {
   try {
-    // CSRF-Token für POST/PUT/DELETE/PATCH Requests abrufen
     const method = options.method || 'GET';
     let headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
 
@@ -33,12 +31,11 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     const response = await fetch(url, {
-      credentials: 'include', // sendet Cookies mit
+      credentials: 'include',
       headers,
       ...options,
     });
 
-    // Versuche, JSON zu parsen, falls vorhanden
     let result;
     try {
       result = await response.json();
@@ -47,7 +44,6 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     if (!response.ok) {
-      // Bei CSRF-Fehlern Token zurücksetzen
       if (response.status === 403 && result?.error?.includes('csrf')) {
         csrfToken = null;
       }
@@ -59,7 +55,12 @@ export async function makeApiRequest(url, options = {}) {
       };
     }
 
-    return result;
+    // Konsistente Rückgabe für erfolgreiche Requests
+    return {
+      success: true,
+      data: result,
+      status: response.status,
+    };
   } catch (error) {
     throw new Error(`API-Request fehlgeschlagen: ${error.message}`, error);
   }
