@@ -79,7 +79,7 @@ function getCurrentPageType() {
   if (page === 'mostReadPosts') return 'most_read';
   if (page === 'readPost') return 'read_post';
   if (page === 'about') return 'about';
-  if (path === '/blogpost/all' || page === 'all') return 'list_posts';
+  if (path === '/posts') return 'list_posts';
 
   // Fallback für unbekannte Seiten
   console.log(`Unbekannte Seite erkannt: ${page} (Pfad: ${path})`);
