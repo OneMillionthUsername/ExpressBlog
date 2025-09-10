@@ -4,7 +4,7 @@
 
 # MIME-Type Konfiguration für statische Dateien
 <IfModule mod_mime.c>
-    # JavaScript-Dateien
+    # JavaScript-Dateien - sicherstellen, dass sie als JavaScript erkannt werden
     AddType text/javascript .js
     AddType text/javascript .mjs
     
@@ -23,6 +23,11 @@
     # Images
     AddType image/svg+xml .svg
     AddType image/webp .webp
+    AddType image/png .png
+    AddType image/jpeg .jpg
+    AddType image/jpeg .jpeg
+    AddType image/gif .gif
+    AddType image/x-icon .ico
 </IfModule>
 
 # ==========================================
@@ -30,7 +35,7 @@
 # ==========================================
 
 <IfModule mod_headers.c>
-    # MIME-Type Sniffing verhindern
+    # MIME-Type Sniffing verhindern - aber nur für Nicht-Asset-Dateien
     Header always set X-Content-Type-Options "nosniff"
     
     # XSS-Schutz
@@ -39,8 +44,20 @@
     # Clickjacking-Schutz
     Header always set X-Frame-Options "SAMEORIGIN"
     
-    # CORS für statische Dateien
-    <FilesMatch "\.(js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|gif|ico)$">
+    # CORS für statische Dateien - explizite Content-Type Header setzen
+    <FilesMatch "\.(js)$">
+        Header always set Content-Type "text/javascript; charset=utf-8"
+        Header always set Cross-Origin-Resource-Policy "same-origin"
+        Header always set Access-Control-Allow-Origin "https://speculumx.at"
+    </FilesMatch>
+    
+    <FilesMatch "\.(css)$">
+        Header always set Content-Type "text/css; charset=utf-8"
+        Header always set Cross-Origin-Resource-Policy "same-origin"
+        Header always set Access-Control-Allow-Origin "https://speculumx.at"
+    </FilesMatch>
+    
+    <FilesMatch "\.(woff2?|ttf|otf|svg|png|jpg|jpeg|gif|ico)$">
         Header always set Cross-Origin-Resource-Policy "same-origin"
         Header always set Access-Control-Allow-Origin "https://speculumx.at"
     </FilesMatch>
@@ -96,15 +113,25 @@
     RewriteCond %{HTTP_HOST} ^www\.speculumx\.at$ [NC]
     RewriteRule ^(.*)$ https://speculumx.at/$1 [R=301,L]
     
-    # Express.js Proxy (falls Plesk als Reverse Proxy fungiert)
-    # Statische Dateien direkt von Apache ausliefern
+    # Statische Assets direkt von Apache ausliefern
+    # Assets im Root (z.B. /assets/css/style.css)
     RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^public/assets/.*$ - [L]
+    RewriteRule ^assets/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf)$ - [L]
+    
+    # Assets in public (z.B. /public/assets/css/style.css)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^public/assets/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf)$ - [L]
+    
+    # Alle anderen statischen Dateien in public
+    RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^public/.*$ - [L]
     
     # API und dynamische Routen an Node.js weiterleiten
+    # Aber nicht für statische Assets
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/assets/
+    RewriteCond %{REQUEST_URI} !^/public/assets/
     RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
 </IfModule>
 
@@ -117,24 +144,13 @@
     Require all denied
 </FilesMatch>
 
-# Node.js Dateien schützen
-<FilesMatch "\.(js)$">
-    # Nur public/assets/js erlauben
-    RewriteCond %{REQUEST_URI} !^/public/assets/js/
-    RewriteCond %{REQUEST_URI} \.js$
-    RewriteRule . - [F,L]
+# Node.js Backend-Dateien schützen
+<FilesMatch "^(controllers|models|middleware|routes|services|utils|config|databases)/.*\.js$">
+    Require all denied
 </FilesMatch>
 
 # Verzeichnis-Browsing deaktivieren
 Options -Indexes
-
-# ==========================================
-# ERROR PAGES (Optional)
-# ==========================================
-
-# Custom Error Pages (falls gewünscht)
-# ErrorDocument 404 /error/404.html
-# ErrorDocument 500 /error/500.html
 
 # ==========================================
 # PERFORMANCE OPTIMIERUNGEN

@@ -2,6 +2,7 @@ node_modules/
 .env
 *.log
 *.backup
+*.new
 *.md
 *.sql
 ssl/
