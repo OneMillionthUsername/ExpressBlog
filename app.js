@@ -22,6 +22,7 @@ import { requireDatabase } from './middleware/databaseMiddleware.js';
 import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
 import csrfProtection from './utils/csrf.js';
+import nonceMiddleware from './middleware/nonceMiddleware.js';
 
 // App-Status Management
 class AppStatus extends EventEmitter {
@@ -110,7 +111,7 @@ app.use(helmet({
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
         'https://generativelanguage.googleapis.com',
-        // Note: 'unsafe-inline' intentionally excluded for security
+        // Nonce wird dynamisch hinzugefügt für Inline-Scripts
       ],
       styleSrc: [
         '\'self\'',
@@ -155,6 +156,9 @@ app.use(helmet({
   frameguard: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
+
+// Nonce-Middleware für sichere Inline-Scripts
+app.use(nonceMiddleware);
 
 // 2. Cookie Parser (required BEFORE CSRF!)
 app.use(cookieParser());
