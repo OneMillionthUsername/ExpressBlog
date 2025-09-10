@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import * as postController from '../controllers/postController.js';
+import postController from '../controllers/postController.js';
 import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
@@ -23,20 +23,20 @@ const postRouter = express.Router();
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {
-  logger.debug('POST /all: Received request for all blog posts');
+  logger.debug('GET /all: Received request for all blog posts');
   try {
-    logger.debug('POST /all: Calling postController.getAllPosts()');
+    logger.debug('GET /all: Calling postController.getAllPosts()');
     const posts = await postController.getAllPosts();
     
-    logger.debug(`POST /all: Controller returned ${posts ? posts.length : 'null'} posts`);
+    logger.debug(`GET /all: Controller returned ${posts ? posts.length : 'null'} posts`);
     
     // Auch leere Arrays sind gültige Antworten
     const response = convertBigInts(posts) || [];
-    logger.debug(`POST /all: Sending response with ${response.length} posts`);
+    logger.debug(`GET /all: Sending response with ${response.length} posts`);
     
     res.json(response);
   } catch (error) {
-    logger.debug(`POST /all: Error occurred: ${error.message}`, { stack: error.stack });
+    logger.debug(`GET /all: Error occurred: ${error.message}`, { stack: error.stack });
     console.error('Error loading blog posts', error);
     logger.error(`POST /all route error: ${error.message}`);
     res.status(500).json({ error: 'Server failed to load blog posts' });
