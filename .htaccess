@@ -99,7 +99,7 @@
     # Express.js Proxy (falls Plesk als Reverse Proxy fungiert)
     # Statische Dateien direkt von Apache ausliefern
     RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^assets/.*$ - [L]
+    RewriteRule ^public/assets/.*$ - [L]
     RewriteRule ^public/.*$ - [L]
     
     # API und dynamische Routen an Node.js weiterleiten
@@ -119,9 +119,8 @@
 
 # Node.js Dateien schützen
 <FilesMatch "\.(js)$">
-    # Nur assets/js und public/js erlauben
-    RewriteCond %{REQUEST_URI} !^/assets/js/
-    RewriteCond %{REQUEST_URI} !^/public/js/
+    # Nur public/assets/js erlauben
+    RewriteCond %{REQUEST_URI} !^/public/assets/js/
     RewriteCond %{REQUEST_URI} \.js$
     RewriteRule . - [F,L]
 </FilesMatch>
