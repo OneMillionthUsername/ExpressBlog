@@ -29,7 +29,32 @@ function createMockPool() {
             return [{ version: '10.5.9-MariaDB-1:10.5.9+maria~focal' }];
           }
           else if (Sql.toLowerCase().includes('select') && Sql.toLowerCase().includes('posts')) {
-            return [];
+            return [
+              {
+                id: 1,
+                slug: 'sample-post-1',
+                title: 'Sample Blog Post 1',
+                content: '<p>This is a sample blog post content.</p>',
+                tags: '["sample","blog"]',
+                author: 'admin',
+                views: 10,
+                published: 1,
+                created_at: new Date(),
+                updated_at: new Date(),
+              },
+              {
+                id: 2,
+                slug: 'sample-post-2',
+                title: 'Sample Blog Post 2',
+                content: '<p>This is another sample blog post.</p>',
+                tags: '["sample","test"]',
+                author: 'admin',
+                views: 5,
+                published: 1,
+                created_at: new Date(),
+                updated_at: new Date(),
+              },
+            ];
           }
           else if (Sql.toLowerCase().includes('insert')) {
             return { insertId: 1, affectedRows: 1 };

@@ -73,16 +73,13 @@ export function resetCsrfToken() {
 // Blog-Posts laden
 export async function loadAllBlogPosts() {
   try {
-    const response = await fetch('/blogpost/all', {
-      credentials: 'include',
-    });
+    const result = await makeApiRequest('/blogpost/all');
 
-    // Error handling
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to load blog posts');
     }
 
-    const posts = await response.json();
+    const posts = result;
 
     if (!Array.isArray(posts)) {
       throw new Error('Response is not an array');
