@@ -371,9 +371,13 @@ export const DatabaseService = {
       //const { query, params } = queryBuilder('get', 'posts');
       //const result = await conn.query(query, params);
       const result = await conn.query('SELECT * FROM posts');
+      
+      // Keine Posts gefunden ist kein Fehler, sondern ein leeres Ergebnis
       if(!result || result.length === 0) {
-        throw new Error('No posts found');
+        logger.info('No posts found in database - returning empty array');
+        return []; // Leeres Array zurückgeben statt Exception
       }
+      
       return result.map(post => {
         convertBigInts(post);
         post.tags = parseTags(post.tags);

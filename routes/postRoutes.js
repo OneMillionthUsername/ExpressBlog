@@ -24,7 +24,8 @@ const postRouter = express.Router();
 postRouter.get('/all', globalLimiter, async (req, res) => {
   try {
     const posts = await postController.getAllPosts();
-    res.json(convertBigInts(posts) || posts);
+    // Auch leere Arrays sind gültige Antworten
+    res.json(convertBigInts(posts) || []);
   } catch (error) {
     console.error('Error loading blog posts', error);
     res.status(500).json({ error: 'Server failed to load blog posts' });

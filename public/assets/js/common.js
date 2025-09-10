@@ -10,7 +10,8 @@ window.loadAllBlogPosts = loadAllBlogPosts;
 export function showElement(id) {
   const element = document.getElementById(id);
   if (element) {
-    element.style.display = 'block';
+    element.classList.remove('d-none');
+    element.classList.add('d-block');
     return true;
   }
   return false;
@@ -18,7 +19,8 @@ export function showElement(id) {
 export function hideElement(id) {
   const element = document.getElementById(id);
   if (element) {
-    element.style.display = 'none';
+    element.classList.remove('d-block');
+    element.classList.add('d-none');
     return true;
   }
   return false;

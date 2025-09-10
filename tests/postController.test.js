@@ -416,9 +416,10 @@ describe('PostController', () => {
         author: 'Test Author',
       });
     });
-    it('throws if no posts are found', async () => {
+    it('returns empty array if no posts are found', async () => {
       DatabaseService.getAllPosts.mockResolvedValueOnce([]);
-      await expect(postController.default.getAllPosts()).rejects.toThrow('No valid published posts found');
+      const result = await postController.default.getAllPosts();
+      expect(result).toEqual([]);
     });
   });
   describe('getMostReadPosts', () => {

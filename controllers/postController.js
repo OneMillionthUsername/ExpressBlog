@@ -6,6 +6,7 @@
 import { Post } from '../models/postModel.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { PostControllerException } from '../models/customExceptions.js';
+import logger from '../utils/logger.js';
 
 const getPostBySlug = async (slug) => {
   try {
@@ -75,8 +76,10 @@ const updatePost = async (postData) => {
 const getAllPosts = async () => {
   try {
     const posts = await DatabaseService.getAllPosts();
-    if (!posts) {
-      throw new PostControllerException('No posts found');
+    if (!posts || posts.length === 0) {
+      // Unterscheide zwischen leerem Ergebnis und DB-Fehler
+      logger.warn('No posts found in database - returning empty array');
+      return []; // Leeres Array zurückgeben statt Exception
     }
     const validPosts = [];
     for (const post of posts) {
@@ -90,10 +93,17 @@ const getAllPosts = async () => {
       }
     }
     if (validPosts.length === 0) {
-      throw new PostControllerException('No valid published posts found');
+      logger.warn('No valid published posts found - returning empty array');
+      return []; // Leeres Array zurückgeben statt Exception
     }
     return validPosts;
   } catch (error) {
+    // Hier wird zwischen DB-Fehlern und anderen Fehlern unterschieden
+    if (error.message && error.message.includes('No posts found')) {
+      logger.warn('Database returned no posts - treating as empty result');
+      return []; // Leeres Array bei "keine Posts gefunden"
+    }
+    logger.error(`Critical database error in getAllPosts: ${error.message}`);
     throw new PostControllerException(`Error fetching all posts: ${error.message}`, error);
   }
 };

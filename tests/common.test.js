@@ -228,7 +228,9 @@ describe('showElement', () => {
   });
   it('shows the element and returns true', () => {
     expect(showElement('testEl')).toBe(true);
-    expect(document.getElementById('testEl').style.display).toBe('block');
+    const element = document.getElementById('testEl');
+    expect(element.classList.contains('d-block')).toBe(true);
+    expect(element.classList.contains('d-none')).toBe(false);
   });
   it('returns false if element does not exist', () => {
     expect(showElement('notExist')).toBe(false);
@@ -240,7 +242,9 @@ describe('hideElement', () => {
   });
   it('hides the element and returns true', () => {
     expect(hideElement('testEl')).toBe(true);
-    expect(document.getElementById('testEl').style.display).toBe('none');
+    const element = document.getElementById('testEl');
+    expect(element.classList.contains('d-none')).toBe(true);
+    expect(element.classList.contains('d-block')).toBe(false);
   });
   it('returns false if element does not exist', () => {
     expect(hideElement('notExist')).toBe(false);
@@ -253,11 +257,15 @@ describe('toggleElementVisibility', () => {
   });
   it('shows element if show=true', () => {
     expect(toggleElementVisibility('testEl', true)).toBe(true);
-    expect(document.getElementById('testEl').style.display).toBe('block');
+    const element = document.getElementById('testEl');
+    expect(element.classList.contains('d-block')).toBe(true);
+    expect(element.classList.contains('d-none')).toBe(false);
   });
   it('hides element if show=false', () => {
     expect(toggleElementVisibility('testEl', false)).toBe(true);
-    expect(document.getElementById('testEl').style.display).toBe('none');
+    const element = document.getElementById('testEl');
+    expect(element.classList.contains('d-none')).toBe(true);
+    expect(element.classList.contains('d-block')).toBe(false);
   });
 });
 

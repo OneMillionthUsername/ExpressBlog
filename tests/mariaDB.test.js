@@ -154,9 +154,10 @@ describe('DatabaseService', () => {
       expect(posts[0].tags).toEqual(['philo', 'wissenschaft']);
       expect(posts[1].tags).toEqual(['kilo', 'bissenschaft', 'kunst']);
     });
-    it('getAllPosts return no posts found', async () => {
+    it('getAllPosts returns empty array when no posts found', async () => {
       mockQuery.mockResolvedValueOnce([]);
-      await expect(DatabaseService.getAllPosts()).rejects.toThrow('No posts found');
+      const result = await DatabaseService.getAllPosts();
+      expect(result).toEqual([]);
     });
     it('getAllPosts throws if query fails', async () => {
       mockQuery.mockRejectedValueOnce(new Error('DB error'));

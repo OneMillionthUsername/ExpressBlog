@@ -128,6 +128,8 @@ async function initializeIndexPage() {
       if (typeof renderPopularPostsSidebar === 'function') {
         await renderPopularPostsSidebar(posts);
       }
+    } else {
+      console.info('No posts available - skipping sidebar rendering');
     }
 
     // Cards laden
@@ -136,6 +138,8 @@ async function initializeIndexPage() {
       if (typeof renderAndDisplayCards === 'function') {
         await renderAndDisplayCards(cards);
       }
+    } else {
+      console.info('No cards available - skipping card rendering');
     }
 
   } catch (error) {

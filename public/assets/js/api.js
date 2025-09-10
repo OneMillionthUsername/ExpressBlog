@@ -87,7 +87,7 @@ export async function loadAllBlogPosts() {
     }
 
     if (posts.length === 0) {
-      console.warn('No blog posts found');
+      console.info('No blog posts found - showing empty state');
       return [];
     }
 
@@ -106,7 +106,9 @@ export async function loadAllBlogPosts() {
     return posts;
   } catch (error) {
     console.error('Fehler beim Laden der Blog-Posts:', error);
-    throw error; // Re-throw error instead of returning empty array
+    // Bei Fehlern ein leeres Array zurückgeben statt zu re-throwen
+    // So können andere Teile der Seite trotzdem laden
+    return [];
   }
 }
 
