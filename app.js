@@ -239,16 +239,42 @@ app.use(express.static(publicDirectoryPath, {
   },
 }));
 
-// Favicon-Route (falls keine Datei existiert)
+// Favicon-Route (optimiert für ModSecurity-Kompatibilität)
 app.get('/favicon.ico', (req, res) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag Cache
+  res.setHeader('Content-Type', 'image/x-icon'); // Expliziter ICO MIME-Type
+  res.setHeader('Content-Security-Policy', 'default-src \'none\''); // Minimal CSP für favicon
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   
-  // Sende clippy.png als Favicon (konvertiert zu ICO-Format ist nicht nötig)
-  res.sendFile(join(publicDirectoryPath, 'assets', 'media', 'clippy.png'), (err) => {
+  // Versuche erst favicon.ico, dann clippy.png als Fallback
+  res.sendFile(join(publicDirectoryPath, 'favicon.ico'), {
+    headers: {
+      'Content-Type': 'image/x-icon',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  }, (err) => {
     if (err) {
-      // Falls Datei nicht existiert, sende 204 No Content
-      res.status(204).end();
+      logger.debug('favicon.ico not found, trying clippy.png fallback');
+      // Fallback zu clippy.png
+      res.sendFile(join(publicDirectoryPath, 'assets', 'media', 'clippy.png'), {
+        headers: {
+          'Content-Type': 'image/x-icon',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      }, (err2) => {
+        if (err2) {
+          logger.debug('No favicon available, sending minimal ICO');
+          // Minimal 1x1 transparent ICO (Base64-encoded) - ModSecurity-freundlich
+          const minimalIco = Buffer.from(
+            'AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAABILAAASCwAAAAAAAAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+            'base64',
+          );
+          res.setHeader('Content-Length', minimalIco.length.toString());
+          res.setHeader('Content-Type', 'image/x-icon');
+          res.status(200).end(minimalIco);
+        }
+      });
     }
   });
 });
