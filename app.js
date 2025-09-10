@@ -327,6 +327,7 @@ function registerDatabaseRoutes() {
   app.use('/blogpost', requireDatabase, routes.postRouter);
   app.use('/upload', requireDatabase, routes.uploadRouter);
   app.use('/comments', requireDatabase, routes.commentsRouter);
+  app.use('/cards', requireDatabase, routes.cardRouter);
     
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {

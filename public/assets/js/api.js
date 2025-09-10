@@ -232,12 +232,32 @@ export async function loadAllBlogPosts() {
   }
 }
 
-// Cards laden (placeholder - keine API-Route implementiert)
+// Cards laden
 export async function loadCards() {
   try {
-    // TODO: Implementiere /cards API-Route im Backend
-    console.info('Cards API not implemented yet - returning empty array');
-    return [];
+    console.debug('loadCards: Starting request to /cards');
+    const response = await makeApiRequest('/cards', {
+      method: 'GET'
+    });
+    
+    if (!response || !Array.isArray(response)) {
+      console.warn('loadCards: Invalid response format', response);
+      return [];
+    }
+    
+    if (response.length === 0) {
+      console.warn('No cards found');
+      return [];
+    }
+    
+    if (response.length > 9) {
+      console.warn('More than nine cards found. Taking the most recent');
+      // Kürze das Array auf die ersten 9 Elemente (neueste)
+      response.splice(9);
+    }
+    
+    console.debug('loadCards: Successfully loaded', response.length, 'cards');
+    return response;
   } catch (error) {
     console.error('Fehler beim Laden der Cards:', error);
     return [];

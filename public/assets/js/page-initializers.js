@@ -8,7 +8,8 @@ import {
   loadAndDisplayRecentPosts, 
   loadAndDisplayArchivePosts, 
   loadAndDisplayMostReadPosts,
-  loadAndDisplayBlogPost
+  loadAndDisplayBlogPost,
+  renderAndDisplayCards
 } from './common.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
