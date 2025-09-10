@@ -180,14 +180,40 @@ app.use(express.urlencoded({
 // 5. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
 
-// 6. Rate Limiting
-app.use(globalLimiter);
+// 6. Rate Limiting (statische Dateien ausgenommen)
+app.use((req, res, next) => {
+  // Rate Limiting für statische Assets überspringen
+  if (req.url.startsWith('/assets/') || 
+      req.url.startsWith('/public/') ||
+      req.url.includes('.js') ||
+      req.url.includes('.css') ||
+      req.url.includes('.ico') ||
+      req.url.includes('.png') ||
+      req.url.includes('.jpg') ||
+      req.url.includes('.jpeg') ||
+      req.url.includes('.svg')) {
+    return next();
+  }
+  // Rate Limiting nur für dynamische Inhalte
+  return globalLimiter(req, res, next);
+});
 
 // 7. Basis-Konfiguration
 app.set('trust proxy', false);
 app.use(loggerMiddleware);
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
+
+// 7.5. Explizite MIME-Type-Behandlung für kritische statische Dateien
+app.get(/\.(js|css)$/, (req, res, next) => {
+  if (req.url.endsWith('.js')) {
+    res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+  } else if (req.url.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  }
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  next();
+});
 
 // 8. Statische Dateien (brauchen keine DB)
 app.use(express.static(publicDirectoryPath, {
@@ -361,15 +387,20 @@ export { appStatus };
 // ERROR HANDLING & FALLBACKS
 // ===========================================
 
-// HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen ausgeschlossen
+// HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen und statische Dateien ausgeschlossen
 app.use((req, res, next) => {
-  // API-Routen von HTTPS-Redirect ausschließen
+  // API-Routen und statische Assets von HTTPS-Redirect ausschließen
   if (req.url.startsWith('/auth/') || 
     req.url.startsWith('/extension/') || 
     req.url.startsWith('/blogpost') || 
     req.url.startsWith('/comments/') || 
-    req.url.startsWith('/upload/')) {
-    return next(); // Kein Redirect für API-Calls
+    req.url.startsWith('/upload/') ||
+    req.url.startsWith('/assets/') || 
+    req.url.startsWith('/public/') ||
+    req.url.includes('.js') ||
+    req.url.includes('.css') ||
+    req.url.includes('.ico')) {
+    return next(); // Kein Redirect für API-Calls und statische Dateien
   }
   // Plesk verwendet x-forwarded-proto Header
   if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {

@@ -1,0 +1,170 @@
+# ==========================================
+# EXPRESS BLOG - PLESK HTACCESS CONFIGURATION
+# ==========================================
+
+# MIME-Type Konfiguration für statische Dateien
+<IfModule mod_mime.c>
+    # JavaScript-Dateien
+    AddType text/javascript .js
+    AddType text/javascript .mjs
+    
+    # CSS-Dateien
+    AddType text/css .css
+    
+    # JSON-Dateien
+    AddType application/json .json
+    
+    # Fonts
+    AddType font/woff2 .woff2
+    AddType font/woff .woff
+    AddType font/ttf .ttf
+    AddType font/otf .otf
+    
+    # Images
+    AddType image/svg+xml .svg
+    AddType image/webp .webp
+</IfModule>
+
+# ==========================================
+# SICHERHEITS-HEADER
+# ==========================================
+
+<IfModule mod_headers.c>
+    # MIME-Type Sniffing verhindern
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # XSS-Schutz
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Clickjacking-Schutz
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # CORS für statische Dateien
+    <FilesMatch "\.(js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|gif|ico)$">
+        Header always set Cross-Origin-Resource-Policy "same-origin"
+        Header always set Access-Control-Allow-Origin "https://speculumx.at"
+    </FilesMatch>
+    
+    # Cache-Control für verschiedene Dateitypen
+    <FilesMatch "\.(js|css)$">
+        Header always set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    
+    <FilesMatch "\.(png|jpg|jpeg|gif|ico|svg|woff2?|ttf|otf)$">
+        Header always set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+    
+    # JSON-Dateien kein Caching
+    <FilesMatch "\.json$">
+        Header always set Cache-Control "no-cache, no-store, must-revalidate"
+    </FilesMatch>
+</IfModule>
+
+# ==========================================
+# GZIP KOMPRESSION
+# ==========================================
+
+<IfModule mod_deflate.c>
+    # Kompression für Text-basierte Dateien
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ==========================================
+# URL REWRITING & REDIRECTS
+# ==========================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # HTTPS Redirect (falls nicht über Node.js gehandhabt)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} ^speculumx\.at$ [NC]
+    RewriteRule ^(.*)$ https://speculumx.at/$1 [R=301,L]
+    
+    # WWW zu non-WWW Redirect
+    RewriteCond %{HTTP_HOST} ^www\.speculumx\.at$ [NC]
+    RewriteRule ^(.*)$ https://speculumx.at/$1 [R=301,L]
+    
+    # Express.js Proxy (falls Plesk als Reverse Proxy fungiert)
+    # Statische Dateien direkt von Apache ausliefern
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^assets/.*$ - [L]
+    RewriteRule ^public/.*$ - [L]
+    
+    # API und dynamische Routen an Node.js weiterleiten
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
+</IfModule>
+
+# ==========================================
+# DATEI-ZUGRIFF BESCHRÄNKUNGEN
+# ==========================================
+
+# Sensible Dateien schützen
+<FilesMatch "^(\.env|\.htaccess|\.gitignore|package\.json|server\.js|app\.js)$">
+    Require all denied
+</FilesMatch>
+
+# Node.js Dateien schützen
+<FilesMatch "\.(js)$">
+    # Nur assets/js und public/js erlauben
+    RewriteCond %{REQUEST_URI} !^/assets/js/
+    RewriteCond %{REQUEST_URI} !^/public/js/
+    RewriteCond %{REQUEST_URI} \.js$
+    RewriteRule . - [F,L]
+</FilesMatch>
+
+# Verzeichnis-Browsing deaktivieren
+Options -Indexes
+
+# ==========================================
+# ERROR PAGES (Optional)
+# ==========================================
+
+# Custom Error Pages (falls gewünscht)
+# ErrorDocument 404 /error/404.html
+# ErrorDocument 500 /error/500.html
+
+# ==========================================
+# PERFORMANCE OPTIMIERUNGEN
+# ==========================================
+
+# ETags aktivieren
+FileETag MTime Size
+
+# Expires Headers für bessere Performance
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # JavaScript und CSS
+    ExpiresByType text/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 year"
+    
+    # Bilder
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    
+    # Fonts
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
+    
+    # HTML und JSON
+    ExpiresByType text/html "access plus 0 seconds"
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
