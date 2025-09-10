@@ -119,7 +119,7 @@ async function initializeIndexPage() {
 
   try {
     // Posts laden
-    const posts = await window.loadAllBlogPosts();
+    const posts = await loadAllBlogPosts();
     if (posts && posts.length > 0) {
       // Sidebar-Elemente rendern
       if (typeof renderSidebarArchive === 'function') {

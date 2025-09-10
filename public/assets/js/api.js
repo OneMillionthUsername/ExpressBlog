@@ -76,7 +76,8 @@ export async function loadAllBlogPosts() {
     const result = await makeApiRequest('/blogpost/all');
 
     if (!result.success) {
-      throw new Error(result.error || 'Failed to load blog posts');
+      console.error('API Error loading blog posts:', result.error, 'Status:', result.status);
+      throw new Error(`Failed to load blog posts: ${result.error}`);
     }
 
     const posts = result;
@@ -105,7 +106,7 @@ export async function loadAllBlogPosts() {
     return posts;
   } catch (error) {
     console.error('Fehler beim Laden der Blog-Posts:', error);
-    return [];
+    throw error; // Re-throw error instead of returning empty array
   }
 }
 

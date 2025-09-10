@@ -258,7 +258,7 @@ export function initializeBlogPostForm() {
 
       window.showNotification('Post erfolgreich gespeichert!', 'success');
       setTimeout(() => {
-        window.location.href = '/blogpost/all';
+        window.location.href = '/';  // Navigate to index page instead of API route
       }, 1000);
 
     } catch (error) {
@@ -1244,7 +1244,7 @@ function showNewPostNotification(newPosts) {
   // Add click event to navigate to first new post
   modal.addEventListener('click', (e) => {
     if (e.target.tagName !== 'BUTTON') {
-      window.location.href = `/blogpost/${newPosts[0].id}`;
+      window.location.href = '/';  // Navigate to index page instead of API route
     }
   });
     
