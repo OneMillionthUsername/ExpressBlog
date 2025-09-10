@@ -2,6 +2,8 @@
 // EINFACHES & ROBUSTES PAGE INITIALISIERUNGSSYSTEM
 // ===========================================
 
+import { loadAllBlogPosts } from './api.js';
+
 // Globale Initialisierung - einmalig beim DOM-Ready
 document.addEventListener('DOMContentLoaded', async function() {
   try {
@@ -117,7 +119,7 @@ async function initializeIndexPage() {
 
   try {
     // Posts laden
-    const posts = await loadAllBlogPosts();
+    const posts = await window.loadAllBlogPosts();
     if (posts && posts.length > 0) {
       // Sidebar-Elemente rendern
       if (typeof renderSidebarArchive === 'function') {

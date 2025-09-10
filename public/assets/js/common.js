@@ -1,6 +1,10 @@
 // Import dependencies as ES6 modules
 import { checkAdminStatusCached, showAdminLoginModal } from './admin.js';
+import { loadAllBlogPosts } from './api.js';
 // Logger not available in frontend - use console instead
+
+// Make functions globally available for non-module scripts
+window.loadAllBlogPosts = loadAllBlogPosts;
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
 export function showElement(id) {

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-// Nonce-Middleware für sichere Inline-Scripts
+// Nonce-Middleware für sichere Inline-Scripts und Styles
 const nonceMiddleware = (req, res, next) => {
   // Generiere eine sichere Nonce für jeden Request
   const nonce = crypto.randomBytes(16).toString('base64');

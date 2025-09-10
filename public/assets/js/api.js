@@ -70,6 +70,48 @@ export function resetCsrfToken() {
   csrfToken = null;
 }
 
+// Blog-Posts laden
+export async function loadAllBlogPosts() {
+  try {
+    const response = await fetch('/blogpost/all', {
+      credentials: 'include',
+    });
+
+    // Error handling
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const posts = await response.json();
+
+    if (!Array.isArray(posts)) {
+      throw new Error('Response is not an array');
+    }
+
+    if (posts.length === 0) {
+      console.warn('No blog posts found');
+      return [];
+    }
+
+    if (posts.length > 100) {
+      console.warn('More than 100 blog posts found, this might take a while to load');
+      const loadingElement = document.getElementById('loading');
+      if (loadingElement) {
+        loadingElement.innerHTML = `
+          <p class="warning-message">
+            Mehr als 100 Blog-Posts gefunden. Dies kann eine Weile dauern, um sie alle zu laden.
+          </p>
+        `;
+      }
+    }
+
+    return posts;
+  } catch (error) {
+    console.error('Fehler beim Laden der Blog-Posts:', error);
+    return [];
+  }
+}
+
 // CSRF-Token regelmäßig aktualisieren (alle 30 Minuten)
 setInterval(async () => {
   csrfToken = null; // Token zurücksetzen, damit es beim nächsten Request neu abgerufen wird
