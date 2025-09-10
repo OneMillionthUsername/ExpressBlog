@@ -30,7 +30,7 @@
         <div class="row justify-content-center text-center">
             <div class="col-md-10">
                 <!-- Admin-Schutz: Inhalt wird nur für Admins angezeigt -->
-                <div id="admin-required" class="content-area" style="display: none;">
+                <div id="admin-required" class="content-area hidden">
                     <div class="alert alert-warning text-center">
                         <h4>🔒 Zugriff verweigert</h4>
                         <p>Sie müssen sich als Administrator anmelden, um Blogposts erstellen zu können.</p>
@@ -42,7 +42,7 @@
                         </a>
                     </div>
                 </div>
-                <div id="create-content" class="content-area" style="display: none;">
+                <div id="create-content" class="content-area hidden">
                     <form id="blogPostForm" class="create-form">
                         <div class="form-group">
                             <label for="title" class="form-label">

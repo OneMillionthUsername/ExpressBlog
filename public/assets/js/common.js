@@ -1236,20 +1236,7 @@ function showNewPostNotification(newPosts) {
   modal.className = 'new-post-modal';
   modal.innerHTML = `
         <span>Neue Posts verfügbar! ${newPosts.length} brandneue${newPosts.length > 1 ? ' Beiträge' : 'r Beitrag'}</span>
-        <button onclick="this.parentElement.remove()" style="
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-left: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        ">✕</button>
+        <button onclick="this.parentElement.remove()" class="modal-close-btn">✕</button>
     `;
     
   document.body.appendChild(modal);
