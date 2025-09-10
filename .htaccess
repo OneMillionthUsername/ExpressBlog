@@ -126,13 +126,20 @@
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^public/.*$ - [L]
     
-    # API und dynamische Routen an Node.js weiterleiten
-    # Aber nicht für statische Assets
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/assets/
-    RewriteCond %{REQUEST_URI} !^/public/assets/
-    RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
+    # Statische Assets direkt von Apache ausliefern
+    # Assets im Root (z.B. /assets/css/style.css)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^assets/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf)$ - [L]
+    
+    # Assets in public (z.B. /public/assets/css/style.css)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^public/assets/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf)$ - [L]
+    
+    # Alle anderen statischen Dateien in public
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^public/.*$ - [L]
+    
+    # Alle anderen Anfragen lässt Plesk automatisch an Node.js weiterleiten
 </IfModule>
 
 # ==========================================
