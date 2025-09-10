@@ -5,6 +5,7 @@ import commentsRouter from './commentsRoutes.js';
 import utilityRouter from './utilityRoutes.js';
 import staticRouter from './staticRoutes.js';
 import cardRouter from './cardRoutes.js';
+import sitemapRouter from './sitemapRoutes.js';
 
 export default {
   postRouter,
@@ -14,4 +15,5 @@ export default {
   utilityRouter,
   staticRouter,
   cardRouter,
+  sitemapRouter,
 };

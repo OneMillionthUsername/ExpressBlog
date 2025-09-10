@@ -348,6 +348,9 @@ function registerDatabaseRoutes() {
   app.use('/', requireDatabase, routes.staticRouter);
 
   app.use('/', requireDatabase, routes.utilityRouter);
+  
+  // Sitemap und SEO-Routes (können ohne DB funktionieren, aber mit DB für dynamische Inhalte)
+  app.use('/', routes.sitemapRouter);
 
   app.use('/auth', requireDatabase, routes.authRouter);
   app.use('/blogpost', requireDatabase, routes.postRouter);
