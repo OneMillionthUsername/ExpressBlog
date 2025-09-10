@@ -195,6 +195,15 @@ app.use(express.static(publicDirectoryPath, {
     // Cross-Origin-Resource-Policy für alle statischen Dateien
     res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
     
+    // MIME-Type für JavaScript-Dateien explizit setzen
+    if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
+    }
+    // MIME-Type für CSS-Dateien
+    else if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    }
+    
     // Cache-Control für verschiedene Dateitypen
     if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
       res.setHeader('Cache-Control', 'public, max-age=31536000');
