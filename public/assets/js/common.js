@@ -422,7 +422,7 @@ export async function renderAndDisplayCards(cards) {
             <div class="discovery-card ${isNew ? 'discovery-card-new' : ''} ${isVeryNew ? 'discovery-card-very-new' : ''}">
                 ${isVeryNew ? '<div class="discovery-new-badge very-new">Gerade veröffentlicht</div>' : ''}
                 ${isNew && !isVeryNew ? '<div class="discovery-new-badge">Neu</div>' : ''}
-                <img src="${card.img_url}" 
+                <img src="${card.img}" 
                      alt="${card.title}" 
                      class="discovery-img"
                      onclick="window.open('${card.link}', '_blank')"
