@@ -192,11 +192,31 @@ app.set('views', join(__dirname, 'views'));
 // 8. Statische Dateien (brauchen keine DB)
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
+    // Cross-Origin-Resource-Policy für alle statischen Dateien
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    
+    // Cache-Control für verschiedene Dateitypen
     if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
       res.setHeader('Cache-Control', 'public, max-age=31536000');
+    } else if (path.includes('.ico') || path.includes('.png') || path.includes('.jpg') || path.includes('.jpeg')) {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag für Bilder
     }
   },
 }));
+
+// Favicon-Route (falls keine Datei existiert)
+app.get('/favicon.ico', (req, res) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag Cache
+  
+  // Sende clippy.png als Favicon (konvertiert zu ICO-Format ist nicht nötig)
+  res.sendFile(join(publicDirectoryPath, 'assets', 'media', 'clippy.png'), (err) => {
+    if (err) {
+      // Falls Datei nicht existiert, sende 204 No Content
+      res.status(204).end();
+    }
+  });
+});
 
 // 9. Health Check (funktioniert IMMER, auch ohne DB)
 app.get('/health', (req, res) => {
