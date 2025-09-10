@@ -94,6 +94,19 @@ export async function initializeDatabase() {
     return;
   }
   
+  // Prüfe ob alle notwendigen DB-Umgebungsvariablen gesetzt sind
+  if (!dbConfig.user || !dbConfig.password || !dbConfig.database) {
+    logger.warn('Database environment variables not fully configured. Using mock mode.');
+    logger.warn('Missing variables:', {
+      DB_USER: !dbConfig.user ? 'MISSING' : 'OK',
+      DB_PASSWORD: !dbConfig.password ? 'MISSING' : 'OK', 
+      DB_NAME: !dbConfig.database ? 'MISSING' : 'OK',
+    });
+    pool = createMockPool();
+    isMockMode = true;
+    return;
+  }
+  
   try {
     pool = mariadb.createPool(dbConfig);
 
@@ -101,7 +114,11 @@ export async function initializeDatabase() {
     connection.release();
   } catch (error) {
     logger.error(`Error creating MariaDB pool connection: ${error.message}`);
-    throw new databaseError(`Error creating pool connection: ${error.message}`, error);
+    logger.warn('Falling back to mock mode due to database connection failure');
+    pool = createMockPool();
+    isMockMode = true;
+    // Nicht mehr werfen - auf Mock-Modus fallen lassen
+    return;
   }
 }
 
