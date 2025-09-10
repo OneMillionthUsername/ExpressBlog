@@ -540,13 +540,8 @@ export async function loadAndDisplayArchivePosts() {
 // Funktion zum Laden und Anzeigen von aktuellen Posts (für list_posts.html)
 export async function loadAndDisplayRecentPosts() {
   try {
-    const response = await fetch('/blogposts');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const posts = await response.json();
-    //DEBUG
+    const posts = await loadAllBlogPosts();
+    
     if (!Array.isArray(posts)) {
       throw new Error('Response is not an array');
     }
