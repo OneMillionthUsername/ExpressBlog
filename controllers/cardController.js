@@ -1,6 +1,6 @@
-import { DatabaseService } from '../databases/mariaDB';
-import { Card } from '../models/cardModel';
-import { CardControllerException } from '../models/customExceptions';
+import { DatabaseService } from '../databases/mariaDB.js';
+import { Card } from '../models/cardModel.js';
+import { CardControllerException } from '../models/customExceptions.js';
 
 const createCard = async (cardData) => {
   const { error, value } = Card.validate(cardData);
