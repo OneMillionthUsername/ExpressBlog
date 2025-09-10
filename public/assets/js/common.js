@@ -688,16 +688,22 @@ export async function loadAndDisplayRecentPosts() {
 
 // Funktion zum Laden und Anzeigen aller Posts (für /blogpost/all)
 export async function loadAndDisplayAllPosts() {
+  console.log('loadAndDisplayAllPosts: Starting...');
+  
   try {
-    console.debug('loadAndDisplayAllPosts: Starting...');
+    console.log('loadAndDisplayAllPosts: Calling loadAllBlogPosts()...');
     const posts = await loadAllBlogPosts();
-    console.debug('loadAndDisplayAllPosts: Loaded posts:', posts);
+    console.log('loadAndDisplayAllPosts: Loaded posts:', posts, 'Length:', posts?.length);
     
     if (!Array.isArray(posts)) {
+      console.error('loadAndDisplayAllPosts: Response is not an array:', typeof posts);
       throw new Error('Response is not an array');
     }
     
+    console.log('loadAndDisplayAllPosts: Posts array validation passed');
+    
     if (posts.length === 0) {
+      console.log('loadAndDisplayAllPosts: No posts found, showing empty state');
       const isAdmin = typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn;
       document.getElementById('blogPostsList').innerHTML = `
                 <div class="no-posts">
@@ -711,17 +717,21 @@ export async function loadAndDisplayAllPosts() {
     }
     
     // Container für die Blogposts      
+    console.log('loadAndDisplayAllPosts: Looking for blogPostsList container...');
     const listContainer = document.getElementById('blogPostsList');
     if (!listContainer) {
-      console.error('Blog posts list container not found');
+      console.error('loadAndDisplayAllPosts: Blog posts list container not found');
       return;
     }
+    console.log('loadAndDisplayAllPosts: Container found, clearing and rendering...');
     
     listContainer.innerHTML = ''; // Leeren vor dem Rendern
     let html = '';
     
+    console.log('loadAndDisplayAllPosts: Starting to render posts...');
     // Alle Posts anzeigen (keine 3-Monats-Filterung)
-    posts.forEach(post => {
+    posts.forEach((post, index) => {
+      console.log(`loadAndDisplayAllPosts: Rendering post ${index + 1}/${posts.length}:`, post.title);
       const postDate = formatPostDate(post.created_at);
       const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
       
@@ -746,8 +756,9 @@ export async function loadAndDisplayAllPosts() {
       `;
     });
     
+    console.log('loadAndDisplayAllPosts: Setting HTML content...');
     listContainer.innerHTML = html;
-    console.debug(`loadAndDisplayAllPosts: Rendered ${posts.length} posts`);
+    console.log(`loadAndDisplayAllPosts: Successfully rendered ${posts.length} posts`);
     
     // Admin-Delete-Buttons hinzufügen (falls verfügbar)
     if (typeof addDeleteButtonsToPosts === 'function') {
@@ -755,6 +766,7 @@ export async function loadAndDisplayAllPosts() {
     }
         
   } catch (error) {
+    console.error('loadAndDisplayAllPosts: Error occurred:', error);
     console.error('Fehler beim Laden aller Posts:', error);
     document.getElementById('blogPostsList').innerHTML = `
             <div class="error-state">

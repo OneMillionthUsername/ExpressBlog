@@ -163,15 +163,23 @@ async function initializeArchivePage() {
 
 // Recent Posts - vereinfacht
 async function initializeRecentPostsPage() {
-  console.log('Initialisiere Recent Posts Page (alle Posts)...');
+  console.log('initializeRecentPostsPage: Starting...');
+  console.log('initializeRecentPostsPage: Current URL:', window.location.href);
 
   try {
+    console.log('initializeRecentPostsPage: Checking for loadAndDisplayAllPosts function...');
     if (typeof loadAndDisplayAllPosts === 'function') {
+      console.log('initializeRecentPostsPage: Found loadAndDisplayAllPosts, calling it...');
       await loadAndDisplayAllPosts();
+      console.log('initializeRecentPostsPage: loadAndDisplayAllPosts completed');
     } else if (typeof loadAndDisplayRecentPosts === 'function') {
+      console.log('initializeRecentPostsPage: Fallback to loadAndDisplayRecentPosts...');
       await loadAndDisplayRecentPosts();
+    } else {
+      console.error('initializeRecentPostsPage: No suitable function found!');
     }
   } catch (error) {
+    console.error('initializeRecentPostsPage: Error occurred:', error);
     console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
   }
 }
