@@ -685,6 +685,88 @@ export async function loadAndDisplayRecentPosts() {
         `;
   }
 }
+
+// Funktion zum Laden und Anzeigen aller Posts (für /blogpost/all)
+export async function loadAndDisplayAllPosts() {
+  try {
+    console.debug('loadAndDisplayAllPosts: Starting...');
+    const posts = await loadAllBlogPosts();
+    console.debug('loadAndDisplayAllPosts: Loaded posts:', posts);
+    
+    if (!Array.isArray(posts)) {
+      throw new Error('Response is not an array');
+    }
+    
+    if (posts.length === 0) {
+      const isAdmin = typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn;
+      document.getElementById('blogPostsList').innerHTML = `
+                <div class="no-posts">
+                    <div class="no-posts-icon">Posts</div>
+                    <h3>Keine Posts verfügbar</h3>
+                    <p>Es gibt noch keine Blog-Posts.</p>
+                    ${isAdmin ? '<a href="/blogpost/create" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+                </div>
+            `;
+      return;
+    }
+    
+    // Container für die Blogposts      
+    const listContainer = document.getElementById('blogPostsList');
+    if (!listContainer) {
+      console.error('Blog posts list container not found');
+      return;
+    }
+    
+    listContainer.innerHTML = ''; // Leeren vor dem Rendern
+    let html = '';
+    
+    // Alle Posts anzeigen (keine 3-Monats-Filterung)
+    posts.forEach(post => {
+      const postDate = formatPostDate(post.created_at);
+      const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
+      
+      html += `
+        <article class="blog-post-card">
+          <div class="post-meta">
+            <span class="post-date">${postDate}</span>
+            <span class="post-author">von ${post.author || 'Unbekannt'}</span>
+          </div>
+          <h2 class="post-title">
+            <a href="/blogpost/${post.slug}" class="post-link">${post.title}</a>
+          </h2>
+          <div class="post-excerpt">${excerpt}</div>
+          <div class="post-footer">
+            <span class="post-views">${post.views || 0} Aufrufe</span>
+            ${post.tags && post.tags.length > 0 ? 
+              `<div class="post-tags">
+                ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+              </div>` : ''}
+          </div>
+        </article>
+      `;
+    });
+    
+    listContainer.innerHTML = html;
+    console.debug(`loadAndDisplayAllPosts: Rendered ${posts.length} posts`);
+    
+    // Admin-Delete-Buttons hinzufügen (falls verfügbar)
+    if (typeof addDeleteButtonsToPosts === 'function') {
+      setTimeout(addDeleteButtonsToPosts, 50);
+    }
+        
+  } catch (error) {
+    console.error('Fehler beim Laden aller Posts:', error);
+    document.getElementById('blogPostsList').innerHTML = `
+            <div class="error-state">
+                <div class="error-icon">Error</div>
+                <h3>Laden fehlgeschlagen</h3>
+                <p>Die Blog-Posts konnten nicht geladen werden.</p>
+                <button onclick="loadAndDisplayAllPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+            </div>
+        `;
+  }
+}
+
 // Funktion zum Laden und Anzeigen der meistgelesenen Posts (für most_read.html)
 export async function loadAndDisplayMostReadPosts() {
   try {

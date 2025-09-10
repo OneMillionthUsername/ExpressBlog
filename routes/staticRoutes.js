@@ -17,8 +17,4 @@ staticRouter.get('/about.html', (req, res) => {
   res.redirect('/about');
 });
 
-staticRouter.get('/blogpost/all', (req, res) => {
-  res.render('listCurrentPosts');
-});
-
 export default staticRouter;

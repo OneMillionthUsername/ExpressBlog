@@ -75,6 +75,7 @@ export function resetCsrfToken() {
 export async function loadAllBlogPosts() {
   try {
     const result = await makeApiRequest('/blogpost/all');
+    console.debug('loadAllBlogPosts - Raw result:', result);
 
     if (!result.success) {
       console.error('API Error loading blog posts:', result.error, 'Status:', result.status);
@@ -82,6 +83,7 @@ export async function loadAllBlogPosts() {
     }
 
     const posts = result.data;
+    console.debug('loadAllBlogPosts - Posts data:', posts, 'Type:', typeof posts, 'Is Array:', Array.isArray(posts));
 
     if (!Array.isArray(posts)) {
       throw new Error('Response is not an array');
