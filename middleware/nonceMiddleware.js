@@ -12,16 +12,25 @@ const nonceMiddleware = (req, res, next) => {
   const cspHeader = res.getHeader('Content-Security-Policy') || '';
 
   if (cspHeader) {
-    // Ersetze die bestehende CSP mit Nonce-Unterstützung für scripts UND styles
+    // Bekannte Hashes für inline Scripts und Styles die erlaubt werden sollen
+    const knownScriptHashes = [
+      '\'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM=\'',
+    ];
+    
+    const knownStyleHashes = [
+      '\'sha256-+OsIn6RhyCZCUkkvtHxFtP0kU3CGdGeLjDd9Fzqdl3o=\'',
+    ];
+    
+    // Ersetze die bestehende CSP mit Nonce-Unterstützung für scripts UND erlaubte Hashes
     let updatedCSP = cspHeader.replace(
       /script-src ([^;]*)/,
-      `script-src $1 'nonce-${nonce}'`,
+      `script-src $1 'nonce-${nonce}' ${knownScriptHashes.join(' ')}`,
     );
     
-    // Füge Nonce für style-src hinzu und erlaube unsafe-hashes für style-Attribute
+    // Füge Nonce für style-src hinzu und erlaube unsafe-hashes für style-Attribute plus bekannte Hashes
     updatedCSP = updatedCSP.replace(
       /style-src ([^;]*)/,
-      `style-src $1 'nonce-${nonce}' 'unsafe-hashes'`,
+      `style-src $1 'nonce-${nonce}' 'unsafe-hashes' ${knownStyleHashes.join(' ')}`,
     );
     
     res.setHeader('Content-Security-Policy', updatedCSP);

@@ -1,5 +1,24 @@
 /**
- * Fehler im Controller als Exceptions werfen
+ * Fehler im ContropostRouter.get('/all', globalLimiter, async (req, res) => {
+  logger.debug('GET /all: Received request for all blog posts');
+  try {
+    logger.debug('GET /all: Calling postController.getAllPosts()');
+    const posts = await postController.getAllPosts();
+    
+    logger.debug(`GET /all: Controller returned ${posts ? posts.length : 'null'} posts`);
+    
+    // Auch leere Arrays sind gültige Antworten
+    const response = convertBigInts(posts) || [];
+    logger.debug(`GET /all: Sending response with ${response.length} posts`);
+    
+    res.json(response);
+  } catch (error) {
+    logger.debug(`GET /all: Error occurred: ${error.message}`, { stack: error.stack });
+    console.error('Error loading blog posts', error);
+    logger.error(`GET /all route error: ${error.message}`);
+    res.status(500).json({ error: 'Server failed to load blog posts' });
+  }
+});werfen
  * in der Route abfangen und an das Frontend zurückgeben
  */
 
