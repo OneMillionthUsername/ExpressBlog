@@ -1,24 +1,5 @@
 /**
- * Fehler im ContropostRouter.get('/all', globalLimiter, async (req, res) => {
-  logger.debug('GET /all: Received request for all blog posts');
-  try {
-    logger.debug('GET /all: Calling postController.getAllPosts()');
-    const posts = await postController.getAllPosts();
-    
-    logger.debug(`GET /all: Controller returned ${posts ? posts.length : 'null'} posts`);
-    
-    // Auch leere Arrays sind gültige Antworten
-    const response = convertBigInts(posts) || [];
-    logger.debug(`GET /all: Sending response with ${response.length} posts`);
-    
-    res.json(response);
-  } catch (error) {
-    logger.debug(`GET /all: Error occurred: ${error.message}`, { stack: error.stack });
-    console.error('Error loading blog posts', error);
-    logger.error(`GET /all route error: ${error.message}`);
-    res.status(500).json({ error: 'Server failed to load blog posts' });
-  }
-});werfen
+ * Fehler im Controller als Exceptions werfen
  * in der Route abfangen und an das Frontend zurückgeben
  */
 
@@ -33,12 +14,6 @@ import { validateId, validatePostBody, validateSlug } from '../middleware/valida
 import logger from '../utils/logger.js';
 
 const postRouter = express.Router();
-// postRouter.all('*', async (req, res, next) => {
-//   //hier allgemeine Logik ausführen
-//   //logging
-//   //sanitazing
-//   next();
-// });
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {
@@ -57,7 +32,7 @@ postRouter.get('/all', globalLimiter, async (req, res) => {
   } catch (error) {
     logger.debug(`GET /all: Error occurred: ${error.message}`, { stack: error.stack });
     console.error('Error loading blog posts', error);
-    logger.error(`POST /all route error: ${error.message}`);
+    logger.error(`GET /all route error: ${error.message}`);
     res.status(500).json({ error: 'Server failed to load blog posts' });
   }
 });
