@@ -1,192 +1,238 @@
-// Create Page Initialisierung
-async function initializeCreatePageComplete() {
-  try {        
-    // TinyMCE Editor
-    if (typeof initializeCreatePage === 'function') {
-      await initializeCreatePage();
-    } else {
-      console.warn('initializeCreatePage Funktion nicht verfügbar');
-    }        
-  } catch (error) {
-    console.error('Fehler bei der Create Page Initialisierung:', error);
-  }
-  // Create Page Admin Protection und Initialisierung
-  async function initializeCreatePage() {
-    // Prüfe Admin-Status und zeige entsprechenden Inhalt
-    hideElement('create-content');
-    hideElement('admin-required');
-    if (isAdminLoggedIn) {
-      // Admin ist eingeloggt - zeige Create-Formular
-      showElement('create-content');
-      // Editor und API-Keys NUR jetzt initialisieren!
-      if (typeof initializeBlogEditor === 'function') {
-        await initializeBlogEditor();
-      }
-    } else {
-      // Kein Admin - zeige Warnung
-      showElement('admin-required');
-    }
-        
-    // Navigation-Sichtbarkeit aktualisieren
-    updateNavigationVisibility();
-  }
-}
+// ===========================================
+// EINFACHES & ROBUSTES PAGE INITIALISIERUNGSSYSTEM
+// ===========================================
 
-// Index Page Initialisierung
-async function initializeIndexPageComplete() {
+// Globale Initialisierung - einmalig beim DOM-Ready
+document.addEventListener('DOMContentLoaded', async function() {
   try {
-    const posts = await loadAllBlogPosts();
-    const cards = await loadCards();
-
-    if(!posts || posts.length === 0) {
-      console.warn('Keine Posts gefunden');
-    }
-    if (typeof renderSidebarArchive === 'function') {
-      await renderSidebarArchive(posts);
-    }
-    if (typeof renderPopularPostsSidebar === 'function') {
-      await renderPopularPostsSidebar(posts);
-    }
-    if(!cards || cards.length === 0) {
-      console.warn('Keine Cards gefunden');
-    }
-    if(typeof renderAndDisplayCards === 'function') {
-      await renderAndDisplayCards(cards);
-    }
-  } catch (error) {
-    console.error('Fehler bei der Index Page Initialisierung:', error);
-  }
-}
-
-// Archiv Page Initialisierung
-async function initializeArchivePageComplete() {
-  try {
-    if (typeof loadAndDisplayArchivePosts === 'function') {
-      await loadAndDisplayArchivePosts();
-    } else {
-      console.warn('loadAndDisplayArchivePosts Funktion nicht verfügbar');
-    }
-  } catch (error) {
-    console.error('Fehler bei der Archiv Page Initialisierung:', error);
-  }
-}
-
-// Recent Posts Page Initialisierung
-async function initializeRecentPostsPageComplete() {
-  try {
-    if (typeof loadAndDisplayRecentPosts === 'function') {
-      await loadAndDisplayRecentPosts();
-    } else {
-      console.warn('loadAndDisplayRecentPosts Funktion nicht verfügbar');
-    }
-  } catch (error) {
-    console.error('Fehler bei der Recent Posts Page Initialisierung:', error);
-  }
-}
-
-// Most Read Posts Page Initialisierung
-async function initializeMostReadPostsPageComplete() {
-  try {
-    if (typeof loadAndDisplayMostReadPosts === 'function') {
-      await loadAndDisplayMostReadPosts();
-    } else {
-      console.warn('loadAndDisplayMostReadPosts Funktion nicht verfügbar');
-    }
-  } catch (error) {
-    console.error('Fehler bei der Most Read Posts Page Initialisierung:', error);
-  }
-}
-
-// Read Post Page Initialisierung
-async function initializeReadPostPageComplete() {
-  try {
-    if (typeof loadAndDisplayBlogPost === 'function') {
-      await loadAndDisplayBlogPost();
-    } else {
-      console.warn('loadAndDisplayBlogPost Funktion nicht verfügbar');
-    }
-
-    // Admin-Controls und Kommentarsystem nach dem Laden des Posts
-    function waitForElement(selector, callback, interval = 100, maxTries = 20) {
-      let tries = 0;
-      const timer = setInterval(() => {
-        const el = document.querySelector(selector);
-        if (el) {
-          clearInterval(timer);
-          callback(el);
-        } else if (++tries >= maxTries) {
-          clearInterval(timer);
-          console.warn(`Element ${selector} nicht gefunden.`);
-        }
-      }, interval);
-    }
-
-    waitForElement('#admin-controls', addReadPostAdminControls);
-    waitForElement('#comments-section', (el) => {
-      el.style.display = 'block';
-      if (typeof initializeCommentsSystem === 'function') {
-        initializeCommentsSystem();
-      }
-    });
-
-  } catch (error) {
-    console.error('Fehler bei der Read Post Page Initialisierung:', error);
-  }
-}
-
-// Export für andere Dateien
-window.pageInitializers = {
-  create: initializeCreatePageComplete,
-  index: initializeIndexPageComplete,
-  archiv: initializeArchivePageComplete,
-  list_posts: initializeRecentPostsPageComplete,
-  most_read: initializeMostReadPostsPageComplete,
-  read_post: initializeReadPostPageComplete,
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-  if (typeof addAdminMenuItemToNavbar === 'function') {
-    addAdminMenuItemToNavbar();
-  }
-
-  const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
-  window.moduleLoader.onAllLoaded(async () => {
-    // standardmäßige Initialisierung
+    // 1. Admin-System initialisieren (immer zuerst)
     if (typeof initializeAdminSystem === 'function') {
-      await initializeAdminSystem();   
-      if (typeof addAdminMenuItemToNavbar === 'function') {
-        addAdminMenuItemToNavbar();
-      }
+      await initializeAdminSystem();
     }
-    if (typeof initializeBlogUtilities === 'function') {
-      await initializeBlogUtilities();
-    }
-    // Dann die page-spezifische Initialisierung
-    switch(currentPage) {
-    case 'create':
-      window.pageInitializers.create();
-      break;
-    case 'index':
-    case '':
-      window.pageInitializers.index();
-      break;
-    case 'archiv':
-      window.pageInitializers.archiv();
-      break;
-    case 'list_posts':
-      window.pageInitializers.list_posts();
-      break;
-    case 'most_read':
-      window.pageInitializers.most_read();
-      break;
-    case 'read_post':
-      window.pageInitializers.read_post();
-      break;
-    default:
-      console.log(`Keine spezifische Initialisierung für ${currentPage}`);
-    }       
+
+    // 2. Admin-Menü hinzufügen (einmalig)
     if (typeof addAdminMenuItemToNavbar === 'function') {
       addAdminMenuItemToNavbar();
     }
-  });
+
+    // 3. Blog-Utilities initialisieren
+    if (typeof initializeBlogUtilities === 'function') {
+      await initializeBlogUtilities();
+    }
+
+    // 4. Seiten-spezifische Initialisierung
+    await initializeCurrentPage();
+
+  } catch (error) {
+    console.error('Fehler bei der globalen Initialisierung:', error);
+  }
 });
+
+// Seiten-spezifische Initialisierung
+async function initializeCurrentPage() {
+  const currentPage = getCurrentPageType();
+
+  try {
+    switch(currentPage) {
+      case 'create':
+        await initializeCreatePage();
+        break;
+      case 'index':
+        await initializeIndexPage();
+        break;
+      case 'archiv':
+        await initializeArchivePage();
+        break;
+      case 'list_posts':
+        await initializeRecentPostsPage();
+        break;
+      case 'most_read':
+        await initializeMostReadPostsPage();
+        break;
+      case 'read_post':
+        await initializeReadPostPage();
+        break;
+      case 'about':
+        // About-Seite - normalerweise keine spezielle Initialisierung nötig
+        console.log('About-Seite geladen - keine spezielle Initialisierung');
+        break;
+      default:
+        console.log(`Standard-Initialisierung für: ${currentPage}`);
+    }
+  } catch (error) {
+    console.error(`Fehler bei ${currentPage} Initialisierung:`, error);
+  }
+}
+
+// Hilfsfunktion: Aktuelle Seite ermitteln
+function getCurrentPageType() {
+  const path = window.location.pathname;
+  const page = path.split('/').pop().replace('.html', '').replace('.ejs', '');
+
+  // Exakte Übereinstimmungen mit tatsächlichen Dateinamen
+  if (path === '/' || page === '') return 'index';
+  if (page === 'createPost') return 'create';
+  if (page === 'archiv') return 'archiv';
+  if (page === 'listCurrentPosts') return 'list_posts';
+  if (page === 'mostReadPosts') return 'most_read';
+  if (page === 'readPost') return 'read_post';
+  if (page === 'about') return 'about';
+
+  // Fallback für unbekannte Seiten
+  console.log(`Unbekannte Seite erkannt: ${page} (Pfad: ${path})`);
+  return 'index';
+}
+
+// ===========================================
+// VEREINFACHTE SEITEN-INITIALISIERUNGEN
+// ===========================================
+
+// Create Page - vereinfacht
+async function initializeCreatePage() {
+  console.log('Initialisiere Create Page...');
+
+  try {
+    // Editor initialisieren (falls verfügbar)
+    if (typeof initializeBlogEditor === 'function') {
+      await initializeBlogEditor();
+    }
+
+    // Admin-Status prüfen und UI anpassen
+    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+      showElement('create-content');
+      hideElement('admin-required');
+    } else {
+      hideElement('create-content');
+      showElement('admin-required');
+    }
+
+  } catch (error) {
+    console.error('Create Page Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// Index Page - vereinfacht
+async function initializeIndexPage() {
+  console.log('Initialisiere Index Page...');
+
+  try {
+    // Posts laden
+    const posts = await loadAllBlogPosts();
+    if (posts && posts.length > 0) {
+      // Sidebar-Elemente rendern
+      if (typeof renderSidebarArchive === 'function') {
+        await renderSidebarArchive(posts);
+      }
+      if (typeof renderPopularPostsSidebar === 'function') {
+        await renderPopularPostsSidebar(posts);
+      }
+    }
+
+    // Cards laden
+    const cards = await loadCards();
+    if (cards && cards.length > 0) {
+      if (typeof renderAndDisplayCards === 'function') {
+        await renderAndDisplayCards(cards);
+      }
+    }
+
+  } catch (error) {
+    console.error('Index Page Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// Archiv Page - vereinfacht
+async function initializeArchivePage() {
+  console.log('Initialisiere Archiv Page...');
+
+  try {
+    if (typeof loadAndDisplayArchivePosts === 'function') {
+      await loadAndDisplayArchivePosts();
+    }
+  } catch (error) {
+    console.error('Archiv Page Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// Recent Posts - vereinfacht
+async function initializeRecentPostsPage() {
+  console.log('Initialisiere Recent Posts Page...');
+
+  try {
+    if (typeof loadAndDisplayRecentPosts === 'function') {
+      await loadAndDisplayRecentPosts();
+    }
+  } catch (error) {
+    console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// Most Read Posts - vereinfacht
+async function initializeMostReadPostsPage() {
+  console.log('Initialisiere Most Read Posts Page...');
+
+  try {
+    if (typeof loadAndDisplayMostReadPosts === 'function') {
+      await loadAndDisplayMostReadPosts();
+    }
+  } catch (error) {
+    console.error('Most Read Posts Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// Read Post Page - vereinfacht
+async function initializeReadPostPage() {
+  console.log('Initialisiere Read Post Page...');
+
+  try {
+    // Post laden
+    if (typeof loadAndDisplayBlogPost === 'function') {
+      await loadAndDisplayBlogPost();
+    }
+
+    // Admin-Controls hinzufügen (vereinfacht)
+    setTimeout(() => {
+      const adminControls = document.getElementById('admin-controls');
+      if (adminControls) {
+        addReadPostAdminControls();
+      }
+
+      // Kommentare aktivieren
+      const commentsSection = document.getElementById('comments-section');
+      if (commentsSection) {
+        commentsSection.style.display = 'block';
+        if (typeof initializeCommentsSystem === 'function') {
+          initializeCommentsSystem();
+        }
+      }
+    }, 500); // Kurze Verzögerung für DOM-Updates
+
+  } catch (error) {
+    console.error('Read Post Page Initialisierung fehlgeschlagen:', error);
+  }
+}
+
+// ===========================================
+// LEGACY CODE - WIRD NICHT MEHR VERWENDET
+// Kann später entfernt werden
+// ===========================================
+
+// Altes pageInitializers Objekt (für Abwärtskompatibilität)
+window.pageInitializers = {
+  create: initializeCreatePage,
+  index: initializeIndexPage,
+  archiv: initializeArchivePage,
+  list_posts: initializeRecentPostsPage,
+  most_read: initializeMostReadPostsPage,
+  read_post: initializeReadPostPage,
+};
+
+// Fallback für altes moduleLoader System
+window.moduleLoader = window.moduleLoader || {
+  onAllLoaded: function(callback) {
+    // Sofort ausführen (DOM ist bereits geladen)
+    if (typeof callback === 'function') {
+      callback();
+    }
+  }
+};
