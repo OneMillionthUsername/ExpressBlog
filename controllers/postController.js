@@ -74,36 +74,60 @@ const updatePost = async (postData) => {
   }
 };
 const getAllPosts = async () => {
+  logger.debug('getAllPosts: Starting to fetch all posts');
   try {
+    logger.debug('getAllPosts: Calling DatabaseService.getAllPosts()');
     const posts = await DatabaseService.getAllPosts();
+    
+    logger.debug(`getAllPosts: Database returned ${posts ? posts.length : 'null'} posts`);
+    
     if (!posts || posts.length === 0) {
       // Unterscheide zwischen leerem Ergebnis und DB-Fehler
       logger.warn('No posts found in database - returning empty array');
+      logger.debug('getAllPosts: Returning empty array due to no posts');
       return []; // Leeres Array zurückgeben statt Exception
     }
+    
+    logger.debug(`getAllPosts: Processing ${posts.length} posts for validation`);
     const validPosts = [];
     for (const post of posts) {
+      logger.debug(`getAllPosts: Validating post ID ${post.id}, title: "${post.title}"`);
       const { error, value } = Post.validate(post);
       if (error) {
+        logger.debug(`getAllPosts: Validation failed for post ID ${post.id}: ${error.details.map(d => d.message).join('; ')}`);
         console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
         continue;
       }
       if (value.published) {
+        logger.debug(`getAllPosts: Adding published post ID ${post.id} to valid posts`);
         validPosts.push(new Post(value));
+      } else {
+        logger.debug(`getAllPosts: Skipping unpublished post ID ${post.id}`);
       }
     }
+    
+    logger.debug(`getAllPosts: Found ${validPosts.length} valid published posts`);
+    
     if (validPosts.length === 0) {
       logger.warn('No valid published posts found - returning empty array');
+      logger.debug('getAllPosts: Returning empty array due to no valid published posts');
       return []; // Leeres Array zurückgeben statt Exception
     }
+    
+    logger.debug(`getAllPosts: Successfully returning ${validPosts.length} posts`);
     return validPosts;
   } catch (error) {
     // Hier wird zwischen DB-Fehlern und anderen Fehlern unterschieden
+    logger.debug(`getAllPosts: Caught error: ${error.message}`, { stack: error.stack });
+    
     if (error.message && error.message.includes('No posts found')) {
       logger.warn('Database returned no posts - treating as empty result');
+      logger.debug('getAllPosts: Treating "No posts found" as empty result');
       return []; // Leeres Array bei "keine Posts gefunden"
     }
+    
     logger.error(`Critical database error in getAllPosts: ${error.message}`);
+    logger.debug('getAllPosts: Throwing PostControllerException due to critical error');
     throw new PostControllerException(`Error fetching all posts: ${error.message}`, error);
   }
 };

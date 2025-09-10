@@ -11,6 +11,7 @@ import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import * as validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
+import logger from '../utils/logger.js';
 
 const postRouter = express.Router();
 // postRouter.all('*', async (req, res, next) => {
@@ -22,12 +23,22 @@ const postRouter = express.Router();
 
 // commentsRouter.all();
 postRouter.get('/all', globalLimiter, async (req, res) => {
+  logger.debug('POST /all: Received request for all blog posts');
   try {
+    logger.debug('POST /all: Calling postController.getAllPosts()');
     const posts = await postController.getAllPosts();
+    
+    logger.debug(`POST /all: Controller returned ${posts ? posts.length : 'null'} posts`);
+    
     // Auch leere Arrays sind gültige Antworten
-    res.json(convertBigInts(posts) || []);
+    const response = convertBigInts(posts) || [];
+    logger.debug(`POST /all: Sending response with ${response.length} posts`);
+    
+    res.json(response);
   } catch (error) {
+    logger.debug(`POST /all: Error occurred: ${error.message}`, { stack: error.stack });
     console.error('Error loading blog posts', error);
+    logger.error(`POST /all route error: ${error.message}`);
     res.status(500).json({ error: 'Server failed to load blog posts' });
   }
 });

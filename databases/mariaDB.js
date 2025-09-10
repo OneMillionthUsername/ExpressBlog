@@ -87,14 +87,18 @@ export function isMockDatabase() {
 }
 
 export async function initializeDatabase() {
+  logger.debug('initializeDatabase: Starting database initialization');
+  
   if (process.env.NODE_ENV === 'development') {
     logger.warn('Keine lokale Datenbank konfiguriert. Überspringe Datenbank-Initialisierung.');
+    logger.debug('initializeDatabase: Using mock mode for development');
     pool = createMockPool();
     isMockMode = true;
     return;
   }
   
   // Prüfe ob alle notwendigen DB-Umgebungsvariablen gesetzt sind
+  logger.debug('initializeDatabase: Checking environment variables');
   if (!dbConfig.user || !dbConfig.password || !dbConfig.database) {
     logger.warn('Database environment variables not fully configured. Using mock mode.');
     logger.warn('Missing variables:', {
@@ -102,17 +106,30 @@ export async function initializeDatabase() {
       DB_PASSWORD: !dbConfig.password ? 'MISSING' : 'OK', 
       DB_NAME: !dbConfig.database ? 'MISSING' : 'OK',
     });
+    logger.debug('initializeDatabase: Switching to mock mode due to missing env vars');
     pool = createMockPool();
     isMockMode = true;
     return;
   }
   
   try {
+    logger.debug('initializeDatabase: Creating MariaDB connection pool', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      database: dbConfig.database,
+      connectionLimit: dbConfig.connectionLimit,
+    });
+    
     pool = mariadb.createPool(dbConfig);
 
+    logger.debug('initializeDatabase: Testing initial connection');
     const connection = await pool.getConnection();
     connection.release();
+    
+    logger.debug('initializeDatabase: Database pool created successfully');
   } catch (error) {
+    logger.debug(`initializeDatabase: Database connection failed: ${error.message}`, { stack: error.stack });
     logger.error(`Error creating MariaDB pool connection: ${error.message}`);
     logger.warn('Falling back to mock mode due to database connection failure');
     pool = createMockPool();
@@ -383,28 +400,44 @@ export const DatabaseService = {
   },
   async getAllPosts() {
     let conn;
+    logger.debug('DatabaseService.getAllPosts: Starting database query');
     try {
+      logger.debug('DatabaseService.getAllPosts: Getting database connection');
       conn = await getDatabasePool().getConnection();
+      
+      logger.debug('DatabaseService.getAllPosts: Executing SELECT * FROM posts');
       //const { query, params } = queryBuilder('get', 'posts');
       //const result = await conn.query(query, params);
       const result = await conn.query('SELECT * FROM posts');
       
+      logger.debug(`DatabaseService.getAllPosts: Query returned ${result ? result.length : 'null'} rows`);
+      
       // Keine Posts gefunden ist kein Fehler, sondern ein leeres Ergebnis
       if(!result || result.length === 0) {
         logger.info('No posts found in database - returning empty array');
+        logger.debug('DatabaseService.getAllPosts: Returning empty array');
         return []; // Leeres Array zurückgeben statt Exception
       }
       
-      return result.map(post => {
+      logger.debug(`DatabaseService.getAllPosts: Processing ${result.length} posts`);
+      const processedPosts = result.map((post, index) => {
+        logger.debug(`DatabaseService.getAllPosts: Processing post ${index + 1}/${result.length}, ID: ${post.id}`);
         convertBigInts(post);
         post.tags = parseTags(post.tags);
         return post;
       });
+      
+      logger.debug(`DatabaseService.getAllPosts: Successfully processed ${processedPosts.length} posts`);
+      return processedPosts;
     } catch (error) {
+      logger.debug(`DatabaseService.getAllPosts: Database error occurred: ${error.message}`, { stack: error.stack });
       logger.error(`Error in getAllPosts: ${error.message}`);
       throw new databaseError(`Error in getAllPosts: ${error.message}`);
     } finally {
-      if (conn) conn.release();
+      if (conn) {
+        logger.debug('DatabaseService.getAllPosts: Releasing database connection');
+        conn.release();
+      }
     }
   },
   async getArchivedPosts() {

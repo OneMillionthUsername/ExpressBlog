@@ -66,6 +66,20 @@ export function createEscapeInputMiddleware(whitelist = []) {
 }
 // --- error handler (production-safe) ---
 export function errorHandlerMiddleware(err, req, res, _next) {
-  logger.error(err); // internal logging only
+  logger.debug('errorHandlerMiddleware: Caught error', {
+    url: req.url,
+    method: req.method,
+    userAgent: req.get('User-Agent'),
+    error: err.message,
+    stack: err.stack,
+  });
+  
+  logger.error('Error in request processing:', {
+    url: req.url,
+    method: req.method,
+    error: err.message,
+    stack: err.stack,
+  }); // internal logging only
+  
   res.status(500).json({ error: 'Internal Server Error' });
 }
