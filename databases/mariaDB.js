@@ -424,6 +424,22 @@ export const DatabaseService = {
         logger.debug(`DatabaseService.getAllPosts: Processing post ${index + 1}/${result.length}, ID: ${post.id}`);
         convertBigInts(post);
         post.tags = parseTags(post.tags);
+        
+        // Datentyp-Konvertierung für Validation
+        // Autor: NULL oder undefined zu String konvertieren
+        if (post.author === null || post.author === undefined) {
+          post.author = 'admin'; // Default-Autor
+        }
+        
+        // Published: Integer (0/1) zu Boolean konvertieren
+        if (typeof post.published === 'number') {
+          post.published = post.published === 1;
+        } else if (post.published === null || post.published === undefined) {
+          post.published = false; // Default zu false
+        }
+        
+        logger.debug(`DatabaseService.getAllPosts: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+        
         return post;
       });
       
