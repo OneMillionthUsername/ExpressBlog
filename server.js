@@ -53,6 +53,19 @@ async function startServer() {
   try {
     // Wait for app initialization to complete
     await waitForApp();
+    
+    // Check app status after initialization
+    const appStatus = getAppStatus();
+    logger.info('Detailed App Status:', {
+      ready: appStatus.ready,
+      database: appStatus.database,
+      timestamp: appStatus.timestamp
+    });
+
+    if (!appStatus.ready) {
+      throw new Error('App initialization failed - not ready');
+    }
+    
     logger.info('App ready, starting servers...');
         
     // Log server configuration
