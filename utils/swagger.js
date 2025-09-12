@@ -10,7 +10,7 @@ const options = {
       version: '1.0.0',
     },
   },
-  apis: ['./server/app.js'], // Pfad zu deinen Endpunkten
+  apis: ['./routes/*.js'], // Pfad zu deinen Endpunkten
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
