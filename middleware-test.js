@@ -33,9 +33,9 @@ let dbModule;
 try {
   const module = await import('./databases/mariaDB.js');
   dbModule = module;
-  logToFile('✅ Database module imported successfully');
+  logToFile('SUCCESS: Database module imported successfully');
 } catch (error) {
-  logToFile(`❌ Database module import failed: ${error.message}`);
+  logToFile(`FAILED: Database module import failed: ${error.message}`);
   process.exit(1);
 }
 
@@ -43,17 +43,17 @@ try {
 logToFile('Testing database initialization...');
 try {
   await dbModule.initializeDatabase();
-  logToFile('✅ Database initialized');
+  logToFile('SUCCESS: Database initialized');
   
   const connected = await dbModule.testConnection();
-  logToFile(`✅ Database connection test: ${connected}`);
+  logToFile(`SUCCESS: Database connection test: ${connected}`);
   
   if (connected) {
     await dbModule.initializeDatabaseSchema();
-    logToFile('✅ Database schema initialized');
+    logToFile('SUCCESS: Database schema initialized');
   }
 } catch (error) {
-  logToFile(`❌ Database initialization failed: ${error.message}`);
+  logToFile(`FAILED: Database initialization failed: ${error.message}`);
 }
 
 // Basic Middleware (NO SECURITY YET)
@@ -83,9 +83,9 @@ app.get('/', async (req, res) => {
       title: 'Database + Middleware Test',
       message: `Database connected! Found ${Array.isArray(result) ? result.length : 0} posts.`
     });
-    logToFile('✅ ROOT route: success with database');
+    logToFile('SUCCESS: ROOT route: success with database');
   } catch (error) {
-    logToFile(`❌ ROOT route: database error - ${error.message}`);
+    logToFile(`FAILED:   ROOT route: database error - ${error.message}`);
     res.status(500).json({
       error: 'Database query failed',
       message: error.message
@@ -115,14 +115,14 @@ app.get('/posts', async (req, res) => {
   logToFile('POSTS route called');
   try {
     const posts = await dbModule.getAllPosts();
-    logToFile(`✅ Posts retrieved: ${Array.isArray(posts) ? posts.length : 'none'}`);
+    logToFile(`SUCCESS: Posts retrieved: ${Array.isArray(posts) ? posts.length : 'none'}`);
     res.json({
       success: true,
       count: Array.isArray(posts) ? posts.length : 0,
       posts: posts || []
     });
   } catch (error) {
-    logToFile(`❌ Posts route error: ${error.message}`);
+    logToFile(`FAILED: Posts route error: ${error.message}`);
     res.status(500).json({
       success: false,
       error: error.message
@@ -134,14 +134,14 @@ app.get('/cards', async (req, res) => {
   logToFile('CARDS route called');
   try {
     const cards = await dbModule.getAllCards();
-    logToFile(`✅ Cards retrieved: ${Array.isArray(cards) ? cards.length : 'none'}`);
+    logToFile(`SUCCESS: Cards retrieved: ${Array.isArray(cards) ? cards.length : 'none'}`);
     res.json({
       success: true,
       count: Array.isArray(cards) ? cards.length : 0,
       cards: cards || []
     });
   } catch (error) {
-    logToFile(`❌ Cards route error: ${error.message}`);
+    logToFile(`Cards route error: ${error.message}`);
     res.status(500).json({
       success: false,
       error: error.message
@@ -151,8 +151,8 @@ app.get('/cards', async (req, res) => {
 
 // Error handlers
 app.use((error, req, res, next) => {
-  logToFile(`❌ ERROR: ${error.message}`);
-  logToFile(`❌ Stack: ${error.stack}`);
+  logToFile(`ERROR: ${error.message}`);
+  logToFile(`Stack: ${error.stack}`);
   res.status(500).json({ 
     error: 'Internal Server Error',
     message: error.message,
@@ -169,18 +169,18 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, (error) => {
   if (error) {
-    logToFile(`❌ Server start FAILED: ${error.message}`);
+    logToFile(`Server start FAILED: ${error.message}`);
     process.exit(1);
   }
-  logToFile(`✅ Middleware test server running on port ${PORT}`);
+  logToFile(`Middleware test server running on port ${PORT}`);
 });
 
 process.on('uncaughtException', (error) => {
-  logToFile(`❌ UNCAUGHT EXCEPTION: ${error.message}`);
+  logToFile(`UNCAUGHT EXCEPTION: ${error.message}`);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
-  logToFile(`❌ UNHANDLED REJECTION: ${reason}`);
+  logToFile(`UNHANDLED REJECTION: ${reason}`);
   process.exit(1);
 });
