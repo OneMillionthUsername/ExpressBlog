@@ -59,7 +59,7 @@ async function startServer() {
     logger.info('Detailed App Status:', {
       ready: appStatus.ready,
       database: appStatus.database,
-      timestamp: appStatus.timestamp
+      timestamp: appStatus.timestamp,
     });
 
     if (!appStatus.ready) {
