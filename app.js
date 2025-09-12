@@ -239,28 +239,6 @@ app.use(express.static(publicDirectoryPath, {
   },
 }));
 
-// Favicon-Route (optimiert für ModSecurity-Kompatibilität)
-app.get('/favicon.ico', (req, res) => {
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag Cache
-  res.setHeader('Content-Type', 'image/x-icon'); // Expliziter ICO MIME-Type
-  res.setHeader('Content-Security-Policy', 'default-src \'none\''); // Minimal CSP für favicon
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-
-  // Serviere direkt clippy.png als Favicon
-  res.sendFile(join(publicDirectoryPath, 'assets', 'media', 'clippy.png'), {
-    headers: {
-      'Content-Type': 'image/x-icon',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  }, (err) => {
-    if (err) {
-      logger.error('Favicon clippy.png not found:', err);
-      res.status(404).send('Favicon not found');
-    }
-  });
-});
-
 // 9. Health Check (funktioniert IMMER, auch ohne DB)
 app.get('/health', (req, res) => {
   res.json({
