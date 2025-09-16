@@ -30,3 +30,5 @@ staticRouter.get('/about.html', (req, res) => {
 staticRouter.get('/posts', (req, res) => {
   res.render('listCurrentPosts');
 });
+
+export default staticRouter;
