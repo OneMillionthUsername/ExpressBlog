@@ -101,7 +101,7 @@ const app = express();
 // MIDDLEWARE
 // ===========================================
 // Helmet core + secure CSP (no 'unsafe-inline')
-app.set('trust proxy', true);
+app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
