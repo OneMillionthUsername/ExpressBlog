@@ -101,6 +101,7 @@ const app = express();
 // MIDDLEWARE
 // ===========================================
 // Helmet core + secure CSP (no 'unsafe-inline')
+app.set('trust proxy', true);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -199,7 +200,6 @@ app.use((req, res, next) => {
 });
 
 // 7. Basis-Konfiguration
-app.set('trust proxy', true);
 app.use(loggerMiddleware);
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
