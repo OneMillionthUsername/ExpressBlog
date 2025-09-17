@@ -199,7 +199,7 @@ app.use((req, res, next) => {
 });
 
 // 7. Basis-Konfiguration
-app.set('trust proxy', false);
+app.set('trust proxy', true);
 app.use(loggerMiddleware);
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
