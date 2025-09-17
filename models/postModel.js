@@ -41,4 +41,11 @@ export const postSchema = Joi.object({
   published: Joi.boolean().optional(),
   created_at: Joi.date().optional(),
   updated_at: Joi.date().optional(),
+  media: Joi.array().items(Joi.object({
+    id: Joi.number().integer().optional(),
+    original_name: Joi.string().max(255).optional(),
+    upload_path: Joi.string().max(500).optional(),
+    mime_type: Joi.string().max(100).optional(),
+    alt_text: Joi.string().max(255).optional(),
+  })).optional(),
 });

@@ -73,7 +73,7 @@ describe('CardController', () => {
         .rejects.toThrow('Validation failed: Title required; Link required');
     });
     it('should throw error when database fails', async () => {
-      const cardData = { title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
+      const cardData = { title: 'Test', link: 'http://test.com', img_link: 'http://test.jpg' };
       Card.validate.mockReturnValue({ error: null, value: cardData });
       mockCreateCard.mockRejectedValue(new Error('Database error'));
 
@@ -91,7 +91,7 @@ describe('CardController', () => {
         .rejects.toThrow('Validation failed: Link required; Image required');
     });
     it('should create and return card when data is valid', async () => {
-      const cardData = { title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
+      const cardData = { title: 'Test', link: 'http://test.com', img_link: 'http://test.jpg' };
       const dbResult = { id: 1, ...cardData };
       Card.validate.mockReturnValue({ error: null, value: cardData });
       mockCreateCard.mockResolvedValue(dbResult);
@@ -102,7 +102,7 @@ describe('CardController', () => {
       expect(result.id).toBe(1);
       expect(result.title).toBe('Test');
       expect(result.link).toBe('http://test.com');
-      expect(result.img).toBe('http://test.jpg');
+      expect(result.img_link).toBe('http://test.jpg');
     });
   });
   describe('getAllCards', () => {
@@ -148,8 +148,8 @@ describe('CardController', () => {
     });
     it('should return valid cards', async () => {
       const cards = [
-        { id: 1, title: 'Valid Card', link: 'http://valid.com', img: 'http://valid.jpg' },
-        { id: 2, title: 'Another Valid', link: 'http://another.com', img: 'http://another.jpg' },
+        { id: 1, title: 'Valid Card', link: 'http://valid.com', img_link: 'http://valid.jpg' },
+        { id: 2, title: 'Another Valid', link: 'http://another.com', img_link: 'http://another.jpg' },
       ];
       
       mockGetAllCards.mockResolvedValue(cards);
@@ -170,7 +170,7 @@ describe('CardController', () => {
   });
   describe('getCardById', () => {
     it('should return card when found', async () => {
-      const card = { id: 1, title: 'Test', link: 'http://test.com', img: 'http://test.jpg' };
+      const card = { id: 1, title: 'Test', link: 'http://test.com', img_link: 'http://test.jpg' };
       mockGetCardById.mockResolvedValue(card);
       Card.validate.mockReturnValue({ error: null, value: card });
 

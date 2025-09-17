@@ -6,7 +6,7 @@ export class Card{
     title = '',
     subtitle = '',
     link = '',
-    img = '',
+    img_link = '',
     published = false,
   } = {})
   {
@@ -14,7 +14,7 @@ export class Card{
     this.title = title;
     this.subtitle = subtitle;
     this.link = link;
-    this.img = img;
+    this.img_link = img_link;
     this.published = published;
   }
 
@@ -28,6 +28,6 @@ export const cardSchema = Joi.object({
   title: Joi.string().min(2).max(200).required(),
   subtitle: Joi.string().min(2).max(200).optional(),
   link: Joi.string().uri().required(),
-  img: Joi.string().uri().optional(),
+  img_link: Joi.string().uri().optional(),
   published: Joi.boolean().optional(),
 });

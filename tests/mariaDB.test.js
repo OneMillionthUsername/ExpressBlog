@@ -292,7 +292,7 @@ describe('DatabaseService', () => {
         title: 'Test Card',
         subtitle: 'Test Subtitle',
         link: 'https://example.com',
-        img: '/images/test.png',
+        img_link: '/images/test.png',
         published: 1,
       };
       const result = await DatabaseService.createCard(cardData);
@@ -303,7 +303,7 @@ describe('DatabaseService', () => {
       expect(result.card.title).toBe(cardData.title);
       expect(result.card.id).toBeGreaterThan(0);
       expect(result.card.link).toBe(cardData.link);
-      expect(result.card.img).toBe(cardData.img);
+      expect(result.card.img_link).toBe(cardData.img_link);
       expect(result.card.published).toBe(cardData.published);
     });
     it('createCard throws if no data provided', async () => {

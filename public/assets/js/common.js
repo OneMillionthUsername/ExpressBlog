@@ -3,27 +3,35 @@ import { checkAdminStatusCached, showAdminLoginModal } from './admin.js';
 import { loadAllBlogPosts } from './api.js';
 // Logger not available in frontend - use console instead
 
-// Make functions globally available for non-module scripts
-window.loadAllBlogPosts = loadAllBlogPosts;
+// Export imported helper so other modules can import it from this module
+export { loadAllBlogPosts };
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
-export function showElement(id) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.classList.remove('d-none');
-    element.classList.add('d-block');
-    return true;
+export function showElement(target) {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) return false;
+  if (el.dataset._prevDisplay === undefined) {
+    el.dataset._prevDisplay = getComputedStyle(el).display || '';
   }
-  return false;
+  // restore previous display (empty string lets CSS decide)
+  el.style.display = el.dataset._prevDisplay === 'none' ? '' : el.dataset._prevDisplay;
+  el.classList.remove('d-none'); // harmless if Bootstrap present
+  el.classList.add('d-block');
+  el.setAttribute('aria-hidden', 'false');
+  return true;
 }
-export function hideElement(id) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.classList.remove('d-block');
-    element.classList.add('d-none');
-    return true;
+
+export function hideElement(target) {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) return false;
+  if (el.dataset._prevDisplay === undefined) {
+    el.dataset._prevDisplay = getComputedStyle(el).display || '';
   }
-  return false;
+  el.style.display = 'none';
+  el.classList.remove('d-block');
+  el.classList.add('d-none');
+  el.setAttribute('aria-hidden', 'true');
+  return true;
 }
 export function toggleElementVisibility(id, show) {
   return show ? showElement(id) : hideElement(id);
@@ -422,7 +430,7 @@ export async function renderAndDisplayCards(cards) {
             <div class="discovery-card ${isNew ? 'discovery-card-new' : ''} ${isVeryNew ? 'discovery-card-very-new' : ''}">
                 ${isVeryNew ? '<div class="discovery-new-badge very-new">Gerade veröffentlicht</div>' : ''}
                 ${isNew && !isVeryNew ? '<div class="discovery-new-badge">Neu</div>' : ''}
-                <img src="${card.img}" 
+       <img src="${card.img_link}" 
                      alt="${card.title}" 
                      class="discovery-img"
                      onclick="window.open('${card.link}', '_blank')"

@@ -521,8 +521,8 @@ describe('renderAndDisplayCards', () => {
   it('renders cards with correct classes', async () => {
     const now = new Date().toISOString();
     const cards = [
-      { title: 'A', subtitle: 'B', img: 'img', link: 'link', created_at: now },
-      { title: 'C', subtitle: 'D', img: 'img2', link: 'link2', created_at: now },
+      { title: 'A', subtitle: 'B', img_link: 'img', link: 'link', created_at: now },
+      { title: 'C', subtitle: 'D', img_link: 'img2', link: 'link2', created_at: now },
     ];
     await renderAndDisplayCards(cards);
     expect(document.getElementById('discoveries-grid').innerHTML).toContain('discovery-card');

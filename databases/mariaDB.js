@@ -331,7 +331,7 @@ export async function initializeDatabaseSchema() {
             title VARCHAR(200) NOT NULL,
             subtitle VARCHAR(200) DEFAULT NULL,
             link VARCHAR(500) NOT NULL,
-            img VARCHAR(500) NOT NULL,
+            img_link VARCHAR(500) NOT NULL,
             published BOOLEAN DEFAULT 0
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -364,11 +364,24 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
       //const { query, params } = queryBuilder('get', 'posts', { slug });
       //const result = await conn.query(query, params);
-      const result = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [slug]);
-      if (!result || result.length === 0) return null;
-      if (result.length > 1) return null;
-      if (!result[0].published) return null;
-      return convertBigInts(result[0]);
+      // Fetch post
+      const posts = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [slug]);
+      if (!posts || posts.length === 0) return null;
+      const postRow = posts[0];
+      if (!postRow.published) return null;
+      // Fetch associated media via post_media
+      const mediaRows = await conn.query(
+        `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
+         FROM media m
+         JOIN post_media pm ON pm.mediaId = m.id
+         WHERE pm.postId = ?
+         ORDER BY pm.id ASC`,
+        [postRow.id],
+      );
+      const post = convertBigInts(postRow);
+      post.tags = parseTags(post.tags);
+      post.media = (mediaRows || []).map(r => convertBigInts(r));
+      return post;
     } catch (error) {
       logger.error(`Error in getPostBySlug: ${error.message}`);
       throw new databaseError(`Error in getPostBySlug: ${error.message}`, error);
@@ -382,14 +395,23 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
       //const { query, params } = queryBuilder('get', 'posts', { id });
       //const result = await conn.query(query, params);
-      const result = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
-      if(!result || result.length === 0) {
+      const posts = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
+      if(!posts || posts.length === 0) {
         logger.warn(`Post with ID ${id} not found`);
         throw new Error('Post not found');
       }
-      const post = result[0];
-      convertBigInts(post);
+      const postRow = posts[0];
+      const mediaRows = await conn.query(
+        `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
+         FROM media m
+         JOIN post_media pm ON pm.mediaId = m.id
+         WHERE pm.postId = ?
+         ORDER BY pm.id ASC`,
+        [postRow.id],
+      );
+      const post = convertBigInts(postRow);
       post.tags = parseTags(post.tags);
+      post.media = (mediaRows || []).map(r => convertBigInts(r));
       return post;
     } catch (error) {
       logger.error(`Error in getPostById: ${error.message}`);

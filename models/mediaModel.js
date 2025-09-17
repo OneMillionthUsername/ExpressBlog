@@ -32,7 +32,7 @@ export class Media {
 
 export const mediaSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  postId: Joi.number().integer().min(1).required(),
+  postId: Joi.number().integer().min(1).optional().allow(null),
   original_name: Joi.string().min(2).max(255).required(),
   file_size: Joi.number().integer().min(0).optional(),
   mime_type: Joi.string().max(100).optional(),
