@@ -430,11 +430,11 @@ export async function renderAndDisplayCards(cards) {
             <div class="discovery-card ${isNew ? 'discovery-card-new' : ''} ${isVeryNew ? 'discovery-card-very-new' : ''}">
                 ${isVeryNew ? '<div class="discovery-new-badge very-new">Gerade veröffentlicht</div>' : ''}
                 ${isNew && !isVeryNew ? '<div class="discovery-new-badge">Neu</div>' : ''}
-       <img src="${card.img_link}" 
-                     alt="${card.title}" 
-                     class="discovery-img"
-                     onclick="window.open('${card.link}', '_blank')"
-                     title="Zum Link öffnen">
+  <img src="${card.img_link}" 
+      alt="${card.title}" 
+      class="discovery-img"
+      data-link="${card.link}"
+      title="Zum Link öffnen">
                 <div class="discovery-card-body">
                     <h5 class="discovery-title">${card.title}</h5>
                     <h6 class="discovery-subtitle">${card.subtitle}</h6>
@@ -447,6 +447,26 @@ export async function renderAndDisplayCards(cards) {
         `;
   });
   grid.innerHTML = html;
+
+  // Attach event listeners to images with data-link to avoid inline handlers (CSP-friendly)
+  const discoveryImgs = grid.querySelectorAll('.discovery-img[data-link]');
+  discoveryImgs.forEach(img => {
+    // make clickable and keyboard-accessible
+    img.style.cursor = 'pointer';
+    img.setAttribute('role', 'link');
+    img.setAttribute('tabindex', '0');
+    img.addEventListener('click', () => {
+      const url = img.dataset.link;
+      if (url) window.open(url, '_blank');
+    });
+    img.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const url = img.dataset.link;
+        if (url) window.open(url, '_blank');
+      }
+    });
+  });
 }
 // Hauptfunktion zum Laden und Anzeigen eines Blogposts (für read_post.html)
 export async function loadAndDisplayBlogPost() {
