@@ -163,11 +163,7 @@ app.use(nonceMiddleware);
 
 // 2. Cookie Parser (required BEFORE CSRF!)
 app.use(cookieParser());
-
-// 3. CSRF-Schutz (needs cookies!)
-app.use(csrfProtection);
-
-// 4. Request-Parsing (with security limits)
+// 3. Request-Parsing (with security limits) - must run before CSRF middleware so req.body is available
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
 app.use(express.urlencoded({
   extended: true,
@@ -175,8 +171,10 @@ app.use(express.urlencoded({
   limit: config.URLENCODED_BODY_LIMIT,  // Configurable limit for DoS protection
   parameterLimit: 1000,  // Reduced from 5000
   type: 'application/x-www-form-urlencoded',
-}),
-);
+}));
+
+// 4. CSRF-Schutz (needs cookies AND parsed body!)
+app.use(csrfProtection);
 
 // 5. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));

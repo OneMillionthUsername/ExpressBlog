@@ -9,7 +9,7 @@ const csrfProtection = csrf({
   },
   // CSRF-Token aus Header ODER Body akzeptieren
   value: (req) => {
-    return req.headers['x-csrf-token'] || req.body._csrf || req.query._csrf;
+    return req.headers['x-csrf-token'] || req.body?.['_csrf'] || req.query?.['_csrf'];
   },
 });
 
