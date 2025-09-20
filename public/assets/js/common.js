@@ -1,3 +1,5 @@
+/* eslint-env browser, es2021 */
+/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, deletePost, makeApiRequest, adminLogout, document, window, fetch, MutationObserver, location, getComputedStyle, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { checkAdminStatusCached, showAdminLoginModal } from './admin.js';
 import { loadAllBlogPosts } from './api.js';
@@ -162,7 +164,7 @@ export function updateBlogPostUI(post) {
     console.warn('Content element not found, skipping content update');
   }
   // TAGS: Tags anzeigen
-  if (post.tags && post.tags.length > 0) {
+  if (Array.isArray(post.tags) && post.tags.length > 0) {
     const tagsHtml = post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ');
     const tags = document.getElementById('tags');
     if (tags) {
@@ -171,10 +173,13 @@ export function updateBlogPostUI(post) {
                 <div class="tags-list">${tagsHtml}</div>
             `;
       tags.style.display = 'block';
+    } else {
+      console.debug('Tags element not found — skipping tag render');
     }
-    else {
-      tags.style.display = 'none';
-    }
+  } else {
+    // If no tags present, hide the container if it exists (don't access if missing)
+    const tags = document.getElementById('tags');
+    if (tags) tags.style.display = 'none';
   }
   // Elemente sichtbar machen
   const loading = document.getElementById('loading');
@@ -476,7 +481,8 @@ export async function loadAndDisplayBlogPost() {
     
   // Prüfen, ob ein Post-Parameter in der URL vorhanden ist
   if (!postId) {
-    document.getElementById('loading').innerHTML = '<p class="error-message">Kein Blogpost ausgewählt.</p>';
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.innerHTML = '<p class="error-message">Kein Blogpost ausgewählt.</p>';
     return;
   }
 
@@ -486,9 +492,9 @@ export async function loadAndDisplayBlogPost() {
     if (!response.ok) {
       throw new Error('Blogpost konnte nicht geladen werden');
     }
-    const post = await response.json();
-    // UI aktualisieren
-    updateBlogPostUI(post);
+  const post = await response.json();
+  // UI aktualisieren
+  if (post) updateBlogPostUI(post);
         
     // Set canonical URL for the specific blog post
     // unklar ob ich das auch brauche
@@ -496,7 +502,8 @@ export async function loadAndDisplayBlogPost() {
         
   } catch (error) {
     console.error('Fehler beim Laden des Blogposts:', error);
-    document.getElementById('loading').innerHTML = `<p class="error-message">Error loading blogpost. ${error.message}</p>`;
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.innerHTML = `<p class="error-message">Error loading blogpost. ${error.message}</p>`;
   }
 }
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)
@@ -665,14 +672,13 @@ export async function loadAndDisplayRecentPosts() {
                             ${isHot && !isVeryNew ? '<span class="hot-indicator">Trending</span>' : ''}
                             ${isNew && !isHot && !isVeryNew ? '<span class="new-indicator">Neu</span>' : ''}
                         </div>
-                    
-                    <div class="post-card-content">
-                        ${post.tags.length > 0 ? `
+                        <div class="post-card-content">
+                          ${Array.isArray(post.tags) && post.tags.length > 0 ? `
                             <div class="post-card-tags">
-                                Tags: ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}
+                              Tags: ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}
                             </div>
-                        ` : ''}
-                    </div>
+                          ` : ''}
+                        </div>
                 </article>
             `;
     });
@@ -754,8 +760,7 @@ export async function loadAndDisplayAllPosts() {
     console.log('loadAndDisplayAllPosts: Starting to render posts...');
     // Alle Posts anzeigen (keine 3-Monats-Filterung)
     posts.forEach((post, index) => {
-      console.log(`loadAndDisplayAllPosts: Rendering post ${index + 1}/${posts.length}:`, post.title);
-      const postDate = formatPostDate(post.created_at);
+      const { postDate } = formatPostDate(post.created_at);
       const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
       
       html += `
@@ -993,7 +998,7 @@ export async function addDeleteButtonsToPosts() {
     if (card.querySelector('.admin-delete-btn')) return;
 
     // Hole die Post-ID (passe an, falls du sie anders speicherst)
-    const link = card.querySelector('a[href*="/blogpost/${post.id}"]');
+    const link = card.querySelector('a[href*="/blogpost/"]');
     if (!link) return;
     const url = new URL(link.href, window.location.origin);
     const postId = url.pathname.split('/').pop();
