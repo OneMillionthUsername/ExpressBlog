@@ -23,11 +23,26 @@ import readline from 'readline';
 const SALT_ROUNDS = 12; // Hohe Sicherheit (dauert länger, aber sicherer)
 const MIN_PASSWORD_LENGTH = 8;
 
-// Konsolen-Interface
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+// small helper to ask a question (clean readline per question)
+function askQuestion(prompt) {
+    return new Promise((resolve, reject) => {
+        const r = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            terminal: !!process.stdin.isTTY
+        });
+
+        r.question(prompt, (answer) => {
+            r.close();
+            resolve(answer);
+        });
+
+        r.on('SIGINT', () => {
+            r.close();
+            reject(new Error('Aborted by user'));
+        });
+        });
+    }
 
 // Passwort-Stärke prüfen
 function checkPasswordStrength(password) {
@@ -73,38 +88,50 @@ function getPasswordFeedback(strength) {
 
 // Passwort sicher eingeben (versteckt)
 function securePasswordInput(prompt) {
-    return new Promise((resolve) => {
-        const stdin = process.stdin;
-        const stdout = process.stdout;
-        
-        stdout.write(prompt);
-        stdin.resume();
-        stdin.setRawMode(true);
-        stdin.setEncoding('utf8');
-        
-        let password = '';
-        
-        stdin.on('data', (char) => {
-            if (char === '\n' || char === '\r' || char === '\u0004') {
-                // Enter oder Ctrl+D
-                stdin.setRawMode(false);
-                stdin.pause();
-                stdout.write('\n');
-                resolve(password);
-            } else if (char === '\u0003') {
-                // Ctrl+C
-                stdout.write('\n');
-                process.exit();
-            } else if (char === '\u007f') {
-                // Backspace
-                if (password.length > 0) {
-                    password = password.slice(0, -1);
-                    stdout.write('\b \b');
-                }
+    return new Promise((resolve, reject) => {
+        // Non-interactive fallback
+        if (!process.stdin.isTTY) {
+            askQuestion(prompt).then(a => resolve(a || '')).catch(reject);
+            return;
+        }
+
+        // Create a temporary readline interface that mutes output
+        const rlHidden = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            terminal: true
+        });
+
+        // Override output to mask input with '*'
+        const originalWrite = rlHidden._writeToOutput.bind(rlHidden);
+        rlHidden._writeToOutput = function(stringToWrite) {
+            // When the prompt or control characters are emitted, allow them through
+            if (stringToWrite.startsWith(prompt) || /\u001b\[.*?m/.test(stringToWrite)) {
+                originalWrite(stringToWrite);
             } else {
-                password += char;
-                stdout.write('*');
+                const masked = stringToWrite.replace(/./g, '*');
+                originalWrite(masked);
             }
+        };
+
+        rlHidden.question(prompt, (answer) => {
+            // Clear the current line that may contain echoed plaintext
+            try {
+                // ANSI clear line and carriage return
+                process.stdout.write('\x1b[2K\r');
+                // Reprint prompt + masked input for visual feedback
+                const masked = (answer || '').replace(/./g, '*');
+                process.stdout.write(prompt + masked + '\n');
+            } catch (e) {
+                // ignore if terminal doesn't support
+            }
+            rlHidden.close();
+            resolve(answer || '');
+        });
+
+        rlHidden.on('SIGINT', () => {
+            rlHidden.close();
+            reject(new Error('Aborted by user'));
         });
     });
 }
@@ -129,7 +156,6 @@ async function main() {
         
         if (!password) {
             console.log('Fehler: Kein Passwort eingegeben');
-            rl.close();
             return;
         }
         
@@ -150,60 +176,55 @@ async function main() {
         }
         
         // Frage ob fortfahren
-        rl.question('\nMöchten Sie fortfahren? (j/n): ', async (answer) => {
-            if (answer.toLowerCase() !== 'j' && answer.toLowerCase() !== 'y') {
-                console.log('Abgebrochen');
-                rl.close();
-                return;
-            }
-            
-            // Hash generieren
-            console.log('\nGeneriere bcrypt-Hash...');
-            console.log('(Dies kann einige Sekunden dauern)');
-            
-            const startTime = Date.now();
-            const hash = await bcrypt.hash(password, SALT_ROUNDS);
-            const endTime = Date.now();
-            
-            console.log('\n' + '='.repeat(60));
-            console.log('BCRYPT-HASH (Salt Rounds: ' + SALT_ROUNDS + ')');
-            console.log('='.repeat(60));
-            console.log(hash);
-            console.log('='.repeat(60));
-            console.log(`Generiert in: ${endTime - startTime}ms`);
-            console.log();
-            
-            // SQL-Beispiel
-            console.log('SQL-BEISPIEL:');
-            console.log('INSERT INTO admins (username, password_hash, email, full_name, role, active) VALUES (');
-            console.log(`    'admin',`);
-            console.log(`    '${hash}',`);
-            console.log(`    'admin@example.com',`);
-            console.log(`    'System Administrator',`);
-            console.log(`    'admin',`);
-            console.log(`    1`);
-            console.log(');');
-            console.log();
-            
-            // Verifikation
-            console.log('VERIFIKATION:');
-            const isValid = await bcrypt.compare(password, hash);
-            console.log(`Hash-Verifikation: ${isValid ? 'Erfolgreich' : 'Fehlgeschlagen'}`);
-            console.log();
-            
-            console.log('WICHTIGE HINWEISE:');
-            console.log('- Kopieren Sie den Hash in Ihr SQL-Script');
-            console.log('- Löschen Sie dieses Terminal/diese Konsole nach der Verwendung');
-            console.log('- Verwenden Sie den Hash nur für einen Admin-Benutzer');
-            console.log('- Bewahren Sie das ursprüngliche Passwort sicher auf');
-            console.log();
-            
-            rl.close();
-        });
+        const answer = await askQuestion('\nMöchten Sie fortfahren? (j/n): ');
+        if (answer.toLowerCase() !== 'j' && answer.toLowerCase() !== 'y') {
+            console.log('Abgebrochen');
+            return;
+        }
+
+        // Hash generieren
+        console.log('\nGeneriere bcrypt-Hash...');
+        console.log('(Dies kann einige Sekunden dauern)');
+
+        const startTime = Date.now();
+        const hash = await bcrypt.hash(password, SALT_ROUNDS);
+        const endTime = Date.now();
+
+        console.log('\n' + '='.repeat(60));
+        console.log('BCRYPT-HASH (Salt Rounds: ' + SALT_ROUNDS + ')');
+        console.log('='.repeat(60));
+        console.log(hash);
+        console.log('='.repeat(60));
+        console.log(`Generiert in: ${endTime - startTime}ms`);
+        console.log();
+
+        // SQL-Beispiel
+        console.log('SQL-BEISPIEL:');
+        console.log('INSERT INTO admins (username, password_hash, email, full_name, role, active) VALUES (');
+        console.log(`    'admin',`);
+        console.log(`    '${hash}',`);
+        console.log(`    'admin@example.com',`);
+        console.log(`    'System Administrator',`);
+        console.log(`    'admin',`);
+        console.log(`    1`);
+        console.log(');');
+        console.log();
+
+        // Verifikation
+        console.log('VERIFIKATION:');
+        const isValid = await bcrypt.compare(password, hash);
+        console.log(`Hash-Verifikation: ${isValid ? 'Erfolgreich' : 'Fehlgeschlagen'}`);
+        console.log();
+
+        console.log('WICHTIGE HINWEISE:');
+        console.log('- Kopieren Sie den Hash in Ihr SQL-Script');
+        console.log('- Löschen Sie dieses Terminal/diese Konsole nach der Verwendung');
+        console.log('- Verwenden Sie den Hash nur für einen Admin-Benutzer');
+        console.log('- Bewahren Sie das ursprüngliche Passwort sicher auf');
+        console.log();
         
     } catch (error) {
         console.error('Fehler beim Generieren des Hashes:', error);
-        rl.close();
     }
 }
 
