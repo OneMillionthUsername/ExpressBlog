@@ -103,8 +103,6 @@ function getCurrentPageType() {
 
 // Create Page - vereinfacht
 async function initializeCreatePage() {
-  console.log('Initialisiere Create Page...');
-
   try {
     // Editor initialisieren (falls verfügbar)
     if (typeof initializeBlogEditor === 'function') {

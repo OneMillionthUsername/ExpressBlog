@@ -138,7 +138,6 @@ describe('CardController', () => {
       expect(result[1]).toBeInstanceOf(Card);
       expect(result[1].id).toBe(3);
       expect(result[1].title).toBe('Another Valid');
-      expect(consoleSpy).toHaveBeenCalledWith('Validation failed for card:', 'Invalid');
     });
     it('should throw error when database fails', async () => {
       mockGetAllCards.mockRejectedValue(new Error('DB Error'));

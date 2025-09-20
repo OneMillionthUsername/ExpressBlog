@@ -643,13 +643,20 @@ export const DatabaseService = {
     }
   },
   async getAllCards() {
+    logger.debug('DatabaseService.getAllCards: Starting database query');
     let conn;
     try {
+      logger.debug('DatabaseService.getAllCards: Getting database connection');
       conn = await getDatabasePool().getConnection();
+      logger.debug('DatabaseService.getAllCards: Executing SELECT * FROM cards ORDER BY id DESC');
+      //const { query, params } = queryBuilder('get', 'cards', {}, { orderBy: 'id DESC' });
+      //const result = await conn.query(query, params);
       const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+      logger.debug(`DatabaseService.getAllCards: Query returned ${result ? result.length : 'null'} rows`);
       if (!result || result.length === 0) {
         throw new Error('No cards found');
       }
+      logger.debug(`DatabaseService.getAllCards: Successfully processing ${result.length} cards`);
       return result.map(card => ({
         ...convertBigInts(card),
       }));

@@ -1,6 +1,7 @@
 import { DatabaseService } from '../databases/mariaDB.js';
 import { Card } from '../models/cardModel.js';
 import { CardControllerException } from '../models/customExceptions.js';
+import logger from '../utils/logger.js';
 
 const createCard = async (cardData) => {
   const { error, value } = Card.validate(cardData);
@@ -16,8 +17,12 @@ const createCard = async (cardData) => {
 };
 const getAllCards = async () => {
   try {
+    logger.debug('Fetching all cards from database');
     const cards = await DatabaseService.getAllCards();
-    if (!cards || cards.length === 0) {
+    const fetchedCount = Array.isArray(cards) ? cards.length : 0;
+    logger.debug(`Fetched ${fetchedCount} cards from database`);
+    if (!cards || fetchedCount === 0) {
+      logger.debug('No cards found in database');
       return [];
     }
     // validate
@@ -25,11 +30,12 @@ const getAllCards = async () => {
     for (const card of cards) {
       const { error, value } = Card.validate(card);
       if (error) {
-        console.error('Validation failed for card:', error.details.map(d => d.message).join('; '));
+        logger.debug('Validation failed for card:', error.details.map(d => d.message).join('; '));
         continue;
       }
       validCards.push(new Card(value));
     }
+    logger.debug(`Returning ${validCards.length} valid cards`);
     return validCards;
   } catch (error) {
     throw new CardControllerException(`Error getting all cards: ${error.message}`, error);

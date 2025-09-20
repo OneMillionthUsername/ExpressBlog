@@ -80,9 +80,7 @@ export function resetCsrfToken() {
 
 // Blog-Posts laden
 export async function loadAllBlogPosts() {
-  
   try {
-
     const startTime = performance.now();
     const result = await makeApiRequest('/blogpost/all');
     const endTime = performance.now();
@@ -131,14 +129,12 @@ export async function loadCards() {
     const apiResult = await makeApiRequest('/cards', { method: 'GET' });
 
     if (!apiResult || apiResult.success !== true) {
-      console.warn('loadCards: API returned failure or unexpected envelope', apiResult);
       return [];
     }
 
     const response = apiResult.data;
 
     if (!response || !Array.isArray(response)) {
-      console.warn('loadCards: Invalid response format', response);
       return [];
     }
 
