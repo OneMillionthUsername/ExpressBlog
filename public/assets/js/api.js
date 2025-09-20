@@ -9,9 +9,22 @@ async function getCsrfToken() {
     const response = await fetch('/api/csrf-token', {
       credentials: 'include',
     });
-    const data = await response.json();
-    csrfToken = data.csrfToken;
-    return csrfToken;
+    if (!response.ok) {
+      console.error('CSRF token endpoint returned non-OK status', response.status, response.statusText);
+      return null;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      csrfToken = data.csrfToken || data.token || null;
+      return csrfToken;
+    } else {
+      // Unexpected content type (HTML or plain text) — read text for debugging
+      const text = await response.text();
+      console.error('Unexpected CSRF token response content-type:', contentType, 'body:', text.slice(0, 200));
+      return null;
+    }
   } catch (error) {
     console.error('Fehler beim Abrufen des CSRF-Tokens:', error);
     return null;

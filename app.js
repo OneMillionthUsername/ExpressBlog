@@ -305,7 +305,7 @@ function registerDatabaseRoutes() {
   // Alle DB-abhängigen Routes mit DB-Check (Reihenfolge wichtig!)
   app.use('/', requireDatabase, routes.staticRouter);
 
-  app.use('/', requireDatabase, routes.utilityRouter);
+  app.use('/api', requireDatabase, routes.utilityRouter);
   
   // Sitemap und SEO-Routes (können ohne DB funktionieren, aber mit DB für dynamische Inhalte)
   app.use('/', routes.sitemapRouter);
