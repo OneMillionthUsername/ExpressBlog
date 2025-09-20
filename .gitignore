@@ -5,6 +5,7 @@ node_modules/
 *.new
 *.md
 *.sql
+media/
 ssl/
 BildHochladen.js
 
