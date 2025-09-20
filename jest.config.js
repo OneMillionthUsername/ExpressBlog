@@ -4,6 +4,7 @@ export default {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  // No transforms: running in Node >=18 with experimental vm modules for ESM support
   transform: {},
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['./tests/setup.js'],

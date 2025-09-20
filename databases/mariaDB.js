@@ -126,7 +126,7 @@ export async function initializeDatabase() {
     logger.debug('initializeDatabase: Testing initial connection');
     const connection = await pool.getConnection();
     connection.release();
-    
+
     logger.debug('initializeDatabase: Database pool created successfully');
   } catch (error) {
     logger.debug(`initializeDatabase: Database connection failed: ${error.message}`, { stack: error.stack });

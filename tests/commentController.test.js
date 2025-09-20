@@ -1,3 +1,4 @@
+
 import { describe, expect, it, jest, beforeEach, test } from '@jest/globals';
 
 // Mocks müssen vor den dynamischen Imports kommen
@@ -5,8 +6,8 @@ const mockCreateComment = jest.fn();
 const mockGetCommentsByPostId = jest.fn();
 const mockDeleteComment = jest.fn();
 
-// Mock Comment model
-jest.mock('../models/commentModel.js', () => ({
+// Use unstable_mockModule to register ESM mocks before imports
+jest.unstable_mockModule('../models/commentModel.js', () => ({
   default: class MockComment {
     constructor(data) {
       Object.assign(this, data);
@@ -15,8 +16,7 @@ jest.mock('../models/commentModel.js', () => ({
   },
 }));
 
-// Mock DatabaseService
-jest.mock('../databases/mariaDB.js', () => ({
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: {
     createComment: mockCreateComment,
     getCommentsByPostId: mockGetCommentsByPostId,
@@ -24,19 +24,15 @@ jest.mock('../databases/mariaDB.js', () => ({
   },
 }));
 
-// 2. Imports nach den Mocks
-import { DatabaseService } from '../databases/mariaDB.js';
-import Comment from '../models/commentModel.js';
-import * as commentController from '../controllers/commentController.js';
+// Dynamic imports after mocks
+const { DatabaseService } = await import('../databases/mariaDB.js');
+const Comment = (await import('../models/commentModel.js')).default;
+const commentController = await import('../controllers/commentController.js');
 
 // Add the validate method to the mocked Comment class
 Comment.validate = jest.fn();
 
-// Mock DatabaseService methods after import
-const originalCreateComment = DatabaseService.createComment;
-const originalGetCommentsByPostId = DatabaseService.getCommentsByPostId;
-const originalDeleteComment = DatabaseService.deleteComment;
-
+// Wire DatabaseService methods to the jest mocks
 DatabaseService.createComment = mockCreateComment;
 DatabaseService.getCommentsByPostId = mockGetCommentsByPostId;
 DatabaseService.deleteComment = mockDeleteComment;

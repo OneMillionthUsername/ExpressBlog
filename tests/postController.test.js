@@ -1,3 +1,4 @@
+
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // JWT_SECRET für Tests setzen
@@ -13,8 +14,11 @@ const mockGetMostReadPosts = jest.fn();
 const mockDeletePost = jest.fn();
 const mockGetArchivedPosts = jest.fn();
 
-// Mock DatabaseService
-jest.mock('../databases/mariaDB.js', () => ({
+// Mock utils
+const mockCreateSlug = jest.fn();
+
+// Use ESM-friendly unstable mock API so mocks are registered before any import
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: {
     getPostBySlug: mockGetPostBySlug,
     getAllPosts: mockGetAllPosts,
@@ -27,27 +31,16 @@ jest.mock('../databases/mariaDB.js', () => ({
   },
 }));
 
-// Mock utils
-const mockCreateSlug = jest.fn();
-jest.mock('../utils/utils.js', () => ({
+jest.unstable_mockModule('../utils/utils.js', () => ({
   createSlug: mockCreateSlug,
 }));
 
-// 2. Imports nach den Mocks
-import { createSlug } from '../utils/utils.js';
-import { DatabaseService } from '../databases/mariaDB.js';
-import * as postController from '../controllers/postController.js';
+// 2. Dynamic imports after mocks are registered
+const { createSlug } = await import('../utils/utils.js');
+const { DatabaseService } = await import('../databases/mariaDB.js');
+const postController = await import('../controllers/postController.js');
 
-// Mock DatabaseService methods after import
-const originalGetPostBySlug = DatabaseService.getPostBySlug;
-const originalGetAllPosts = DatabaseService.getAllPosts;
-const originalGetPostById = DatabaseService.getPostById;
-const originalCreatePost = DatabaseService.createPost;
-const originalUpdatePost = DatabaseService.updatePost;
-const originalGetMostReadPosts = DatabaseService.getMostReadPosts;
-const originalDeletePost = DatabaseService.deletePost;
-const originalGetArchivedPosts = DatabaseService.getArchivedPosts;
-
+// Mock DatabaseService methods after import (assign our jest.fn implementations)
 DatabaseService.getPostBySlug = mockGetPostBySlug;
 DatabaseService.getAllPosts = mockGetAllPosts;
 DatabaseService.getPostById = mockGetPostById;

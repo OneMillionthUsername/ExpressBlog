@@ -4,13 +4,18 @@
 
 import { loadAllBlogPosts, loadCards } from './api.js';
 import { 
-  loadAndDisplayAllPosts, 
+  //loadAndDisplayAllPosts, 
   loadAndDisplayRecentPosts, 
   loadAndDisplayArchivePosts, 
   loadAndDisplayMostReadPosts,
   loadAndDisplayBlogPost,
-  renderAndDisplayCards
+  renderAndDisplayCards,
+  renderPopularPostsSidebar,
+  renderSidebarArchive,
 } from './common.js';
+import { initializeBlogEditor } from './tinymce/tinymce-editor.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar } from './admin.js';
+import { initializeBlogUtilities } from './common.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
 // da sie aus separaten Modulen kommen können
@@ -135,10 +140,24 @@ async function initializeIndexPage() {
     if (posts && posts.length > 0) {
       // Sidebar-Elemente rendern
       if (typeof renderSidebarArchive === 'function') {
-        await renderSidebarArchive(posts);
+        try {
+          console.debug('initializeIndexPage: calling renderSidebarArchive, posts.length=', posts.length);
+          await renderSidebarArchive(posts);
+        } catch (err) {
+          console.error('initializeIndexPage: renderSidebarArchive threw:', err);
+        }
       }
+
       if (typeof renderPopularPostsSidebar === 'function') {
-        await renderPopularPostsSidebar(posts);
+        try {
+          console.debug('initializeIndexPage: calling renderPopularPostsSidebar, posts.length=', posts.length);
+          // Sanity-check: ensure target container exists (function may be no-op if missing)
+          const popularEl = document.getElementById('popular-posts');
+          if (!popularEl) console.info('initializeIndexPage: #popular-posts element not found in DOM');
+          await renderPopularPostsSidebar(posts);
+        } catch (err) {
+          console.error('initializeIndexPage: renderPopularPostsSidebar threw:', err);
+        }
       }
     } else {
       console.info('No posts available - skipping sidebar rendering');
@@ -172,9 +191,6 @@ async function initializeArchivePage() {
 
 // Recent Posts - vereinfacht
 async function initializeRecentPostsPage() {
-  console.log('initializeRecentPostsPage: Starting...');
-  console.log('initializeRecentPostsPage: Current URL:', window.location.href);
-
   try {
     console.log('initializeRecentPostsPage: Calling loadAndDisplayRecentPosts...');
     await loadAndDisplayRecentPosts();
@@ -231,22 +247,19 @@ async function initializeReadPostPage() {
 // Kann später entfernt werden
 // ===========================================
 
-// Altes pageInitializers Objekt (für Abwärtskompatibilität)
-window.pageInitializers = {
-  create: initializeCreatePage,
-  index: initializeIndexPage,
-  archiv: initializeArchivePage,
-  list_posts: initializeRecentPostsPage,
-  most_read: initializeMostReadPostsPage,
-  read_post: initializeReadPostPage,
+// Export the initializers so other modules/importers can use them directly
+export {
+  initializeCreatePage,
+  initializeIndexPage,
+  initializeArchivePage,
+  initializeRecentPostsPage,
+  initializeMostReadPostsPage,
+  initializeReadPostPage,
+  initializeCurrentPage as initializePage,
+  getCurrentPageType,
 };
 
-// Fallback für altes moduleLoader System
-window.moduleLoader = window.moduleLoader || {
-  onAllLoaded: function(callback) {
-    // Sofort ausführen (DOM ist bereits geladen)
-    if (typeof callback === 'function') {
-      callback();
-    }
-  }
-};
+// Backwards compatibility note: legacy consumers that relied on
+// `window.pageInitializers` or `window.moduleLoader` should be updated
+// to import the named exports above. This keeps the module ESM-only and
+// avoids creating new globals.

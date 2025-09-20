@@ -1,8 +1,21 @@
-jest.unstable_mockModule('dompurify', () => ({
-  default: () => ({
-    sanitize: jest.fn(() => { throw new Error('Sanitization failed'); }),
-  }),
+
+import { beforeEach, describe, expect, it, jest, beforeAll } from '@jest/globals';
+
+// Mock the DatabaseService used by utils to avoid circular ESM import between
+// `utils.js` -> `databases/mariaDB.js` -> `utils.js` when tests import `utils`.
+// Register this mock before any dynamic import of `../utils/utils.js`.
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: {
+    increasePostViews: jest.fn(() => Promise.resolve({ success: true })),
+  },
 }));
+
+// We'll assign these after dynamic import in beforeAll
+let DOMPurifyServer;
+let createSlug, truncateSlug, convertBigInts, sanitizeFilename, escapeHtml, unescapeHtml, escapeAllStrings;
+let createEscapeInputMiddleware;
+let makeApiRequest;
+
 global.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
@@ -11,18 +24,20 @@ global.fetch = jest.fn(() =>
   }),
 );
 
-const DOMPurifyServer = (await import('dompurify')).default;
+beforeAll(async () => {
+  DOMPurifyServer = (await import('dompurify')).default;
+  const utils = await import('../utils/utils.js');
+  createSlug = utils.createSlug;
+  truncateSlug = utils.truncateSlug;
+  convertBigInts = utils.convertBigInts;
+  sanitizeFilename = utils.sanitizeFilename;
+  escapeHtml = utils.escapeHtml;
+  unescapeHtml = utils.unescapeHtml;
+  escapeAllStrings = utils.escapeAllStrings;
+  ({ createEscapeInputMiddleware } = await import('../middleware/securityMiddleware.js'));
+  ({ makeApiRequest } = await import('../public/assets/js/api.js'));
+});
 
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { 
-  createSlug, 
-  truncateSlug, 
-  convertBigInts,
-} from '../utils/utils.js';
-import { createEscapeInputMiddleware } from '../middleware/securityMiddleware.js';
-import { sanitizeFilename, escapeHtml, unescapeHtml, escapeAllStrings } from '../utils/utils.js';
-
-const { makeApiRequest } = await import('../public/assets/js/api.js');
 let req, res, next, mockSanitize;
 
 beforeEach(() => {

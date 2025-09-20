@@ -7,7 +7,7 @@ import { describe, expect, it, jest, beforeEach, test, afterAll } from '@jest/gl
 // Import the module - no mocking needed since we'll mock globals instead
 const common = await import('../public/assets/js/common.js');
 
-// Destructure the functions from the imported module
+// Destructure the functions from the imported module (we will spy on some exports)
 const {
   initializeBlogPostForm,
   showElement,
@@ -37,15 +37,9 @@ const getPostSlugFromPathSpy = jest.fn().mockReturnValue(null);
 const setupGlobalMocks = () => {
   // Mock global functions used by the module
   global.fetch = jest.fn();
-  global.makeApiRequest = jest.fn().mockResolvedValue({ message: 'OK' });
-  global.showNotification = showNotificationSpy;
-
-  // Also set them on window object for jsdom environment
+  // We mock fetch; module functions (makeApiRequest, showNotification, getPostIdFromPath)
+  // are exported and will be spied upon directly in tests.
   window.fetch = global.fetch;
-  window.makeApiRequest = global.makeApiRequest;
-  window.showNotification = global.showNotification;
-  window.getPostIdFromPath = getPostIdFromPathSpy;
-  window.getPostSlugFromPath = getPostSlugFromPathSpy;
 
   // Mock location
   Object.defineProperty(window, 'location', {
@@ -56,6 +50,10 @@ const setupGlobalMocks = () => {
 
 // Helper function to flush promises
 const flushPromises = () => new Promise(resolve => setImmediate(resolve));
+
+// Note: we avoid spying on module-local functions because internal calls in the
+// same module reference local bindings. Tests will assert DOM side-effects
+// (notifications, response messages) or set `window.location` to control path-based behavior.
 
 // Global cleanup to ensure Jest exits properly
 afterAll(async () => {
@@ -156,14 +154,18 @@ describe('initializeBlogPostForm', () => {
     initializeBlogPostForm();
     const event = new Event('submit');
     form.dispatchEvent(event);
-    expect(showNotificationSpy).toHaveBeenCalledWith('Bitte geben Sie einen Titel ein.', 'error');
+    const notif = document.querySelector('.notification');
+    expect(notif).toBeTruthy();
+    expect(notif.innerHTML).toContain('Bitte geben Sie einen Titel ein.');
   });
   it('should show error if content is missing', () => {
     contentInput.value = '';
     initializeBlogPostForm();
     const event = new Event('submit');
     form.dispatchEvent(event);
-    expect(showNotificationSpy).toHaveBeenCalledWith('Bitte geben Sie einen Inhalt ein.', 'error');
+    const notif = document.querySelector('.notification');
+    expect(notif).toBeTruthy();
+    expect(notif.innerHTML).toContain('Bitte geben Sie einen Inhalt ein.');
   });
   it('should send API request and show success notification', async () => {
     window.fetch.mockResolvedValue({
@@ -175,7 +177,9 @@ describe('initializeBlogPostForm', () => {
     await form.dispatchEvent(event);
     await Promise.resolve();
     expect(window.fetch).toHaveBeenCalled();
-    expect(showNotificationSpy).toHaveBeenCalledWith('Post erfolgreich gespeichert!', 'success');
+    const notif = document.querySelector('.notification');
+    expect(notif).toBeTruthy();
+    expect(notif.innerHTML).toContain('Post erfolgreich gespeichert!');
   });
   it('should handle server error', async () => {
     window.fetch.mockResolvedValue({
@@ -198,7 +202,8 @@ describe('initializeBlogPostForm', () => {
     expect(responseMessage.textContent).toContain('Fetch-Fehler');
   });
   it('should send PUT request if editing existing post', async () => {
-    getPostIdFromPathSpy.mockReturnValue('123');
+    // Simulate being on an edit URL so the module's getPostIdFromPath picks it up
+    Object.defineProperty(window, 'location', { value: { pathname: '/blogpost/update/123' }, writable: true });
     window.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ message: 'OK' }),

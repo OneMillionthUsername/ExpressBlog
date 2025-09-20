@@ -1353,11 +1353,7 @@ function runTinyMCEDiagnostics() {
   return diagnostics;
 }
 // Globale Test-Funktion verfügbar machen
-window.testImageUploadHandler = testImageUploadHandler;
-// Globale Funktionen für TinyMCE Setup verfügbar machen
-window.initializeBlogEditor = initializeBlogEditor;
-// Global verfügbar machen
-window.runTinyMCEDiagnostics = runTinyMCEDiagnostics;
+export { testImageUploadHandler, initializeBlogEditor, runTinyMCEDiagnostics };
 
 // mark module as loaded
 // TinyMCE Editor module loaded

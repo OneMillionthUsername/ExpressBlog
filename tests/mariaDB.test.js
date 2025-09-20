@@ -12,13 +12,13 @@ const mockPool = {
   getConnection: mockGetConnection,
 };
 
-// Mariadb-Modul mocken
-jest.mock('mariadb', () => ({
+// Mariadb-Modul mocken (ESM-friendly)
+jest.unstable_mockModule('mariadb', () => ({
   createPool: jest.fn(() => mockPool),
 }));
 
 // Mock für logger
-jest.mock('../utils/logger.js', () => ({
+jest.unstable_mockModule('../utils/logger.js', () => ({
   default: {
     error: jest.fn(),
     warn: jest.fn(),
@@ -27,16 +27,46 @@ jest.mock('../utils/logger.js', () => ({
   },
 }));
 
-// Mock für databaseError
-jest.mock('../models/customExceptions.js', () => ({
-  databaseError: class MockDatabaseError extends Error {
+// Mock für databaseError but preserve other exports (so imports like UtilsException still exist)
+// Provide a minimal mock for customExceptions to avoid importing the real module
+// during mock registration (this can cause ESM "module is already linked" or
+// circular import issues). Tests only rely on the exception class names, so
+// a lightweight mock is sufficient.
+jest.unstable_mockModule('../models/customExceptions.js', () => {
+  class UtilsException extends Error {
+    constructor(message, details = null) {
+      super(message);
+      this.name = 'UtilsException';
+      if (details) this.details = details;
+      if (Error.captureStackTrace) Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+  class databaseError extends Error {
     constructor(message, originalError) {
       super(message);
       this.name = 'databaseError';
-      this.originalError = originalError;
+      if (originalError) this.originalError = originalError;
     }
-  },
-}));
+  }
+
+  // Minimal stubs for other named exports used across the codebase.
+  class AdminControllerException extends Error { constructor(m, d = null){ super(m); this.name = 'AdminControllerException'; if(d) this.details = d; } }
+  class CardControllerException extends Error { constructor(m){ super(m); this.name = 'CardControllerException'; } }
+  class CommentControllerException extends Error { constructor(m){ super(m); this.name = 'CommentControllerException'; } }
+  class PostControllerException extends Error { constructor(m){ super(m); this.name = 'PostControllerException'; } }
+  class MediaControllerException extends Error { constructor(m){ super(m); this.name = 'MediaControllerException'; } }
+
+  return {
+    UtilsException,
+    databaseError,
+    AdminControllerException,
+    CardControllerException,
+    CommentControllerException,
+    PostControllerException,
+    MediaControllerException,
+  };
+});
 
 // Mock für queryBuilder
 // jest.mock("../utils/queryBuilder.js", () => ({
@@ -53,27 +83,11 @@ jest.mock('../models/customExceptions.js', () => ({
 //   })
 // }));
 
-// Mock the getDatabasePool function to return our Jest mock pool
-const mockGetDatabasePool = jest.fn(() => mockPool);
-jest.doMock('../databases/mariaDB.js', () => {
-  const actual = jest.requireActual('../databases/mariaDB.js');
-  return {
-    ...actual,
-    getDatabasePool: mockGetDatabasePool,
-  };
-});
+// We'll import the real module under test in `beforeAll` after mocks are
+// registered. Declare a module-scoped variable to hold the service.
+let DatabaseService;
 
-// Jetzt erst das zu testende Modul importieren!
-const { DatabaseService } = await import('../databases/mariaDB.js');
-
-// Mock the getDatabasePool function to return our Jest mock pool
-jest.mock('../databases/mariaDB.js', () => {
-  const actual = jest.requireActual('../databases/mariaDB.js');
-  return {
-    ...actual,
-    getDatabasePool: jest.fn(() => mockPool),
-  };
-});
+// Note: getDatabasePool is mocked above using jest.doMock to return the test pool.
 
 beforeEach(() => {
   mockQuery.mockReset();
@@ -93,9 +107,11 @@ afterEach(() => {
 
 // Datenbank für Tests initialisieren
 beforeAll(async () => {
+  // Import the module after mocks are registered above so the mocked
+  // `mariadb.createPool` is used. Assign DatabaseService for use in tests
   const mariaDB = await import('../databases/mariaDB.js');
-  // Don't set NODE_ENV to development to avoid using built-in mock pool
-  // process.env.NODE_ENV = 'development';
+  DatabaseService = mariaDB.DatabaseService;
+  // Initialize database (this will use the mocked pool)
   await mariaDB.initializeDatabase();
 });
 

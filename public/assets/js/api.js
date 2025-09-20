@@ -39,6 +39,10 @@ export async function makeApiRequest(url, options = {}) {
       headers,
       ...options,
     });
+    if (typeof response === 'undefined' || response === null) {
+      throw new Error('No response from fetch');
+    }
+
     const fetchEndTime = performance.now();
     const fetchDuration = Math.round(fetchEndTime - fetchStartTime);
 
@@ -69,7 +73,8 @@ export async function makeApiRequest(url, options = {}) {
       status: response.status,
     };
   } catch (error) {
-    throw new Error(`API-Request fehlgeschlagen: ${error.message}`, error);
+    // Normalize error for callers
+    throw new Error(`API-Request fehlgeschlagen: ${error && error.message ? error.message : String(error)}`);
   }
 }
 

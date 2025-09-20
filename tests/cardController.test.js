@@ -1,3 +1,4 @@
+
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 
 // 1. Module mocken BEVOR sie importiert werden
@@ -6,7 +7,7 @@ const mockGetAllCards = jest.fn();
 const mockGetCardById = jest.fn();
 const mockDeleteCard = jest.fn();
 
-jest.mock('../databases/mariaDB.js', () => ({
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: {
     createCard: mockCreateCard,
     getAllCards: mockGetAllCards,
@@ -15,27 +16,23 @@ jest.mock('../databases/mariaDB.js', () => ({
   },
 }));
 
-jest.mock('../models/cardModel.js', () => {
-  const CardMock = jest.fn().mockImplementation((data) => data);
+jest.unstable_mockModule('../models/cardModel.js', () => {
+  class CardMock {
+    constructor(data) { Object.assign(this, data); }
+  }
   CardMock.validate = jest.fn();
-  return { Card: CardMock }; // ← Named export Card mocken
+  return { Card: CardMock };
 });
 
-// 2. NACH dem Mocken importieren
-import { DatabaseService } from '../databases/mariaDB.js';
-import { Card } from '../models/cardModel.js';
-import * as cardController from '../controllers/cardController.js';
+// 2. Dynamic imports nach dem Mocken
+const { DatabaseService } = await import('../databases/mariaDB.js');
+const { Card } = await import('../models/cardModel.js');
+const cardController = await import('../controllers/cardController.js');
 
 // Mock Card.validate after import
-const originalCardValidate = Card.validate;
 Card.validate = jest.fn();
 
-// Mock DatabaseService methods after import
-const originalCreateCard = DatabaseService.createCard;
-const originalGetAllCards = DatabaseService.getAllCards;
-const originalGetCardById = DatabaseService.getCardById;
-const originalDeleteCard = DatabaseService.deleteCard;
-
+// Wire DatabaseService methods to jest mocks
 DatabaseService.createCard = mockCreateCard;
 DatabaseService.getAllCards = mockGetAllCards;
 DatabaseService.getCardById = mockGetCardById;

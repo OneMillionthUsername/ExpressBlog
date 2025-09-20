@@ -1,7 +1,19 @@
 // Admin-System für den Blog
 // Alle admin-bezogenen Funktionen sind hier zentralisiert
-import { makeApiRequest } from '../js/api.js';
-import { showFeedback } from '../js/feedback.js';
+import { makeApiRequest } from './api.js';
+import { showFeedback } from './feedback.js';
+// Import helpers from common module instead of relying on window globals
+import {
+  createElement,
+  elementExists,
+  hideElement,
+  showElement,
+  reloadPageWithDelay,
+  getUrlParameter,
+  // deletePostAndRedirect,
+} from './common.js';
+import { showCreateCardModal } from './common.js';
+import { isValidIdSchema } from '../../../services/validationService.js';
 
 // Admin-Status Variable (muss vor allen Funktionen stehen)
 let isAdminLoggedIn = false;
@@ -339,10 +351,14 @@ function addAdminMenuItemToNavbar() {
       link.style.cursor = 'pointer';
       link.onclick = function(e) {
         e.preventDefault();
-        if (typeof window.showCreateCardModal === 'function') {
-          window.showCreateCardModal();
-        } else {
-          alert('showCreateCardModal ist nicht verfügbar!');
+        try {
+          if (typeof showCreateCardModal === 'function') {
+            showCreateCardModal();
+          } else {
+            alert('showCreateCardModal ist nicht verfügbar!');
+          }
+        } catch (err) {
+          console.error('Fehler beim Öffnen des Card-Create Modals:', err);
         }
       };
 
@@ -356,7 +372,7 @@ const ADMIN_CONFIG = {
   ELEMENT_WAIT_TIMEOUT: 5000,
 };
 
-// Make showAdminLoginModal globally available for cross-module access
-window.showAdminLoginModal = showAdminLoginModal;
+// Exporting showAdminLoginModal is enough for modules to import it;
+// avoid attaching to `window` to keep modules pure.
 
 export { addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG };

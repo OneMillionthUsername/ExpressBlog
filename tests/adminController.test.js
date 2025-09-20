@@ -1,3 +1,4 @@
+
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // 1. Mocks vor allen Imports
@@ -6,8 +7,7 @@ const mockUpdateAdminLoginSuccess = jest.fn();
 const mockUpdateAdminLoginFailure = jest.fn();
 const mockUpdateAdminStatus = jest.fn();
 
-// Mock the entire mariaDB module
-jest.mock('../databases/mariaDB.js', () => ({
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: {
     getAdminByUsername: mockGetAdminByUsername,
     updateAdminLoginSuccess: mockUpdateAdminLoginSuccess,
@@ -16,28 +16,29 @@ jest.mock('../databases/mariaDB.js', () => ({
   },
 }));
 
-// Mock Admin model
-jest.mock('../models/adminModel.js', () => ({
+jest.unstable_mockModule('../models/adminModel.js', () => ({
   Admin: class MockAdmin {
     constructor(data) {
       Object.assign(this, data);
+      // Mirror real model default values
+      if (this.role === undefined) this.role = 'admin';
+      if (this.active === undefined) this.active = true;
     }
   },
 }));
 
-// Add the validate method to the mocked Admin class
-Admin.validate = jest.fn();
-
-// Mock bcrypt
-jest.mock('bcrypt', () => ({
-  compare: jest.fn(),
+jest.unstable_mockModule('bcrypt', () => ({
+  default: {
+    compare: jest.fn(),
+  },
 }));
 
-// 2. Imports nach den Mocks
-import { DatabaseService } from '../databases/mariaDB.js';
-import { Admin } from '../models/adminModel.js';
-import bcrypt from 'bcrypt';
-import * as adminController from '../controllers/adminController.js';
+// 2. Dynamic imports nach den Mocks
+const { DatabaseService } = await import('../databases/mariaDB.js');
+const { Admin } = await import('../models/adminModel.js');
+const bcryptModule = await import('bcrypt');
+const bcrypt = bcryptModule.default ?? bcryptModule;
+const adminController = await import('../controllers/adminController.js');
 
 // Add the validate method to the mocked Admin class
 Admin.validate = jest.fn();
@@ -46,12 +47,7 @@ Admin.validate = jest.fn();
 const mockBcryptCompare = jest.fn();
 bcrypt.compare = mockBcryptCompare;
 
-// Mock DatabaseService methods after import
-const originalGetAdminByUsername = DatabaseService.getAdminByUsername;
-const originalUpdateAdminLoginSuccess = DatabaseService.updateAdminLoginSuccess;
-const originalUpdateAdminLoginFailure = DatabaseService.updateAdminLoginFailure;
-const originalUpdateAdminStatus = DatabaseService.updateAdminStatus;
-
+// Wire DatabaseService methods to jest mocks
 DatabaseService.getAdminByUsername = mockGetAdminByUsername;
 DatabaseService.updateAdminLoginSuccess = mockUpdateAdminLoginSuccess;
 DatabaseService.updateAdminLoginFailure = mockUpdateAdminLoginFailure;
