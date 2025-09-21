@@ -41,14 +41,27 @@
                         <% } else { %>
                         <article id="post-article" class="<%= post ? '' : 'hidden' %>">
                             <header class="post-header">
-                                <h2 id="title" class="post-title"></h2>
-                                <div id="meta" class="post-meta-info"></div>
+                                <h2 id="title" class="post-title"><%= post ? post.title : '' %></h2>
+                                <div id="meta" class="post-meta-info">
+                                    <% if (post) { %>
+                                        <div class="post-date">Erstellt am <%= new Date(post.created_at).toLocaleDateString('de-DE') %> um <%= new Date(post.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %></div>
+                                        <% if (post.updated_at && post.updated_at !== post.created_at) { %>
+                                            <div class="post-updated">Zuletzt aktualisiert am <%= new Date(post.updated_at).toLocaleDateString('de-DE') %> um <%= new Date(post.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) %></div>
+                                        <% } %>
+                                        <div class="post-reading-time">Lesezeit: ca. <%= Math.ceil((post.content || '').split(' ').filter(Boolean).length / 200) %> min.</div>
+                                    <% } %>
+                                </div>
                             </header>
                             
-                            <div id="content" class="post-content"></div>
+                            <div id="content" class="post-content"><% if (post && post.content) { %><%- post.content %><% } %></div>
                             
                             <footer class="post-footer">
-                                <div id="tags" class="post-tags-container"></div>
+                                <div id="tags" class="post-tags-container">
+                                    <% if (post && Array.isArray(post.tags) && post.tags.length > 0) { %>
+                                        <div class="tags-label">Tags:</div>
+                                        <div class="tags-list"><%= post.tags.map(tag => tag).join(' ') %></div>
+                                    <% } %>
+                                </div>
                             </footer>
                         </article>
                         
@@ -124,6 +137,14 @@
         </div>
     </div>
     <script src="/vendor/dompurify.min.js"></script>
+    <% // Precompute JSON on the server side to avoid template parsing issues %>
+    <% const __serverPost = JSON.stringify(typeof post !== 'undefined' ? post : null); %>
+    <!-- If the server rendered the post, expose it to the client JS so the page can
+         show the content without making an extra API request. Use unescaped EJS
+         output to inject JSON. post has been converted by the route where needed. -->
+    <script>
+        window.__SERVER_POST = <%- __serverPost %>;
+    </script>
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
 </body>

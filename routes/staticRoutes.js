@@ -1,6 +1,7 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import * as authService from '../services/authService.js';
+import postController from '../controllers/postController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 
 const staticRouter = express.Router();
@@ -10,8 +11,16 @@ staticRouter.get('/', (req, res) => {
   logger.debug('[HOME] GET / - Rendering index.ejs');
   
   try {
-    res.render('index');
-    logger.debug('[HOME] GET / - Successfully rendered index.ejs');
+    // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
+    postController.getAllPosts().then(posts => {
+      const featuredPosts = (posts || []).slice(0, 3).map(p => ({ title: p.title, slug: p.slug, excerpt: (p.content || '').substring(0, 150) }));
+      logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
+      res.render('index', { featuredPosts });
+      logger.debug('[HOME] GET / - Successfully rendered index.ejs');
+    }).catch(err => {
+      logger.error('[HOME] GET / - Error fetching featured posts, rendering without dynamic posts:', err);
+      res.render('index', { featuredPosts: [] });
+    });
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
     res.status(500).send('Error rendering homepage');

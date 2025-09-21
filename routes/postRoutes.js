@@ -145,6 +145,10 @@ postRouter.get('/by-id/:postId',
       if (post && post.id) {
         incrementViews(req, post.id);
       }
+      // If the client expects HTML (browser), render the readPost view
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('readPost', { post: convertBigInts(post) || post });
+      }
       res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by id', error);
@@ -170,6 +174,10 @@ postRouter.get('/:maybeId',
     try {
       const post = await postController.getPostById(postId);
       if (post && post.id) incrementViews(req, post.id);
+      // If browser expects HTML, render the view instead of returning JSON
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('readPost', { post: convertBigInts(post) || post });
+      }
       return res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by numeric id', error);

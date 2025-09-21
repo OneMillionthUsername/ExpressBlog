@@ -10,7 +10,7 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
-  "test_linux": "NODE_OPTIONS=--experimental-vm-modules jest",
+  "test:linux": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
   "test:quick": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "lint": "eslint app.js server.js config/ controllers/ databases/ middleware/ models/ routes/ services/ utils/ tests/ --ext .js,.mjs",
     "lint:fix": "eslint app.js server.js config/ controllers/ databases/ middleware/ models/ routes/ services/ utils/ tests/ --ext .js,.mjs --fix",

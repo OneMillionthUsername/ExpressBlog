@@ -564,6 +564,18 @@ export async function renderAndDisplayCards(cards) {
 // Hauptfunktion zum Laden und Anzeigen eines Blogposts (für read_post.html)
 export async function loadAndDisplayBlogPost() {
   // URL-Parameter auslesen
+  // If server already injected the post object into the page (SSR), use it
+  // to populate the UI immediately and avoid an extra API request.
+  try {
+    if (typeof window !== 'undefined' && window.__SERVER_POST) {
+      const serverPost = window.__SERVER_POST;
+      if (serverPost) {
+        updateBlogPostUI(serverPost);
+        return;
+      }
+    }
+  } catch { /* ignore issues reading server object */ }
+
   const urlParams = new URLSearchParams(window.location.search); //  unsicher ob ich das brauche
   const postId = getPostIdFromPath() || urlParams.get('post');
     

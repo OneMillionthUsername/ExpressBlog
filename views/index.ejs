@@ -62,21 +62,31 @@
                 <div class="content-area">
                     <h3 class="featured-title">Ausgewählte Beiträge</h3>
                     <div class="featured-posts-grid">
-                        <div class="featured-post-card">
-                            <h4 class="featured-post-title">AI Agents</h4>
-                            <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
-                            <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
-                        </div>
-                        <div class="featured-post-card">
-                            <h4 class="featured-post-title">Vom Archiv zur Ablenkung</h4>
-                            <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
-                            <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
-                        </div>
-                        <div class="featured-post-card">
-                            <h4 class="featured-post-title">Universität Wien</h4>
-                            <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
-                            <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
-                        </div>
+                            <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
+                                <% featuredPosts.forEach(function(fp) { %>
+                                    <div class="featured-post-card">
+                                        <h4 class="featured-post-title"><%= fp.title %></h4>
+                                        <p class="featured-post-excerpt"><%= fp.excerpt %></p>
+                                        <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="featured-post-card">
+                                    <h4 class="featured-post-title">AI Agents</h4>
+                                    <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
+                                    <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
+                                </div>
+                                <div class="featured-post-card">
+                                    <h4 class="featured-post-title">Vom Archiv zur Ablenkung</h4>
+                                    <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
+                                    <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
+                                </div>
+                                <div class="featured-post-card">
+                                    <h4 class="featured-post-title">Universität Wien</h4>
+                                    <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
+                                    <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
+                                </div>
+                            <% } %>
                     </div>
                 </div>
             </div>
