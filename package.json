@@ -15,8 +15,9 @@
     "lint:fix": "eslint app.js server.js config/ controllers/ databases/ middleware/ models/ routes/ services/ utils/ tests/ --ext .js,.mjs --fix",
     "build": "echo 'Build step - add your build commands here'",
     "start": "node server.js",
-    "dev": "nodemon server.js"
-    ,"copy:dompurify": "node scripts/copy-dompurify.cjs"
+    "dev": "nodemon server.js",
+  "postinstall": "npm run copy:dompurify",
+  "copy:dompurify": "node scripts/copy-dompurify.mjs"
   },
   "repository": {
     "type": "git",
@@ -59,8 +60,9 @@
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^26.1.0",
-    "nodemon": "^3.1.10"
+      "nodemon": "^3.1.10"
   },
+
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
