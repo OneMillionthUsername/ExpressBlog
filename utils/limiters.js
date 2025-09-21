@@ -11,14 +11,16 @@ const baseLimiterConfig = {
 // Schärfere Limits für kritische Endpoints
 const strictLimiter = rateLimit({
   ...baseLimiterConfig,
+  // Increase strict limiter to allow more requests during admin/API usage
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 60,
 });
 
 const globalLimiter = rateLimit({
   ...baseLimiterConfig,
+  // Raise global limits to reduce accidental throttling during normal browsing
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 120,
 });
 
 const loginLimiter = rateLimit({

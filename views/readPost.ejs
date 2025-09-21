@@ -36,7 +36,7 @@
                             <h4 class="alert-heading">Hinweis</h4>
                             <p><%= errorMessage %></p>
                             <hr>
-                            <p class="mb-0"><a href="/blogpost/all" class="btn btn-outline-primary">Alle Blogposts</a></p>
+                            <p class="mb-0"><a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a></p>
                         </div>
                         <% } else { %>
                         <article id="post-article" class="<%= post ? '' : 'hidden' %>">
@@ -130,7 +130,7 @@
         </div>
         
         <div class="navigation text-center mt-4">
-            <a href="/blogpost/all" class="btn btn-outline-primary">Alle Blogposts</a>
+            <a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a>
             <a href="/" class="btn btn-outline-secondary ml-2">Zur Startseite</a>
             <a href="/blogpost/create" class="btn btn-outline-success ml-2 create-link hidden">Neuen Post erstellen</a>
             <div id="admin-controls" class="mt-15"></div>

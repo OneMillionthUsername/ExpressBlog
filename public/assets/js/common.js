@@ -602,6 +602,14 @@ export async function loadAndDisplayBlogPost() {
   const urlParams = new URLSearchParams(window.location.search); //  unsicher ob ich das brauche
   const postId = getPostIdFromPath() || urlParams.get('post');
     
+  // Show loading indicator immediately
+  try {
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'block';
+    const postArticle = document.getElementById('post-article');
+    if (postArticle) postArticle.style.display = 'none';
+  } catch (e) { void e; }
+
   // Prüfen, ob ein Post-Parameter in der URL vorhanden ist
   if (!postId) {
     const loadingEl = document.getElementById('loading');
@@ -624,7 +632,7 @@ export async function loadAndDisplayBlogPost() {
     }
     const post = apiResult.data;
     // UI aktualisieren
-    if (post) updateBlogPostUI(post);
+  if (post) updateBlogPostUI(post);
         
     // Set canonical URL for the specific blog post
     // unklar ob ich das auch brauche
@@ -634,12 +642,31 @@ export async function loadAndDisplayBlogPost() {
     console.error('Fehler beim Laden des Blogposts:', error);
     const loadingEl = document.getElementById('loading');
     if (loadingEl) loadingEl.innerHTML = `<p class="error-message">Error loading blogpost. ${error.message}</p>`;
+  } finally {
+    // Ensure loading spinner is hidden in all cases
+    try {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+    } catch (e) { void e; }
   }
 }
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)
 export async function loadAndDisplayArchivePosts() {
+  // Show loading spinner by injecting spinner markup into the archive container
   try {
-  const apiResult = await apiRequest('/blogposts', { method: 'GET' });
+    const archiveContainer = document.getElementById('archivePosts');
+    if (archiveContainer) {
+      archiveContainer.innerHTML = `
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Lade Archiv...</p>
+        </div>
+      `;
+    }
+  } catch (e) { void e; }
+
+  try {
+    const apiResult = await apiRequest('/blogposts', { method: 'GET' });
     const posts = apiResult && apiResult.success === true ? apiResult.data : null;
     // Error handling
     if (!apiResult || apiResult.success !== true) {
@@ -698,7 +725,14 @@ export async function loadAndDisplayArchivePosts() {
         
   } catch (error) {
     console.error('Fehler beim Laden des Archivs:', error);
-    document.getElementById('archivePosts').innerHTML = '<p>Fehler beim Laden des Archivs.</p>';
+    const archiveContainer = document.getElementById('archivePosts');
+    if (archiveContainer) archiveContainer.innerHTML = '<p>Fehler beim Laden des Archivs.</p>';
+  } finally {
+    // Ensure spinner hidden
+    try {
+      const spinner = document.querySelector('#archivePosts .loading-spinner');
+      if (spinner) spinner.style.display = 'none';
+    } catch (e) { void e; }
   }
 }
 // Funktion zum Laden und Anzeigen von aktuellen Posts (für list_posts.html)
@@ -1054,7 +1088,8 @@ export async function deletePostAndRedirect(postId) {
   const apiResult = await apiRequest(`/blogpost/delete/${postId}`, { method: 'DELETE' });
     const deleted = apiResult && (apiResult.success === true || apiResult.status === 200);
     if (deleted) {
-      window.location.href = '/blogpost/all';
+      // Redirect to the SSR-rendered posts listing (avoid raw JSON endpoint)
+      window.location.href = '/posts';
     } else {
       console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
     }
