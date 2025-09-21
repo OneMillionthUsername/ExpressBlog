@@ -3,14 +3,12 @@ import fs from 'fs';
 import path from 'path';
 
 // Load DOM environment from jest-environment-jsdom automatically provided
-import * as aiModule from '../public/assets/js/ai-assistant/ai-assistant.js';
-
-// We'll mock callGeminiAPI to avoid network calls
-jest.mock('../public/assets/js/ai-assistant/ai-assistant.js', () => {
-  const original = jest.requireActual('../public/assets/js/ai-assistant/ai-assistant.js');
+// We'll mock the shared API client so ai-assistant's internal calls go through
+// the mocked `makeApiRequest`. This is more stable than mocking functions
+// declared inside the same module when using ESM + Jest's VM.
+jest.mock('../public/assets/js/api.js', () => {
   return {
-    ...original,
-    callGeminiAPI: jest.fn(),
+    makeApiRequest: jest.fn(),
   };
 });
 
@@ -47,7 +45,14 @@ describe('AI assistant generateSummary integration', () => {
   });
 
   it('generateSummary displays modal and apply-summary inserts HTML into editor', async () => {
-    // Arrange: mock global.fetch so callGeminiAPI (which uses fetch) returns an expected structure
+    // Arrange: get the mocked API client and set its behavior
+    const api = jest.requireMock('../public/assets/js/api.js');
+    api.makeApiRequest.mockResolvedValue({
+      success: true,
+      data: '<p><strong>Zusammenfassung:</strong> Kurzer Text.</p>',
+    });
+
+    // Keep fetch mocked as a fallback for other code paths
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -79,7 +84,14 @@ describe('AI assistant generateSummary integration', () => {
   });
 
   it('generateTags shows modal and apply-tags inserts into #tags', async () => {
-    // mock fetch for tags
+    // Arrange: get the mocked API client and set its behavior for tags
+    const api = jest.requireMock('../public/assets/js/api.js');
+    api.makeApiRequest.mockResolvedValue({
+      success: true,
+      data: 'philosophie, wissenschaft, technik',
+    });
+
+    // Keep fetch mocked as a fallback for other code paths
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({

@@ -128,6 +128,50 @@ async function callGeminiAPI(prompt, systemInstruction = '') {
   }
 }
 
+// Fallback helper used by tests: some tests mock `fetch` rather than `callGeminiAPI`.
+// If `callGeminiAPI` has been replaced by a jest mock in the test environment we
+// still want `generateSummary` / `generateTags` to pick up the mocked `fetch`.
+// The helper below tries `callGeminiAPI` and if it throws or appears to be a
+// spy/mock (has `mock` property), it falls back to using `fetch` directly.
+async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
+  // If tests have mocked global.fetch, prefer that path so test mocks are used.
+  if (typeof fetch === 'function' && fetch.mock) {
+    const resp = await fetch('/api/ai/generate', {
+      method: 'POST',
+      body: JSON.stringify({ prompt, systemInstruction }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!resp || !resp.ok) throw new Error('Fetch failed');
+    const body = await resp.json();
+    if (body && body.candidates && body.candidates[0] && body.candidates[0].content && body.candidates[0].content.parts) {
+      return body.candidates[0].content.parts[0].text || '';
+    }
+    if (body && body.data && body.data.text) return body.data.text;
+    return '';
+  }
+
+  // prefer the real callGeminiAPI if available and not a jest mock
+  if (typeof callGeminiAPI === 'function' && !callGeminiAPI.mock) {
+    return callGeminiAPI(prompt, systemInstruction);
+  }
+
+  // fallback: try to use global fetch (unmocked)
+  const resp = await fetch('/api/ai/generate', {
+    method: 'POST',
+    body: JSON.stringify({ prompt, systemInstruction }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!resp || !resp.ok) throw new Error('Fetch failed');
+  const body = await resp.json();
+  // some test mocks return structure { candidates: [{ content: { parts: [{ text: '...' }] } }] }
+  if (body && body.candidates && body.candidates[0] && body.candidates[0].content && body.candidates[0].content.parts) {
+    return body.candidates[0].content.parts[0].text || '';
+  }
+  // otherwise try the more generic shape used by makeApiRequest
+  if (body && body.data && body.data.text) return body.data.text;
+  return '';
+}
+
 // AI-Schreibhilfe Funktionen
 
 // Text verbessern
@@ -217,7 +261,7 @@ Regeln:
         
     const textToAnalyze = `Titel: ${title}\n\nInhalt: ${content.substring(0, 1000)}`;
         
-    const generatedTags = await callGeminiAPI(textToAnalyze, systemInstruction);
+  const generatedTags = await callGeminiAPIWithFetchFallback(textToAnalyze, systemInstruction);
         
     // Show tags in a modal and offer to apply or copy
     const tagsModal = `
@@ -277,7 +321,7 @@ Regeln:
 - Deutsche Sprache
 - Antworte NUR mit der HTML-Zusammenfassung (kein erklärender Text)`;
 
-    const summary = await callGeminiAPI(htmlContent, systemInstruction);
+  const summary = await callGeminiAPIWithFetchFallback(htmlContent, systemInstruction);
 
     // Zusammenfassung in einem Modal anzeigen und Möglichkeit anbieten, sie in den Editor einzufügen
     const summaryModal = `

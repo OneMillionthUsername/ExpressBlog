@@ -850,9 +850,18 @@ export async function loadAndDisplayAllPosts() {
     console.log('loadAndDisplayAllPosts: Starting to render posts...');
     // Alle Posts anzeigen (keine 3-Monats-Filterung)
   posts.forEach((post, _index) => {
-      const { postDate } = formatPostDate(post.created_at);
+      // Defensive: skip invalid items
+      if (!post || typeof post !== 'object') return;
+      const { postDate } = formatPostDate(post.created_at || new Date());
       const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
-      
+      // Determine href: prefer slug, fallback to by-id if missing
+      let href = '#';
+      if (post.slug) {
+        href = `/blogpost/${post.slug}`;
+      } else if (post.id !== undefined && post.id !== null) {
+        href = `/blogpost/by-id/${post.id}`;
+      }
+
       html += `
         <article class="blog-post-card">
           <div class="post-meta">
@@ -860,7 +869,7 @@ export async function loadAndDisplayAllPosts() {
             <span class="post-author">von ${post.author || 'Unbekannt'}</span>
           </div>
           <h2 class="post-title">
-            <a href="/blogpost/${post.slug}" class="post-link">${post.title}</a>
+            <a href="${href}" class="post-link">${post.title || 'Untitled'}</a>
           </h2>
           <div class="post-excerpt">${excerpt}</div>
           <div class="post-footer">

@@ -6,6 +6,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import postController from '../controllers/postController.js';
+import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
@@ -131,20 +132,8 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     res.status(500).json({ error: 'Server failed to load most read blog posts' });
   }
 });
-postRouter.get('/:slug', 
-  globalLimiter, 
-  validateSlug,
-  async (req, res) => {
-    const slug = req.params.slug;
-    try {
-      const post = await postController.getPostBySlug(slug);
-      incrementViews(req, post.id);
-      res.json(convertBigInts(post) || post);
-    } catch (error) {
-      console.error('Error loading the blog post', error);
-      res.status(500).json({ error: 'Server failed to load the blogpost' });
-    }
-  });
+// Numeric ID route should come BEFORE the slug route to avoid numeric slugs being
+// misinterpreted as human-readable slugs. Example: /blogpost/59 -> by-id route.
 postRouter.get('/by-id/:postId', 
   globalLimiter, 
   validateId,
@@ -152,10 +141,60 @@ postRouter.get('/by-id/:postId',
     const postId = req.params.postId;
     try {
       const post = await postController.getPostById(postId);
-      incrementViews(req, postId);
+      // Only increment views if we got a valid post object
+      if (post && post.id) {
+        incrementViews(req, post.id);
+      }
       res.json(convertBigInts(post) || post);
     } catch (error) {
-      console.error('Error loading the blog post', error);
+      console.error('Error loading the blog post by id', error);
+      if (error instanceof PostControllerException) {
+        return res.status(404).json({ error: 'Blogpost not found' });
+      }
+      res.status(500).json({ error: 'Server failed to load the blogpost' });
+    }
+  });
+
+// Support shorthand numeric URL: /blogpost/59
+// This route must be declared BEFORE the slug route so numeric paths are
+// interpreted as IDs and not validated as slugs.
+postRouter.get('/:maybeId',
+  globalLimiter,
+  async (req, res, next) => {
+    const maybe = req.params.maybeId;
+    // If this is not numeric, pass to the slug route by calling next()
+    if (!/^[0-9]+$/.test(maybe)) {
+      return next();
+    }
+    const postId = maybe;
+    try {
+      const post = await postController.getPostById(postId);
+      if (post && post.id) incrementViews(req, post.id);
+      return res.json(convertBigInts(post) || post);
+    } catch (error) {
+      console.error('Error loading the blog post by numeric id', error);
+      if (error instanceof PostControllerException) {
+        return res.status(404).json({ error: 'Blogpost not found' });
+      }
+      return res.status(500).json({ error: 'Server failed to load the blogpost' });
+    }
+  });
+
+// Slug-based route (human readable) - validated via validateSlug
+postRouter.get('/:slug', 
+  globalLimiter, 
+  validateSlug,
+  async (req, res) => {
+    const slug = req.params.slug;
+    try {
+      const post = await postController.getPostBySlug(slug);
+      if (post && post.id) incrementViews(req, post.id);
+      res.json(convertBigInts(post) || post);
+    } catch (error) {
+      console.error('Error loading the blog post by slug', error);
+      if (error instanceof PostControllerException) {
+        return res.status(404).json({ error: 'Blogpost not found' });
+      }
       res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
   });

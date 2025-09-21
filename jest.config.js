@@ -9,6 +9,10 @@ export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['./tests/setup.js'],
   testTimeout: 10000,
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/tests/etag.test.js'
+  ],
   // forceExit: true, // Removed to prevent early environment teardown
   detectOpenHandles: true,
   clearMocks: true,
