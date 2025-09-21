@@ -594,6 +594,13 @@ export async function loadAndDisplayBlogPost() {
       const serverPost = window.__SERVER_POST;
       if (serverPost) {
         updateBlogPostUI(serverPost);
+        // Defensive: ensure loading spinner is hidden if present
+        try {
+          const loadingEl = document.getElementById('loading');
+          if (loadingEl) loadingEl.style.display = 'none';
+          const spinner = document.querySelector('#blogpost-content .loading-spinner');
+          if (spinner) spinner.style.display = 'none';
+        } catch (e) { void e; }
         return;
       }
     }
@@ -604,10 +611,14 @@ export async function loadAndDisplayBlogPost() {
     
   // Show loading indicator immediately
   try {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) loadingEl.style.display = 'block';
-    const postArticle = document.getElementById('post-article');
-    if (postArticle) postArticle.style.display = 'none';
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) {
+        // Ensure spinner is visible so it remains until data arrived or failed
+        loadingEl.style.display = '';
+        loadingEl.classList.remove('d-none');
+      }
+      const postArticle = document.getElementById('post-article');
+      if (postArticle) postArticle.style.display = 'none';
   } catch (e) { void e; }
 
   // Prüfen, ob ein Post-Parameter in der URL vorhanden ist
@@ -641,12 +652,24 @@ export async function loadAndDisplayBlogPost() {
   } catch (error) {
     console.error('Fehler beim Laden des Blogposts:', error);
     const loadingEl = document.getElementById('loading');
-    if (loadingEl) loadingEl.innerHTML = `<p class="error-message">Error loading blogpost. ${error.message}</p>`;
+    if (loadingEl) {
+      // Show error message inside loading container and keep it visible so user sees the failure
+      loadingEl.innerHTML = `<p class="error-message">Fehler beim Laden des Blogposts: ${error.message}</p>`;
+      loadingEl.style.display = '';
+    }
   } finally {
     // Ensure loading spinner is hidden in all cases
     try {
+      // Remove the spinner element entirely when we're done loading successfully
       const loadingEl = document.getElementById('loading');
-      if (loadingEl) loadingEl.style.display = 'none';
+      if (loadingEl) {
+        // If the post content was rendered, remove spinner. If there is an error message
+        // inside the loading container, keep it visible (do not remove) so user sees it.
+        const hasError = loadingEl.querySelector('.error-message');
+        if (!hasError) {
+          loadingEl.parentNode && loadingEl.parentNode.removeChild(loadingEl);
+        }
+      }
     } catch (e) { void e; }
   }
 }
@@ -731,7 +754,10 @@ export async function loadAndDisplayArchivePosts() {
     // Ensure spinner hidden
     try {
       const spinner = document.querySelector('#archivePosts .loading-spinner');
-      if (spinner) spinner.style.display = 'none';
+      if (spinner) {
+        const hasError = spinner.querySelector('.error-message');
+        if (!hasError) spinner.parentNode && spinner.parentNode.removeChild(spinner);
+      }
     } catch (e) { void e; }
   }
 }

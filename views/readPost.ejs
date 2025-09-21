@@ -26,7 +26,7 @@
             <div class="col-md-10">
                 <div class="content-area">
                     <div id="blogpost-content">
-                        <div id="loading" class="loading-spinner" style="display: none;">
+                        <div id="loading" class="loading-spinner" <%= post ? 'style="display:none;"' : '' %> >
                             <div class="spinner"></div>
                             <p>Lade Blogpost...</p>
                         </div>
@@ -145,6 +145,8 @@
     <script>
         window.__SERVER_POST = <%- __serverPost %>;
     </script>
+    <!-- No inline defensive hiding: spinner should remain visible until content is loaded or an error occurs. 
+         If the server rendered the post (`post` exists), the loading container is initially hidden above. -->
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
 </body>

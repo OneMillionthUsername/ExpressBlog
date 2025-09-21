@@ -355,6 +355,36 @@ initializeApp().then(() => {
 // Mount AI proxy early (route itself enforces admin auth)
 app.use('/api/ai', aiRoutes);
 
+// Temporary diagnostic endpoint to help debug header forwarding issues in
+// production (e.g. proxies/CDNs that strip Accept or X-Requested-With).
+// This endpoint intentionally masks sensitive headers (cookies, authorization)
+// and also returns a small whitelist of headers that are most relevant.
+app.get('/debug/headers', (req, res) => {
+  try {
+    const masked = { ...req.headers };
+    if (masked.cookie) masked.cookie = '[REDACTED]';
+    if (masked.authorization) masked.authorization = '[REDACTED]';
+    // Whitelist of headers helpful for diagnosing content-negotiation issues
+    const whitelist = {
+      accept: req.get('accept') || null,
+      'x-requested-with': req.get('x-requested-with') || null,
+      'user-agent': req.get('user-agent') || null,
+      host: req.get('host') || null,
+      referer: req.get('referer') || null,
+      'x-forwarded-proto': req.get('x-forwarded-proto') || null,
+    };
+
+    return res.json({
+      url: req.originalUrl,
+      method: req.method,
+      ip: req.ip,
+      headers: { masked, whitelist },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'diagnostic endpoint error', message: String(err) });
+  }
+});
+
 
 // Nur sichere, öffentliche APIs exportieren
 export function isAppReady() {

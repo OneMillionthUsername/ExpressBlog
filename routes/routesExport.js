@@ -16,4 +16,5 @@ export default {
   staticRouter,
   cardRouter,
   sitemapRouter,
+  // Note: debug endpoint is mounted directly in app.js as `/debug/headers`.
 };
