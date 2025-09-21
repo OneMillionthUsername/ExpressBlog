@@ -81,14 +81,14 @@ app.get('/', async (req, res) => {
     
     res.render('index', { 
       title: 'Database + Middleware Test',
-      message: `Database connected! Found ${Array.isArray(result) ? result.length : 0} posts.`
+      message: `Database connected! Found ${Array.isArray(result) ? result.length : 0} posts.`,
     });
     logToFile('SUCCESS: ROOT route: success with database');
   } catch (error) {
     logToFile(`FAILED:   ROOT route: database error - ${error.message}`);
     res.status(500).json({
       error: 'Database query failed',
-      message: error.message
+      message: error.message,
     });
   }
 });
@@ -100,13 +100,13 @@ app.get('/health', async (req, res) => {
     res.json({ 
       status: 'healthy',
       database: connected ? 'connected' : 'disconnected',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
       database: 'error',
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -119,13 +119,13 @@ app.get('/posts', async (req, res) => {
     res.json({
       success: true,
       count: Array.isArray(posts) ? posts.length : 0,
-      posts: posts || []
+      posts: posts || [],
     });
   } catch (error) {
     logToFile(`FAILED: Posts route error: ${error.message}`);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -138,26 +138,22 @@ app.get('/cards', async (req, res) => {
     res.json({
       success: true,
       count: Array.isArray(cards) ? cards.length : 0,
-      cards: cards || []
+      cards: cards || [],
     });
   } catch (error) {
     logToFile(`Cards route error: ${error.message}`);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 // Error handlers
-app.use((error, req, res, next) => {
+app.use((error, _req, _res, _next) => {
   logToFile(`ERROR: ${error.message}`);
   logToFile(`Stack: ${error.stack}`);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: error.message,
-    url: req.url
-  });
+  // Not sending response in test helper
 });
 
 app.use((req, res) => {

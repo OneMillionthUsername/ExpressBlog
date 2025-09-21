@@ -19,7 +19,7 @@ async function getCsrfToken() {
 }
 
 export async function makeApiRequest(url, options = {}) {
-  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  const _requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   
   try {
     const method = options.method || 'GET';
@@ -43,13 +43,13 @@ export async function makeApiRequest(url, options = {}) {
       throw new Error('No response from fetch');
     }
 
-    const fetchEndTime = performance.now();
-    const fetchDuration = Math.round(fetchEndTime - fetchStartTime);
+  const fetchEndTime = performance.now();
+  const _fetchDuration = Math.round(fetchEndTime - fetchStartTime);
 
     let result;
     try {
       result = await response.json();
-    } catch (jsonError) {
+    } catch {
       result = null;
     }
 
@@ -90,8 +90,8 @@ export async function loadAllBlogPosts() {
 
     const startTime = performance.now();
     const result = await makeApiRequest('/blogpost/all');
-    const endTime = performance.now();
-    const duration = Math.round(endTime - startTime);
+  const endTime = performance.now();
+  const _duration = Math.round(endTime - startTime);
 
     if (!result.success) {
       console.error('API Error loading blog posts:', result.error, 'Status:', result.status);

@@ -14,8 +14,9 @@ import {
   renderSidebarArchive,
 } from './common.js';
 import { initializeBlogEditor } from './tinymce/tinymce-editor.js';
-import { initializeAdminSystem, addAdminMenuItemToNavbar } from './admin.js';
-import { initializeBlogUtilities } from './common.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
+import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
+import { initializeCommentsDelegation } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
 // da sie aus separaten Modulen kommen können
@@ -38,8 +39,22 @@ document.addEventListener('DOMContentLoaded', async function() {
       await initializeBlogUtilities();
     }
 
+    // Initialize common delegation (data-action handlers)
+    if (typeof initializeCommonDelegation === 'function') {
+      initializeCommonDelegation();
+    }
+    // Initialize admin delegation
+    if (typeof initializeAdminDelegation === 'function') {
+      initializeAdminDelegation();
+    }
+
     // 4. Seiten-spezifische Initialisierung
     await initializeCurrentPage();
+
+    // Initialize comments delegation (used on read_post pages)
+    if (typeof initializeCommentsDelegation === 'function') {
+      initializeCommentsDelegation();
+    }
 
   } catch (error) {
     console.error('Fehler bei der globalen Initialisierung:', error);

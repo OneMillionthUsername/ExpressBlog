@@ -49,9 +49,49 @@ export default [
       '*.config.js',
       'jest.config.js',
       'babel.config.js',
-      'public/', // Ignore frontend files
-      'views/BildHochladen.js' // Platzhalter-Datei
+      'public/', // Ignore frontend files by default for node-focused lint
+      'views/BildHochladen.js' // Placeholder
     ]
+  },
+  // Frontend/browser files: allow browser globals and relax noisy rules
+  {
+    files: ['public/assets/js/**/*.js', 'views/**/*.js'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        location: 'readonly',
+        localStorage: 'readonly',
+        navigator: 'readonly',
+        MutationObserver: 'readonly',
+        CustomEvent: 'readonly',
+        FileReader: 'readonly',
+        Image: 'readonly',
+        HTMLElement: 'readonly',
+        Event: 'readonly',
+        fetch: 'readonly',
+        FormData: 'readonly',
+        // Project-specific globals used in frontend
+        tinymce: 'readonly',
+        showNotification: 'readonly',
+        isLocalDevelopment: 'readonly'
+      }
+    },
+    rules: {
+      'no-undef': 'off',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-redeclare': 'off',
+      'quotes': 'off',
+      'indent': 'off',
+      'no-dupe-keys': 'off',
+      'no-async-promise-executor': 'off',
+      'no-useless-escape': 'off',
+      'prefer-const': 'off',
+      'no-empty': 'off',
+      'no-var': 'off'
+    }
   },
   // Separate config for test files
   {

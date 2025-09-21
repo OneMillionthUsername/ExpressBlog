@@ -2,6 +2,14 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { TINY_MCE_API_KEY } from "../../../../config/config";
+// Import AI assistant functions
+import {
+  improveText,
+  generateTags,
+  generateSummary,
+  generateTitleSuggestions,
+  showApiKeySetup,
+} from '../ai-assistant/ai-assistant.js';
 
 // TinyMCE API-Schlüssel Konfiguration
 const defaultTinyMceKey = 'no-api-key';
@@ -441,9 +449,7 @@ async function initializeTinyMCE() {
 //     }
 // }
 
-// Export functions globally
-// window.applyTinyMCETheme = applyTinyMCETheme;
-// window.updateTinyMCETheme = updateTinyMCETheme;
+// (Removed legacy global exports - use module exports and event binding instead)
 
 // Textarea Fallback aktivieren
 function enableTextareaFallback(contentElement) {
@@ -874,7 +880,7 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
             
       // Komprimierungsrate berechnen
       const compressedSize = compressedBase64.length * 0.75 / 1024 / 1024; // Ungefähre Größe nach Base64-Dekodierung
-      const compressionRate = ((originalSize - compressedSize) / originalSize * 100);
+  const compressionRate = ((originalSize - compressedSize) / originalSize * 100);
                         
       // Fallback: Wenn das Bild immer noch zu groß ist, aggressiver komprimieren
       let finalBase64 = compressedBase64;
@@ -882,8 +888,8 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
         finalBase64 = await compressImage(blob, 0.4, 1024, 768);
                 
         if (progress) {
-          progress(40);
-        }
+              progress(30);
+            }
       }
             
       // Zu Server senden mit Retry-Logik - übergebe das ursprüngliche Blob für weitere Komprimierung
@@ -902,7 +908,7 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
   });
 }
 // Vereinfachter TinyMCE Upload-Handler (verwendet /upload/image ohne Komprimierung)
-function simpleImageUploadHandler(blobInfo, success, failure, progress) {
+  function simpleImageUploadHandler(blobInfo, success, failure, progress) {
   return new Promise((resolve, reject) => {
     try {
       const blob = blobInfo.blob();
@@ -971,7 +977,7 @@ function simpleImageUploadHandler(blobInfo, success, failure, progress) {
   });
 }
 // Sicherer Success-Wrapper für TinyMCE Upload-Handler
-function safeSuccess(success, imageUrl, context = 'Upload') {
+function safeSuccess(success, imageUrl, _context = 'Upload') {
   if (!success || typeof success !== 'function') {
     throw new Error('Ungültiger Success Callback');
   }
@@ -984,6 +990,16 @@ function safeSuccess(success, imageUrl, context = 'Upload') {
   }
   success(imageUrl);
 }
+
+// Export helper functions used by other modules or future code
+// Internal functions are prefixed with '_' to indicate they are internal but
+// we export them under public names for other modules/tests to consume.
+export {
+  _checkForDrafts as checkForDrafts,
+  _addTag as addTag,
+  _initializeDragAndDrop as initializeDragAndDrop,
+  compressAndUploadImage,
+};
 
 // Vereinfachte Upload-Fehlerbehandlung (hauptsächlich für nicht-komprimierbare Fehler)
 async function handleUploadError(error, blobInfo, success, failure) {
@@ -1160,7 +1176,7 @@ async function uploadWithRetry(base64Data, filename, originalBlob, success, fail
         );
                 
         // Neue Größe berechnen und loggen
-        const newSize = newCompressed.length * 0.75 / 1024 / 1024;                
+  const _newSize = newCompressed.length * 0.75 / 1024 / 1024;                
         return await uploadWithRetry(newCompressed, filename, originalBlob, success, failure, progress, attempt + 1);
                 
       } catch (compressionError) {
@@ -1231,6 +1247,42 @@ async function initializeBlogEditor() {
     });
   } else {
     console.error('Tags-Element nicht gefunden');
+  }
+
+  // Bind UI buttons that used to call inline onclick handlers
+  try {
+    // Template buttons
+    document.querySelectorAll('[data-template]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tpl = btn.dataset.template;
+        if (typeof insertTemplate === 'function') insertTemplate(tpl);
+      });
+    });
+
+    // Generic data-action bindings — use an explicit action map instead of eval/global lookups
+      // actionMap is exposed via getActionMap for testing and easier wiring
+      const actionMap = getActionMap();
+
+    document.querySelectorAll('[data-action]').forEach(btn => {
+      const action = btn.dataset.action;
+      if (!action) return;
+      btn.addEventListener('click', () => {
+        const fn = actionMap[action];
+        if (typeof fn === 'function') {
+          try {
+            fn();
+          } catch (err) {
+            console.error(`Error executing action '${action}':`, err);
+          }
+        } else {
+          // Silent no-op for unmapped actions; warn for easier debugging
+          console.warn(`No action mapped for '${action}'`);
+        }
+      });
+    });
+  } catch (err) {
+    // Binding errors shouldn't break editor initialization
+    console.warn('initializeBlogEditor: could not bind some UI actions', err);
   }
 }
 
@@ -1353,7 +1405,23 @@ function runTinyMCEDiagnostics() {
   return diagnostics;
 }
 // Globale Test-Funktion verfügbar machen
-export { testImageUploadHandler, initializeBlogEditor, runTinyMCEDiagnostics };
+// Expose action map for unit testing and reuse
+function getActionMap() {
+  return {
+    improveText: (typeof improveText === 'function') ? improveText : undefined,
+    generateTitleSuggestions: (typeof generateTitleSuggestions === 'function') ? generateTitleSuggestions : undefined,
+    generateTags: (typeof generateTags === 'function') ? generateTags : undefined,
+    generateSummary: (typeof generateSummary === 'function') ? generateSummary : undefined,
+    saveDraft: (typeof saveDraft === 'function') ? saveDraft : undefined,
+    clearDraft: (typeof clearDraft === 'function') ? clearDraft : undefined,
+    showApiKeySetup: (typeof showApiKeySetup === 'function') ? showApiKeySetup : undefined,
+    showTinyMceApiKeySetup: (typeof showTinyMceApiKeySetup === 'function') ? showTinyMceApiKeySetup : undefined,
+    resetForm: (typeof resetForm === 'function') ? resetForm : undefined,
+    togglePreview: (typeof togglePreview === 'function') ? togglePreview : undefined,
+  };
+}
+
+export { testImageUploadHandler, initializeBlogEditor, runTinyMCEDiagnostics, getActionMap };
 
 // mark module as loaded
 // TinyMCE Editor module loaded

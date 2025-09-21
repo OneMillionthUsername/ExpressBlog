@@ -454,6 +454,10 @@ describe('showCreateCardModal', () => {
 
     // Also add it to window object
     window.showNotification = showNotificationSpy;
+    // Ensure delegated action handlers are active for modal buttons
+    if (typeof common.initializeCommonDelegation === 'function') {
+      common.initializeCommonDelegation();
+    }
   });
     
   afterEach(() => {
@@ -513,6 +517,39 @@ describe('showCreateCardModal', () => {
     const cancelBtn = modal.querySelector('button[type="button"]');
     cancelBtn.click();
     expect(document.getElementById('card-create-modal')).toBeFalsy();
+  });
+  it('delegated admin login submit works via delegation', async () => {
+    // Initialize delegation handlers
+    if (typeof common.initializeCommonDelegation === 'function') common.initializeCommonDelegation();
+
+    // Mock API module before importing admin so admin's imported bindings use the mock
+    await jest.unstable_mockModule('../public/assets/js/api.js', () => ({
+      makeApiRequest: async () => ({ success: true, data: { token: 't', user: { name: 'u' } } }),
+      resetCsrfToken: () => {},
+      loadAllBlogPosts: async () => [],
+    }));
+
+    const admin = await import('../public/assets/js/admin.js');
+    if (typeof admin.initializeAdminDelegation === 'function') admin.initializeAdminDelegation();
+
+    // Trigger show-admin-login via delegation
+    const showBtn = document.createElement('button');
+    showBtn.dataset.action = 'show-admin-login';
+    document.body.appendChild(showBtn);
+    showBtn.click();
+
+    const modal = document.getElementById('admin-login-modal');
+    expect(modal).toBeTruthy();
+
+    modal.querySelector('#admin-username').value = 'user';
+    modal.querySelector('#admin-password').value = 'pass1234';
+
+    // Click submit (delegated handler reads inputs)
+    const submitBtn = modal.querySelector('#admin-login-submit');
+    submitBtn.click();
+    await Promise.resolve();
+
+    expect(document.getElementById('admin-login-modal')).toBeFalsy();
   });
 });
 describe('renderAndDisplayCards', () => {

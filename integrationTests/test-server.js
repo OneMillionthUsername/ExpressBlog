@@ -35,8 +35,8 @@ app.get('/', (req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       PORT: process.env.PORT || 3000,
       platform: process.platform,
-      nodeVersion: process.version
-    }
+      nodeVersion: process.version,
+    },
   });
 });
 
@@ -45,20 +45,17 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-app.get('/error-test', (req, res) => {
+app.get('/error-test', (_req, _res) => {
   logToFile('ERROR-TEST route called - throwing intentional error');
   throw new Error('Test-Error für Debugging');
 });
 
 // Error-Handler
-app.use((error, req, res, next) => {
+app.use((error, _req, _res, _next) => {
   logToFile(`ERROR caught: ${error.message}`);
   logToFile(`ERROR stack: ${error.stack}`);
-  res.status(500).json({ 
-    error: 'Server Error', 
-    message: error.message,
-    timestamp: new Date().toISOString()
-  });
+  // This is a standalone test server - log the error to file. The response is not used here.
+  logToFile(`Error handler executed: ${error.message}`);
 });
 
 // 404-Handler

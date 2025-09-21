@@ -2,6 +2,7 @@
 // Kostenlose AI-Integration für Schreibhilfe und Content-Verbesserung
 
 import { GEMINI_API_KEY } from "../../../../config/config";
+import createDOMPurify from 'dompurify';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
@@ -231,13 +232,20 @@ Regeln:
         
     const generatedTags = await callGeminiAPI(textToAnalyze, systemInstruction);
         
-    // Tags ins Eingabefeld einfügen
-    const tagsInput = document.getElementById('tags');
-    if (tagsInput) {
-      tagsInput.value = generatedTags.trim();
-      updatePreview();
-    }
-        
+    // Show tags in a modal and offer to apply or copy
+    const tagsModal = `
+      <div class="ai-tags-modal-container">
+        <h4 class="ai-tags-modal-header">AI-Tags</h4>
+        <p class="ai-tags-modal-content">${generatedTags}</p>
+        <div class="ai-tags-modal-footer">
+          <button data-action="apply-tags" data-tags="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-apply">Einfügen</button>
+          <button data-action="copy-tags" data-text="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-copy ml-2">Kopieren</button>
+          <button data-action="close" class="ai-tags-modal-button-close ml-2">Schließen</button>
+        </div>
+      </div>
+    `;
+
+    showModal(tagsModal);
     showNotification('Tags wurden automatisch generiert!', 'success');
         
   } catch (error) {
@@ -269,32 +277,39 @@ async function generateSummary() {
   }
     
   try {
-    const systemInstruction = `Du bist ein erfahrener Redakteur. Erstelle eine prägnante Zusammenfassung des folgenden Textes.
+    // Use the HTML content for summarization but validate using plain text length
+    const htmlContent = editor.getContent();
+    const systemInstruction = `Du bist ein erfahrener Philosoph. Erstelle eine prägnante, HTML-formatierte Zusammenfassung des folgenden Beitrags.
 
 Regeln:
+- Gib die Zusammenfassung als HTML zurück (verwende nur semantische Tags wie <p>, <strong>, <em>, <ul>, <ol>, <li>, <a>)
+- Bewahre, wenn möglich, wichtige Inline-Formatierungen (z. B. Betonung, Links)
 - 2-3 Sätze maximum
 - Fasse die Kernaussagen zusammen
 - Philosophische und wissenschaftliche Präzision
 - Deutsche Sprache
-- Antworte NUR mit der Zusammenfassung`;
-        
-    const summary = await callGeminiAPI(content, systemInstruction);
-        
-    // Zusammenfassung in einem Modal oder Alert anzeigen
+- Antworte NUR mit der HTML-Zusammenfassung (kein erklärender Text)`;
+
+    const summary = await callGeminiAPI(htmlContent, systemInstruction);
+
+    // Zusammenfassung in einem Modal anzeigen und Möglichkeit anbieten, sie in den Editor einzufügen
     const summaryModal = `
-            <div class="ai-summary-modal-container">
-                <h4 class="ai-summary-modal-header">AI-Zusammenfassung</h4>
-                <p class="ai-summary-modal-content">${summary}</p>
-                <div class="ai-summary-modal-footer">
-                    <button onclick="copyToClipboard('${summary.replace(/'/g, '\\\'')}'); closeModal();" class="ai-summary-modal-button-primary">
-                        <i class="fas fa-copy ai-summary-modal-button-icon"></i> Kopieren
-                    </button>
-                    <button onclick="closeModal();" class="ai-summary-modal-button-secondary ml-2">Schließen</button>
-                </div>
-            </div>
-        `;
-        
-    showModal(summaryModal);
+      <div class="ai-summary-modal-container">
+        <h4 class="ai-summary-modal-header">AI-Zusammenfassung</h4>
+        <div class="ai-summary-modal-content">${summary}</div>
+        <div class="ai-summary-modal-footer">
+          <button data-action="apply-summary" data-html="${encodeURIComponent(summary)}" class="ai-summary-modal-button-apply">
+            <i class="fas fa-plus-circle"></i> Einfügen
+          </button>
+          <button data-action="copy-summary" data-text="${encodeURIComponent(summary)}" class="ai-summary-modal-button-primary ml-2">
+            <i class="fas fa-copy ai-summary-modal-button-icon"></i> Kopieren
+          </button>
+          <button data-action="close" class="ai-summary-modal-button-secondary ml-2">Schließen</button>
+        </div>
+      </div>
+    `;
+
+  showModal(summaryModal);
     showNotification('Zusammenfassung wurde erstellt!', 'success');
         
   } catch (error) {
@@ -337,28 +352,29 @@ Regeln:
         
     const titleSuggestions = await callGeminiAPI(content.substring(0, 500), systemInstruction);
         
-    // Titel-Vorschläge in einem Modal anzeigen
-    const titlesArray = titleSuggestions.split('\n').filter(line => line.trim());
-    const titlesHtml = titlesArray.map(title => {
-      const cleanTitle = title.replace(/^\d+\.\s*/, '').trim();
-      return `<div class="ai-title-suggestion" onclick="selectTitle('${cleanTitle.replace(/'/g, '\\\'')}');">
-                    ${cleanTitle}
-                </div>`;
-    }).join('');
-        
-    const titleModal = `
-            <div class="ai-modal-overlay" id="ai-modal-overlay">
-                <div class="ai-modal-container">
-                    <h4 class="ai-modal-header">AI-Titel-Vorschläge</h4>
-                    <p class="ai-modal-content">Klicke auf einen Titel, um ihn zu übernehmen:</p>
-                    <div class="ai-modal-footer">
-                        <button onclick="closeModal();" class="ai-modal-button">Schließen</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-    showModal(titleModal);
+  // Titel-Vorschläge in einem Modal anzeigen (use data-action attributes)
+  const titlesArray = titleSuggestions.split('\n').filter(line => line.trim());
+  const titlesHtml = titlesArray.map(title => {
+    const cleanTitle = title.replace(/^\d+\.\s*/, '').trim();
+    return `<div class="ai-title-suggestion" data-action="select-title" data-title="${encodeURIComponent(cleanTitle)}">
+          ${cleanTitle}
+        </div>`;
+  }).join('');
+
+  const titleModal = `
+      <div class="ai-modal-overlay" id="ai-modal-overlay">
+        <div class="ai-modal-container">
+          <h4 class="ai-modal-header">AI-Titel-Vorschläge</h4>
+          <p class="ai-modal-content">Klicke auf einen Titel, um ihn zu übernehmen:</p>
+          <div class="ai-title-suggestions">${titlesHtml}</div>
+          <div class="ai-modal-footer">
+            <button data-action="close" class="ai-modal-button">Schließen</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+  showModal(titleModal);
     showNotification('Titel-Vorschläge wurden generiert!', 'success');
         
   } catch (error) {
@@ -387,7 +403,7 @@ function copyToClipboard(text) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => {
       showNotification('Copied to clipboard!', 'success');
-    }).catch(err => {
+    }).catch(() => {
       fallbackCopy(text);
     });
   } else {
@@ -402,7 +418,7 @@ function fallbackCopy(text) {
   try {
     document.execCommand('copy');
     showNotification('Copied to clipboard!', 'success');
-  } catch (err) {
+  } catch {
     showNotification('Copy failed!', 'error');
   }
   document.body.removeChild(textArea);
@@ -423,6 +439,91 @@ function showModal(content) {
   };
   modalOverlay.appendChild(modalContainer);
   document.body.appendChild(modalOverlay);
+  // Delegate actions for elements inside modal using data-action attributes
+  modalContainer.addEventListener('click', function (ev) {
+    const actionEl = ev.target.closest('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.getAttribute('data-action');
+    if (action === 'close') {
+      closeModal();
+      return;
+    }
+    if (action === 'copy-summary') {
+      const encoded = actionEl.getAttribute('data-text') || '';
+      const text = decodeURIComponent(encoded);
+      copyToClipboard(text);
+      closeModal();
+      return;
+    }
+    if (action === 'apply-summary') {
+      const encodedHtml = actionEl.getAttribute('data-html') || '';
+      const html = decodeURIComponent(encodedHtml);
+      try {
+        // sanitize HTML before inserting
+        let DOMPurify = null;
+        try {
+          DOMPurify = createDOMPurify(window);
+        } catch {
+          DOMPurify = (typeof window !== 'undefined' && window.DOMPurify) ? window.DOMPurify : null;
+        }
+        const safeHtml = DOMPurify ? DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['p','strong','em','ul','ol','li','a','br','b','i','u'],
+          ALLOWED_ATTR: ['href','target','rel'],
+        }) : html;
+
+        const editor = tinymce.get('content');
+        if (editor) {
+          const selected = editor.selection && editor.selection.getContent({ format: 'text' });
+          if (selected && selected.trim().length > 0) {
+            editor.selection.setContent(safeHtml);
+          } else {
+            editor.setContent(safeHtml);
+          }
+          updatePreview();
+          showNotification('Zusammenfassung eingefügt!', 'success');
+        } else {
+          const textarea = document.getElementById('content');
+          if (textarea) {
+            textarea.value = safeHtml;
+            updatePreview();
+            showNotification('Zusammenfassung eingefügt!', 'success');
+          }
+        }
+      } catch (err) {
+        console.error('Fehler beim Einfügen der Zusammenfassung:', err);
+        showNotification('Fehler beim Einfügen der Zusammenfassung', 'error');
+      }
+      closeModal();
+      return;
+    }
+    // handle tags apply/copy actions
+    if (action === 'apply-tags') {
+      const encoded = actionEl.getAttribute('data-tags') || '';
+      const tags = decodeURIComponent(encoded);
+      const tagsInput = document.getElementById('tags');
+      if (tagsInput) {
+        tagsInput.value = tags.trim();
+        updatePreview();
+        showNotification('Tags eingefügt!', 'success');
+      }
+      closeModal();
+      return;
+    }
+    if (action === 'copy-tags') {
+      const encoded = actionEl.getAttribute('data-text') || '';
+      const text = decodeURIComponent(encoded);
+      copyToClipboard(text);
+      closeModal();
+      return;
+    }
+    if (action === 'select-title') {
+      const encoded = actionEl.getAttribute('data-title') || '';
+      const title = decodeURIComponent(encoded);
+      selectTitle(title);
+      // closeModal is called by selectTitle
+      return;
+    }
+  });
 }
 // Modal schließen
 function closeModal() {
@@ -468,3 +569,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 //mark module as loaded
 // AI Assistant module loaded
+
+// Export selected functions for use in other modules (and for unit testing)
+export {
+  improveText,
+  generateTags,
+  generateSummary,
+  generateTitleSuggestions,
+  showApiKeySetup,
+  selectTitle,
+  copyToClipboard,
+  fallbackCopy,
+  updateAIButtons,
+  initializeAISystem,
+  loadGeminiApiKey,
+  callGeminiAPI,
+};

@@ -32,6 +32,31 @@ async function loadComments(postId) {
     return [];
   }
 }
+// Delegated handlers for comment actions (data-action attributes)
+let _commentsDelegationInitialized = false;
+export function initializeCommentsDelegation() {
+  if (_commentsDelegationInitialized) return;
+  _commentsDelegationInitialized = true;
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (!action) return;
+    if (action === 'delete-comment') {
+      e.preventDefault();
+      const postId = btn.dataset.postId;
+      const commentId = btn.dataset.commentId;
+      if (postId && commentId) await deleteComment(postId, commentId);
+      return;
+    }
+    if (action === 'retry-display-comments') {
+      e.preventDefault();
+      const postId = btn.dataset.postId;
+      if (postId) await displayComments(postId);
+      return;
+    }
+  });
+}
 async function createComment(postId, username, commentText) {
   // Input-Validierung (client-seitig)
   if (!isValidIdSchema(postId)) {
@@ -123,12 +148,12 @@ async function displayComments(postId) {
                         <i class="fas fa-user-circle"></i> ${comment.username}
                     </span>
                     <span class="comment-time">${formatCommentTime(comment.created_at)}</span>
-                    ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) ? 
-    `<button onclick="deleteComment('${postId}', '${comment.id}')" 
-                                class="btn btn-sm btn-outline-danger comment-delete-btn" 
-                                title="Kommentar löschen">
-                            <i class="fas fa-trash"></i>
-                        </button>` : ''
+          ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) ? 
+  `<button data-action="delete-comment" data-post-id="${postId}" data-comment-id="${comment.id}"
+                class="btn btn-sm btn-outline-danger comment-delete-btn" 
+                title="Kommentar löschen">
+              <i class="fas fa-trash"></i>
+            </button>` : ''
 }
                 </div>
                 <div class="comment-text">${comment.text}</div>
@@ -143,9 +168,9 @@ async function displayComments(postId) {
             <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle"></i>
                 Error loading comments. Please try again later.
-            <button onclick="displayComments('${postId}')" class="btn btn-sm btn-outline-danger ml-2">
-                <i class="fas fa-redo"></i> Try again
-            </button>
+      <button data-action="retry-display-comments" data-post-id="${postId}" class="btn btn-sm btn-outline-danger ml-2">
+        <i class="fas fa-redo"></i> Try again
+      </button>
             </div>
         `;
     updateCommentCount(0);
@@ -360,3 +385,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // mark module as loaded
 // Comments module loaded
+export { initializeCommentsSystem };

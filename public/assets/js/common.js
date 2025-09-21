@@ -1,5 +1,5 @@
 /* eslint-env browser, es2021 */
-/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, deletePost, makeApiRequest, adminLogout, document, window, fetch, MutationObserver, location, getComputedStyle, localStorage, CustomEvent */
+/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, makeApiRequest, adminLogout, document, window, fetch, MutationObserver, location, getComputedStyle, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts } from './api.js';
 // Logger not available in frontend - use console instead
@@ -8,6 +8,42 @@ import { loadAllBlogPosts } from './api.js';
 export { loadAllBlogPosts };
 
 // UI-Element Sichtbarkeits-Utilities (zentralisiert)
+
+// Common delegated action handlers (idempotent)
+let _commonDelegationInitialized = false;
+export function initializeCommonDelegation() {
+  if (_commonDelegationInitialized) return;
+  _commonDelegationInitialized = true;
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (!action) return;
+    switch (action) {
+      case 'load-recent-posts':
+        e.preventDefault();
+        if (typeof loadAndDisplayRecentPosts === 'function') loadAndDisplayRecentPosts();
+        break;
+      case 'load-all-posts':
+        e.preventDefault();
+        if (typeof loadAndDisplayAllPosts === 'function') loadAndDisplayAllPosts();
+        break;
+      case 'load-mostread-posts':
+        e.preventDefault();
+        if (typeof loadAndDisplayMostReadPosts === 'function') loadAndDisplayMostReadPosts();
+        break;
+      case 'close-modal': {
+        e.preventDefault();
+        const modal = btn.closest('.modal');
+        if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
+        break;
+      }
+      default:
+        break;
+    }
+  });
+}
 export function showElement(target) {
   const el = typeof target === 'string' ? document.getElementById(target) : target;
   if (!el) return false;
@@ -41,7 +77,7 @@ export function toggleElementVisibility(id, show) {
 export function refreshCurrentPage() {
   // Intelligenter Refresh basierend auf verfügbaren Funktionen
   try {
-    const g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : undefined);
+  const g = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : undefined);
     if (g && typeof g.loadAndDisplayRecentPosts === 'function') {
       g.loadAndDisplayRecentPosts();
       return;
@@ -64,8 +100,7 @@ export function refreshCurrentPage() {
       g.location.reload();
     }
   } catch (err) {
-    // If anything goes wrong, don't throw during UI refresh
-    console.warn('refreshCurrentPage: could not refresh page', err);
+    console.error('Fehler beim Laden der Blogposts:', err);
   }
 }
 // DOM-Utilities (erweitert)
@@ -101,7 +136,7 @@ export function waitForElement(id, timeout = 5000) {
       return;
     }
         
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver((_mutations) => {
       const element = document.getElementById(id);
       if (element) {
         observer.disconnect();
@@ -350,7 +385,8 @@ export function showCreateCardModal() {
   cancelBtn.type = 'button';
   cancelBtn.classList = 'btn btn-outline-secondary ml-2';
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.onclick = () => modal.remove();
+  // Use delegated data-action instead of inline onclick
+  cancelBtn.dataset.action = 'close-modal';
 
   // Erfolgsmeldung
   const successMsg = document.createElement('div');
@@ -430,7 +466,7 @@ export async function renderAndDisplayCards(cards) {
   }
     
   let html = '';
-  cards.forEach(card => {
+  cards.forEach((card, _index) => {
     // Prüfe, ob die Karte neu ist (z.B. innerhalb der letzten 7 Tage erstellt)
     const isNew = card.created_at ? (() => {
       const cardDate = new Date(card.created_at);
@@ -641,7 +677,7 @@ export async function loadAndDisplayRecentPosts() {
       return;
     }
         
-    recentPosts.forEach((post, index) => {
+  recentPosts.forEach((post, _index) => {
       const postDate = new Date(post.created_at);
       const formattedDate = postDate.toLocaleDateString('de-DE', {
         year: 'numeric',
@@ -722,14 +758,14 @@ export async function loadAndDisplayRecentPosts() {
         
   } catch (error) {
     console.error('Fehler beim Laden der Blogposts:', error);
-    document.getElementById('blogPostsList').innerHTML = `
-            <div class="error-message">
-                <div class="error-icon">Error</div>
-                <h3>Laden fehlgeschlagen</h3>
-                <p>Die Blog-Posts konnten nicht geladen werden.</p>
-                <button onclick="loadAndDisplayRecentPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-            </div>
-        `;
+  document.getElementById('blogPostsList').innerHTML = `
+      <div class="error-message">
+        <div class="error-icon">Error</div>
+        <h3>Laden fehlgeschlagen</h3>
+        <p>Die Blog-Posts konnten nicht geladen werden.</p>
+        <button data-action="load-recent-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+      </div>
+    `;
   }
 }
 
@@ -777,7 +813,7 @@ export async function loadAndDisplayAllPosts() {
     
     console.log('loadAndDisplayAllPosts: Starting to render posts...');
     // Alle Posts anzeigen (keine 3-Monats-Filterung)
-    posts.forEach((post, index) => {
+  posts.forEach((post, _index) => {
       const { postDate } = formatPostDate(post.created_at);
       const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
       
@@ -819,7 +855,7 @@ export async function loadAndDisplayAllPosts() {
                 <div class="error-icon">Error</div>
                 <h3>Laden fehlgeschlagen</h3>
                 <p>Die Blog-Posts konnten nicht geladen werden.</p>
-                <button onclick="loadAndDisplayAllPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+                <button data-action="load-all-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
             </div>
         `;
   }
@@ -839,7 +875,7 @@ export async function loadAndDisplayMostReadPosts() {
                     <div class="error-icon">Error</div>
                     <h3>Laden fehlgeschlagen</h3>
                     <p>Die Posts konnten nicht geladen werden.</p>
-                    <button onclick="loadAndDisplayMostReadPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+                    <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
                 </div>
             `;
       return;
@@ -857,7 +893,7 @@ export async function loadAndDisplayMostReadPosts() {
                     <div class="error-icon">Error</div>
                     <h3>Laden fehlgeschlagen</h3>
                     <p>Die Statistiken konnten nicht geladen werden.</p>
-                    <button onclick="loadAndDisplayMostReadPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+                    <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
                 </div>
             `;
       return;
@@ -904,7 +940,7 @@ export async function loadAndDisplayMostReadPosts() {
                 <div class="error-icon">Error</div>
                 <h3>Laden fehlgeschlagen</h3>
                 <p>Die Posts konnten nicht geladen werden.</p>
-                <button onclick="loadAndDisplayMostReadPosts()" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+                <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
             </div>
         `;
   }
@@ -927,12 +963,22 @@ export async function deletePostAndRedirect(postId) {
     alert(ADMIN_MESSAGES.login.required);
     return;
   }
-  const deleted = await deletePost(postId);
-  if (deleted) {
-    // Nach dem Löschen zur Post-Liste weiterleiten
-    window.location.href = 'list_posts.html';
-  } else {
-    console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
+  try {
+    const response = await fetch(`/blogpost/delete/${postId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    let result = null;
+    try { result = await response.json(); } catch { result = null; }
+    const deleted = response.ok || (result && result.success);
+    if (deleted) {
+      window.location.href = '/blogpost/all';
+    } else {
+      console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
+    }
+  } catch (err) {
+    console.error('Fehler beim Löschen des Posts:', err);
   }
 }
 export function reloadPageWithDelay(delay = 1000) {
@@ -947,10 +993,28 @@ export async function initializeBlogUtilities() {
   return;
 }
 // Utility-Funktion zum Abrufen von URL-Parametern
-// function getUrlParameter(paramName) {
-//     const urlParams = new URLSearchParams(window.location.search);
-//     return urlParams.get(paramName);
-// }
+export function getUrlParameter(paramName) {
+  try {
+    const urlParams = new URLSearchParams(window.location.search || '');
+    return urlParams.get(paramName);
+  } catch {
+    // In test environments window.location.search may be undefined or mocked
+    try {
+      const search = (typeof window !== 'undefined' && window.location && window.location.search) || '';
+      const urlParams = new URLSearchParams(search);
+      return urlParams.get(paramName);
+    } catch {
+      return null;
+    }
+  }
+}
+
+/*
+ Delegation notes:
+ - Use `data-action` attributes in markup and call `initializeCommonDelegation()` once at page init.
+ - Tests that need to mock imported modules should use `jest.unstable_mockModule(...)` BEFORE importing modules that depend on them.
+ - Avoid attaching functions to `window`; prefer exports and delegation.
+*/
 export function getPostIdFromPath() {
   const match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
   const postId = match ? match[1] : null;
@@ -1026,17 +1090,9 @@ export async function addDeleteButtonsToPosts() {
     const btn = document.createElement('button');
     btn.className = 'btn btn-danger btn-sm admin-delete-btn ml-2';
     btn.textContent = 'Löschen';
-    btn.onclick = async () => {
-      if (confirm('Diesen Post wirklich löschen?')) {
-        // Hier deine Delete-Logik (z.B. API-Call)
-        const res = await fetch(`/blogpost/delete/${postId}`, { method: 'DELETE', credentials: 'include' });
-        if (res.ok) {
-          card.remove();
-        } else {
-          alert('Löschen fehlgeschlagen!');
-        }
-      }
-    };
+    // Delegate delete action via data-action so admin module can handle it
+    btn.dataset.action = 'delete-post';
+    btn.dataset.postId = postId;
 
     // Button anhängen (z.B. ans Ende der Karte)
     card.appendChild(btn);
@@ -1045,7 +1101,7 @@ export async function addDeleteButtonsToPosts() {
 // Funktion zum Rendern des Seitenleisten-Archivs
 export async function renderSidebarArchive(posts) {
   const archive = {};
-  posts.forEach(post => {
+  posts.forEach((post, _index) => {
     const year = new Date(post.created_at).getFullYear();
     if (!archive[year]) archive[year] = [];
     archive[year].push(post);
@@ -1141,6 +1197,8 @@ export function addHoverEffects(element, scaleUp = 1.1, scaleDown = 1) {
       }
     } catch (error) {
       if (status) status.innerHTML = 'Oops! Es gab ein Problem beim Senden.';
+      // Log error for debugging and to satisfy lint rules
+      console.error('Error while sending contact form:', error);
     }
   });
 })();
@@ -1373,7 +1431,7 @@ function showNewPostNotification(newPosts) {
   modal.className = 'new-post-modal';
   modal.innerHTML = `
         <span>Neue Posts verfügbar! ${newPosts.length} brandneue${newPosts.length > 1 ? ' Beiträge' : 'r Beitrag'}</span>
-        <button onclick="this.parentElement.remove()" class="modal-close-btn">✕</button>
+        <button data-action="close-modal" class="modal-close-btn">✕</button>
     `;
     
   document.body.appendChild(modal);

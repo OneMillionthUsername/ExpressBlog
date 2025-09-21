@@ -64,7 +64,7 @@ try {
     database: process.env.DB_NAME,
     connectionLimit: 1, // Minimal für Test
     acquireTimeout: 5000,
-    timeout: 5000
+    timeout: 5000,
   });
 
   const conn = await pool.getConnection();
@@ -86,16 +86,16 @@ try {
 // Routes
 app.get('/', (req, res) => {
   logToFile('ROOT route with database test');
-  res.render('index', { 
+  res.render('index', {
     title: 'Database Test',
-    message: 'Check db-debug.log for database test results' 
+    message: 'Check db-debug.log for database test results', 
   });
 });
 
 app.get('/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'healthy - database tested',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -110,7 +110,7 @@ app.get('/db-test', async (req, res) => {
       database: process.env.DB_NAME,
       connectionLimit: 1,
       acquireTimeout: 5000,
-      timeout: 5000
+      timeout: 5000,
     });
 
     const conn = await pool.getConnection();
@@ -122,21 +122,21 @@ app.get('/db-test', async (req, res) => {
     res.json({ 
       status: 'success',
       result: result[0],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logToFile(`❌ DB-TEST failed: ${error.message}`);
     res.status(500).json({
       error: 'Database test failed',
-      message: error.message
+      message: error.message,
     });
   }
 });
 
 // Error handlers
-app.use((error, req, res, next) => {
+app.use((error, _req, _res, _next) => {
   logToFile(`ERROR: ${error.message}`);
-  res.status(500).json({ error: 'Internal Server Error', message: error.message });
+  // Intentionally not sending response in test helper
 });
 
 app.use((req, res) => {

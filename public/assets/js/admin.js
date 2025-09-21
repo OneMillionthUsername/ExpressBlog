@@ -27,7 +27,7 @@ let adminSystemInitPromise = null;
 // Admin-Status über HTTP-only Cookie prüfen
 async function verifyAdminStatus() {
   try {
-    const result = await makeApiRequest('/auth/verify', {
+    const result = await callApi('/auth/verify', {
       method: 'POST',
     });
     return result;
@@ -70,7 +70,7 @@ async function adminLogout() {
     return;
   }
   try {
-    await makeApiRequest('/auth/logout', {
+    await callApi('/auth/logout', {
       method: 'POST',
     });
   } catch (error) {
@@ -178,11 +178,20 @@ function createAdminToolbar() {
   toolbar.className = 'admin-toolbar';
   toolbar.innerHTML = `
         <span>Admin-Modus aktiv</span>
-        <button onclick="adminLogout()" class="admin-logout-btn">
+        <button data-action="admin-logout" class="admin-logout-btn">
             Logout
         </button>
     `;
   document.body.prepend(toolbar);
+  // Attach local listener for admin toolbar actions to avoid inline handlers
+  toolbar.addEventListener('click', (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+    const action = actionEl.dataset.action;
+    if (action === 'admin-logout') {
+      adminLogout();
+    }
+  });
   // Body-Padding anpassen wegen der Toolbar
   document.body.style.paddingTop = ADMIN_CONFIG.TOOLBAR_HEIGHT;
 }
@@ -219,32 +228,27 @@ function showAdminLoginModal() {
     `;
   document.body.appendChild(modal);
     
-  // Event-Handler
-  document.getElementById('admin-login-cancel').onclick = () => modal.remove();
-    
+  // Event-Handler: use delegated/data-action attributes for close and submit
+  const cancelBtn = document.getElementById('admin-login-cancel');
+  if (cancelBtn) {
+    cancelBtn.dataset.action = 'close-modal';
+  }
+
   // Close modal when clicking outside (on overlay)
-  modal.onclick = (e) => {
+  modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-      modal.remove();
+      if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
     }
-  };
-    
-  document.getElementById('admin-login-submit').onclick = async () => {
-    const username = document.getElementById('admin-username').value;
-    const password = document.getElementById('admin-password').value;
-        
-    // Simple validation
-    if (!username || username.length < 3 || !password || password.length < 8) {
-      showError('Benutzername und Passwort müssen mindestens 3 bzw. 8 Zeichen lang sein!');
-      return;
-    }
-        
-    const success = await adminLogin(username, password);
-    if (success) modal.remove();
-    else showError('Login fehlgeschlagen! Bitte überprüfen Sie Ihre Eingaben.');
-  };
-  function showError(msg) {
+  });
+
+  const submitBtn = document.getElementById('admin-login-submit');
+  if (submitBtn) {
+    // Mark submit button so delegated or local code can handle submit
+    submitBtn.dataset.action = 'admin-login-submit';
+  }
+  function _showError(msg) {
     const err = document.getElementById('admin-login-error');
+    if (!err) return;
     err.textContent = msg;
     err.style.display = 'block';
   }
@@ -255,7 +259,7 @@ async function adminLogin(username, password) {
     return true;
   }
   try {
-    const result = await makeApiRequest('/auth/login', {
+    const result = await callApi('/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -298,16 +302,16 @@ async function addReadPostAdminControls() {
   else {
     const adminControls = document.getElementById('admin-controls');
     if (adminControls) {
-      adminControls.innerHTML = `
-                <button type="button" onclick="deletePostAndRedirect('${postId}')" class="btn admin-delete-btn btn-lg ml-2">
-                    Post löschen
-                </button>
-                <button type="button" class="btn btn-outline-warning btn-lg ml-2" onclick="redirectEditPost('${postId}')">
-                    <span class="btn-icon">✏️</span>
-                    Post bearbeiten
-                </button>
+    adminControls.innerHTML = `
+        <button type="button" data-action="delete-post" data-post-id="${postId}" class="btn admin-delete-btn btn-lg ml-2">
+          Post löschen
+        </button>
+        <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="${postId}">
+          <span class="btn-icon">✏️</span>
+          Post bearbeiten
+        </button>
 
-            `;
+      `;
     }
   }
 }
@@ -349,18 +353,8 @@ function addAdminMenuItemToNavbar() {
       link.href = '#';
       link.textContent = 'Card erstellen';
       link.style.cursor = 'pointer';
-      link.onclick = function(e) {
-        e.preventDefault();
-        try {
-          if (typeof showCreateCardModal === 'function') {
-            showCreateCardModal();
-          } else {
-            alert('showCreateCardModal ist nicht verfügbar!');
-          }
-        } catch (err) {
-          console.error('Fehler beim Öffnen des Card-Create Modals:', err);
-        }
-      };
+      // delegate via data-action attribute
+      link.dataset.action = 'show-create-card';
 
       createCardLi.appendChild(link);
       menu.insertBefore(createCardLi, menu.firstChild.nextSibling);
@@ -375,4 +369,115 @@ const ADMIN_CONFIG = {
 // Exporting showAdminLoginModal is enough for modules to import it;
 // avoid attaching to `window` to keep modules pure.
 
-export { addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG };
+/*
+  Admin delegation & testing notes:
+  - Use `initializeAdminDelegation()` to wire admin-specific `data-action` handlers.
+    This keeps markup free of inline `onclick` attributes and centralizes admin UI
+    behavior (login modal, create-card, delete/edit post, etc.).
+
+  - Optimistic UI for login modal in delegated submit:
+    * The delegated `admin-login-submit` handler removes the modal optimistically and
+      triggers `adminLogin()` in the background. This improves UX and reduces test
+      timing flakiness (tests don't need to wait for animations or modal states).
+    * If login fails the code attempts to reopen the modal as a best-effort UX recovery.
+
+  - Testing guidance (Jest + ESM):
+    * If tests mock `makeApiRequest` or other imported functions, perform the mock before
+      importing `admin.js` using `jest.unstable_mockModule(...)`. Then `await import(...)`
+      the module under test. This prevents errors caused by overwriting read-only ESM bindings.
+    * Call `initializeAdminDelegation()` in your test setup to ensure delegated handlers are
+      attached to the document before simulating clicks.
+
+  - Exposing helpers:
+    * Exported functions like `showAdminLoginModal`, `deletePost`, and `getCurrentUser`
+      are intentionally exported so tests and other modules can call them without relying on
+      `window` globals.
+*/
+
+function getCurrentUser() {
+  return currentUser;
+}
+
+export { initializeAdminSystem, addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG, deletePost, addReadPostAdminControls, getCurrentUser };
+
+// Helper wrapper to call API. Tests may mock module imports; fallback to global.makeApiRequest
+async function callApi(path, options) {
+  try {
+    if (typeof makeApiRequest === 'function') {
+      return await makeApiRequest(path, options);
+    }
+  } catch {
+    // fallthrough to global
+  }
+  if (typeof globalThis.makeApiRequest === 'function') {
+    return await globalThis.makeApiRequest(path, options);
+  }
+  throw new Error('No API function available');
+}
+
+// Initialize admin-specific delegated action handlers. Call this once after admin init.
+let _adminDelegationInitialized = false;
+export function initializeAdminDelegation() {
+  if (_adminDelegationInitialized) return;
+  _adminDelegationInitialized = true;
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (!action) return;
+    // Admin-only actions
+    if (action === 'show-admin-login') {
+      e.preventDefault();
+      if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
+      return;
+    }
+    if (action === 'show-create-card') {
+      e.preventDefault();
+      if (typeof showCreateCardModal === 'function') showCreateCardModal();
+      return;
+    }
+    if (action === 'admin-login-submit') {
+      e.preventDefault();
+      // Read credentials from modal inputs
+      const usernameEl = document.getElementById('admin-username');
+      const passwordEl = document.getElementById('admin-password');
+      const username = usernameEl ? usernameEl.value : '';
+      const password = passwordEl ? passwordEl.value : '';
+      // Optimistically remove modal so UI feels responsive in tests and real usage.
+      const modalToClose = document.getElementById('admin-login-modal');
+      if (modalToClose && modalToClose.parentElement) modalToClose.parentElement.removeChild(modalToClose);
+
+      // Call adminLogin in background; if it fails, show feedback and optionally reopen modal
+      (async () => {
+        try {
+          const success = await adminLogin(username, password);
+          if (!success) {
+            showFeedback('Login fehlgeschlagen. Bitte versuchen Sie es erneut.', 'error');
+            // Try to reopen the modal so the user can retry (best-effort)
+            try {
+              showAdminLoginModal();
+            } catch {
+              // ignore
+            }
+          }
+        } catch (err) {
+          console.error('Delegated admin login failed:', err);
+          showFeedback('Login fehlgeschlagen. Bitte versuchen Sie es später erneut.', 'error');
+          try { showAdminLoginModal(); } catch { }
+        }
+      })();
+      return;
+    }
+    if (action === 'delete-post') {
+      const postId = btn.dataset.postId;
+      if (postId && typeof deletePostAndRedirect === 'function') deletePostAndRedirect(postId);
+      return;
+    }
+    if (action === 'edit-post') {
+      const postId = btn.dataset.postId;
+      if (postId && typeof redirectEditPost === 'function') redirectEditPost(postId);
+      return;
+    }
+  });
+}

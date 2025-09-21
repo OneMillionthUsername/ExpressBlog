@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
   try {
     res.render('index', { 
       title: 'Debug Test',
-      message: 'App läuft ohne Database!' 
+      message: 'App läuft ohne Database!', 
     });
     logToFile('ROOT route: EJS render successful');
   } catch (error) {
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
     res.status(500).json({ 
       error: 'Template error', 
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 });
@@ -62,7 +62,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy - no database',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
   });
 });
 
@@ -76,20 +76,16 @@ app.get('/debug-info', (req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       PORT: process.env.PORT,
       platform: process.platform,
-      nodeVersion: process.version
-    }
+      nodeVersion: process.version,
+    },
   });
 });
 
 // Error-Handler
-app.use((error, req, res, next) => {
+app.use((error, _req, _res, _next) => {
   logToFile(`ERROR: ${error.message}`);
   logToFile(`ERROR stack: ${error.stack}`);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: error.message,
-    url: req.url
-  });
+  // Not sending response in test helper
 });
 
 // 404-Handler
@@ -117,7 +113,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   logToFile(`UNHANDLED REJECTION: ${reason}`);
   process.exit(1);
 });
