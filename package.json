@@ -16,7 +16,7 @@
     "build": "echo 'Build step - add your build commands here'",
     "start": "node server.js",
     "dev": "nodemon server.js"
-    ,"copy:dompurify": "node scripts/copy-dompurify.js"
+    ,"copy:dompurify": "node scripts/copy-dompurify.cjs"
   },
   "repository": {
     "type": "git",
