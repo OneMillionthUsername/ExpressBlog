@@ -20,7 +20,9 @@
     "postinstall": "npm run copy:dompurify",
     "copy:dompurify": "node scripts/copy-dompurify.mjs",
     "sanitize-db": "node scripts/sanitize-db-posts.js",
-    "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs"
+    "sanitize-db:dry": "node scripts/sanitize-db-posts.js --dry-run",
+    "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs",
+    "sanitize-db:prod:dry": "node scripts/run-sanitize-prod.mjs --dry-run"
   },
   "repository": {
     "type": "git",
