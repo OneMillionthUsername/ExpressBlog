@@ -9,7 +9,7 @@
 
 
 import * as mariadb from 'mariadb';
-import { convertBigInts, parseTags } from '../utils/utils.js';
+import { convertBigInts, parseTags, createSlug } from '../utils/utils.js';
 //import queryBuilder from '../utils/queryBuilder.js';
 import { dbConfig } from '../config/dbConfig.js';
 import logger from '../utils/logger.js';
@@ -364,32 +364,52 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      //const { query, params } = queryBuilder('get', 'posts', { slug });
-      //const result = await conn.query(query, params);
-      // Fetch post
-      const posts = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [slug]);
-      if (!posts || posts.length === 0) return null;
+
+      // Defensive logging and normalization: trim and attempt normalized lookup if exact match fails
+      const incomingSlug = typeof slug === 'string' ? slug.trim() : slug;
+      const normalizedSlug = typeof incomingSlug === 'string' && incomingSlug.length > 0 ? createSlug(incomingSlug, { maxLength: 50 }) : incomingSlug;
+      logger.debug(`DatabaseService.getPostBySlug: Received slug="${incomingSlug}", normalized="${normalizedSlug}"`);
+
+      // Try exact lookup first
+      let posts = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [incomingSlug]);
+
+      // If no exact match, try normalized slug (useful for legacy entries with different normalization)
+      if ((!posts || posts.length === 0) && normalizedSlug && normalizedSlug !== incomingSlug) {
+        logger.debug(`DatabaseService.getPostBySlug: No exact match for slug="${incomingSlug}", trying normalized slug="${normalizedSlug}"`);
+        posts = await conn.query('SELECT * FROM posts WHERE slug = ? LIMIT 1', [normalizedSlug]);
+      }
+
+      if (!posts || posts.length === 0) {
+        logger.warn(`DatabaseService.getPostBySlug: No post found for slug="${incomingSlug}"`);
+        return null;
+      }
+
       const postRow = posts[0];
-      if (!postRow.published) return null;
-      // Fetch associated media via post_media
-      const mediaRows = await conn.query(
-        `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
-         FROM media m
-         JOIN post_media pm ON pm.mediaId = m.id
-         WHERE pm.postId = ?
-         ORDER BY pm.id ASC`,
-        [postRow.id],
-      );
+
+      // Fetch associated media via post_media (guard in case table doesn't exist or no media)
+      let mediaRows = [];
+      try {
+        mediaRows = await conn.query(
+          `SELECT m.id, m.original_name, m.upload_path, m.mime_type, m.alt_text
+           FROM media m
+           JOIN post_media pm ON pm.mediaId = m.id
+           WHERE pm.postId = ?
+           ORDER BY pm.id ASC`,
+          [postRow.id],
+        );
+      } catch (mediaErr) {
+        logger.debug(`DatabaseService.getPostBySlug: media query failed for postId=${postRow.id}: ${mediaErr.message}`);
+        mediaRows = [];
+      }
+
       const post = convertBigInts(postRow);
       post.tags = parseTags(post.tags);
       post.media = (mediaRows || []).map(r => convertBigInts(r));
 
-      // Datentyp-Konvertierung wie in getAllPosts:
-      // Autor: NULL oder undefined zu Default-String
+      // Normalize some fields to match other getters
       if (post.author === null || post.author === undefined) {
         post.author = 'admin';
       }
-
       // Published: Integer (0/1) zu Boolean konvertieren
       if (typeof post.published === 'number') {
         post.published = post.published === 1;
@@ -397,7 +417,12 @@ export const DatabaseService = {
         post.published = false;
       }
 
-      logger.debug(`DatabaseService.getPostById: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+      logger.debug(`DatabaseService.getPostBySlug: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+
+      if (!post.published) {
+        logger.info(`DatabaseService.getPostBySlug: Post ${post.id} (slug=${post.slug}) is not published`);
+        return null;
+      }
 
       return post;
     } catch (error) {

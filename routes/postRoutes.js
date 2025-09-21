@@ -189,13 +189,23 @@ postRouter.get('/:slug',
     try {
       const post = await postController.getPostBySlug(slug);
       if (post && post.id) incrementViews(req, post.id);
-      res.json(convertBigInts(post) || post);
+      // If the client expects HTML (browser), render the readPost view
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('readPost', { post: convertBigInts(post) || post });
+      }
+      // Otherwise return JSON for API/JS clients
+      return res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by slug', error);
+      // If the client expects HTML, render the view with a friendly message
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        const message = (error instanceof PostControllerException) ? 'Blogpost nicht gefunden' : 'Serverfehler beim Laden des Blogposts';
+        return res.status(error instanceof PostControllerException ? 404 : 500).render('readPost', { post: null, errorMessage: message });
+      }
       if (error instanceof PostControllerException) {
         return res.status(404).json({ error: 'Blogpost not found' });
       }
-      res.status(500).json({ error: 'Server failed to load the blogpost' });
+      return res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
   });
 postRouter.get('/archive', globalLimiter, async (req, res) => {

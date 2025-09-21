@@ -26,12 +26,20 @@
             <div class="col-md-10">
                 <div class="content-area">
                     <div id="blogpost-content">
-                        <div id="loading" class="loading-spinner">
+                        <div id="loading" class="loading-spinner" style="display: none;">
                             <div class="spinner"></div>
                             <p>Lade Blogpost...</p>
                         </div>
-                        
-                        <article id="post-article" class="hidden">
+
+                        <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                        <div class="alert alert-warning" role="alert">
+                            <h4 class="alert-heading">Hinweis</h4>
+                            <p><%= errorMessage %></p>
+                            <hr>
+                            <p class="mb-0"><a href="/blogpost/all" class="btn btn-outline-primary">Alle Blogposts</a></p>
+                        </div>
+                        <% } else { %>
+                        <article id="post-article" class="<%= post ? '' : 'hidden' %>">
                             <header class="post-header">
                                 <h2 id="title" class="post-title"></h2>
                                 <div id="meta" class="post-meta-info"></div>
@@ -45,6 +53,7 @@
                         </article>
                         
                         <!-- Kommentarsystem -->
+                        <% if (post) { %>
                         <section id="comments-section" class="comments-section hidden">
                             <div class="comments-divider">
                                 <hr>
@@ -100,6 +109,8 @@
                                 </div>
                             </div>
                         </section>
+                        <% } %>
+                        <% } %>
                     </div>
                 </div>
             </div>
