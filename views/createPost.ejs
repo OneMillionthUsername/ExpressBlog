@@ -186,7 +186,11 @@
 
     <script src="/vendor/dompurify.min.js"></script>
     <script src="/assets/js/page-initializers.js" type="module"></script>
-    <script src="/assets/js/ai-assistant/ai-assistant.js" type="module"></script>
-    <script src="/assets/js/tinymce/tinymce-editor.js" type="module"></script>
+    <!-- Do NOT inject API keys into the browser. Expose only non-sensitive flags. -->
+    <script>
+        // Safely serialize a small, non-sensitive server config object for the frontend.
+        // Use the unescaped EJS tag so JSON stays valid JS, and ensure values are boolean/primitive only.
+        window.__SERVER_CONFIG = <%- JSON.stringify({ isAdmin: !!isAdmin }) %>;
+    </script>
 </body>
 </html>

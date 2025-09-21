@@ -1,7 +1,18 @@
 // AI-Unterstützung für den Blog mit Google Gemini
 // Kostenlose AI-Integration für Schreibhilfe und Content-Verbesserung
 
-import { GEMINI_API_KEY } from "../../../../config/config";
+// NOTE: This file runs in the browser; importing server-side config files here
+// causes the browser to attempt to fetch `/config/config` which can return
+// HTML and produce a MIME-type error. Instead, obtain any API keys at
+// runtime via an API endpoint or from an injected global (server-rendered)
+// variable. We will prefer a runtime fetch from `/config/google-api-key`.
+
+let GEMINI_API_KEY = '';
+
+// Try reading a server-injected window variable first (when server renders it)
+if (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.GEMINI_API_KEY) {
+  GEMINI_API_KEY = window.__SERVER_CONFIG.GEMINI_API_KEY;
+}
 
 // DOMPurify handling: prefer a synchronous check of `window.DOMPurify` so
 // UI actions (and tests) are not blocked by network imports. We also start a
@@ -22,11 +33,11 @@ async function preloadDOMPurify() {
     if (mod && mod.default) {
       try {
         window.DOMPurify = mod.default(window);
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
-  } catch (e) {
+  } catch {
     // do not spam warnings; silently ignore CDN failures
   }
 }
@@ -37,7 +48,7 @@ import { makeApiRequest } from '../api.js';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
-  apiKey: GEMINI_API_KEY || '', // Wird vom Admin gesetzt
+  apiKey: (GEMINI_API_KEY && GEMINI_API_KEY.length > 0) ? GEMINI_API_KEY : '', // Wird vom Admin gesetzt
   model: 'gemini-1.5-flash', // Kostenloses Modell
   maxTokens: 2048,
   temperature: 0.7,
@@ -95,78 +106,26 @@ function showApiKeySetup() {
   document.getElementById('google-api-key-close').focus();
 }
 
-// Gemini API-Aufruf
+// Server-proxied AI call - key never touches browser
 async function callGeminiAPI(prompt, systemInstruction = '') {
-  if (!GEMINI_CONFIG.apiKey) {
-    if (!showApiKeySetup()) {
-      throw new Error('API-Schlüssel erforderlich');
-    }
-  }
-    
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG.model}:generateContent?key=${GEMINI_CONFIG.apiKey}`;
-    
-  const requestBody = {
-    contents: [{
-      parts: [{
-        text: systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt,
-      }],
-    }],
-    generationConfig: {
-      temperature: GEMINI_CONFIG.temperature,
-      maxOutputTokens: GEMINI_CONFIG.maxTokens,
-      topP: 0.8,
-      topK: 40,
-    },
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH', 
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-    ],
-  };
-    
   try {
-    console.log('Sende Anfrage an Gemini API...');
-        
-    const response = await fetch(url, {
+    const body = { prompt, systemInstruction };
+    const result = await makeApiRequest('/api/ai/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
     });
-        
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Gemini API Fehler: ${errorData.error?.message || response.statusText}`);
+
+    if (!result || result.success !== true) {
+      const err = result?.error || 'AI proxy error';
+      showNotification(`AI-Fehler: ${err}`, 'error');
+      throw new Error(err);
     }
-        
-    const data = await response.json();
-        
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Unerwartete API-Antwort von Gemini');
-    }
-        
-    const aiResponse = data.candidates[0].content.parts[0].text;
-    console.log('Gemini API-Antwort erhalten');
-        
-    return aiResponse;
+
+    return result.data?.text || '';
   } catch (error) {
-    console.error('Gemini API Fehler:', error);
-        
-    // Hilfreiche Fehlermeldungen
-    if (error.message.includes('API_KEY_INVALID')) {
-      showNotification('Ungültiger API-Schlüssel. Bitte überprüfe deinen Gemini API-Schlüssel.', 'error');
-    } else if (error.message.includes('QUOTA_EXCEEDED')) {
-      showNotification('API-Limit erreicht. Versuche es später erneut.', 'error');
-    } else {
-      showNotification(`AI-Fehler: ${error.message}`, 'error');
-    }
-        
+    console.error('AI proxy error:', error);
+    showNotification(`AI-Fehler: ${error.message || error}`, 'error');
     throw error;
   }
 }

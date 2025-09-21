@@ -21,6 +21,7 @@ import * as middleware from './middleware/securityMiddleware.js';
 import { requireDatabase } from './middleware/databaseMiddleware.js';
 import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
+import aiRoutes from './routes/aiRoutes.js';
 import csrfProtection from './utils/csrf.js';
 import nonceMiddleware from './middleware/nonceMiddleware.js';
 
@@ -350,6 +351,10 @@ initializeApp().then(() => {
 // ===========================================
 // PUBLIC ENDPOINTS
 // ===========================================
+
+// Mount AI proxy early (route itself enforces admin auth)
+app.use('/api/ai', aiRoutes);
+
 
 // Nur sichere, öffentliche APIs exportieren
 export function isAppReady() {

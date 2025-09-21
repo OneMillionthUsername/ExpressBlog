@@ -13,7 +13,10 @@ import {
   renderPopularPostsSidebar,
   renderSidebarArchive,
 } from './common.js';
-import { initializeBlogEditor } from './tinymce/tinymce-editor.js';
+// Do NOT statically import the TinyMCE editor or AI assistant here.
+// They should only be loaded on the Create page to avoid loading large
+// modules (and accidental server-side imports) on every page.
+let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
 import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
 import { initializeCommentsDelegation } from './comments.js';
@@ -126,15 +129,41 @@ async function initializeCreatePage() {
   console.log('Initialisiere Create Page...');
 
   try {
-    // Editor initialisieren (falls verfügbar)
+    // Dynamically import editor + AI assistant only on create page
+    if (!initializeBlogEditor) {
+      try {
+        const mod = await import('./tinymce/tinymce-editor.js');
+        // module exports initialize function under several names; support both
+        initializeBlogEditor = mod.initializeTinyMCE || mod.initializeBlogEditor || mod.initializeCreatePage || mod.initializeCreatePage;
+      } catch (err) {
+        console.error('Fehler beim Laden des TinyMCE-Moduls:', err);
+      }
+    }
+
     if (typeof initializeBlogEditor === 'function') {
       await initializeBlogEditor();
     }
 
     // Admin-Status prüfen und UI anpassen
-    if (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) {
+    // Use the safe server-injected flag if available. Do NOT rely on any injected secrets.
+    const isAdmin = (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.isAdmin) ? !!window.__SERVER_CONFIG.isAdmin : false;
+    if (isAdmin) {
       showElement('create-content');
       hideElement('admin-required');
+
+      // Lazy-load AI assistant only for admins (separate module)
+      try {
+        import('./ai-assistant/ai-assistant.js')
+          .then(m => {
+            if (m && typeof m.initAiAssistant === 'function') {
+              m.initAiAssistant();
+            }
+          })
+          .catch(err => console.error('Fehler beim Laden des AI-Assistant-Moduls:', err));
+      } catch (err) {
+        console.error('Dynamischer Import für AI-Assistant fehlgeschlagen:', err);
+      }
+
     } else {
       hideElement('create-content');
       showElement('admin-required');
