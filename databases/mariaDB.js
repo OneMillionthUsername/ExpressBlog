@@ -383,6 +383,22 @@ export const DatabaseService = {
       const post = convertBigInts(postRow);
       post.tags = parseTags(post.tags);
       post.media = (mediaRows || []).map(r => convertBigInts(r));
+
+      // Datentyp-Konvertierung wie in getAllPosts:
+      // Autor: NULL oder undefined zu Default-String
+      if (post.author === null || post.author === undefined) {
+        post.author = 'admin';
+      }
+
+      // Published: Integer (0/1) zu Boolean konvertieren
+      if (typeof post.published === 'number') {
+        post.published = post.published === 1;
+      } else if (post.published === null || post.published === undefined) {
+        post.published = false;
+      }
+
+      logger.debug(`DatabaseService.getPostById: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+
       return post;
     } catch (error) {
       logger.error(`Error in getPostBySlug: ${error.message}`);

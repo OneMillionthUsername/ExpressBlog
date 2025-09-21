@@ -13,6 +13,11 @@ BildHochladen.js
 coverage/
 *.lcov
 
+# Diagnostics (local helper scripts)
+scripts/check-remote-post.*
+scripts/collect-server-logs.ps1
+
+
 # IDE
 .vscode/
 .idea/
