@@ -7,12 +7,10 @@
 // runtime via an API endpoint or from an injected global (server-rendered)
 // variable. We will prefer a runtime fetch from `/config/google-api-key`.
 
+// The Gemini API key MUST never be present in browser code. All AI calls go
+// through a server-proxied endpoint (`/api/ai/generate`) that uses the
+// server-side key. Keep a local empty placeholder only for non-key flows.
 let GEMINI_API_KEY = '';
-
-// Try reading a server-injected window variable first (when server renders it)
-if (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.GEMINI_API_KEY) {
-  GEMINI_API_KEY = window.__SERVER_CONFIG.GEMINI_API_KEY;
-}
 
 // DOMPurify handling: prefer a synchronous check of `window.DOMPurify` so
 // UI actions (and tests) are not blocked by network imports. We also start a

@@ -1,7 +1,7 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import * as authService from '../services/authService.js';
-import { TINY_MCE_API_KEY, GEMINI_API_KEY } from '../config/config.js';
+import { TINY_MCE_API_KEY } from '../config/config.js';
 
 const staticRouter = express.Router();
 
@@ -36,8 +36,9 @@ staticRouter.get('/createPost', (req, res) => {
 
     // Only expose tinyMCE key to authenticated admins when rendering the page
     const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;
-    const geminiApiKey = isAdmin ? GEMINI_API_KEY : null;
-    res.render('createPost', { tinyMceKey, isAdmin, geminiApiKey });
+    // IMPORTANT: Do NOT expose the GEMINI API key to the browser. The AI endpoint
+    // should be accessed via a server-side proxy that uses the key from config.
+    res.render('createPost', { tinyMceKey, isAdmin });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
