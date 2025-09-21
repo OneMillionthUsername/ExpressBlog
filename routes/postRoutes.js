@@ -133,7 +133,11 @@ export { getAllHandler };
 postRouter.get('/most-read', globalLimiter, async (req, res) => {
   try {
     const posts = await postController.getMostReadPosts();
-    res.json(convertBigInts(posts) || posts);
+    const response = convertBigInts(posts) || posts;
+    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+      return res.render('mostReadPosts', { posts: response });
+    }
+    res.json(response);
   } catch (error) {
     console.error('Error loading most read blog posts', error);
     res.status(500).json({ error: 'Server failed to load most read blog posts' });
@@ -226,7 +230,11 @@ postRouter.get('/:slug',
 postRouter.get('/archive', globalLimiter, async (req, res) => {
   try {
     const posts = await postController.getArchivedPosts();
-    res.json(convertBigInts(posts) || posts);
+    const response = convertBigInts(posts) || posts;
+    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+      return res.render('archiv', { posts: response });
+    }
+    res.json(response);
   } catch (error) {
     console.error('Error loading archived blog posts', error);
     res.status(500).json({ error: 'Server failed to load archived blog posts' });

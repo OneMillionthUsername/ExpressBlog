@@ -29,12 +29,54 @@
 
                     </div>
                     
-                    <div id="blogPostsList">
-                        <div class="loading-spinner">
-                            <div class="spinner"></div>
-                            <p>Lade Blogposts...</p>
-                        </div>
-                    </div>
+                                    <div id="blogPostsList">
+                                                    <% 
+                                                            // Helper: strip HTML tags from content (simple fallback). We keep
+                                                            // this lightweight and avoid requiring additional server utilities.
+                                                            const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
+                                                            const createExcerpt = (htmlContent, maxLen = 150) => {
+                                                                const txt = stripHtml(htmlContent).trim();
+                                                                if (!txt) return '';
+                                                                return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+                                                            };
+                                                    %>
+
+                                                    <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                                                            <% posts.forEach(function(post) { %>
+                                                                    <article class="blog-post-card">
+                                                                        <div class="post-meta">
+                                                                            <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
+                                                                            <span class="post-author">von <%= post.author || 'Unbekannt' %></span>
+                                                                        </div>
+                                                                        <h2 class="post-title">
+                                                                            <% if (post.slug) { %>
+                                                                                <a href="/blogpost/<%= post.slug %>" class="post-link"><%= post.title || 'Untitled' %></a>
+                                                                            <% } else if (post.id !== undefined && post.id !== null) { %>
+                                                                                <a href="/blogpost/by-id/<%= post.id %>" class="post-link"><%= post.title || 'Untitled' %></a>
+                                                                            <% } else { %>
+                                                                                <span class="post-link"><%= post.title || 'Untitled' %></span>
+                                                                            <% } %>
+                                                                        </h2>
+                                                                        <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                                                        <div class="post-footer">
+                                                                            <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
+                                                                            <% if (post.tags && post.tags.length > 0) { %>
+                                                                                <div class="post-tags">
+                                                                                    <% post.tags.forEach(function(tag){ %>
+                                                                                        <span class="tag"><%= tag %></span>
+                                                                                    <% }); %>
+                                                                                </div>
+                                                                            <% } %>
+                                                                        </div>
+                                                                    </article>
+                                                            <% }); %>
+                                                    <% } else { %>
+                                                            <div class="loading-spinner">
+                                                                    <div class="spinner"></div>
+                                                                    <p>Lade Blogposts...</p>
+                                                            </div>
+                                                    <% } %>
+                                            </div>
                 </div>
             </div>
         </div>

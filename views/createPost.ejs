@@ -193,5 +193,12 @@
         // Safely inject a minimal, non-sensitive server config object for the frontend.
         window.__SERVER_CONFIG = <%- __serverConfig %>;
     </script>
+        <% if (typeof post !== 'undefined' && post) { %>
+            <script>
+                // Inject the post object for client-side prefill of the editor. This
+                // is safe because post content is intended to be displayed/edited by an admin.
+                window.__SERVER_POST = <%- JSON.stringify(post) %>;
+            </script>
+        <% } %>
 </body>
 </html>

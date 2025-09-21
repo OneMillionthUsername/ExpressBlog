@@ -1111,13 +1111,18 @@ export function getPostSlugFromPath() {
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
 export async function checkAndPrefillEditPostForm() {
-  const postId = getPostIdFromPath();
-  if (!postId) return;
+  // Prefer server-injected post object (SSR) to avoid an extra API call.
+  // This will be set by server when rendering create/edit forms as `window.__SERVER_POST`.
+  let post = (typeof window !== 'undefined' && window.__SERVER_POST) ? window.__SERVER_POST : null;
+  if (!post) {
+    const postId = getPostIdFromPath();
+    if (!postId) return;
 
-  // Postdaten laden via zentraler API-Wrapper
-  const apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
-  if (!apiResult || apiResult.success !== true) return;
-  const post = apiResult.data;
+    // Postdaten laden via zentraler API-Wrapper
+    const apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
+    if (!apiResult || apiResult.success !== true) return;
+    post = apiResult.data;
+  }
 
   if (!post || !post.id) {
     showNotification('Blogpost nicht gefunden', 'error');

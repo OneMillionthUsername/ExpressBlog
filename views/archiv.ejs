@@ -25,10 +25,29 @@
             <div class="col-md-10">
                 <div class="content-area">
                     <div id="archivePosts">
-                        <div class="loading-spinner">
-                            <div class="spinner"></div>
-                            <p>Lade Archiv...</p>
-                        </div>
+                        <% 
+                          const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
+                          const createExcerpt = (htmlContent, maxLen = 150) => {
+                            const txt = stripHtml(htmlContent).trim();
+                            if (!txt) return '';
+                            return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+                          };
+                        %>
+
+                        <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                            <% posts.forEach(function(post) { %>
+                                <div class="archive-post-item">
+                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
+                                    <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
+                                    <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                                <p>Lade Archiv...</p>
+                            </div>
+                        <% } %>
                     </div>
                 </div>
             </div>

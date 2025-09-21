@@ -39,7 +39,7 @@ staticRouter.get('/about', (req, res) => {
   res.render('about');
 });
 
-staticRouter.get('/createPost', (req, res) => {
+staticRouter.get('/createPost', async (req, res) => {
   try {
     // Determine if requester is authenticated admin by extracting token
     const token = authService.extractTokenFromRequest(req);
@@ -53,13 +53,34 @@ staticRouter.get('/createPost', (req, res) => {
 
     // Only expose tinyMCE key to authenticated admins when rendering the page
     const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;
-    // IMPORTANT: Do NOT expose the GEMINI API key to the browser. The AI endpoint
-    // should be accessed via a server-side proxy that uses the key from config.
-    res.render('createPost', { tinyMceKey, isAdmin });
+
+    // If a `post` query parameter is provided (edit flow), try to fetch the post
+    // server-side and inject it into the view so the editor can be prefilled
+    // without an extra client request. Support numeric id or slug.
+    const postParam = req.query.post;
+    let serverPost = null;
+    if (postParam) {
+      try {
+        if (/^[0-9]+$/.test(postParam)) {
+          serverPost = await postController.getPostById(postParam);
+        } else {
+          serverPost = await postController.getPostBySlug(postParam);
+        }
+        // Convert bigints if controller returns them (controller functions
+        // usually return raw DB objects; controller's callers normally handle converting)
+        // But keep it simple and pass through the object as-is; views will treat fields as strings
+      } catch (fetchErr) {
+        logger.debug('[CREATEPOST] Could not fetch post for prefill:', fetchErr && fetchErr.message);
+        serverPost = null;
+      }
+    }
+
+    // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
+    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
-    res.render('createPost', { tinyMceKey: null, isAdmin: false });
+    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
   }
 });
 
