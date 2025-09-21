@@ -260,7 +260,24 @@ export function updateBlogPostUI(post) {
   // CONTENT: Inhalt formatieren und einfügen
   const formattedContent = formatContent(post.content);
   const content = document.getElementById('content');
-  if (content) content.innerHTML = `<p>${formattedContent}</p>`;
+  if (content) {
+    // Client-side sanitize with DOMPurify before inserting into innerHTML
+    try {
+      if (typeof DOMPurify !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
+        const safe = DOMPurify.sanitize(`<p>${formattedContent}</p>`, {
+          ALLOWED_TAGS: ['p','br','b','i','strong','em','u','a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3'],
+          ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
+          FORBID_TAGS: ['script','style'],
+        });
+        content.innerHTML = safe;
+      } else {
+        content.innerHTML = `<p>${formattedContent}</p>`;
+      }
+    } catch (e) {
+      console.error('Error sanitizing content in updateBlogPostUI:', e);
+      content.innerHTML = `<p>${formattedContent}</p>`;
+    }
+  }
   else {
     console.warn('Content element not found, skipping content update');
   }
@@ -632,7 +649,9 @@ export async function loadAndDisplayBlogPost() {
     // Blogpost laden via zentraler API-Wrapper
     // Prefer the explicit by-id endpoint (safer). If it returns 404 or fails,
     // try the slug-based endpoint as a fallback (some links may use slugs).
-    let apiResult = await apiRequest(`/blogpost/by-id/${postId}`, { method: 'GET' });
+  // Use the JSON-only API alias to avoid content negotiation issues when proxies
+  // or CDNs strip Accept/X-Requested-With headers.
+  let apiResult = await apiRequest(`/blogpost/api/by-id/${postId}`, { method: 'GET' });
     if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
       // fallback to slug-based route
       apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });

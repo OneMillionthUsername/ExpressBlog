@@ -8,12 +8,14 @@ import crypto from 'crypto';
 import postController from '../controllers/postController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
+import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import * as validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
+import { escapeAllStrings } from '../utils/utils.js';
 
 const postRouter = express.Router();
 
@@ -34,13 +36,23 @@ async function getAllHandler(req, res) {
   });
   
   try {
-    logger.debug(`[${requestId}] GET /all: Calling postController.getAllPosts()`);
-    const controllerStartTime = Date.now();
-    
-    const posts = await postController.getAllPosts();
-    
-    const controllerEndTime = Date.now();
-    const controllerDuration = controllerEndTime - controllerStartTime;
+    logger.debug(`[${requestId}] GET /all: Checking cache for all posts`);
+    const cacheKey = 'posts:all';
+    let posts = simpleCache.get(cacheKey);
+    let controllerDuration = null;
+    if (!posts) {
+      logger.debug(`[${requestId}] GET /all: Cache miss - loading posts from controller`);
+      const controllerStartTime = Date.now();
+      posts = await postController.getAllPosts();
+      const controllerEndTime = Date.now();
+      controllerDuration = controllerEndTime - controllerStartTime;
+      logger.debug(`[${requestId}] GET /all: Controller returned in ${controllerDuration}ms`);
+      // Cache the result for 60 seconds
+      simpleCache.set(cacheKey, posts, 60 * 1000);
+    } else {
+      controllerDuration = 'cache';
+      logger.debug(`[${requestId}] GET /all: Cache hit - returning cached posts`);
+    }
     
     logger.debug(`[${requestId}] GET /all: Controller returned data`, {
       posts_count: posts ? posts.length : 'null',
@@ -111,11 +123,21 @@ async function getAllHandler(req, res) {
 
       // If the request is clearly an API/XHR request, return JSON
       if (wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson)) {
-        return res.json(response);
+        try {
+          const safe = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+          return res.json(safe);
+        } catch (_e) {
+          return res.json(response);
+        }
       }
 
       // Otherwise render HTML for human-driven browser navigation
-      return res.render('listCurrentPosts', { posts: response });
+      try {
+        const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+        return res.render('listCurrentPosts', { posts: safePosts });
+      } catch (_e) {
+        return res.render('listCurrentPosts', { posts: response });
+      }
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
       // Fallback: send response without ETag
@@ -142,12 +164,36 @@ export { getAllHandler };
 // Spezifische Routen VOR parametrische Routen
 postRouter.get('/most-read', globalLimiter, async (req, res) => {
   try {
-    const posts = await postController.getMostReadPosts();
+    const cacheKey = 'posts:mostRead';
+    let posts = simpleCache.get(cacheKey);
+    if (!posts) {
+      posts = await postController.getMostReadPosts();
+      simpleCache.set(cacheKey, posts);
+    }
     const response = convertBigInts(posts) || posts;
-    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+
+    // Content negotiation: prefer JSON if explicit ?format=json, X-Requested-With is XHR,
+    // or Accept header prefers JSON over HTML. Otherwise render HTML view for browsers.
+    const wantsJsonParam = req.query && String(req.query.format || '').toLowerCase() === 'json';
+    const isAjax = (req.get && String(req.get('X-Requested-With') || '').toLowerCase()) === 'xmlhttprequest';
+    const acceptsHtml = req.accepts && req.accepts('html');
+    const acceptsJson = req.accepts && req.accepts('json');
+
+    if (wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson)) {
+      try {
+        const safe = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+        return res.json(safe);
+      } catch (_e) {
+        return res.json(response);
+      }
+    }
+
+    try {
+      const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      return res.render('mostReadPosts', { posts: safePosts });
+    } catch (_e) {
       return res.render('mostReadPosts', { posts: response });
     }
-    res.json(response);
   } catch (error) {
     console.error('Error loading most read blog posts', error);
     res.status(500).json({ error: 'Server failed to load most read blog posts' });
@@ -166,11 +212,19 @@ postRouter.get('/by-id/:postId',
       if (post && post.id) {
         incrementViews(req, post.id);
       }
-      // If the client expects HTML (browser), render the readPost view
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('readPost', { post: convertBigInts(post) || post });
+      const safe = convertBigInts(post) || post;
+      try {
+        const sanitized = escapeAllStrings(safe, ['content', 'description']);
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          return res.render('readPost', { post: sanitized });
+        }
+        return res.json(sanitized);
+      } catch (_e) {
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          return res.render('readPost', { post: safe });
+        }
+        return res.json(safe);
       }
-      res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by id', error);
       if (error instanceof PostControllerException) {
@@ -179,6 +233,39 @@ postRouter.get('/by-id/:postId',
       res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
   });
+
+// JSON-only alias routes under /api/blogpost to avoid reliance on Accept/X-Requested-With
+// These endpoints always return JSON regardless of Accept headers or request content type.
+postRouter.get('/api/by-id/:postId', globalLimiter, validateId, async (req, res) => {
+  const postId = req.params.postId;
+  try {
+    const post = await postController.getPostById(postId);
+    if (post && post.id) incrementViews(req, post.id);
+    const safe = convertBigInts(post) || post;
+    try {
+      return res.json(escapeAllStrings(safe, ['content', 'description']));
+    } catch (_e) {
+      return res.json(safe);
+    }
+  } catch (error) {
+    console.error('Error loading the blog post by id (api):', error);
+    if (error instanceof PostControllerException) return res.status(404).json({ error: 'Blogpost not found' });
+    return res.status(500).json({ error: 'Server failed to load the blogpost' });
+  }
+});
+
+postRouter.get('/api/:slug', globalLimiter, validateSlug, async (req, res) => {
+  const slug = req.params.slug;
+  try {
+    const post = await postController.getPostBySlug(slug);
+    if (post && post.id) incrementViews(req, post.id);
+    return res.json(convertBigInts(post) || post);
+  } catch (error) {
+    console.error('Error loading the blog post by slug (api):', error);
+    if (error instanceof PostControllerException) return res.status(404).json({ error: 'Blogpost not found' });
+    return res.status(500).json({ error: 'Server failed to load the blogpost' });
+  }
+});
 
 // Support shorthand numeric URL: /blogpost/59
 // This route must be declared BEFORE the slug route so numeric paths are
@@ -195,11 +282,19 @@ postRouter.get('/:maybeId',
     try {
       const post = await postController.getPostById(postId);
       if (post && post.id) incrementViews(req, post.id);
-      // If browser expects HTML, render the view instead of returning JSON
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('readPost', { post: convertBigInts(post) || post });
+      const safe = convertBigInts(post) || post;
+      try {
+        const sanitized = escapeAllStrings(safe, ['content', 'description']);
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          return res.render('readPost', { post: sanitized });
+        }
+        return res.json(sanitized);
+      } catch (_e) {
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          return res.render('readPost', { post: safe });
+        }
+        return res.json(safe);
       }
-      return res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by numeric id', error);
       if (error instanceof PostControllerException) {
@@ -239,12 +334,25 @@ postRouter.get('/:slug',
   });
 postRouter.get('/archive', globalLimiter, async (req, res) => {
   try {
-    const posts = await postController.getArchivedPosts();
-    const response = convertBigInts(posts) || posts;
-    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-      return res.render('archiv', { posts: response });
+    const cacheKey = 'posts:archive';
+    let posts = simpleCache.get(cacheKey);
+    if (!posts) {
+      posts = await postController.getArchivedPosts();
+      simpleCache.set(cacheKey, posts);
     }
-    res.json(response);
+    const response = convertBigInts(posts) || posts;
+    try {
+      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: safeResponse });
+      }
+      return res.json(safeResponse);
+    } catch (_e) {
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: response });
+      }
+      return res.json(response);
+    }
   } catch (error) {
     console.error('Error loading archived blog posts', error);
     res.status(500).json({ error: 'Server failed to load archived blog posts' });
@@ -265,6 +373,12 @@ postRouter.post('/create',
         return res.status(400).json({ error: 'Failed to create blog post' });
       }
       res.status(201).json({ message: 'Blog post created successfully', postId: Number(result.postId), title: result.title });
+      // Invalidate cached lists
+      try {
+        simpleCache.del('posts:all');
+        simpleCache.del('posts:mostRead');
+        simpleCache.del('posts:archive');
+      } catch (e) { void e; }
     } catch (error) {
       console.error('Error creating new blog post', error);
       res.status(500).json({ error: 'Server failed to create the blogpost' });
@@ -286,6 +400,11 @@ postRouter.put('/update/:postId',
         return res.status(400).json({ error: 'Failed to update blog post' });
       }
       res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.postId), title: result.title });
+      try {
+        simpleCache.del('posts:all');
+        simpleCache.del('posts:mostRead');
+        simpleCache.del('posts:archive');
+      } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
       res.status(500).json({ error: 'Server failed to update the blogpost' });
@@ -309,6 +428,11 @@ postRouter.delete(
         return res.status(400).json({ error: 'Failed to delete blog post' });
       }
       res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(result.postId) });
+      try {
+        simpleCache.del('posts:all');
+        simpleCache.del('posts:mostRead');
+        simpleCache.del('posts:archive');
+      } catch (e) { void e; }
     } catch (error) {
       console.error('Error deleting blog post', error);
       res.status(500).json({ error: 'Server failed to delete the blogpost' });
