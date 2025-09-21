@@ -1,5 +1,5 @@
 import { showFeedback } from './feedback.js';
-import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema} from '../../../services/validationService.js';
+import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema } from './lib/validationClient.js';
 import { makeApiRequest } from './api.js';
 
 async function loadComments(postId) {

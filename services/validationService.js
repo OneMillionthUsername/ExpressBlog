@@ -2,7 +2,9 @@
  * Für unkritische Validierung gedacht.
  * Backend wird mit Joi und Celebrate validiert.
  */
-import { URL } from 'url';
+// Note: do not import Node's 'url' module here because this service is imported
+// both by server-side code and by client-side ESM modules under `public/assets/js`.
+// Browsers provide a global `URL` constructor, so rely on that to validate URLs.
 /**
  * Validiert eine ID.
  * @param {*} id - Die zu prüfende ID.

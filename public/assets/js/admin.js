@@ -13,7 +13,7 @@ import {
   // deletePostAndRedirect,
 } from './common.js';
 import { showCreateCardModal } from './common.js';
-import { isValidIdSchema } from '../../../services/validationService.js';
+import { isValidIdSchema } from './lib/validationClient.js';
 
 // Admin-Status Variable (muss vor allen Funktionen stehen)
 let isAdminLoggedIn = false;
