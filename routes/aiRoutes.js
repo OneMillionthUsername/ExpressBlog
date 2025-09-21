@@ -1,6 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-import fetch from 'node-fetch';
+/* global fetch */
 import { GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
