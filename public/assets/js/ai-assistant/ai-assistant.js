@@ -3,32 +3,36 @@
 
 import { GEMINI_API_KEY } from "../../../../config/config";
 
-// DOMPurify: don't use a bare specifier in browser bundles. Instead try to
-// use a global `window.DOMPurify` (if loaded via a script tag) or dynamically
-// import the ESM build from a CDN at runtime. This avoids the "bare
-// specifier" error in browsers that don't remap node-style imports.
-async function getDOMPurify() {
+// DOMPurify handling: prefer a synchronous check of `window.DOMPurify` so
+// UI actions (and tests) are not blocked by network imports. We also start a
+// background attempt to load the ESM build from CDN so that DOMPurify becomes
+// available later if possible.
+function getDOMPurifySync() {
   if (typeof window === 'undefined') return null;
-  if (window.DOMPurify) return window.DOMPurify;
+  return (typeof window.DOMPurify !== 'undefined') ? window.DOMPurify : null;
+}
 
-  // Try dynamic import from CDN (ES module build). Lock to a known version
-  // to avoid surprises. If offline or blocked, this will fail and callers
-  // should handle a null return.
+// Background loader: try to populate window.DOMPurify asynchronously. This
+// does not block UI actions; it only helps populate the global if possible.
+async function preloadDOMPurify() {
+  if (typeof window === 'undefined') return;
+  if (window.DOMPurify) return; // already present
   try {
     const mod = await import('https://cdn.jsdelivr.net/npm/dompurify@3.2.7/dist/purify.es.js');
-    // Module default export is a factory function `createDOMPurify`
     if (mod && mod.default) {
-      // create a DOMPurify instance bound to window
-      return mod.default(window);
+      try {
+        window.DOMPurify = mod.default(window);
+      } catch (err) {
+        // ignore
+      }
     }
-    return null;
   } catch (e) {
-    // Swallow error; callers will fallback to using raw html when no DOMPurify
-    // is available.
-    console.warn('Could not load DOMPurify from CDN:', e && e.message);
-    return null;
+    // do not spam warnings; silently ignore CDN failures
   }
 }
+
+// Start background preload (best-effort)
+preloadDOMPurify();
 import { makeApiRequest } from '../api.js';
 
 // Gemini API Konfiguration
@@ -466,7 +470,7 @@ function showModal(content) {
   modalOverlay.appendChild(modalContainer);
   document.body.appendChild(modalOverlay);
   // Delegate actions for elements inside modal using data-action attributes
-  modalContainer.addEventListener('click', async function (ev) {
+  modalContainer.addEventListener('click', function (ev) {
     const actionEl = ev.target.closest('[data-action]');
     if (!actionEl) return;
     const action = actionEl.getAttribute('data-action');
@@ -485,8 +489,10 @@ function showModal(content) {
       const encodedHtml = actionEl.getAttribute('data-html') || '';
       const html = decodeURIComponent(encodedHtml);
       try {
-        // sanitize HTML before inserting
-        const DOMPurify = await getDOMPurify();
+        // sanitize HTML before inserting using the synchronous getter. If a
+        // global DOMPurify is available it will be used; otherwise fall back
+        // to the raw HTML synchronously so UI/tests don't race.
+        const DOMPurify = getDOMPurifySync();
         const safeHtml = DOMPurify ? DOMPurify.sanitize(html, {
           ALLOWED_TAGS: ['p','strong','em','ul','ol','li','a','br','b','i','u'],
           ALLOWED_ATTR: ['href','target','rel'],
