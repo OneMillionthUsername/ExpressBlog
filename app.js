@@ -209,7 +209,9 @@ app.get(/\.(js|css)$/, (req, res, next) => {
   } else if (req.url.endsWith('.css')) {
     res.setHeader('Content-Type', 'text/css; charset=utf-8');
   }
-  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  // Allow cross-origin resource sharing for static JS/CSS so resources like `favicon.ico`
+  // or third-party served assets don't get blocked by strict CORP rules.
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 
@@ -217,7 +219,9 @@ app.get(/\.(js|css)$/, (req, res, next) => {
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
     // Cross-Origin-Resource-Policy für alle statischen Dateien
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    // Relax CORP for static assets served by this Express app so clients on other origins
+    // (or reverse proxies) can fetch favicon.ico, images, JS, etc., without being blocked.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
     // MIME-Type für JavaScript-Dateien explizit setzen
     if (path.endsWith('.js')) {
