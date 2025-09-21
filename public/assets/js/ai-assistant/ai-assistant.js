@@ -2,7 +2,33 @@
 // Kostenlose AI-Integration für Schreibhilfe und Content-Verbesserung
 
 import { GEMINI_API_KEY } from "../../../../config/config";
-import createDOMPurify from 'dompurify';
+
+// DOMPurify: don't use a bare specifier in browser bundles. Instead try to
+// use a global `window.DOMPurify` (if loaded via a script tag) or dynamically
+// import the ESM build from a CDN at runtime. This avoids the "bare
+// specifier" error in browsers that don't remap node-style imports.
+async function getDOMPurify() {
+  if (typeof window === 'undefined') return null;
+  if (window.DOMPurify) return window.DOMPurify;
+
+  // Try dynamic import from CDN (ES module build). Lock to a known version
+  // to avoid surprises. If offline or blocked, this will fail and callers
+  // should handle a null return.
+  try {
+    const mod = await import('https://cdn.jsdelivr.net/npm/dompurify@3.2.7/dist/purify.es.js');
+    // Module default export is a factory function `createDOMPurify`
+    if (mod && mod.default) {
+      // create a DOMPurify instance bound to window
+      return mod.default(window);
+    }
+    return null;
+  } catch (e) {
+    // Swallow error; callers will fallback to using raw html when no DOMPurify
+    // is available.
+    console.warn('Could not load DOMPurify from CDN:', e && e.message);
+    return null;
+  }
+}
 import { makeApiRequest } from '../api.js';
 
 // Gemini API Konfiguration
@@ -440,7 +466,7 @@ function showModal(content) {
   modalOverlay.appendChild(modalContainer);
   document.body.appendChild(modalOverlay);
   // Delegate actions for elements inside modal using data-action attributes
-  modalContainer.addEventListener('click', function (ev) {
+  modalContainer.addEventListener('click', async function (ev) {
     const actionEl = ev.target.closest('[data-action]');
     if (!actionEl) return;
     const action = actionEl.getAttribute('data-action');
@@ -460,12 +486,7 @@ function showModal(content) {
       const html = decodeURIComponent(encodedHtml);
       try {
         // sanitize HTML before inserting
-        let DOMPurify = null;
-        try {
-          DOMPurify = createDOMPurify(window);
-        } catch {
-          DOMPurify = (typeof window !== 'undefined' && window.DOMPurify) ? window.DOMPurify : null;
-        }
+        const DOMPurify = await getDOMPurify();
         const safeHtml = DOMPurify ? DOMPurify.sanitize(html, {
           ALLOWED_TAGS: ['p','strong','em','ul','ol','li','a','br','b','i','u'],
           ALLOWED_ATTR: ['href','target','rel'],
