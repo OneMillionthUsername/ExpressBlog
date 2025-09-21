@@ -98,14 +98,24 @@ async function getAllHandler(req, res) {
       res.set('Cache-Control', 'private, max-age=30, must-revalidate');
 
       logger.debug(`[${requestId}] GET /all: Sending successful response with ETag`);
-      // If the client expects HTML (typical browser navigation), render the
-      // server-side view and let client-side JS fetch the posts as needed.
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        // Render the list view and inject the posts for immediate SSR.
-        return res.render('listCurrentPosts', { posts: response });
+      // Determine whether this request should be treated as an API call (JSON)
+      // or a browser navigation (HTML). We treat it as API if any of the
+      // following are true:
+      // - explicit ?format=json query parameter
+      // - X-Requested-With header set to XMLHttpRequest (typical for XHR/fetch)
+      // - Accept header explicitly asks for JSON or does not explicitly prefer HTML
+      const wantsJsonParam = req.query && String(req.query.format).toLowerCase() === 'json';
+      const isAjax = (req.get && String(req.get('X-Requested-With') || '').toLowerCase()) === 'xmlhttprequest';
+      const acceptsHtml = req.accepts && req.accepts('html');
+      const acceptsJson = req.accepts && req.accepts('json');
+
+      // If the request is clearly an API/XHR request, return JSON
+      if (wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson)) {
+        return res.json(response);
       }
-      // Otherwise return JSON for API/JS clients
-      return res.json(response);
+
+      // Otherwise render HTML for human-driven browser navigation
+      return res.render('listCurrentPosts', { posts: response });
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
       // Fallback: send response without ETag

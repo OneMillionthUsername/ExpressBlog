@@ -88,8 +88,18 @@ staticRouter.get('/about.html', (req, res) => {
   res.redirect('/about');
 });
 
-staticRouter.get('/posts', (req, res) => {
-  res.render('listCurrentPosts');
+staticRouter.get('/posts', async (req, res) => {
+  try {
+    // Server-side render the list of current posts to preserve the
+    // HTML-first experience and avoid client-side JSON-only rendering.
+    const posts = await postController.getAllPosts();
+    // Pass posts (controller returns JS objects); views will handle formatting
+    return res.render('listCurrentPosts', { posts });
+  } catch (err) {
+    logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
+    // Fallback: render without posts so client-side JS can still attempt to fetch
+    return res.render('listCurrentPosts');
+  }
 });
 
 export default staticRouter;

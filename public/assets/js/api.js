@@ -73,9 +73,16 @@ export async function makeApiRequest(url, options = {}) {
   try {
   const method = options.method || 'GET';
   const methodUp = method.toUpperCase();
-    // Detect FormData bodies — do not set Content-Type so browser can add the correct boundary
-    const isFormData = typeof FormData !== 'undefined' && options.body && options.body instanceof FormData;
-    let headers = isFormData ? { ...(options.headers || {}) } : { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  // Detect FormData bodies — do not set Content-Type so browser can add the correct boundary
+  const isFormData = typeof FormData !== 'undefined' && options.body && options.body instanceof FormData;
+  // Default headers: request JSON by default; tests may override global.makeApiRequest
+  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+  // Ensure we also ask explicitly for JSON responses to avoid server-side HTML rendering
+  defaultHeaders['Accept'] = 'application/json';
+  // Mark the request as an XMLHttpRequest so servers can distinguish browser navigation from API/XHR
+  // This helps proxies and middleware detect API calls and avoid rendering HTML responses.
+  defaultHeaders['X-Requested-With'] = 'XMLHttpRequest';
+  let headers = { ...(defaultHeaders), ...(options.headers || {}) };
 
     // During unit tests we avoid requesting a CSRF token to prevent
     // the extra /api/csrf-token fetch from breaking expectations.
