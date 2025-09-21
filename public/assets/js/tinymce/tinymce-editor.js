@@ -1,7 +1,7 @@
 // TinyMCE Editor Konfiguration und Funktionen
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
-import { TINY_MCE_API_KEY } from "../../../../config/config";
+import { makeApiRequest } from '../api.js';
 // Import AI assistant functions
 import {
   improveText,
@@ -11,26 +11,15 @@ import {
   showApiKeySetup,
 } from '../ai-assistant/ai-assistant.js';
 
-// TinyMCE API-Schlüssel Konfiguration
+// TinyMCE API-Schlüssel Konfiguration (client uses default; server injects CDN script when allowed)
 const defaultTinyMceKey = 'no-api-key';
 const TINYMCE_CONFIG = {
-  apiKey: TINY_MCE_API_KEY || defaultTinyMceKey,
+  apiKey: defaultTinyMceKey,
   defaultKey: defaultTinyMceKey,
 };
 
-async function loadTinyMceApiKey() {
-  try {
-    const apiKey = await getTinyMceApiKey();
-    if (!apiKey || apiKey.trim() === '') {
-      TINYMCE_CONFIG.apiKey = TINYMCE_CONFIG.defaultKey;
-    } else {
-      TINYMCE_CONFIG.apiKey = apiKey;
-    }
-  } catch (error) {
-    console.error('Fehler beim Laden des TinyMCE API-Schlüssels:', error);
-    TINYMCE_CONFIG.apiKey = TINYMCE_CONFIG.defaultKey;
-  }
-}
+// Removed client-side key fetch; server injects the TinyMCE CDN script with key when appropriate.
+// The editor will use the global `tinymce` if present or fall back to local loading.
 
 /**
  * Holt den TinyMCE API-Key vom Server.
@@ -38,14 +27,8 @@ async function loadTinyMceApiKey() {
  * Um den reinen API-Key-String zu erhalten, muss die Funktion asynchron verwendet werden,
  * z.B. über await in einer weiteren Hilfsfunktion wie loadTinyMceApiKey().
  */
-async function getTinyMceApiKey() {
-  const response = await fetch('/config/tinymce-key');
-  if (!response.ok) {
-    throw new Error('Fehler beim Laden des TinyMCE API-Schlüssels');
-  }
-  const data = await response.json();
-  return data.apiKey;
-}
+// getTinyMceApiKey removed. Server should not expose key via public endpoint. If the page
+// included the TinyMCE CDN script (rendered server-side for admins), `tinymce` global will be available.
 
 // TinyMCE API-Schlüssel Setup-Dialog mit verbesserter Benutzerführung
 function showTinyMceApiKeySetup() {
@@ -879,8 +862,8 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
       }
             
       // Komprimierungsrate berechnen
-      const compressedSize = compressedBase64.length * 0.75 / 1024 / 1024; // Ungefähre Größe nach Base64-Dekodierung
-  const compressionRate = ((originalSize - compressedSize) / originalSize * 100);
+        const compressedSize = compressedBase64.length * 0.75 / 1024 / 1024; // Ungefähre Größe nach Base64-Dekodierung
+        const _compressionRate = ((originalSize - compressedSize) / originalSize * 100);
                         
       // Fallback: Wenn das Bild immer noch zu groß ist, aggressiver komprimieren
       let finalBase64 = compressedBase64;
@@ -908,7 +891,7 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
   });
 }
 // Vereinfachter TinyMCE Upload-Handler (verwendet /upload/image ohne Komprimierung)
-  function simpleImageUploadHandler(blobInfo, success, failure, progress) {
+  function simpleImageUploadHandler(blobInfo, success, failure, _progress) {
   return new Promise((resolve, reject) => {
     try {
       const blob = blobInfo.blob();
@@ -919,28 +902,21 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
       reader.onload = function() {
         const base64Data = reader.result;
                 
-        const headers = {
-          'Content-Type': 'application/json',
-        };
-                
-        fetch('/upload/image', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include',
-          body: JSON.stringify({
-            image: base64Data,
-            name: filename,
-          }),
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        (async () => {
+          try {
+            const apiResult = await makeApiRequest('/upload/image', {
+              method: 'POST',
+              body: JSON.stringify({ image: base64Data, name: filename }),
+            });
+            if (!apiResult || apiResult.success !== true) {
+              const errMsg = (apiResult && apiResult.error) || 'Upload fehlgeschlagen';
+              const error = new Error(errMsg);
+              failure(error.message, { remove: true });
+              showNotification(`Upload-Fehler: ${errMsg}`, 'error');
+              reject(error);
+              return;
             }
-            return response.json();
-          })
-          .then(result => {
-                    
-            // Debug Response
+            const result = apiResult.data;
             const imageUrl = debugUploadResponse(result, 'Upload');
             if (!imageUrl) {
               const error = new Error('Server gab keine gültige URL zurück');
@@ -948,17 +924,16 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
               reject(error);
               return;
             }
-                    
             safeSuccess(success, imageUrl, 'Upload');
             showNotification(`Bild "${result.filename}" hochgeladen! 📸`, 'success');
-            resolve(imageUrl); // Nur die URL zurückgeben, nicht das ganze Objekt
-          })
-          .catch(error => {
+            resolve(imageUrl);
+          } catch (error) {
             console.error('Upload fehlgeschlagen:', error);
             failure(error.message, { remove: true });
             showNotification(`Upload-Fehler: ${error.message}`, 'error');
             reject(error);
-          });
+          }
+        })();
       };
             
       reader.onerror = function() {
@@ -995,9 +970,9 @@ function safeSuccess(success, imageUrl, _context = 'Upload') {
 // Internal functions are prefixed with '_' to indicate they are internal but
 // we export them under public names for other modules/tests to consume.
 export {
-  _checkForDrafts as checkForDrafts,
-  _addTag as addTag,
-  _initializeDragAndDrop as initializeDragAndDrop,
+  checkForDrafts,
+  addTag,
+  initializeDragAndDrop,
   compressAndUploadImage,
 };
 
@@ -1108,31 +1083,20 @@ function compressImage(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
 async function uploadWithRetry(base64Data, filename, originalBlob, success, failure, progress, attempt = 1) {
   const maxAttempts = 3;
     
-  try {        
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-        
-    const response = await fetch('/upload/image', {
-      method: 'POST',
-      headers: headers,
-      credentials: 'include',
-      body: JSON.stringify({
-        image: base64Data,
-        name: filename,
-      }),
-    });
+    try {
+      const apiResult = await makeApiRequest('/upload/image', {
+        method: 'POST',
+        body: JSON.stringify({ image: base64Data, name: filename }),
+      });
         
     if (progress) {
       progress(50 + (attempt * 15));
     }
         
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+    if (!apiResult || apiResult.success !== true) {
+      throw new Error(apiResult && apiResult.error ? apiResult.error : 'Upload fehlgeschlagen');
     }
-        
-    const result = await response.json();
+    const result = apiResult.data;
         
     if (progress) {
       progress(100);
@@ -1146,7 +1110,7 @@ async function uploadWithRetry(base64Data, filename, originalBlob, success, fail
       throw error;
     }
         
-    safeSuccess(success, imageUrl, 'Komprimierter Upload');
+  safeSuccess(success, imageUrl, 'Komprimierter Upload');
     showNotification(`Bild "${result.filename}" erfolgreich hochgeladen! 📸`, 'success');
     return imageUrl; // Nur die URL zurückgeben, nicht das ganze Objekt
         
@@ -1225,8 +1189,6 @@ async function initializeBlogEditor() {
   if (!await checkAdminStatusCached()) {
     return;
   }
-  // API-Schlüssel laden
-  await loadTinyMceApiKey();
   // TinyMCE initialisieren
   await initializeTinyMCE();
   // Event Listener für Titel und Tags

@@ -3,6 +3,7 @@
 
 import { GEMINI_API_KEY } from "../../../../config/config";
 import createDOMPurify from 'dompurify';
+import { makeApiRequest } from '../api.js';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
@@ -16,14 +17,13 @@ const GEMINI_CONFIG = {
 async function loadGeminiApiKey() {
   // Versuche, den API-Key vom Server zu laden
   try {
-    const response = await fetch('/config/google-api-key', { method: 'GET' });
-    if (response.ok) {
-      const data = await response.json();
+    const apiResult = await makeApiRequest('/config/google-api-key', { method: 'GET' });
+    if (apiResult && apiResult.success === true) {
+      const data = apiResult.data;
       if (data.apiKey && data.apiKey.trim() !== '' && data.apiKey.length > 10) {
         GEMINI_CONFIG.apiKey = data.apiKey;
         return true;
-      }
-      else {
+      } else {
         console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
         return false;
       }

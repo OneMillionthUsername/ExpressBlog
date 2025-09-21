@@ -1,5 +1,6 @@
 import { showFeedback } from './feedback.js';
 import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema} from '../../../services/validationService.js';
+import { makeApiRequest } from './api.js';
 
 async function loadComments(postId) {
   if (!postId || !isValidIdSchema(postId)) {
@@ -7,17 +8,15 @@ async function loadComments(postId) {
     return;
   }
   try {
-    const response = await fetch(`/comments/${postId}`);
-    if (!response.ok) {
-      if (response.status === 404) {
-        // Keine Kommentare gefunden, leere Liste zurückgeben
+    const apiResult = await makeApiRequest(`/comments/${postId}`, { method: 'GET' });
+    if (!apiResult || apiResult.success !== true) {
+      if (apiResult && apiResult.status === 404) {
         return [];
       }
-    } else {
       showFeedback('Fehler beim Laden der Kommentare. Bitte versuche es später erneut.', 'error');
       return [];
     }
-    const comments = await response.json();
+    const comments = apiResult.data;
     if (!Array.isArray(comments)) {
       showFeedback('Unerwartetes Format der Kommentare.', 'error');
       return [];
@@ -85,19 +84,15 @@ async function createComment(postId, username, commentText) {
     return false;
   }
   try {
-    const response = await fetch(`/comments/${postId}`, {
+    const apiResult = await makeApiRequest(`/comments/${postId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         username: username && username.trim() !== '' ? escapeHtml(username.trim()) : '',
         text: escapeHtml(commentText.trim()),
       }),
     });
-    const result = await response.json();      
-    if (!response.ok) {
-      showFeedback('Fehler beim Speichern: ' + (result.error || 'Unbekannter Fehler'), 'error');
+    if (!apiResult || apiResult.success !== true) {
+      showFeedback('Fehler beim Speichern: ' + (apiResult && (apiResult.error || (apiResult.data && apiResult.data.error)) || 'Unbekannter Fehler'), 'error');
       return false;
     }
     // Kommentare neu laden und anzeigen
@@ -191,25 +186,17 @@ async function deleteComment(postId, commentId) {
     return false;
   }
   try {
-    const response = await fetch(`/comments/${postId}/${commentId}`, {
-      method: 'DELETE',
-      credentials: 'include', // HTTP-only Cookies verwenden
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const result = await response.json();
+    const apiResult = await makeApiRequest(`/comments/${postId}/${commentId}`, { method: 'DELETE' });
     // Bei 401/403 - Session abgelaufen
-    if (response.status === 401 || response.status === 403) {
+    if (apiResult && (apiResult.status === 401 || apiResult.status === 403)) {
       showFeedback('Session abgelaufen. Bitte melden Sie sich erneut an.', 'error');
-      // Optional: Admin-Logout aufrufen falls verfügbar
       if (typeof adminLogout === 'function') {
         await adminLogout();
       }
       return false;
     }
-    if (!response.ok) {
-      showFeedback('Fehler beim Löschen: ' + (result.error || 'Unbekannter Fehler'), 'error');
+    if (!apiResult || apiResult.success !== true) {
+      showFeedback('Fehler beim Löschen: ' + (apiResult && (apiResult.error || (apiResult.data && apiResult.data.error)) || 'Unbekannter Fehler'), 'error');
       return false;
     }
     // Kommentare neu laden und anzeigen
