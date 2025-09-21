@@ -55,6 +55,7 @@ const createPost = async (postData) => {
 };
 const getPostById = async (postId) => {
   try {
+    logger.debug(`postController.getPostById: Received postId=${postId} (type=${typeof postId})`);
     const post = await DatabaseService.getPostById(postId);
     if (!post) {
       throw new PostControllerException('Post not found');

@@ -410,13 +410,30 @@ export const DatabaseService = {
   async getPostById(id) {
     let conn;
     try {
+      // Validate incoming id to avoid unexpected DB misses and provide clearer errors
+      logger.debug(`DatabaseService.getPostById: incoming id=${id} (type=${typeof id})`);
+      if (id === null || id === undefined) {
+        throw new Error('ID is null or invalid');
+      }
+      if (typeof id === 'string') {
+        const trimmed = id.trim();
+        if (!/^\d+$/.test(trimmed)) {
+          throw new Error('ID is null or invalid');
+        }
+        id = Number(trimmed);
+      }
+      if (typeof id === 'number') {
+        if (!Number.isFinite(id) || id <= 0) {
+          throw new Error('ID is null or invalid');
+        }
+      }
       conn = await getDatabasePool().getConnection();
       //const { query, params } = queryBuilder('get', 'posts', { id });
       //const result = await conn.query(query, params);
       const posts = await conn.query('SELECT * FROM posts WHERE id = ?', [id]);
       if(!posts || posts.length === 0) {
         logger.warn(`Post with ID ${id} not found`);
-        throw new Error('Post not found');
+        throw new Error(`Post not found for id ${id}`);
       }
       const postRow = posts[0];
       const mediaRows = await conn.query(
@@ -430,6 +447,19 @@ export const DatabaseService = {
       const post = convertBigInts(postRow);
       post.tags = parseTags(post.tags);
       post.media = (mediaRows || []).map(r => convertBigInts(r));
+
+      // Normalize some fields to match other getters
+      if (post.author === null || post.author === undefined) {
+        post.author = 'admin';
+      }
+      if (typeof post.published === 'number') {
+        post.published = post.published === 1;
+      } else if (post.published === null || post.published === undefined) {
+        post.published = false;
+      }
+
+      logger.debug(`DatabaseService.getPostById: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+
       return post;
     } catch (error) {
       logger.error(`Error in getPostById: ${error.message}`);
