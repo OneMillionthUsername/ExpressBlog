@@ -1,6 +1,14 @@
 // Cache für CSRF-Token
 let csrfToken = null;
 
+// Simple in-memory GET cache to reduce duplicate requests for idempotent endpoints
+const getResponseCache = new Map();
+const DEFAULT_GET_CACHE_TTL = 60 * 1000; // 60 seconds
+
+export function clearGetResponseCache() {
+  getResponseCache.clear();
+}
+
 // CSRF-Token abrufen
 async function getCsrfToken() {
   if (csrfToken) return csrfToken;
@@ -22,7 +30,8 @@ export async function makeApiRequest(url, options = {}) {
   const _requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   
   try {
-    const method = options.method || 'GET';
+  const method = options.method || 'GET';
+  const methodUp = method.toUpperCase();
     // Detect FormData bodies — do not set Content-Type so browser can add the correct boundary
     const isFormData = typeof FormData !== 'undefined' && options.body && options.body instanceof FormData;
     let headers = isFormData ? { ...(options.headers || {}) } : { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -30,13 +39,30 @@ export async function makeApiRequest(url, options = {}) {
     // During unit tests we avoid requesting a CSRF token to prevent
     // the extra /api/csrf-token fetch from breaking expectations.
     const isTestEnv = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') || false;
-    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase())) {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(methodUp)) {
+      // invalidate GET cache on mutating requests
+  try { clearGetResponseCache(); } catch (e) { void e; }
       if (!isTestEnv) {
         const token = await getCsrfToken();
         if (token) {
           headers['x-csrf-token'] = token;
         }
       }
+    }
+
+    // Simple GET cache lookup
+    if (methodUp === 'GET') {
+      try {
+        const cacheKey = String(url);
+        const cached = getResponseCache.get(cacheKey);
+        if (cached) {
+          const age = Date.now() - cached.ts;
+          if (age < (options.cacheTtl || DEFAULT_GET_CACHE_TTL)) {
+            return { success: true, data: JSON.parse(JSON.stringify(cached.data)), status: 200 };
+          }
+          getResponseCache.delete(cacheKey);
+        }
+  } catch (e) { void e; }
     }
 
     const fetchStartTime = performance.now();
@@ -72,6 +98,14 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     // Konsistente Rückgabe für erfolgreiche Requests
+    // Cache GET responses
+    if (methodUp === 'GET') {
+      try {
+        const cacheKey = String(url);
+        getResponseCache.set(cacheKey, { ts: Date.now(), data: result });
+      } catch (e) { void e; }
+    }
+
     return {
       success: true,
       data: result,

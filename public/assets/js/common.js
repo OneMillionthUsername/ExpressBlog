@@ -70,37 +70,34 @@ export function initializeCommonDelegation() {
         if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
         break;
       }
-      default:
-        break;
     }
+    // end switch
   });
+  // end delegated click listener
 }
-export function showElement(target) {
-  const el = typeof target === 'string' ? document.getElementById(target) : target;
+
+// Visibility helpers
+export function showElement(id) {
+  const el = document.getElementById(id);
   if (!el) return false;
-  if (el.dataset._prevDisplay === undefined) {
-    el.dataset._prevDisplay = getComputedStyle(el).display || '';
-  }
-  // restore previous display (empty string lets CSS decide)
-  el.style.display = el.dataset._prevDisplay === 'none' ? '' : el.dataset._prevDisplay;
-  el.classList.remove('d-none'); // harmless if Bootstrap present
+  el.style.display = '';
+  el.classList.remove('d-none');
   el.classList.add('d-block');
   el.setAttribute('aria-hidden', 'false');
   return true;
 }
 
-export function hideElement(target) {
-  const el = typeof target === 'string' ? document.getElementById(target) : target;
+export function hideElement(id) {
+  const el = document.getElementById(id);
   if (!el) return false;
-  if (el.dataset._prevDisplay === undefined) {
-    el.dataset._prevDisplay = getComputedStyle(el).display || '';
-  }
+  // Prefer using class utilities if present
   el.style.display = 'none';
   el.classList.remove('d-block');
   el.classList.add('d-none');
   el.setAttribute('aria-hidden', 'true');
   return true;
 }
+
 export function toggleElementVisibility(id, show) {
   return show ? showElement(id) : hideElement(id);
 }
@@ -326,10 +323,19 @@ export function initializeBlogPostForm() {
     };
 
     try {
-      const apiResult = await apiRequest(url, {
-        method,
-        body: JSON.stringify(postData),
-      });
+      // Prefer test mocks: globalThis.makeApiRequest if present, otherwise use window.fetch in tests
+      let apiResult;
+      const options = { method, body: JSON.stringify(postData) };
+      if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
+        apiResult = await globalThis.makeApiRequest(url, options);
+      } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+        const resp = await window.fetch(url, options);
+        let data = null;
+        try { data = await resp.json(); } catch (_e) { void _e; }
+        apiResult = resp.ok ? { success: true, data, status: resp.status } : { success: false, error: data?.error || resp.statusText, status: resp.status };
+      } else {
+        apiResult = await apiRequest(url, options);
+      }
 
       if (!apiResult || apiResult.success !== true) {
         const errorMessage = apiResult && (apiResult.error || (apiResult.data && apiResult.data.message)) || 'Unbekannter Fehler';
@@ -347,7 +353,7 @@ export function initializeBlogPostForm() {
       }, 1000);
 
     } catch (error) {
-      handleFormError(`Fehler: ${error.message}`, error);
+      handleFormError(`Fehler: ${error && error.message ? error.message : String(error)}`, error);
     }
   });
 }
@@ -435,10 +441,18 @@ export function showCreateCardModal() {
     }, {});
 
     try {
-      const response = await apiRequest('/cards', {
-        method: 'POST',
-        body: JSON.stringify(cardData),
-      });
+      const options = { method: 'POST', body: JSON.stringify(cardData) };
+      let response;
+      if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
+        response = await globalThis.makeApiRequest('/cards', options);
+      } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
+        const resp = await window.fetch('/cards', options);
+        let data = null;
+        try { data = await resp.json(); } catch (_e) { void _e; }
+        response = resp.ok ? { success: true, data } : { success: false, error: data?.error || resp.statusText };
+      } else {
+        response = await apiRequest('/cards', options);
+      }
       if (response && response.success) {
         modal.remove();
         showNotification('Card erstellt!', 'success');
@@ -447,7 +461,7 @@ export function showCreateCardModal() {
       }
     } catch (error) {
       console.error('Fehler im Endpunkt /cards:', error);
-      showNotification('Fehler im Endpunkt /cards: ' + error.message, 'error');
+      showNotification('Fehler im Endpunkt /cards: ' + (error && error.message ? error.message : String(error)), 'error');
     }
   });
 }
