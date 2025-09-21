@@ -231,6 +231,22 @@ body {
     overflow-wrap: break-word;
     white-space: normal;
 }
+.featured-post-title a.featured-post-link,
+.featured-post-title a.featured-post-link:visited,
+.featured-post-title a.featured-post-link:hover,
+.featured-post-title a.featured-post-link:active {
+    color: inherit; /* keep heading color (black) */
+    text-decoration: none; /* no underline ever */
+    font-family: inherit; /* inherit heading font */
+    font-weight: inherit;
+    font-size: inherit;
+}
+
+/* Keep focus visible for keyboard users */
+.featured-post-title a.featured-post-link:focus {
+    outline: 3px solid rgba(21,156,228,0.4);
+    outline-offset: 2px;
+}
 .featured-post-excerpt {
     color: var(--color-text);
     font-size: 1rem;
