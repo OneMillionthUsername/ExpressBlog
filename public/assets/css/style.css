@@ -242,11 +242,6 @@ body {
     font-size: inherit;
 }
 
-/* Keep focus visible for keyboard users */
-.featured-post-title a.featured-post-link:focus {
-    outline: 3px solid rgba(21,156,228,0.4);
-    outline-offset: 2px;
-}
 .featured-post-excerpt {
     color: var(--color-text);
     font-size: 1rem;
