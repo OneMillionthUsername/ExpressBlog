@@ -58,7 +58,8 @@ function validateFields(rules) {
   };
 }
 function validateSlug(req, res, next) {
-  const slug = req.body.slug || req.params.slug;
+  // Guard against req.body being undefined (GET requests may not have a body)
+  const slug = (req.body && req.body.slug) || req.params.slug;
   // Slug muss vorhanden sein, 3-50 Zeichen, nur a-z, 0-9, Bindestrich
   const slugPattern = /^[a-z0-9-]{3,50}$/;
   if (!slug || typeof slug !== 'string' || !slugPattern.test(slug)) {
