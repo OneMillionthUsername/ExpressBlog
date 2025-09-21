@@ -9,6 +9,47 @@ export function clearGetResponseCache() {
   getResponseCache.clear();
 }
 
+// Per-endpoint TTLs (ms) - add entries here for endpoints that should cache longer/shorter
+const ENDPOINT_CACHE_TTLS = new Map([
+  ['/blogpost/all', 30 * 1000], // posts list keep shorter TTL (30s)
+  ['/cards', 5 * 60 * 1000],    // cards change rarely; cache 5 minutes
+]);
+
+// Shared posts cache (higher-level store used by UI components)
+const postsCache = {
+  ts: 0,
+  data: null,
+  ttl: ENDPOINT_CACHE_TTLS.get('/blogpost/all') || DEFAULT_GET_CACHE_TTL,
+};
+
+export function getCachedPosts() {
+  try {
+    if (!postsCache.data) return null;
+    if (Date.now() - postsCache.ts > postsCache.ttl) {
+      postsCache.data = null;
+      return null;
+    }
+    // return a shallow clone to avoid accidental mutation by callers
+    return Array.isArray(postsCache.data) ? postsCache.data.slice() : JSON.parse(JSON.stringify(postsCache.data));
+  } catch (e) { void e; return null; }
+}
+
+export async function refreshPosts(force = false) {
+  if (!force) {
+    const cached = getCachedPosts();
+    if (cached) return cached;
+  }
+
+  const result = await makeApiRequest('/blogpost/all');
+  if (!result || result.success !== true) {
+    return [];
+  }
+  const posts = result.data;
+  postsCache.ts = Date.now();
+  postsCache.data = Array.isArray(posts) ? posts.slice() : posts;
+  return postsCache.data;
+}
+
 // CSRF-Token abrufen
 async function getCsrfToken() {
   if (csrfToken) return csrfToken;
@@ -55,14 +96,16 @@ export async function makeApiRequest(url, options = {}) {
       try {
         const cacheKey = String(url);
         const cached = getResponseCache.get(cacheKey);
+        const endpointTtl = ENDPOINT_CACHE_TTLS.get(url);
+        const ttl = typeof options.cacheTtl === 'number' ? options.cacheTtl : (typeof endpointTtl === 'number' ? endpointTtl : DEFAULT_GET_CACHE_TTL);
         if (cached) {
           const age = Date.now() - cached.ts;
-          if (age < (options.cacheTtl || DEFAULT_GET_CACHE_TTL)) {
+          if (age < ttl) {
             return { success: true, data: JSON.parse(JSON.stringify(cached.data)), status: 200 };
           }
           getResponseCache.delete(cacheKey);
         }
-  } catch (e) { void e; }
+      } catch (e) { void e; }
     }
 
     const fetchStartTime = performance.now();
@@ -102,7 +145,9 @@ export async function makeApiRequest(url, options = {}) {
     if (methodUp === 'GET') {
       try {
         const cacheKey = String(url);
-        getResponseCache.set(cacheKey, { ts: Date.now(), data: result });
+        const endpointTtl = ENDPOINT_CACHE_TTLS.get(url);
+        const ttl = typeof options.cacheTtl === 'number' ? options.cacheTtl : (typeof endpointTtl === 'number' ? endpointTtl : DEFAULT_GET_CACHE_TTL);
+        getResponseCache.set(cacheKey, { ts: Date.now(), data: result, ttl });
       } catch (e) { void e; }
     }
 
@@ -139,16 +184,9 @@ export async function loadAllBlogPosts() {
   try {
 
     const startTime = performance.now();
-    const result = await makeApiRequest('/blogpost/all');
-  const endTime = performance.now();
-  const _duration = Math.round(endTime - startTime);
-
-    if (!result.success) {
-      console.error('API Error loading blog posts:', result.error, 'Status:', result.status);
-      throw new Error(`Failed to load blog posts: ${result.error}`);
-    }
-
-    const posts = result.data;
+    const posts = await refreshPosts();
+    const endTime = performance.now();
+    const _duration = Math.round(endTime - startTime);
 
     if (!Array.isArray(posts)) {
       throw new Error('Response is not an array');

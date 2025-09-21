@@ -4,6 +4,7 @@
  */
 
 import express from 'express';
+import crypto from 'crypto';
 import postController from '../controllers/postController.js';
 import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
@@ -16,7 +17,7 @@ import logger from '../utils/logger.js';
 const postRouter = express.Router();
 
 // commentsRouter.all();
-postRouter.get('/all', globalLimiter, async (req, res) => {
+async function getAllHandler(req, res) {
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   logger.debug(`[${requestId}] GET /all: Request received`, {
     headers: {
@@ -61,8 +62,47 @@ postRouter.get('/all', globalLimiter, async (req, res) => {
       conversion_applied: 'convertBigInts',
     });
     
-    logger.debug(`[${requestId}] GET /all: Sending successful response`);
-    res.json(response);
+    // Prefer controller-provided checksum as ETag to avoid hashing the full payload on every request.
+    try {
+      let etag;
+      try {
+        const checksum = typeof postController.getPostsChecksum === 'function' ? await postController.getPostsChecksum() : null;
+        if (checksum) {
+          etag = `"${checksum}"`;
+          logger.debug(`[${requestId}] GET /all: Using controller checksum for ETag`);
+        }
+      } catch (innerErr) {
+        // If controller checksum retrieval fails, fall back to hashing below
+        logger.debug(`[${requestId}] GET /all: Controller checksum retrieval failed: ${innerErr.message}`);
+      }
+
+      // If we don't have an etag yet, compute it from the response body (SHA-1). Quoted per RFC.
+      if (!etag) {
+        const bodyString = JSON.stringify(response);
+        const hash = crypto.createHash('sha1').update(bodyString).digest('hex');
+        etag = `"${hash}"`;
+        logger.debug(`[${requestId}] GET /all: Computed ETag from response body`);
+      }
+
+      const incoming = req.get('If-None-Match');
+      if (incoming && incoming === etag) {
+        logger.debug(`[${requestId}] GET /all: ETag matched - returning 304`);
+        res.status(304).set('ETag', etag).end();
+        return;
+      }
+
+      // Set ETag and Cache-Control for short client-side caching
+      res.set('ETag', etag);
+      // Clients may cache for a short duration; server still validates with If-None-Match
+      res.set('Cache-Control', 'private, max-age=30, must-revalidate');
+
+      logger.debug(`[${requestId}] GET /all: Sending successful response with ETag`);
+      res.json(response);
+    } catch (err) {
+      logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
+      // Fallback: send response without ETag
+      res.json(response);
+    }
     
   } catch (error) {
     logger.debug(`[${requestId}] GET /all: Error occurred`, {
@@ -75,7 +115,12 @@ postRouter.get('/all', globalLimiter, async (req, res) => {
     logger.error(`[${requestId}] GET /all route error: ${error.message}`);
     res.status(500).json({ error: 'Server failed to load blog posts' });
   }
-});
+}
+
+postRouter.get('/all', globalLimiter, getAllHandler);
+
+// Export handler for integration tests
+export { getAllHandler };
 // Spezifische Routen VOR parametrische Routen
 postRouter.get('/most-read', globalLimiter, async (req, res) => {
   try {

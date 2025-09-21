@@ -7,6 +7,19 @@ import { Post } from '../models/postModel.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import logger from '../utils/logger.js';
+import crypto from 'crypto';
+
+// Lightweight posts checksum/version - updated on mutations to avoid hashing full payload
+let postsChecksum = null;
+function bumpPostsChecksum() {
+  try {
+    // Use current time + random to produce a new checksum
+    postsChecksum = crypto.createHash('sha1').update(String(Date.now()) + Math.random().toString(36).substr(2, 9)).digest('hex');
+  } catch (e) { void e; postsChecksum = String(Date.now()); }
+}
+function getPostsChecksum() {
+  return postsChecksum;
+}
 
 const getPostBySlug = async (slug) => {
   try {
@@ -33,6 +46,8 @@ const createPost = async (postData) => {
     }
     const { error: valError, value: valValue } = Post.validate(post);
     if (valError) throw new PostControllerException('Validation failed after update: ' + valError.details.map(d => d.message).join('; '));
+    // bump checksum so caches/ETags change
+    try { bumpPostsChecksum(); } catch (e) { void e; }
     return new Post(valValue);
   } catch (error) {
     throw new PostControllerException(`Error creating post: ${error.message}`, error);
@@ -68,6 +83,8 @@ const updatePost = async (postData) => {
     if (!post) throw new PostControllerException('Post not found after update');
     const { error: valError, value: valValue } = Post.validate(post);
     if (valError) throw new PostControllerException('Validation failed after update: ' + valError.details.map(d => d.message).join('; '));
+    // bump checksum after successful update
+    try { bumpPostsChecksum(); } catch (e) { void e; }
     return new Post(valValue);
   } catch (error) {
     throw new PostControllerException(`Error in updatePost: ${error.message}`, error);
@@ -189,6 +206,8 @@ const deletePost = async (postId) => {
     if (!result) {
       throw new PostControllerException('Post not found or not deleted');
     }
+    // bump checksum on deletion
+    try { bumpPostsChecksum(); } catch (e) { void e; }
     return { success: true, message: 'Post deleted successfully' };
   } catch (error) {
     throw new PostControllerException(`Error deleting post: ${error.message}`, error);
@@ -203,4 +222,5 @@ export default {
   getAllPosts,
   getMostReadPosts,
   deletePost,
+  getPostsChecksum,
 };
