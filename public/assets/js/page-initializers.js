@@ -90,10 +90,9 @@ async function initializeCurrentPage() {
         break;
       case 'about':
         // About-Seite - normalerweise keine spezielle Initialisierung nötig
-        console.log('About-Seite geladen - keine spezielle Initialisierung');
         break;
       default:
-        console.log(`Standard-Initialisierung für: ${currentPage}`);
+        // default: no-op
     }
   } catch (error) {
     console.error(`Fehler bei ${currentPage} Initialisierung:`, error);
@@ -116,7 +115,6 @@ function getCurrentPageType() {
   if (path === '/posts') return 'list_posts';
 
   // Fallback für unbekannte Seiten
-  console.log(`Unbekannte Seite erkannt: ${page} (Pfad: ${path})`);
   return 'index';
 }
 
@@ -126,7 +124,6 @@ function getCurrentPageType() {
 
 // Create Page - vereinfacht
 async function initializeCreatePage() {
-  console.log('Initialisiere Create Page...');
 
   try {
     // Dynamically import editor + AI assistant only on create page
@@ -176,7 +173,6 @@ async function initializeCreatePage() {
 
 // Index Page - vereinfacht
 async function initializeIndexPage() {
-  console.log('Initialisiere Index Page...');
 
   try {
     // Posts laden
@@ -224,7 +220,6 @@ async function initializeIndexPage() {
 
 // Archiv Page - vereinfacht
 async function initializeArchivePage() {
-  console.log('Initialisiere Archiv Page...');
 
   try {
     await loadAndDisplayArchivePosts();
@@ -236,9 +231,7 @@ async function initializeArchivePage() {
 // Recent Posts - vereinfacht
 async function initializeRecentPostsPage() {
   try {
-    console.log('initializeRecentPostsPage: Calling loadAndDisplayRecentPosts...');
     await loadAndDisplayRecentPosts();
-    console.log('initializeRecentPostsPage: loadAndDisplayRecentPosts completed');
   } catch (error) {
     console.error('initializeRecentPostsPage: Error occurred:', error);
     console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
@@ -247,8 +240,6 @@ async function initializeRecentPostsPage() {
 
 // Most Read Posts - vereinfacht
 async function initializeMostReadPostsPage() {
-  console.log('Initialisiere Most Read Posts Page...');
-
   try {
     await loadAndDisplayMostReadPosts();
   } catch (error) {
@@ -258,8 +249,6 @@ async function initializeMostReadPostsPage() {
 
 // Read Post Page - vereinfacht
 async function initializeReadPostPage() {
-  console.log('Initialisiere Read Post Page...');
-
   try {
     // Post laden
     await loadAndDisplayBlogPost();

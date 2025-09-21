@@ -1,12 +1,7 @@
-import DOMPurify from 'dompurify'; // npm install dompurify
-import { JSDOM } from 'jsdom';
 import path from 'path';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { UtilsException } from '../models/customExceptions.js';
-
-// Für Node.js Server-Side
-const window = new JSDOM('').window;
-const DOMPurifyServer = DOMPurify(window);
+import { sanitizeHtml } from './sanitizer.js';
 
 const FORBIDDEN_KEYS = new Set([
   '__proto__',
@@ -47,23 +42,26 @@ export function unescapeHtml(str) {
  * @param {string[]} whitelist - field names that should be sanitized (allowed HTML)
  * @param {string[]} path
  */
-export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstance = DOMPurifyServer) {
+export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstance = null) {
   if(!obj) throw new Error('Invalid input: Object is null or undefined'); // null, undefined, false, 0
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
     if (currentKey && whitelist.includes(currentKey)) {
-      console.log('Sanitizing:', obj, 'key:', currentKey);
       // SANITIZE allowed HTML server-side (not raw)
       try {
-        return domPurifyInstance.sanitize(obj, {
-          ALLOWED_TAGS: [
-            'p','br','b','i','strong','em','u',
-            'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3',
-          ],
-          ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
-          ALLOW_DATA_ATTR: false,
-        });
+        if (domPurifyInstance && typeof domPurifyInstance.sanitize === 'function') {
+          // If a DOMPurify-like instance was supplied, use it (tests inject mocks this way)
+          return domPurifyInstance.sanitize(obj, {
+            ALLOWED_TAGS: [
+              'p','br','b','i','strong','em','u',
+              'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3',
+            ],
+            ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
+            ALLOW_DATA_ATTR: false,
+          });
+        }
+        return sanitizeHtml(obj);
       } catch (error) {
         throw new Error(`Sanitization failed for key "${currentKey}": ${error.message}`);
       }
@@ -77,7 +75,6 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
   // objects
   if (obj && typeof obj === 'object') {
     for (const key of Object.keys(obj)) {
-      console.log('Processing key:', key); // Debugging
       if (FORBIDDEN_KEYS.has(key)) {
         // skip to prevent prototype pollution
         throw new Error(`Forbidden key detected: "${key}"`);

@@ -1303,7 +1303,7 @@ function testImageUploadHandler() {
         
     // Teste einfachen Upload
     simpleImageUploadHandler(testBlobInfo, success, failure, progress)
-      .then(() => console.log('Test Upload Promise erfolgreich aufgelöst'))
+      .then(() => { /* upload test resolved */ })
       .catch(error => {
         if(typeof failure === 'function') {
           failure(error);
@@ -1356,7 +1356,8 @@ function runTinyMCEDiagnostics() {
   // CSP Test
   try {
     const testScript = document.createElement('script');
-    testScript.src = 'data:text/javascript,console.log("CSP Test OK")';
+    // Use a harmless no-op to avoid polluting the console during diagnostics
+    testScript.src = 'data:text/javascript,/* CSP Test OK */';
     document.head.appendChild(testScript);
     document.head.removeChild(testScript);
   } catch (error) {

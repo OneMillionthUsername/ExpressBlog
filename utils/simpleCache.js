@@ -1,6 +1,8 @@
 // Simple in-memory cache with TTL and basic LRU protections for single-instance use.
 // Not suitable for multi-process deployments (use Redis or similar there).
 
+import { sanitizeFields } from './sanitizer.js';
+
 const store = new Map();
 
 function now() {
@@ -43,21 +45,8 @@ function sanitizeForCache(value) {
     // Only attempt to sanitize objects/arrays which may contain content fields
     if (typeof value === 'object') {
       // Work on a clone to avoid mutating caller's object
-      const cloned = deepClone(value);
-      // Lightweight sanitization: remove <script> tags from content/description fields
-      const scrub = (obj) => {
-        if (!obj || typeof obj !== 'object') return obj;
-        for (const k of Object.keys(obj)) {
-          try {
-            if (typeof obj[k] === 'string' && (k === 'content' || k === 'description')) {
-              obj[k] = String(obj[k]).replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
-            } else if (typeof obj[k] === 'object') {
-              scrub(obj[k]);
-            }
-          } catch (_ignore) { /* ignore per-field errors */ }
-        }
-      };
-      scrub(cloned);
+      // Use the shared sanitizer to sanitize known fields (content, description)
+      const cloned = sanitizeFields(value, ['content', 'description']);
       return cloned;
     }
     return value;
