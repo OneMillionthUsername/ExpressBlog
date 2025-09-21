@@ -43,10 +43,7 @@
                                 </div>
                             <% }); %>
                         <% } else { %>
-                            <div class="loading-spinner">
-                                <div class="spinner"></div>
-                                <p>Lade Archiv...</p>
-                            </div>
+                            <% include('partials/message', { text: 'Keine Archiv-Posts gefunden.', small: true }) %>
                         <% } %>
                     </div>
                 </div>
@@ -60,6 +57,20 @@
     </div>
 
     <script src="/vendor/dompurify.min.js"></script>
+    <script>
+        // Defensive: if server injected posts, remove loading spinner that might be present
+        (function() {
+            try {
+                const archiveEl = document.getElementById('archivePosts');
+                if (archiveEl && archiveEl.querySelectorAll('.archive-post-item').length > 0) {
+                    const spinner = archiveEl.querySelector('.loading-spinner');
+                    if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
+                }
+            } catch (err) {
+                // non-critical
+            }
+        })();
+    </script>
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
 </body>

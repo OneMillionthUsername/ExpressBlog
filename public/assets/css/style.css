@@ -242,6 +242,12 @@ body {
     font-size: inherit;
 }
 
+/* Safety: hide any action buttons inside archive's no-posts area to avoid duplicate CTA in body */
+#archivePosts .no-posts .btn,
+#archivePosts .no-posts a.btn {
+    display: none !important;
+}
+
 .featured-post-excerpt {
     color: var(--color-text);
     font-size: 1rem;
@@ -929,6 +935,19 @@ body {
     text-align: center;
     padding: 50px 20px;
     color: var(--color-text-light);
+}
+
+/* Hide the blogpost loading spinner when server-rendered content is present.
+   The template already sets inline style="display:none;" when `post` is provided,
+   but some clients/styles might still show the markup — hide it with a specific rule.
+   Alternative: use JS to remove the element after content injection or CSS :has() when available. */
+#blogpost-content .loading-spinner {
+    display: none !important;
+}
+
+/* Also hide archive spinner when server-rendered posts are present */
+#archivePosts .loading-spinner {
+    display: none !important;
 }
 .spinner {
     width: 40px;

@@ -1,0 +1,23 @@
+<%--
+  Partial: message.ejs
+  Usage:
+    <% include('partials/message', { text: '...', type: 'warning', small: true }) %>
+  Params:
+    - text (string): message text to render (required)
+    - type (string): one of 'info'|'warning'|'danger' (optional, defaults to 'info')
+    - small (boolean): if true render smaller muted paragraph (optional)
+--%>
+<%
+  const t = typeof text !== 'undefined' ? String(text) : '';
+  const kind = typeof type === 'string' ? type : 'info';
+  const isSmall = !!small;
+%>
+<% if (!t) { %>
+  <% /* nothing to render */ %>
+<% } else if (isSmall) { %>
+  <p class="text-muted small"><%= t %></p>
+<% } else { %>
+  <div class="alert alert-<%= kind %>" role="alert">
+    <%= t %>
+  </div>
+<% } %>

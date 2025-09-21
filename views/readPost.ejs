@@ -26,18 +26,16 @@
             <div class="col-md-10">
                 <div class="content-area">
                     <div id="blogpost-content">
-                        <div id="loading" class="loading-spinner" <%= post ? 'style="display:none;"' : '' %> >
+                        <% if (!post) { %>
+                        <div id="loading" class="loading-spinner">
                             <div class="spinner"></div>
                             <p>Lade Blogpost...</p>
                         </div>
+                        <% } %>
 
                         <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
-                        <div class="alert alert-warning" role="alert">
-                            <h4 class="alert-heading">Hinweis</h4>
-                            <p><%= errorMessage %></p>
-                            <hr>
-                            <p class="mb-0"><a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a></p>
-                        </div>
+                        <!-- Replaced alert with simple paragraph to avoid duplicate CTAs and confusion -->
+                        <p class="text-muted small"><%= errorMessage %></p>
                         <% } else { %>
                         <article id="post-article" class="<%= post ? '' : 'hidden' %>">
                             <header class="post-header">
@@ -144,6 +142,27 @@
          output to inject JSON. post has been converted by the route where needed. -->
     <script>
         window.__SERVER_POST = <%- __serverPost %>;
+    </script>
+    <script>
+        // Defensive fallback: if the server injected the post JSON, remove the loading
+        // spinner element and ensure the article is visible. This helps if CSS is stale
+        // or if the client-side initializer hasn't run yet.
+        (function() {
+            try {
+                if (window.__SERVER_POST) {
+                    const loadingEl = document.getElementById('loading');
+                    if (loadingEl && loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+                    const postArticle = document.getElementById('post-article');
+                    if (postArticle) {
+                        postArticle.classList.remove('hidden');
+                        postArticle.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                // swallow errors - non-critical
+                console.debug('defensive spinner removal failed', err);
+            }
+        })();
     </script>
     <!-- No inline defensive hiding: spinner should remain visible until content is loaded or an error occurs. 
          If the server rendered the post (`post` exists), the loading container is initially hidden above. -->
