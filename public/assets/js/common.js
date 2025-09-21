@@ -576,13 +576,20 @@ export async function loadAndDisplayBlogPost() {
 
   try {
     // Blogpost laden via zentraler API-Wrapper
-  const apiResult = await apiRequest(`/blogpost/by-id/${postId}`, { method: 'GET' });
+    // Prefer the explicit by-id endpoint (safer). If it returns 404 or fails,
+    // try the slug-based endpoint as a fallback (some links may use slugs).
+    let apiResult = await apiRequest(`/blogpost/by-id/${postId}`, { method: 'GET' });
+    if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
+      // fallback to slug-based route
+      apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
+    }
     if (!apiResult || apiResult.success !== true) {
-      throw new Error('Blogpost konnte nicht geladen werden');
+      const msg = apiResult && apiResult.error ? apiResult.error : 'Blogpost konnte nicht geladen werden';
+      throw new Error(msg);
     }
     const post = apiResult.data;
-  // UI aktualisieren
-  if (post) updateBlogPostUI(post);
+    // UI aktualisieren
+    if (post) updateBlogPostUI(post);
         
     // Set canonical URL for the specific blog post
     // unklar ob ich das auch brauche
@@ -1055,9 +1062,12 @@ export function getUrlParameter(paramName) {
  - Avoid attaching functions to `window`; prefer exports and delegation.
 */
 export function getPostIdFromPath() {
-  const match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
-  const postId = match ? match[1] : null;
-  return postId;
+  // Match explicit routes like /blogpost/by-id/123, /blogpost/update/123, /blogpost/delete/123
+  let match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
+  if (match) return match[1];
+  // Also support the shorthand numeric URL /blogpost/123
+  match = window.location.pathname.match(/\/blogpost\/(\d+)(?:\/|$)/);
+  return match ? match[1] : null;
 }
 export function getPostSlugFromPath() {
   const match = window.location.pathname.match(/\/blogpost\/([^\/]+)/);
