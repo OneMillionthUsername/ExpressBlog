@@ -13,7 +13,15 @@ staticRouter.get('/', (req, res) => {
   try {
     // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
     postController.getAllPosts().then(posts => {
-      const featuredPosts = (posts || []).slice(0, 3).map(p => ({ title: p.title, slug: p.slug, excerpt: (p.content || '').substring(0, 150) }));
+      // Strip HTML tags from content server-side when building excerpts to avoid
+      // rendering raw HTML in templates. Use a simple regex here; content is
+      // trusted from DB but may contain editor HTML.
+      const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
+      const featuredPosts = (posts || []).slice(0, 3).map(p => {
+        const plain = stripTags(p.content || '');
+        const excerpt = plain.length > 150 ? plain.substring(0, 150) + '...' : plain;
+        return { title: p.title, slug: p.slug, excerpt };
+      });
       logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
       res.render('index', { featuredPosts });
       logger.debug('[HOME] GET / - Successfully rendered index.ejs');

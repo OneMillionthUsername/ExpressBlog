@@ -1,11 +1,34 @@
 /* eslint-env browser, es2021 */
-/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, getComputedStyle, localStorage, CustomEvent */
+/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
 // Logger not available in frontend - use console instead
 
 // Export imported helper so other modules can import it from this module
 export { loadAllBlogPosts };
+
+// Helper: strip HTML from a string and return plain text. Prefer DOMPurify if
+// available for better handling, otherwise fall back to a simple regex.
+export function stripHtml(html = '') {
+  if (!html) return '';
+  try {
+    if (typeof DOMPurify !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
+      // Use DOMPurify to sanitize then remove tags by placing into a temporary element
+      const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+      return String(clean);
+    }
+  } catch (e) {
+    void e; // silence unused var linter, fallback to regex stripper
+  }
+  // Fallback: naive tag stripper
+  return String(html).replace(/<[^>]*>/g, '');
+}
+
+export function createExcerptFromHtml(html = '', maxLength = 150) {
+  const text = stripHtml(html).trim();
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
 
 // Use globalThis.makeApiRequest when present (tests sometimes mock global.makeApiRequest)
 async function apiRequest(path, options) {
@@ -872,7 +895,7 @@ export async function loadAndDisplayAllPosts() {
       // Defensive: skip invalid items
       if (!post || typeof post !== 'object') return;
       const { postDate } = formatPostDate(post.created_at || new Date());
-      const excerpt = post.content ? post.content.substring(0, 150) + '...' : 'Kein Inhalt verfügbar';
+  const excerpt = createExcerptFromHtml(post.content, 150) || 'Kein Inhalt verfügbar';
       // Determine href: prefer slug, fallback to by-id if missing
       let href = '#';
       if (post.slug) {

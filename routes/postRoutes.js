@@ -98,7 +98,14 @@ async function getAllHandler(req, res) {
       res.set('Cache-Control', 'private, max-age=30, must-revalidate');
 
       logger.debug(`[${requestId}] GET /all: Sending successful response with ETag`);
-      res.json(response);
+      // If the client expects HTML (typical browser navigation), render the
+      // server-side view and let client-side JS fetch the posts as needed.
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        // Render the list view and inject the posts for immediate SSR.
+        return res.render('listCurrentPosts', { posts: response });
+      }
+      // Otherwise return JSON for API/JS clients
+      return res.json(response);
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
       // Fallback: send response without ETag
