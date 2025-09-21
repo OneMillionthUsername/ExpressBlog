@@ -10,15 +10,17 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
-  "test:linux": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
-  "test:quick": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:linux": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:quick": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "lint": "eslint app.js server.js config/ controllers/ databases/ middleware/ models/ routes/ services/ utils/ tests/ --ext .js,.mjs",
     "lint:fix": "eslint app.js server.js config/ controllers/ databases/ middleware/ models/ routes/ services/ utils/ tests/ --ext .js,.mjs --fix",
     "build": "echo 'Build step - add your build commands here'",
     "start": "node server.js",
     "dev": "nodemon server.js",
-  "postinstall": "npm run copy:dompurify",
-  "copy:dompurify": "node scripts/copy-dompurify.mjs"
+    "postinstall": "npm run copy:dompurify",
+    "copy:dompurify": "node scripts/copy-dompurify.mjs",
+    "sanitize-db": "node scripts/sanitize-db-posts.js",
+    "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs"
   },
   "repository": {
     "type": "git",
@@ -37,7 +39,7 @@
     "bcrypt": "^6.0.0",
     "celebrate": "^15.0.3",
     "cookie-parser": "^1.4.7",
-    "dompurify": "^3.2.6",
+    "dompurify": "^3.2.7",
     "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
@@ -61,9 +63,8 @@
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^26.1.0",
-      "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10"
   },
-
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
