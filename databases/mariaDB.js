@@ -39,8 +39,9 @@ function createMockPool() {
                 author: 'admin',
                 views: 10,
                 published: 1,
-                created_at: new Date(),
-                updated_at: new Date(),
+                // Older post
+                created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // 7 days ago
+                updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
               },
               {
                 id: 2,
@@ -51,6 +52,7 @@ function createMockPool() {
                 author: 'admin',
                 views: 5,
                 published: 1,
+                // Newer post
                 created_at: new Date(),
                 updated_at: new Date(),
               },
@@ -427,10 +429,11 @@ export const DatabaseService = {
       logger.debug('DatabaseService.getAllPosts: Getting database connection');
       conn = await getDatabasePool().getConnection();
       
-      logger.debug('DatabaseService.getAllPosts: Executing SELECT * FROM posts');
-      //const { query, params } = queryBuilder('get', 'posts');
+      logger.debug('DatabaseService.getAllPosts: Executing SELECT * FROM posts ORDER BY created_at DESC');
+      //const { query, params } = queryBuilder('get', 'posts', { orderBy: 'created_at DESC' });
       //const result = await conn.query(query, params);
-      const result = await conn.query('SELECT * FROM posts');
+      // Ensure newest posts come first
+      const result = await conn.query('SELECT * FROM posts ORDER BY created_at DESC');
       
       logger.debug(`DatabaseService.getAllPosts: Query returned ${result ? result.length : 'null'} rows`);
       

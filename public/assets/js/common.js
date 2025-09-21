@@ -1151,7 +1151,31 @@ export async function renderSidebarArchive(posts) {
 // Diese Funktion lädt alle Blogposts, filtert die letzten 3 Monate und sortiert sie
 export async function renderPopularPostsSidebar(posts) {
   if (!Array.isArray(posts)) return;
+  // Prefer server-provided most-read posts (ordered by views). If it fails,
+  // fall back to the existing client-side selection logic.
+  try {
+    const resp = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
+      globalThis.makeApiRequest('/most-read', { method: 'GET' }) : await apiRequest('/most-read', { method: 'GET' }));
 
+    const serverPosts = resp && resp.success === true ? resp.data : null;
+    if (Array.isArray(serverPosts) && serverPosts.length > 0) {
+      const list = document.getElementById('popular-posts');
+      if (!list) return;
+      list.innerHTML = '';
+      serverPosts.slice(0, 5).forEach(p => {
+          const views = Number(p.views || 0);
+          const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
+        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.id}">${title}</a> <span class="sidebar-views">(${views} Aufrufe)</span>`);
+        list.appendChild(li);
+      });
+      return;
+    }
+  } catch (err) {
+    // If server call fails, fall back to client-side logic below
+    console.debug('renderPopularPostsSidebar: could not fetch /most-read, falling back to client-side selection', err);
+  }
+
+  // --- Fallback: client-side selection (as before) ---
   const now = new Date();
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(now.getMonth() - 3);
