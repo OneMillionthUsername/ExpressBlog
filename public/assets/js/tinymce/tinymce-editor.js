@@ -2,6 +2,7 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { makeApiRequest } from '../api.js';
+import { checkAdminStatusCached } from '../admin.js';
 // Import AI assistant functions
 import {
   improveText,
@@ -322,8 +323,6 @@ async function initializeTinyMCE() {
       // Comprehensive content styles to match final post appearance
       content_css: [
         'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
-      ],
-      content_css: [
         '/assets/css/tinymce-content.css',
       ],            
       // Upload-Konfiguration (mit Fallback-Option)
@@ -400,37 +399,34 @@ async function initializeTinyMCE() {
   }
 }
 
-// TinyMCE Theme Management for Dark Mode
-// function applyTinyMCETheme(editor) {
-//     if (!editor || !editor.getBody) return;
-    
-//     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-//     const editorBody = editor.getBody();
-    
-//     if (editorBody) {
-//         if (isDarkMode) {
-//             editorBody.setAttribute('data-theme', 'dark');
-//             // Apply dark mode styles to editor frame
-//             editorBody.style.backgroundColor = '#121212';
-//             editorBody.style.color = '#e0e0e0';
-//         } else {
-//             editorBody.removeAttribute('data-theme');
-//             // Apply light mode styles to editor frame
-//             editorBody.style.backgroundColor = '#ffffff';
-//             editorBody.style.color = '#2c3e50';
-//         }
-//     }
-// }
+// TinyMCE Theme Management for Dark Mode (safe no-op if not used)
+function applyTinyMCETheme(editor) {
+  try {
+    if (!editor || !editor.getBody) return;
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    const editorBody = editor.getBody();
+    if (!editorBody) return;
+    if (isDarkMode) {
+      editorBody.setAttribute('data-theme', 'dark');
+      editorBody.style.backgroundColor = '#121212';
+      editorBody.style.color = '#e0e0e0';
+    } else {
+      editorBody.removeAttribute('data-theme');
+      editorBody.style.backgroundColor = '#ffffff';
+      editorBody.style.color = '#2c3e50';
+    }
+  } catch { /* no-op */ }
+}
 
 // Global function to update TinyMCE theme when dark mode toggles
-// function updateTinyMCETheme() {
-//     if (typeof tinymce !== 'undefined') {
-//         const editor = tinymce.get('content');
-//         if (editor) {
-//             applyTinyMCETheme(editor);
-//         }
-//     }
-// }
+function _updateTinyMCETheme() {
+  try {
+    if (typeof tinymce !== 'undefined') {
+      const editor = tinymce.get('content');
+      if (editor) applyTinyMCETheme(editor);
+    }
+  } catch { /* no-op */ }
+}
 
 // (Removed legacy global exports - use module exports and event binding instead)
 

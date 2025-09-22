@@ -27,18 +27,12 @@ import { initializeCommentsDelegation, initializeCommentsSystem } from './commen
 // Globale Initialisierung - einmalig beim DOM-Ready
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    // 1. Admin-System initialisieren (only when admin UI is present or server signals admin)
-    // This avoids calling /auth/verify on every public page which creates unnecessary
-    // 401 noise and extra requests.
-    const shouldInitAdmin = (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.isAdmin)
-      || document.getElementById('admin-login-btn')
-      || document.querySelector('.admin-required')
-      || document.querySelector('[data-admin-init]');
-    if (shouldInitAdmin && typeof initializeAdminSystem === 'function') {
+    // 1. Admin-System immer initialisieren, damit Admin-UI nach Reload/Navigations persistiert
+    if (typeof initializeAdminSystem === 'function') {
       await initializeAdminSystem();
     }
 
-    // 2. Admin-Menü hinzufügen (einmalig)
+    // 2. Admin-Menü hinzufügen (bei jedem Load; Funktion ist idempotent)
     if (typeof addAdminMenuItemToNavbar === 'function') {
       addAdminMenuItemToNavbar();
     }
