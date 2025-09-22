@@ -17,7 +17,7 @@ import {
 // They should only be loaded on the Create page to avoid loading large
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
-import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls } from './admin.js';
 import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
@@ -210,7 +210,8 @@ async function initializeIndexPage() {
     }
 
     // Cards laden only if the page contains a cards container or the renderer is present
-    const hasCardsContainer = document.getElementById('cards-container') || document.getElementById('cards') || document.querySelector('.cards-list');
+  // Support multiple possible containers used across templates (discoveries-grid is used on index.ejs)
+  const hasCardsContainer = document.getElementById('cards-container') || document.getElementById('cards') || document.querySelector('.cards-list') || document.getElementById('discoveries-grid');
     if (hasCardsContainer) {
       const cards = await loadCards();
       if (cards && cards.length > 0) {
@@ -265,7 +266,7 @@ async function initializeReadPostPage() {
     // Admin-Controls hinzufügen (vereinfacht)
     setTimeout(() => {
       const adminControls = document.getElementById('admin-controls');
-      if (adminControls) {
+      if (adminControls && typeof addReadPostAdminControls === 'function') {
         addReadPostAdminControls();
       }
 

@@ -1014,11 +1014,27 @@ export async function loadAndDisplayAllPosts() {
 // Funktion zum Laden und Anzeigen der meistgelesenen Posts (für most_read.html)
 export async function loadAndDisplayMostReadPosts() {
   try {
-  const apiResult = await apiRequest('/blogpost/most-read', { method: 'GET' });
-    const posts = apiResult && apiResult.success === true ? apiResult.data : null;
+  let apiResult = null;
+  try {
+    apiResult = await apiRequest('/blogpost/most-read', { method: 'GET' });
+  } catch {
+    // swallow and fall back to computing from all posts below
+    apiResult = null;
+  }
+    let posts = apiResult && apiResult.success === true ? apiResult.data : null;
     // Error handling
     if (!apiResult || apiResult.success !== true) {
       console.error('Fehler beim Laden der meistgelesenen Posts:', apiResult && apiResult.error);
+      // Fallback: try to compute most-read from the all-posts endpoint to keep UI working
+      try {
+        const allResult = await apiRequest('/blogpost/all', { method: 'GET' });
+        if (allResult && allResult.success === true && Array.isArray(allResult.data)) {
+          // sort by views desc and take top N
+          posts = allResult.data.slice().sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 10);
+        }
+      } catch (err) {
+        void err;
+      }
       const listContainer = document.getElementById('mostReadPosts');
       listContainer.innerHTML = `
                 <div class="error-message">

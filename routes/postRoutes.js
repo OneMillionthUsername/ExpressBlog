@@ -163,6 +163,8 @@ postRouter.get('/all', globalLimiter, getAllHandler);
 export { getAllHandler };
 // Spezifische Routen VOR parametrische Routen
 postRouter.get('/most-read', globalLimiter, async (req, res) => {
+  const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  logger.debug(`[${requestId}] GET /most-read: Request received ${req.originalUrl} accept=${req.get('Accept')} xreq=${req.get('X-Requested-With')} host=${req.get('Host')}`);
   try {
     const cacheKey = 'posts:mostRead';
     let posts = simpleCache.get(cacheKey);
@@ -196,6 +198,7 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
+    logger.error(`[${requestId}] GET /most-read route error: ${error && error.message ? error.message : String(error)}`);
     // If the client expects HTML (regular browser navigation), render the
     // `mostReadPosts` view with a friendly message. For API/JS clients, return JSON.
     if (req.accepts && req.accepts('html') && !req.is('application/json')) {
