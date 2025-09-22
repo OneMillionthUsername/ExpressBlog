@@ -318,7 +318,27 @@ function registerDatabaseRoutes() {
   // Build the grouped DB router in routes/ and mount it here after DB init.
   const dbRouter = createDbRouter(requireDatabase, routes);
   app.use('/', dbRouter);
-    
+  
+  // Specific handler for CSRF errors (must be registered BEFORE generic error handlers)
+  app.use((err, req, res, next) => {
+    if (err && (err.code === 'EBADCSRFTOKEN' || err.name === 'EBADCSRFTOKEN')) {
+      try {
+        logger.warn('CSRF validation failed', {
+          url: req.originalUrl,
+          method: req.method,
+          hasCsrfHeader: Boolean(req.get('x-csrf-token')),
+          hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
+          cookieNames: Object.keys(req.cookies || {}),
+          referer: req.get('referer') || null,
+          origin: req.get('origin') || null,
+          userAgent: req.get('user-agent') || null,
+        });
+      } catch { /* ignore logging errors */ }
+      return res.status(403).json({ error: 'Invalid or missing CSRF token' });
+    }
+    next(err);
+  });
+  
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
     res.status(404).send('Sorry, can\'t find that!');
