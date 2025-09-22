@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="/assets/css/components.css">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <title>Blogpost - Sub specie aeternitatis</title>
+    <% if (typeof post !== 'undefined' && post && post.id) { %>
+    <meta name="post-id" content="<%= post.id %>">
+    <% } %>
 </head>
 <body>
     <%- include('partials/navbar.ejs') %>
@@ -37,7 +40,7 @@
                         <!-- Replaced alert with simple paragraph to avoid duplicate CTAs and confusion -->
                         <p class="text-muted small"><%= errorMessage %></p>
                         <% } else { %>
-                        <article id="post-article" class="<%= post ? '' : 'hidden' %>">
+                        <article id="post-article" class="<%= post ? '' : 'hidden' %>" <% if (typeof post !== 'undefined' && post && post.id) { %> data-post-id="<%= post.id %>" <% } %>>
                             <header class="post-header">
                                 <h2 id="title" class="post-title"><%= post ? post.title : '' %></h2>
                                 <div id="meta" class="post-meta-info">

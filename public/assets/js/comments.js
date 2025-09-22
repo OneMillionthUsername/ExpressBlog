@@ -3,6 +3,44 @@ import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema } from './
 import { makeApiRequest } from './api.js';
 import { getUrlParameter, escapeHtml } from './common.js';
 
+/**
+ * Resolve the current post ID from multiple possible sources so the comments
+ * system works for server-rendered pages, client-only pages, and test harnesses.
+ * Order of checks:
+ *  - window.__SERVER_POST.id (server injected JSON)
+ *  - meta[name="post-id"]
+ *  - data-post-id attribute on #post-article or #blogpost-content
+ *  - URL query parameter `post`
+ *  - URL path segment like /blogpost/by-id/<id>
+ */
+function resolvePostId() {
+  try {
+    if (typeof window !== 'undefined' && window.__SERVER_POST && window.__SERVER_POST.id) {
+      return String(window.__SERVER_POST.id);
+    }
+    // meta tag
+    const meta = document.querySelector('meta[name="post-id"]');
+    if (meta && meta.content) return String(meta.content);
+    // data attribute on common containers
+    const postArticle = document.getElementById('post-article') || document.getElementById('blogpost-content');
+    if (postArticle && postArticle.dataset && postArticle.dataset.postId) {
+      return String(postArticle.dataset.postId);
+    }
+    // generic element with data-post-id
+    const dataEl = document.querySelector('[data-post-id]');
+    if (dataEl && dataEl.dataset && dataEl.dataset.postId) return String(dataEl.dataset.postId);
+    // query param
+    const q = getUrlParameter('post');
+    if (q) return String(q);
+    // path pattern /blogpost/by-id/<id>
+    const m = window.location.pathname.match(/\/blogpost\/by-id\/(\d+)/i);
+    if (m && m[1]) return String(m[1]);
+  } catch {
+    // ignore and fall through
+  }
+  return null;
+}
+
 async function loadComments(postId) {
   if (!postId || !isValidIdSchema(postId)) {
     console.warn('Ungültige Post-ID, Kommentarsystem wird nicht geladen.');
@@ -250,7 +288,7 @@ function updateCharCounter() {
 }
 async function handleCommentSubmit(event) {
   event.preventDefault();
-  const postId = escapeHtml(getUrlParameter('post'));
+  const postId = escapeHtml(resolvePostId());
   if (!postId) {
     showFeedback('Fehler: Post-ID nicht gefunden.', 'error');
     return;
@@ -302,8 +340,8 @@ function updateCommentCount(count) {
 }
 // Kommentarsystem initialisieren
 async function initializeCommentsSystem() {    
-  // Post-Id aus URL extrahieren
-  const postId = getUrlParameter('post');
+  // Resolve post id from multiple sources
+  const postId = resolvePostId();
   if (!postId) {
     console.warn('Keine Post-ID gefunden, Kommentarsystem wird nicht geladen.');
     return;
