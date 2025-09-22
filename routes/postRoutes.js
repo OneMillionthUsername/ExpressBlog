@@ -172,26 +172,32 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
       logger.debug(`[${requestId}] GET /most-read: Cache hit for ${cacheKey}, returning cached posts_count=${Array.isArray(posts) ? posts.length : 'unknown'}`);
     } else {
       logger.debug(`[${requestId}] GET /most-read: Cache miss for ${cacheKey} - loading from controller`);
-      posts = await postController.getMostReadPosts();
-
-      // If the controller returned no valid posts (strict validation), fall back
-      // to loading all posts and computing the top N by views. This prevents an
-      // empty UI when the controller validation filters out rows that are still
-      // useful for the public most-read listing (e.g. subtle schema mismatches
-      // in mock data). This is a local, low-risk fallback.
-      if (!posts || (Array.isArray(posts) && posts.length === 0)) {
-        try {
-          logger.debug(`[${requestId}] GET /most-read: Controller returned no posts - falling back to DatabaseService.getAllPosts()`);
-          const all = await (await import('../databases/mariaDB.js')).DatabaseService?.getAllPosts?.() || await (await import('../databases/mariaDB.js')).getAllPosts();
-          if (Array.isArray(all) && all.length > 0) {
-            posts = all.slice().sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 5);
-            logger.debug(`[${requestId}] GET /most-read: Fallback selected ${posts.length} posts from all posts`);
-          } else {
+      try {
+        posts = await postController.getMostReadPosts();
+      } catch (ctlErr) {
+        // If the controller threw because there were no valid published posts,
+        // try a direct, efficient DB query that selects the top published
+        // posts ordered by views. This avoids loading the entire posts set.
+        if (ctlErr instanceof PostControllerException) {
+          logger.debug(`[${requestId}] GET /most-read: Controller threw PostControllerException - attempting direct DB fallback query`);
+          try {
+            const dbModule = await import('../databases/mariaDB.js');
+            let conn;
+            try {
+              conn = await dbModule.getDatabasePool().getConnection();
+              const rows = await conn.query('SELECT id, slug, title, content, views, created_at FROM posts WHERE published = 1 ORDER BY views DESC LIMIT 5');
+              posts = Array.isArray(rows) ? rows.map(p => convertBigInts(p)) : [];
+              logger.debug(`[${requestId}] GET /most-read: Direct DB fallback returned ${Array.isArray(posts) ? posts.length : 'null'} rows`);
+            } finally {
+              if (conn && typeof conn.release === 'function') conn.release();
+            }
+          } catch (fallbackErr) {
+            logger.debug(`[${requestId}] GET /most-read: Direct DB fallback failed: ${fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr)}`);
             posts = [];
           }
-        } catch (fallbackErr) {
-          logger.debug(`[${requestId}] GET /most-read: Fallback failed: ${fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr)}`);
-          // keep posts as-is (likely empty) so downstream logic handles empty case
+        } else {
+          // Non-controller errors should bubble out to be handled by outer try/catch
+          throw ctlErr;
         }
       }
 
