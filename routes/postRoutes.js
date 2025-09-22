@@ -191,8 +191,8 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
             } finally {
               if (conn && typeof conn.release === 'function') conn.release();
             }
-          } catch (fallbackErr) {
-            logger.debug(`[${requestId}] GET /most-read: Direct DB fallback failed: ${fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr)}`);
+          } catch (_fallbackErr) {
+            // fallback failed - leave posts as empty array and allow outer logic
             posts = [];
           }
         } else {
@@ -262,6 +262,17 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
       return res.status(200).json([]);
     }
     return res.status(500).json({ error: 'Server failed to load most read blog posts' });
+  }
+});
+// Admin-only endpoint to clear the most-read cache
+postRouter.post('/admin/cache/clear-most-read', globalLimiter, authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    simpleCache.del('posts:mostRead');
+    // Return 204 No Content to avoid exposing payload
+    return res.status(204).end();
+  } catch (error) {
+    console.error('Error clearing most-read cache:', error);
+    return res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 // Numeric ID route should come BEFORE the slug route to avoid numeric slugs being
