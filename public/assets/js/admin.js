@@ -25,25 +25,28 @@ let adminSystemInitialized = false;
 let adminSystemInitPromise = null;
 
 // Admin-Status über HTTP-only Cookie prüfen
+// Normalize response to a stable shape: { ok, valid, user }
 async function verifyAdminStatus() {
   try {
-    const result = await callApi('/auth/verify', {
+    const envelope = await callApi('/auth/verify', {
       method: 'POST',
     });
-    return result;
+    const payload = envelope && envelope.data ? envelope.data : null; // server JSON
+    const valid = Boolean(payload && payload.data && payload.data.valid === true);
+    const user = payload && payload.data && payload.data.user ? payload.data.user : null;
+    return { ok: envelope && envelope.success === true, valid, user };
   } catch (error) {
     console.warn('Admin status check failed:', error);
-    return { success: false };
+    return { ok: false, valid: false, user: null };
   }
 }
 async function checkAdminStatus() {
   try {
-    const result = await verifyAdminStatus();
-    // TODO: doppelt data analysieren
-    if (result.success && result.data?.valid) {
+    const status = await verifyAdminStatus();
+    if (status.ok && status.valid) {
       isAdminLoggedIn = true;
       adminStatusPromise = Promise.resolve(true);
-      currentUser = result.data.user;
+      currentUser = status.user || null;
       return true;
     } else {
       // Admin nicht eingeloggt oder Session abgelaufen
