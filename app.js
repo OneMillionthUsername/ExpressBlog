@@ -176,7 +176,14 @@ app.use(express.urlencoded({
 }));
 
 // 4. CSRF-Schutz (needs cookies AND parsed body!)
-app.use(csrfProtection);
+// Exclude CSRF token endpoint from CSRF protection to avoid chicken-and-egg problem
+app.use((req, res, next) => {
+  // Skip CSRF protection for the CSRF token endpoint
+  if (req.path === '/api/csrf-token' && req.method === 'GET') {
+    return next();
+  }
+  return csrfProtection(req, res, next);
+});
 
 // 5. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
@@ -345,6 +352,9 @@ initializeApp().then(() => {
 
 // Mount AI proxy early (route itself enforces admin auth)
 app.use('/api/ai', aiRoutes);
+
+// Mount utility routes under /api for consistent API structure
+app.use('/api', routes.utilityRouter);
 
 // Temporary diagnostic endpoint to help debug header forwarding issues in
 // production (e.g. proxies/CDNs that strip Accept or X-Requested-With).

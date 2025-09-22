@@ -17,7 +17,7 @@ jest.unstable_mockModule('../public/assets/js/api.js', () => ({
   getCachedPosts: jest.fn(),
   refreshPosts: jest.fn(),
   resetCsrfToken: jest.fn(),
-  loadCards: jest.fn()
+  loadCards: jest.fn(),
 }));
 
 // Import common.js after mocking its dependencies
@@ -38,7 +38,7 @@ describe('Common.js Functions', () => {
     window.location = { 
       pathname: '/test', 
       reload: jest.fn(),
-      href: 'http://localhost:3000/test'
+      href: 'http://localhost:3000/test',
     };
     
     // Mock global variables that common.js might expect
@@ -53,7 +53,7 @@ describe('Common.js Functions', () => {
           return html.replace(/<[^>]*>/g, '');
         }
         return html;
-      })
+      }),
     };
   });
 
@@ -88,7 +88,7 @@ describe('Common.js Functions', () => {
     it('should create elements with attributes', () => {
       const element = commonModule.createElement('div', {
         id: 'test-id',
-        class: 'test-class'
+        class: 'test-class',
       });
 
       expect(element.tagName).toBe('DIV');

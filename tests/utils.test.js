@@ -187,7 +187,7 @@ describe('Utils Functions', () => {
   describe('makeApiRequest simulation', () => {
     it('should handle GET requests', async () => {
       const makeApiRequest = async (url, options = {}) => {
-        const response = await fetch(url, options);
+        const response = await global.fetch(url, options);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -207,7 +207,7 @@ describe('Utils Functions', () => {
 
     it('should handle POST requests', async () => {
       const makeApiRequest = async (url, options = {}) => {
-        const response = await fetch(url, options);
+        const response = await global.fetch(url, options);
         return response.json();
       };
 
@@ -229,7 +229,7 @@ describe('Utils Functions', () => {
     it('should handle network errors', async () => {
       const makeApiRequest = async (url, options = {}) => {
         try {
-          const response = await fetch(url, options);
+          const response = await global.fetch(url, options);
           return response.json();
         } catch (error) {
           throw new Error('Network error');

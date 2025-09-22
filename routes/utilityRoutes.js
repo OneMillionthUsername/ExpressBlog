@@ -1,5 +1,4 @@
 import express from 'express';
-import csrfProtection from '../utils/csrf.js'; // Falls nötig
 const utilityRouter = express.Router();
 
 utilityRouter.get('/health', (req, res) => {
@@ -24,7 +23,7 @@ utilityRouter.get('/redirect', (req, res) => {
   }
 });
 
-utilityRouter.get('/csrf-token', csrfProtection, (req, res) => {
+utilityRouter.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
