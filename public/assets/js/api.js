@@ -117,10 +117,12 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     const fetchStartTime = performance.now();
-    const response = await fetch(url, Object.assign({
+    // Build final options ensuring our merged headers (with CSRF token) are used
+    const finalOptions = Object.assign({}, options, {
       credentials: 'include',
-      headers,
-    }, options));
+      headers, // our merged headers include options.headers and x-csrf-token
+    });
+    const response = await fetch(url, finalOptions);
     if (typeof response === 'undefined' || response === null) {
       throw new Error('No response from fetch');
     }
