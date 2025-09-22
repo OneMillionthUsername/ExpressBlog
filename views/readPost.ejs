@@ -83,13 +83,14 @@
     <script src="/vendor/dompurify.min.js"></script>
     <% // Precompute JSON on the server side to avoid template parsing issues %>
     <% const __serverPost = JSON.stringify(typeof post !== 'undefined' ? post : null); %>
+    <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
     <!-- If the server rendered the post, expose it to the client JS so the page can
          show the content without making an extra API request. Use unescaped EJS
          output to inject JSON. post has been converted by the route where needed. -->
-    <script nonce="<%= nonce %>">
+    <script<%- __nonceAttr %>>
         window.__SERVER_POST = <%- __serverPost %>;
     </script>
-    <script nonce="<%= nonce %>">
+    <script<%- __nonceAttr %>>
         // Defensive fallback: if the server injected the post JSON, remove the loading
         // spinner element and ensure the article is visible. This helps if CSS is stale
         // or if the client-side initializer hasn't run yet.

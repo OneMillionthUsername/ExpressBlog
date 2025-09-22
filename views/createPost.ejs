@@ -189,12 +189,12 @@
     <!-- Do NOT inject API keys into the browser. Expose only non-sensitive flags. -->
     <% // Precompute JSON on the server side to avoid template parsing issues %>
     <% const __serverConfig = JSON.stringify({ isAdmin: !!isAdmin }); %>
-    <script nonce="<%= nonce %>">
+    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
         // Safely inject a minimal, non-sensitive server config object for the frontend.
         window.__SERVER_CONFIG = <%- __serverConfig %>;
     </script>
         <% if (typeof post !== 'undefined' && post) { %>
-            <script nonce="<%= nonce %>">
+            <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
                 // Inject the post object for client-side prefill of the editor. This
                 // is safe because post content is intended to be displayed/edited by an admin.
                 window.__SERVER_POST = <%- JSON.stringify(post) %>;
