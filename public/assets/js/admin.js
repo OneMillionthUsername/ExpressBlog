@@ -204,6 +204,7 @@ function showAdminLoginModal() {
   if (document.getElementById('admin-login-modal')) return;
   const modal = document.createElement('div');
   modal.id = 'admin-login-modal';
+  modal.className = 'modal';
   modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -219,8 +220,8 @@ function showAdminLoginModal() {
                     <input id="admin-password" type="password" />
                 </div>
                 <div class="modal-actions">
-                    <button id="admin-login-cancel">Abbrechen</button>
-                    <button id="admin-login-submit">Anmelden</button>
+          <button type="button" id="admin-login-cancel" data-action="close-modal">Abbrechen</button>
+          <button type="button" id="admin-login-submit">Anmelden</button>
                 </div>
                 <div id="admin-login-error"></div>
             </div>
