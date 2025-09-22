@@ -21,6 +21,7 @@ import * as middleware from './middleware/securityMiddleware.js';
 import { requireDatabase } from './middleware/databaseMiddleware.js';
 import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
+import createDbRouter from './routes/dbRouter.js';
 import aiRoutes from './routes/aiRoutes.js';
 import csrfProtection from './utils/csrf.js';
 import nonceMiddleware from './middleware/nonceMiddleware.js';
@@ -306,20 +307,10 @@ async function initializeApp() {
 // DB-abhängige Routes (werden erst nach DB-Init registriert)
 function registerDatabaseRoutes() {
   logger.info('Registering database-dependent routes...');
-    
-  // Alle DB-abhängigen Routes mit DB-Check (Reihenfolge wichtig!)
-  app.use('/', requireDatabase, routes.staticRouter);
-
-  app.use('/', requireDatabase, routes.utilityRouter);
   
-  // Sitemap und SEO-Routes (können ohne DB funktionieren, aber mit DB für dynamische Inhalte)
-  app.use('/', routes.sitemapRouter);
-
-  app.use('/auth', requireDatabase, routes.authRouter);
-  app.use('/blogpost', requireDatabase, routes.postRouter);
-  app.use('/upload', requireDatabase, routes.uploadRouter);
-  app.use('/comments', requireDatabase, routes.commentsRouter);
-  app.use('/cards', requireDatabase, routes.cardRouter);
+  // Build the grouped DB router in routes/ and mount it here after DB init.
+  const dbRouter = createDbRouter(requireDatabase, routes);
+  app.use('/', dbRouter);
     
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
