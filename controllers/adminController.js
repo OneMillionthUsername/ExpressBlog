@@ -10,13 +10,16 @@ import { DatabaseService } from '../databases/mariaDB.js';
 import { Admin } from '../models/adminModel.js';
 import bcrypt from 'bcrypt';
 import { AdminControllerException } from '../models/customExceptions.js';
+import logger from '../utils/logger.js';
 
 const getAdminByUsername = async (username) => {
   try {
+    logger.debug('[ADMIN] getAdminByUsername called', { username });
     if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {
       throw new AdminControllerException('Valid username is required');
     }
     const admin = await DatabaseService.getAdminByUsername(username);
+    logger.debug('[ADMIN] getAdminByUsername DB result', { found: Boolean(admin) });
     if (!admin) {
       throw new AdminControllerException('Admin not found');
     }
@@ -31,6 +34,7 @@ const getAdminByUsername = async (username) => {
 };
 const updateAdminLoginSuccess = async (adminId) => {
   try {
+    logger.debug('[ADMIN] updateAdminLoginSuccess called', { adminId });
     const update = await DatabaseService.updateAdminLoginSuccess(adminId);
     if (!update) {
       throw new AdminControllerException('Failed to update admin login success');
@@ -42,6 +46,7 @@ const updateAdminLoginSuccess = async (adminId) => {
 };
 const updateAdminLoginFailure = async (adminId) => {
   try {
+    logger.debug('[ADMIN] updateAdminLoginFailure called', { adminId });
     const update = await DatabaseService.updateAdminLoginFailure(adminId);
     if (!update) {
       throw new AdminControllerException('Failed to update admin login failure');
@@ -72,6 +77,7 @@ const authenticateAdmin = async (username, password) => {
     throw new AdminControllerException('Username and password are required');
   }
   try {
+    logger.debug('[ADMIN] authenticateAdmin start', { usernamePresent: Boolean(username), passwordPresent: typeof password === 'string' });
     const adminData = await DatabaseService.getAdminByUsername(username.trim());
     if (!adminData) return null;
 
@@ -87,6 +93,7 @@ const authenticateAdmin = async (username, password) => {
     }
         
     const isValidPassword = await bcrypt.compare(password, admin.password_hash);
+    logger.debug('[ADMIN] password compare result', { isValidPassword });
         
     if (isValidPassword) {
       await updateAdminLoginSuccess(admin.id);

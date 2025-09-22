@@ -267,9 +267,9 @@ async function adminLogin(username, password) {
       body: JSON.stringify({ username, password }),
     });
         
-    if (result.success && result.data?.token) {
+    if (result && result.success === true) {
       isAdminLoggedIn = true;
-      currentUser = result.data.user;
+      currentUser = (result.data && result.data.user) ? result.data.user : currentUser;
       adminStatusPromise = Promise.resolve(true);
       showFeedback('Erfolgreich eingeloggt.', 'info');
       updateNavigationVisibility();

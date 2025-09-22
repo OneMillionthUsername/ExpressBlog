@@ -20,38 +20,41 @@ const JWT_CONFIG = {
   AUDIENCE: 'blog-users',
 };
 
-// JWT-Secret Validation
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  if (NODE_ENV === 'test') {
-    console.warn('WARNING: JWT_SECRET not set in test environment');
-    JWT_SECRET = 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes';
-  } else {
-    console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
-    console.error('Please add JWT_SECRET to your .env file');
-    console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
-    process.exit(1);
-  }
-}
+// Determine effective secret without mutating imported constants
+const EFFECTIVE_JWT_SECRET = (!JWT_SECRET || JWT_SECRET.length < 32)
+  ? (NODE_ENV === 'test'
+    ? 'test_jwt_secret_key_with_at_least_32_characters_for_testing_purposes'
+    : (() => {
+      console.error('FATAL ERROR: JWT_SECRET environment variable is not set or invalid');
+      console.error('Please add JWT_SECRET to your .env file');
+      console.error('Example: JWT_SECRET=your_64_character_secret_key_here');
+      process.exit(1);
+    })())
+  : JWT_SECRET;
+
+// Update config to use effective secret
+JWT_CONFIG.SECRET_KEY = EFFECTIVE_JWT_SECRET;
 // Generate JWT token
 export function generateToken(user) {
-  if(user && !(user instanceof Admin)) {
+  // Accept either an Admin instance or a plain object with required fields
+  const u = (user instanceof Admin) ? user : (user || {});
+  if (typeof u.id === 'undefined' || !u.username || !u.role) {
     throw new Error('Invalid user data for token generation');
   }
- 
+
   const payload = {
-    id: Number(user.id), // BigInt to Number
-    username: user.username,
-    role: user.role,
+    id: Number(u.id), // BigInt to Number
+    username: u.username,
+    role: u.role,
     iss: JWT_CONFIG.ISSUER,
     aud: JWT_CONFIG.AUDIENCE,
   };
-    
+
   try {
     const token = jwt.sign(payload, JWT_CONFIG.SECRET_KEY, {
       expiresIn: JWT_CONFIG.EXPIRES_IN,
       algorithm: JWT_CONFIG.ALGORITHM,
     });
-        
     return token;
   } catch (error) {
     console.error('Token generation failed:', error);

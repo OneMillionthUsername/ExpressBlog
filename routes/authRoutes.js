@@ -51,13 +51,29 @@ authRouter.post('/login',
   }),
   async (req, res) => {
     try {
-      // Timeout für Auth-Operationen
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Authentication timeout')), 5000);
+      logger.debug('[AUTH] /auth/login request received', {
+        bodyKeys: Object.keys(req.body || {}),
+        hasUsername: Boolean(req.body && req.body.username),
+        hasPassword: Boolean(req.body && typeof req.body.password === 'string'),
+        csrfHeader: req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token') || null,
+        hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
       });
+      // Timeout für Auth-Operationen (ohne unhandled rejection)
+      const AUTH_TIMEOUT_MS = Number(process.env.AUTH_TIMEOUT_MS || 8000);
+      const TIMEOUT_SENTINEL = Symbol('AUTH_TIMEOUT');
+      let timer;
       const authPromise = adminController.authenticateAdmin(req.body.username, req.body.password);
-      // Authentication
-      const admin = await Promise.race([authPromise, timeoutPromise]);
+      const raced = await Promise.race([
+        authPromise,
+        new Promise((resolve) => { timer = setTimeout(() => resolve(TIMEOUT_SENTINEL), AUTH_TIMEOUT_MS); }),
+      ]);
+      if (timer) clearTimeout(timer);
+
+      if (raced === TIMEOUT_SENTINEL) {
+        logger.warn(`[AUTH AUDIT] Authentication timed out for username: ${req.body.username}`);
+        return res.status(503).json({ success: false, error: 'Authentication timeout' });
+      }
+      const admin = raced;
       if (!admin) {
         logger.warn(`[AUTH AUDIT] Failed login for username: ${req.body.username}`);
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
@@ -65,6 +81,7 @@ authRouter.post('/login',
       // Token generation
       const { id, username, role } = admin;
       const token = authService.generateToken({ id, username, role });
+      logger.debug('[AUTH] Token generated successfully for user', { id, username, role });
       res.cookie(AUTH_COOKIE_NAME, token, {
         httpOnly: true,           // Nicht per JavaScript lesbar
         secure: IS_PRODUCTION,    // Nur über HTTPS
@@ -83,7 +100,13 @@ authRouter.post('/login',
         },
       });
     } catch (error) {
-      logger.error(`[AUTH AUDIT] Login error for username: ${req.body.username}`, error);
+      logger.error(`[AUTH AUDIT] Login error for username: ${req.body && req.body.username}`, error);
+      logger.debug('[AUTH] Login error details', {
+        message: error && error.message,
+        stack: error && error.stack,
+        hasCsrfHeader: Boolean(req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token')),
+        hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
+      });
       res.status(500).json({ success: false, error: 'Internal server error' });
     }
   });
