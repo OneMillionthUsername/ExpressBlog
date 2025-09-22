@@ -113,14 +113,15 @@ export default [
         HTMLElement: 'readonly',
         Event: 'readonly',
         // Test globals
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        setImmediate: 'readonly'
+          describe: 'readonly',
+          it: 'readonly',
+          test: 'readonly',
+          expect: 'readonly',
+          beforeEach: 'readonly',
+          afterEach: 'readonly',
+          beforeAll: 'readonly',
+          afterAll: 'readonly',
+          setImmediate: 'readonly'
       }
     },
     rules: {
