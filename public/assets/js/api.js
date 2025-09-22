@@ -13,6 +13,7 @@ export function clearGetResponseCache() {
 const ENDPOINT_CACHE_TTLS = new Map([
   ['/blogpost/all', 30 * 1000], // posts list keep shorter TTL (30s)
   ['/cards', 5 * 60 * 1000],    // cards change rarely; cache 5 minutes
+  ['/blogpost/most-read', 5 * 60 * 1000], // most-read is semi-static; cache 5 minutes
 ]);
 
 // Shared posts cache (higher-level store used by UI components)

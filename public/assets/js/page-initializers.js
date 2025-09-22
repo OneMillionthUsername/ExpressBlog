@@ -27,8 +27,14 @@ import { initializeCommentsDelegation, initializeCommentsSystem } from './commen
 // Globale Initialisierung - einmalig beim DOM-Ready
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    // 1. Admin-System initialisieren (immer zuerst)
-    if (typeof initializeAdminSystem === 'function') {
+    // 1. Admin-System initialisieren (only when admin UI is present or server signals admin)
+    // This avoids calling /auth/verify on every public page which creates unnecessary
+    // 401 noise and extra requests.
+    const shouldInitAdmin = (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.isAdmin)
+      || document.getElementById('admin-login-btn')
+      || document.querySelector('.admin-required')
+      || document.querySelector('[data-admin-init]');
+    if (shouldInitAdmin && typeof initializeAdminSystem === 'function') {
       await initializeAdminSystem();
     }
 
@@ -109,8 +115,8 @@ function getCurrentPageType() {
   if (page === 'createPost') return 'create';
   if (page === 'archiv') return 'archiv';
   if (page === 'listCurrentPosts') return 'list_posts';
-  if (page === 'mostReadPosts') return 'most_read';
-  if (page === 'readPost') return 'read_post';
+  if (page === 'mostReadPosts' || path === '/blogpost/most-read' || path.endsWith('/most-read')) return 'most_read';
+  if (page === 'readPost' || /^\/blogpost\/(by-id\/\d+|\d+|[^\/]+)$/.test(path)) return 'read_post';
   if (page === 'about') return 'about';
   if (path === '/posts') return 'list_posts';
 
@@ -203,14 +209,17 @@ async function initializeIndexPage() {
       console.info('No posts available - skipping sidebar rendering');
     }
 
-    // Cards laden
-    const cards = await loadCards();
-    if (cards && cards.length > 0) {
-      if (typeof renderAndDisplayCards === 'function') {
-        await renderAndDisplayCards(cards);
+    // Cards laden only if the page contains a cards container or the renderer is present
+    const hasCardsContainer = document.getElementById('cards-container') || document.getElementById('cards') || document.querySelector('.cards-list');
+    if (hasCardsContainer) {
+      const cards = await loadCards();
+      if (cards && cards.length > 0) {
+        if (typeof renderAndDisplayCards === 'function') {
+          await renderAndDisplayCards(cards);
+        }
+      } else {
+        console.info('No cards available - skipping card rendering');
       }
-    } else {
-      console.info('No cards available - skipping card rendering');
     }
 
   } catch (error) {

@@ -1014,7 +1014,7 @@ export async function loadAndDisplayAllPosts() {
 // Funktion zum Laden und Anzeigen der meistgelesenen Posts (für most_read.html)
 export async function loadAndDisplayMostReadPosts() {
   try {
-  const apiResult = await apiRequest('/most-read', { method: 'GET' });
+  const apiResult = await apiRequest('/blogpost/most-read', { method: 'GET' });
     const posts = apiResult && apiResult.success === true ? apiResult.data : null;
     // Error handling
     if (!apiResult || apiResult.success !== true) {
@@ -1277,8 +1277,12 @@ export async function renderPopularPostsSidebar(posts) {
   // Prefer server-provided most-read posts (ordered by views). If it fails,
   // fall back to the existing client-side selection logic.
   try {
+    // If the sidebar element is not present, avoid making the server call.
+    const listEl = document.getElementById('popular-posts');
+    if (!listEl) return;
+
     const resp = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
-      globalThis.makeApiRequest('/most-read', { method: 'GET' }) : await apiRequest('/most-read', { method: 'GET' }));
+      globalThis.makeApiRequest('/blogpost/most-read', { method: 'GET' }) : await apiRequest('/blogpost/most-read', { method: 'GET' }));
 
     const serverPosts = resp && resp.success === true ? resp.data : null;
     if (Array.isArray(serverPosts) && serverPosts.length > 0) {
