@@ -9,6 +9,11 @@ export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['./tests/setup.js'],
   testTimeout: 10000,
+  // Run tests sequentially in one worker to avoid ESM module-linking races with
+  // unstable_mockModule when tests register ESM mocks dynamically. This is a
+  // conservative measure; if you prefer parallel runs, we should refactor tests
+  // to avoid global unstable_mockModule side-effects.
+  maxWorkers: 1,
   testPathIgnorePatterns: [
     '/node_modules/',
     '<rootDir>/tests/etag.test.js'
@@ -18,6 +23,7 @@ export default {
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
+  // resetModules: true, // Commented out to avoid ESM module-linking issues
   testEnvironmentOptions: {
     html: '<html lang="zh-cmn-Hant"></html>',
     url: 'https://jestjs.io/',

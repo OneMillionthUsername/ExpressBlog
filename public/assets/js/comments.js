@@ -175,24 +175,50 @@ async function displayComments(postId) {
     // Sort comments by date (newest first)
     comments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    const commentsHtml = comments.map(comment => `
-            <div class="comment-item" data-comment-id="${comment.id}">
-                <div class="comment-header">
-                    <span class="comment-username">
-                        <i class="fas fa-user-circle"></i> ${comment.username}
-                    </span>
-                    <span class="comment-time">${formatCommentTime(comment.created_at)}</span>
-          ${(typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) ? 
-  `<button data-action="delete-comment" data-post-id="${postId}" data-comment-id="${comment.id}"
+    const commentsHtml = comments.map(comment => {
+      // Safely render username and text. Prefer DOMPurify in the browser; fall back
+      // to server-side/client-side escaping if DOMPurify is not available (tests).
+      let safeUsername;
+      let safeText;
+      try {
+        if (typeof DOMPurify !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
+          safeUsername = DOMPurify.sanitize(String(comment.username || ''), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+          safeText = DOMPurify.sanitize(String(comment.text || ''), {
+            ALLOWED_TAGS: ['p','br','b','i','strong','em','u','a','ul','ol','li','code','pre'],
+            ALLOWED_ATTR: ['href','title','target','rel','alt'],
+            FORBID_TAGS: ['script','style'],
+          });
+        } else {
+          // Tests or environments without DOMPurify: escape HTML and preserve line breaks
+          safeUsername = escapeHtml(String(comment.username || ''));
+          safeText = escapeHtml(String(comment.text || '')).replace(/\n/g, '<br>');
+        }
+      } catch {
+        // Fallback to escaped plain text
+        safeUsername = escapeHtml(String(comment.username || ''));
+        safeText = escapeHtml(String(comment.text || '')).replace(/\n/g, '<br>');
+      }
+
+      const deleteButton = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) ? 
+        `<button data-action="delete-comment" data-post-id="${postId}" data-comment-id="${comment.id}"
                 class="btn btn-sm btn-outline-danger comment-delete-btn" 
                 title="Kommentar löschen">
               <i class="fas fa-trash"></i>
-            </button>` : ''
-}
+            </button>` : '';
+
+      return `
+            <div class="comment-item" data-comment-id="${comment.id}">
+                <div class="comment-header">
+                    <span class="comment-username">
+                        <i class="fas fa-user-circle"></i> ${safeUsername}
+                    </span>
+                    <span class="comment-time">${formatCommentTime(comment.created_at)}</span>
+          ${deleteButton}
                 </div>
-                <div class="comment-text">${comment.text}</div>
+                <div class="comment-text">${safeText}</div>
             </div>
-        `).join('');
+        `;
+    }).join('');
     commentsContainer.innerHTML = commentsHtml;
     // actualise commentscounter
     updateCommentCount(comments.length);

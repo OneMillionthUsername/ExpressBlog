@@ -1,6 +1,8 @@
 import { DatabaseService } from '../databases/mariaDB.js';
 import Comment from '../models/commentModel.js';
 import { CommentControllerException } from '../models/customExceptions.js';
+import { sanitizeHtml } from '../utils/sanitizer.js';
+import { escapeHtml } from '../utils/utils.js';
 
 const createComment = async (postId, commentData) => {
   const { error, value } = Comment.validate(commentData);
@@ -8,6 +10,19 @@ const createComment = async (postId, commentData) => {
     throw new CommentControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
   }
   try {
+    // Server-side sanitization: allow only safe HTML in comment text and
+    // ensure username is plain text (no tags/styles). This prevents stored
+    // content from containing inline style attributes that violate CSP.
+    try {
+      value.text = sanitizeHtml(String(value.text || ''));
+    } catch (_e) {
+      value.text = escapeHtml(String(value.text || ''));
+    }
+    if (!value.username || String(value.username).trim() === '') {
+      value.username = 'Anonym';
+    } else {
+      value.username = escapeHtml(String(value.username));
+    }
     const result = await DatabaseService.createComment(postId, value);
     if (!result || result.affectedRows === 0) {
       throw new Error('Failed to add comment');
