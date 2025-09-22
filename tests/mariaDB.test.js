@@ -581,7 +581,7 @@ describe('DatabaseService', () => {
       expect(result.card.id).toBeGreaterThan(0);
       expect(result.card.link).toBe(cardData.link);
       expect(result.card.img_link).toBe(cardData.img_link);
-      expect(result.card.published).toBe(cardData.published);
+            		expect(result.card.published).toBe(Boolean(cardData.published));
     });
     it('createCard throws if no data provided', async () => {
       await expect(DatabaseService.createCard(null)).rejects.toThrow('Error in createCard: Card is null or invalid');

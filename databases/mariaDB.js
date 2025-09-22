@@ -343,16 +343,9 @@ export async function initializeDatabaseSchema() {
     `);
 
     // Karten-Tabelle
-    await conn.query(`
-        CREATE TABLE IF NOT EXISTS cards (
-            id BIGINT AUTO_INCREMENT PRIMARY KEY,
-            title VARCHAR(200) NOT NULL,
-            subtitle VARCHAR(200) DEFAULT NULL,
-            link VARCHAR(500) NOT NULL,
-            img_link VARCHAR(500) NOT NULL,
-            published BOOLEAN DEFAULT 0
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
+    // Hinweis: Die Cards-Tabelle wird weiter oben bereits mit created_at, Indizes
+    // und published DEFAULT 1 erstellt. Der folgende doppelte Block wurde entfernt,
+    // um Konflikte zwischen unterschiedlichen Defaults (0 vs 1) zu vermeiden.
 
     console.log('MariaDB schema created/verified successfully');
     logger.info('MariaDB schema created/verified successfully');
@@ -733,7 +726,8 @@ export const DatabaseService = {
         link: cardData.link,
         img_link: cardData.img_link,
         // Ensure boolean maps correctly for MariaDB tinyint(1)/boolean
-        published: typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 0,
+        // Default to 1 (true) if not explicitly provided to match schema default
+        published: typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 1,
       };
       const result = await conn.query(
         'INSERT INTO cards (title, subtitle, link, img_link, published) VALUES (?, ?, ?, ?, ?)',
@@ -756,14 +750,23 @@ export const DatabaseService = {
   async getAllCards() {
     let conn;
     try {
-      conn = await getDatabasePool().getConnection();
-      const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+      		conn = await getDatabasePool().getConnection();
+      		const result = await conn.query('SELECT * FROM cards WHERE published = 1 ORDER BY id DESC');
       if (!result || result.length === 0) {
         throw new Error('No cards found');
       }
-      return result.map(card => ({
-        ...convertBigInts(card),
-      }));
+      return result.map(card => {
+        const converted = { ...convertBigInts(card) };
+        // Normalize published to boolean consistently
+        if (typeof converted.published === 'number') {
+          converted.published = converted.published === 1;
+        } else if (converted.published === null || converted.published === undefined) {
+          converted.published = false;
+        } else {
+          converted.published = Boolean(converted.published);
+        }
+        return converted;
+      });
     } catch (error) {
       logger.error(`Error in getAllCards: ${error.message}`);
       throw new databaseError(`Error in getAllCards: ${error.message}`, error);
@@ -779,9 +782,16 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
-      return result.length > 0 ? {
-        ...convertBigInts(result[0]),
-      } : null;
+      if (result.length === 0) return null;
+      const converted = { ...convertBigInts(result[0]) };
+      if (typeof converted.published === 'number') {
+        converted.published = converted.published === 1;
+      } else if (converted.published === null || converted.published === undefined) {
+        converted.published = false;
+      } else {
+        converted.published = Boolean(converted.published);
+      }
+      return converted;
     } catch (error) {
       logger.error(`Error in getCardById: ${error.message}`);
       throw new databaseError(`Error in getCardById: ${error.message}`, error);
