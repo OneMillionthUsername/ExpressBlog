@@ -142,6 +142,7 @@ app.use(helmet({
         '\'self\'', 
         'data:', 
         'blob:',
+        'https:',
         'https://images.unsplash.com',
         'https://cdn.tiny.cloud',
         'https://avatars.githubusercontent.com',

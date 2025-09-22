@@ -548,6 +548,10 @@ export async function renderAndDisplayCards(cards) {
     
   let html = '';
   cards.forEach((card, _index) => {
+    // Prefer HTTPS for external images to avoid mixed-content/CSP issues
+    const imgSrc = (typeof card.img_link === 'string' && card.img_link.startsWith('http://'))
+      ? card.img_link.replace('http://', 'https://')
+      : card.img_link;
     // Prüfe, ob die Karte neu ist (z.B. innerhalb der letzten 7 Tage erstellt)
     const isNew = card.created_at ? (() => {
       const cardDate = new Date(card.created_at);
@@ -562,12 +566,12 @@ export async function renderAndDisplayCards(cards) {
       return daysDiff < 1;
     })() : false;
         
-    html += `
+  html += `
         <div class="col-md-4 mb-4">
             <div class="discovery-card ${isNew ? 'discovery-card-new' : ''} ${isVeryNew ? 'discovery-card-very-new' : ''}">
                 ${isVeryNew ? '<div class="discovery-new-badge very-new">Gerade veröffentlicht</div>' : ''}
                 ${isNew && !isVeryNew ? '<div class="discovery-new-badge">Neu</div>' : ''}
-  <img src="${card.img_link}" 
+  <img src="${imgSrc}" 
       alt="${card.title}" 
       class="discovery-img"
       data-link="${card.link}"
@@ -592,6 +596,17 @@ export async function renderAndDisplayCards(cards) {
     img.style.cursor = 'pointer';
     img.setAttribute('role', 'link');
     img.setAttribute('tabindex', '0');
+    // Graceful fallback if image fails to load (hide broken image and disable link behavior)
+    img.addEventListener('error', () => {
+      try {
+        img.removeAttribute('data-link');
+        img.style.cursor = 'default';
+        img.alt = img.alt ? img.alt + ' (Bild konnte nicht geladen werden)' : 'Bild konnte nicht geladen werden';
+        img.classList.add('discovery-img-error');
+        // Optionally hide the image to avoid broken icon
+        img.style.display = 'none';
+      } catch (e) { void e; }
+    });
     img.addEventListener('click', () => {
       const url = img.dataset.link;
       if (url) window.open(url, '_blank');
