@@ -8,8 +8,10 @@ const createCard = async (cardData) => {
     throw new CardControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
   }
   try {
-    const card = await DatabaseService.createCard(value);
-    return new Card(card);
+    const result = await DatabaseService.createCard(value);
+    // DatabaseService.createCard returns { success: true, card: {...} }
+    const created = result && result.card ? result.card : result;
+    return new Card(created);
   } catch (error) {
     throw new CardControllerException(`Error creating card: ${error.message}`, error);
   }

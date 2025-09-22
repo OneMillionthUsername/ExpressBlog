@@ -429,14 +429,15 @@ export function showCreateCardModal() {
 
   // Eingabefelder erstellen
   const fields = [
-    { id: 'card-input-title', label: 'Title' },
-    { id: 'card-input-subtitle', label: 'Subtitle' },
-    { id: 'card-input-inputImgUrl', label: 'Image URL' },
-    { id: 'card-input-inputLink', label: 'Link' },
+    { id: 'card-input-title', label: 'Title', key: 'title', placeholder: 'z.B. Cooles Fundstück' },
+    { id: 'card-input-subtitle', label: 'Subtitle', key: 'subtitle', placeholder: 'optional' },
+    { id: 'card-input-img_link', label: 'Image URL', key: 'img_link', placeholder: 'https://…' },
+    { id: 'card-input-link', label: 'Link', key: 'link', placeholder: 'https://…' },
   ];
 
   fields.forEach(field => {
     const { label, input } = createInputField(field.id, field.label);
+    if (field.placeholder) input.placeholder = field.placeholder;
     form.appendChild(label);
     form.appendChild(input);
   });
@@ -476,7 +477,10 @@ export function showCreateCardModal() {
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
     const cardData = fields.reduce((data, field) => {
-      data[field.id.replace('card-input-', '')] = document.getElementById(field.id).value;
+      const el = document.getElementById(field.id);
+      const val = el ? el.value : '';
+      // Map to API keys
+      data[field.key] = val;
       return data;
     }, {});
 
@@ -1306,7 +1310,7 @@ export async function renderPopularPostsSidebar(posts) {
       if (!list) return;
       list.innerHTML = '';
       serverPosts.slice(0, 5).forEach(p => {
-          const views = Number(p.views || 0);
+          //const _views = Number(p.views || 0);
           const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
         const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.id}">${title}</a>`);
         list.appendChild(li);

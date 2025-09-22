@@ -76,8 +76,8 @@ cardRouter.post('/',
       img_link: Joi.string().uri().required(),
     }),
   }),
-  requireAdmin,
   authenticateToken,
+  requireAdmin,
   async (req, res) => {
     const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     logger.debug(`[${requestId}] POST /cards: Request received from ${req.ip}`);
@@ -114,8 +114,8 @@ cardRouter.delete('/:id',
       id: Joi.number().integer().min(1).required(),
     }),
   }),
-  requireAdmin,
   authenticateToken,
+  requireAdmin,
   async (req, res) => {
     const cardId = parseInt(req.params.id);
     const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);

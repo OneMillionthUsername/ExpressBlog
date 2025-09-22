@@ -25,9 +25,9 @@ export class Card{
 
 export const cardSchema = Joi.object({
   id: Joi.number().integer().optional(),
-  title: Joi.string().min(2).max(200).required(),
-  subtitle: Joi.string().min(2).max(200).optional(),
+  title: Joi.string().min(1).max(255).required(),
+  subtitle: Joi.string().max(500).allow('', null).optional(),
   link: Joi.string().uri().required(),
-  img_link: Joi.string().uri().optional(),
+  img_link: Joi.string().uri().required(),
   published: Joi.boolean().optional(),
 });

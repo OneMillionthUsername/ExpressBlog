@@ -258,6 +258,22 @@ export async function initializeDatabaseSchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Cards-Tabelle
+    await conn.query(`
+        CREATE TABLE IF NOT EXISTS cards (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            subtitle VARCHAR(500) DEFAULT NULL,
+            link VARCHAR(1000) NOT NULL,
+            img_link VARCHAR(1000) NOT NULL,
+            published BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+            INDEX idx_cards_created_at (created_at DESC),
+            INDEX idx_cards_published (published)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // Analytics/Views-Tabelle
     // await conn.query(`
     //     CREATE TABLE IF NOT EXISTS post_analytics (
