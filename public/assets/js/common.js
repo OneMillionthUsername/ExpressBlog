@@ -1308,7 +1308,7 @@ export async function renderPopularPostsSidebar(posts) {
       serverPosts.slice(0, 5).forEach(p => {
           const views = Number(p.views || 0);
           const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
-        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.id}">${title}</a> <span class="sidebar-views">(${views} Aufrufe)</span>`);
+        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.id}">${title}</a>`);
         list.appendChild(li);
       });
       return;
