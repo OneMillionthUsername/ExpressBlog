@@ -208,7 +208,7 @@ function showAdminLoginModal() {
   modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Admin Login</h3>
+                <h3>Login</h3>
             </div>
             <div class="modal-body">
                 <div>
