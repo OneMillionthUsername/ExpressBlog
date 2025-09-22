@@ -2,6 +2,7 @@
 /* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
+import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
 // Logger not available in frontend - use console instead
 
 // Export imported helper so other modules can import it from this module
@@ -548,37 +549,9 @@ export async function renderAndDisplayCards(cards) {
     
   let html = '';
   cards.forEach((card, _index) => {
-    // Helpers: decode common punctuation entities (including double-escaped) and escape HTML for safe insertion
-    const decodePunctEntities = (str) => {
-      try {
-        if (typeof str !== 'string') return '';
-        const mapping = {
-          '&rsquo;': '’', '&lsquo;': '‘', '&rdquo;': '”', '&ldquo;': '“',
-          '&#39;': "'", '&apos;': "'", '&quot;': '"',
-          '&ndash;': '–', '&mdash;': '—', '&hellip;': '…',
-        };
-        let out = str;
-        for (const [ent, ch] of Object.entries(mapping)) {
-          // Replace single-escaped and double-escaped forms (e.g., &rsquo; and &amp;rsquo;)
-          const name = ent.slice(1); // e.g., 'rsquo;'
-          const re1 = new RegExp(ent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-          const re2 = new RegExp('&amp;' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-          out = out.replace(re1, ch).replace(re2, ch);
-        }
-        return out;
-      } catch { return String(str || ''); }
-    };
-    const escapeHtml = (str) => {
-      if (typeof str !== 'string') return '';
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    };
-    const safeTitle = escapeHtml(decodePunctEntities(card.title || ''));
-    const safeSubtitle = escapeHtml(decodePunctEntities(card.subtitle || ''));
+    // Use shared decoder/escaper for consistent typography and safety
+    const safeTitle = _escapeHtml(decodeHtmlEntities(card.title || ''));
+    const safeSubtitle = _escapeHtml(decodeHtmlEntities(card.subtitle || ''));
     // Prefer HTTPS for external images to avoid mixed-content/CSP issues
     const imgSrc = (typeof card.img_link === 'string' && card.img_link.startsWith('http://'))
       ? card.img_link.replace('http://', 'https://')
@@ -1715,13 +1688,5 @@ if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 't
   }
 }
 
-// Client-side escapeHtml for user-provided strings (keeps parity with server utils)
-export function escapeHtml(str) {
-  if (typeof str !== 'string') return str;
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+// Re-export shared escapeHtml to keep existing imports working
+export { _escapeHtml as escapeHtml };

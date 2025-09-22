@@ -1,5 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
+import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
 import * as authService from '../services/authService.js';
 import postController from '../controllers/postController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
@@ -19,8 +20,10 @@ staticRouter.get('/', (req, res) => {
       const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
       const featuredPosts = (posts || []).slice(0, 3).map(p => {
         const plain = stripTags(p.content || '');
-        const excerpt = plain.length > 150 ? plain.substring(0, 150) + '...' : plain;
-        return { title: p.title, slug: p.slug, excerpt };
+        const decodedPlain = decodeHtmlEntities(plain);
+        const excerpt = decodedPlain.length > 150 ? decodedPlain.substring(0, 150) + '...' : decodedPlain;
+        const decodedTitle = decodeHtmlEntities(p.title || '');
+        return { title: decodedTitle, slug: p.slug, excerpt };
       });
       logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
       res.render('index', { featuredPosts });
