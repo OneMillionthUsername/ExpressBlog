@@ -204,16 +204,36 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
-    logger.error(`[${requestId}] GET /most-read route error: ${error && error.message ? error.message : String(error)}`);
+    // If the controller indicates there are simply no valid published posts,
+    // log at WARN level to avoid noisy error logs. For other errors, keep ERROR.
+    if (error instanceof PostControllerException) {
+      logger.warn(`[${requestId}] GET /most-read route: ${error && error.message ? error.message : String(error)}`);
+    } else {
+      logger.error(`[${requestId}] GET /most-read route error: ${error && error.message ? error.message : String(error)}`);
+    }
     // If the client expects HTML (regular browser navigation), render the
-    // `mostReadPosts` view with a friendly message. For API/JS clients, return JSON.
-    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+    // `mostReadPosts` view with a friendly message. For API/JS clients, return
+    // JSON. When there are simply no most-read posts (PostControllerException),
+    // return an empty array with 200 for API/XHR clients so the frontend can
+    // gracefully fall back instead of logging noisy 404s.
+    const acceptsHtml = req.accepts && req.accepts('html');
+    if (acceptsHtml && !req.is('application/json')) {
       const message = (error instanceof PostControllerException)
         ? 'No most-read blog posts found'
         : 'Server error while loading most-read blog posts';
-      return res.status(error instanceof PostControllerException ? 404 : 500).render('mostReadPosts', { posts: null, errorMessage: message });
+      // Render a friendly page for browsers. When there are simply no most-read
+      // posts, return 200 so the browser doesn't treat the page as a missing
+      // resource. Server errors still return 500.
+      return res.status(error instanceof PostControllerException ? 200 : 500).render('mostReadPosts', { posts: null, errorMessage: message });
     }
-    return res.status(error instanceof PostControllerException ? 404 : 500).json({ error: 'Server failed to load most read blog posts' });
+
+    // API / XHR clients
+    if (error instanceof PostControllerException) {
+      // Treat 'no posts' as empty result for API consumers to avoid noisy 404
+      // in the client console; client-side code will fall back appropriately.
+      return res.status(200).json([]);
+    }
+    return res.status(500).json({ error: 'Server failed to load most read blog posts' });
   }
 });
 // Numeric ID route should come BEFORE the slug route to avoid numeric slugs being
