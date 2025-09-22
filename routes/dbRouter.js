@@ -12,7 +12,6 @@ export default function createDbRouter(requireDatabase, routes) {
 
   // Mount the sub-routers (order preserved)
   dbRouter.use('/', routes.staticRouter);
-  dbRouter.use('/', routes.utilityRouter);
   // Sitemap may be fine without DB; keep it here for consistency. Move outside if needed.
   dbRouter.use('/', routes.sitemapRouter);
 

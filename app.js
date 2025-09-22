@@ -25,6 +25,9 @@ import createDbRouter from './routes/dbRouter.js';
 import aiRoutes from './routes/aiRoutes.js';
 import csrfProtection from './utils/csrf.js';
 import nonceMiddleware from './middleware/nonceMiddleware.js';
+import compression from 'compression';
+import { authenticateToken, requireAdmin } from './middleware/authMiddleware.js';
+import { errors as celebrateErrors } from 'celebrate';
 
 // App-Status Management
 class AppStatus extends EventEmitter {
@@ -103,7 +106,13 @@ const app = express();
 // MIDDLEWARE
 // ===========================================
 // Helmet core + secure CSP (no 'unsafe-inline')
-app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
+// Configure trust proxy based on environment: in production behind proxies (e.g., Plesk),
+// trust the first proxy to correctly determine protocol and IP; in development, keep loopback only.
+if (config.IS_PRODUCTION || config.IS_PLESK) {
+  app.set('trust proxy', 1);
+} else {
+  app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
+}
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -162,6 +171,9 @@ app.use(helmet({
 
 // Nonce-Middleware für sichere Inline-Scripts
 app.use(nonceMiddleware);
+
+// Enable gzip/deflate compression for responses
+app.use(compression());
 
 // 2. Cookie Parser (required BEFORE CSRF!)
 app.use(cookieParser());
@@ -346,6 +358,9 @@ function registerDatabaseRoutes() {
   const dbRouter = createDbRouter(requireDatabase, routes);
   app.use('/', dbRouter);
   
+  // Celebrate validation error handler should be before 404 and other error handlers
+  app.use(celebrateErrors());
+  
   
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
@@ -388,7 +403,7 @@ app.use('/api', routes.utilityRouter);
 // production (e.g. proxies/CDNs that strip Accept or X-Requested-With).
 // This endpoint intentionally masks sensitive headers (cookies, authorization)
 // and also returns a small whitelist of headers that are most relevant.
-app.get('/debug/headers', (req, res) => {
+app.get('/debug/headers', authenticateToken, requireAdmin, (req, res) => {
   try {
     const masked = { ...req.headers };
     if (masked.cookie) masked.cookie = '[REDACTED]';
@@ -475,6 +490,7 @@ app.use((req, res, next) => {
 
 // Error-Handling Middleware (MUSS am Ende stehen!)
 app.use(middleware.errorHandlerMiddleware);
+
 
 // Export the app to be used by the server
 export default app;
