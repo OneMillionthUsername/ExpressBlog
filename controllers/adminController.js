@@ -84,7 +84,8 @@ const authenticateAdmin = async (username, password) => {
     // 2. Admin-Objekt validieren
     const { error, value } = Admin.validate(adminData);
     if (error) {
-      throw new AdminControllerException('Invalid admin data from database:', error.details.map(d => d.message).join('; '));
+      const details = error.details ? error.details.map(d => d.message).join('; ') : String(error.message || error);
+      throw new AdminControllerException('Invalid admin data from database: ' + details);
     }
     const admin = new Admin(value);
     // 3. Account-Status prüfen

@@ -22,7 +22,8 @@ export class Admin {
     created_at = new Date(),
     updated_at = new Date(),
   } = {}) {
-    this.id = id;
+    // coerce id to number if possible
+    this.id = typeof id === 'string' ? Number(id) : id;
     this.username = username;
     this.password_hash = password_hash;
     this.email = email;
@@ -30,7 +31,7 @@ export class Admin {
     this.role = role;
     this.active = !!active;
     this.last_login = last_login ? new Date(last_login) : null;
-    this.login_attempts = login_attempts;
+    this.login_attempts = typeof login_attempts === 'string' ? parseInt(login_attempts, 10) : login_attempts;
     this.locked_until = locked_until ? new Date(locked_until) : null;
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
@@ -42,16 +43,16 @@ export class Admin {
 }
 
 export const adminSchema = Joi.object({
-  id: Joi.number().integer().optional(),
+  id: Joi.alternatives(Joi.number().integer(), Joi.string().pattern(/^\d+$/)).optional(),
   username: Joi.string().min(1).max(100).required(),
   password_hash: Joi.string().min(8).required(),
-  email: Joi.string().email().required(),
+  email: Joi.string().email().allow(null).optional(),
   full_name: Joi.string().min(2).max(200).optional(),
   role: Joi.string().valid('admin', 'editor', 'viewer').required(),
   active: Joi.boolean().optional(),
-  last_login: Joi.date().optional(),
+  last_login: Joi.date().allow(null).optional(),
   login_attempts: Joi.number().integer().min(0).optional(),
-  locked_until: Joi.date().optional(),
+  locked_until: Joi.date().allow(null).optional(),
   created_at: Joi.date().required(),
   updated_at: Joi.date().optional(),
 });

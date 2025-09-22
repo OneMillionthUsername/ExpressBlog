@@ -911,7 +911,58 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query('SELECT * FROM admins WHERE username = ? LIMIT 1', [username]);
-      return result.length > 0 ? result[0] : null;
+      if (!result || result.length === 0) return null;
+
+      // Normalize admin row to expected types for Joi schema
+      const raw = result[0];
+      const row = convertBigInts({ ...raw });
+
+      // id: ensure number
+      if (typeof row.id === 'string') {
+        const n = Number(row.id);
+        row.id = Number.isFinite(n) ? n : row.id;
+      }
+
+      // active: tinyint(1) -> boolean
+      if (typeof row.active === 'number') {
+        row.active = row.active === 1;
+      } else if (typeof row.active === 'string') {
+        row.active = row.active === '1' || row.active.toLowerCase() === 'true';
+      } else if (row.active == null) {
+        row.active = true; // default active if missing
+      }
+
+      // role: default to 'admin' if missing/null
+      if (!row.role) {
+        row.role = 'admin';
+      }
+
+      // full_name: remove if null/invalid to satisfy Joi.optional string
+      if (row.full_name == null || (typeof row.full_name !== 'string')) {
+        delete row.full_name;
+      }
+
+      // Dates: convert invalid sentinel to null and ensure Date objects
+      const normalizeDate = (v) => {
+        if (!v) return null;
+        if (typeof v === 'string' && v.startsWith('0000-00-00')) return null;
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      };
+      row.last_login = normalizeDate(row.last_login);
+      row.locked_until = normalizeDate(row.locked_until);
+      row.created_at = normalizeDate(row.created_at) || new Date();
+      row.updated_at = normalizeDate(row.updated_at) || row.created_at;
+
+      // login_attempts: ensure number >= 0
+      if (typeof row.login_attempts === 'string') {
+        const n = parseInt(row.login_attempts, 10);
+        row.login_attempts = Number.isFinite(n) && n >= 0 ? n : 0;
+      } else if (typeof row.login_attempts !== 'number' || row.login_attempts < 0 || !Number.isFinite(row.login_attempts)) {
+        row.login_attempts = 0;
+      }
+
+      return row;
     } catch (error) {
       logger.error(`Error in getAdminByUsername: ${error.message}`);
       throw new databaseError(`Error in getAdminByUsername: ${error.message}`, error);
