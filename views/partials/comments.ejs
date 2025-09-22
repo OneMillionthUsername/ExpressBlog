@@ -1,0 +1,56 @@
+<!-- Comments partial: renders comment form and list for a post. Expects `post` to be defined -->
+<section id="comments-section" class="comments-section hidden">
+    <div class="comments-divider">
+        <hr>
+    </div>
+
+    <h3 id="comments-title" class="comments-title">
+        💬 Kommentare <span class="badge badge-secondary" id="comment-count">0</span>
+    </h3>
+
+    <!-- Kommentar-Formular -->
+    <div class="comment-form-container">
+        <h4 class="mb-3">Kommentar schreiben</h4>
+        <form id="comment-form" class="comment-form">
+            <div class="form-group">
+                <label for="comment-username">Name (optional):</label>
+                <input type="text" 
+                       id="comment-username" 
+                       class="form-control" 
+                       placeholder="Dein Name oder lasse es leer für 'Anonym'"
+                       maxlength="50">
+                <small class="form-text text-muted">
+                    Falls leer gelassen, wird "Anonym" angezeigt.
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="comment-text">Kommentar: <span class="text-danger">*</span></label>
+                <textarea id="comment-text" 
+                          class="form-control" 
+                          rows="4" 
+                          placeholder="Teile deine Gedanken zu diesem Blogpost..."
+                          maxlength="1000"
+                          required></textarea>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="form-text text-muted">
+                        Sei respektvoll und konstruktiv in deinen Kommentaren.
+                    </small>
+                    <small id="char-counter" class="char-counter text-muted">0/1000</small>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary-theme">
+                <i class="fas fa-paper-plane"></i> Kommentar senden
+            </button>
+        </form>
+    </div>
+    
+    <!-- Kommentare anzeigen -->
+    <div class="comments-list-container">
+        <h4 class="mb-3">💭 Diskussion</h4>
+        <div id="comments-list" class="comments-list">
+            <!-- Kommentare werden hier dynamisch eingefügt -->
+        </div>
+    </div>
+</section>

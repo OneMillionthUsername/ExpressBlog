@@ -19,7 +19,7 @@ import {
 let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
 import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
-import { initializeCommentsDelegation } from './comments.js';
+import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
 // da sie aus separaten Modulen kommen können
@@ -260,11 +260,12 @@ async function initializeReadPostPage() {
         addReadPostAdminControls();
       }
 
-      // Kommentare aktivieren
+      // Kommentare aktivieren: remove the utility 'hidden' class (CSS uses !important)
       const commentsSection = document.getElementById('comments-section');
       if (commentsSection) {
-        commentsSection.style.display = 'block';
+        commentsSection.classList.remove('hidden');
         if (typeof initializeCommentsSystem === 'function') {
+          // initializeCommentsSystem will attach event handlers and load comments
           initializeCommentsSystem();
         }
       }
