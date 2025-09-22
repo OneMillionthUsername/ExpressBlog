@@ -5,7 +5,7 @@
  */
 import express from 'express';
 import { loginLimiter, strictLimiter } from '../utils/limiters.js';
-import * as adminController from '../controllers/adminController.js';
+import adminController from '../controllers/adminController.js';
 import * as authService from '../services/authService.js';
 import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import { celebrate, Joi, Segments } from 'celebrate';
