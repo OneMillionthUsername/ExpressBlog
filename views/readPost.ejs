@@ -86,10 +86,10 @@
     <!-- If the server rendered the post, expose it to the client JS so the page can
          show the content without making an extra API request. Use unescaped EJS
          output to inject JSON. post has been converted by the route where needed. -->
-    <script>
+    <script nonce="<%= nonce %>">
         window.__SERVER_POST = <%- __serverPost %>;
     </script>
-    <script>
+    <script nonce="<%= nonce %>">
         // Defensive fallback: if the server injected the post JSON, remove the loading
         // spinner element and ensure the article is visible. This helps if CSS is stale
         // or if the client-side initializer hasn't run yet.

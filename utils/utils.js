@@ -164,4 +164,22 @@ export function incrementViews(req, postId) {
   DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
     console.error('Fehler beim Tracking:', err);
   });
+  // Probabilistic cache invalidation: occasionally invalidate mostRead cache
+  // to ensure popular lists reflect recent view counts without deleting cache on every hit.
+  try {
+    const rand = Math.random();
+    if (rand < 0.01) { // ~1% chance
+      // Lazy-load simpleCache to avoid cyclic deps at module load time
+      import('../utils/simpleCache.js').then(m => m.default).then(simpleCache => {
+        try {
+          console.debug('incrementViews: probabilistic cache invalidation triggered for posts:mostRead');
+        } catch (_e) { /* ignore */ }
+        if (simpleCache && typeof simpleCache.del === 'function') {
+          try { simpleCache.del('posts:mostRead'); } catch (_e) { /* ignore */ }
+        }
+      }).catch(() => { /* ignore import failures */ });
+    }
+  } catch (_err) {
+    // best-effort invalidation, ignore failures
+  }
 }

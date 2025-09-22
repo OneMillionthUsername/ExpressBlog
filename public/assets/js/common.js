@@ -1664,3 +1664,14 @@ if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 't
     initializeDarkMode();
   }
 }
+
+// Client-side escapeHtml for user-provided strings (keeps parity with server utils)
+export function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

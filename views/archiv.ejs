@@ -57,7 +57,7 @@
     </div>
 
     <script src="/vendor/dompurify.min.js"></script>
-    <script>
+    <script nonce="<%= nonce %>">
         // Defensive: if server injected posts, remove loading spinner that might be present
         (function() {
             try {

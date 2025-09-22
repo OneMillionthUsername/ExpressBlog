@@ -168,9 +168,15 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
   try {
     const cacheKey = 'posts:mostRead';
     let posts = simpleCache.get(cacheKey);
-    if (!posts) {
+    if (posts) {
+      logger.debug(`[${requestId}] GET /most-read: Cache hit for ${cacheKey}, returning cached posts_count=${Array.isArray(posts) ? posts.length : 'unknown'}`);
+    } else {
+      logger.debug(`[${requestId}] GET /most-read: Cache miss for ${cacheKey} - loading from controller`);
       posts = await postController.getMostReadPosts();
-      simpleCache.set(cacheKey, posts);
+      // Cache most-read for a short period to keep results relatively fresh while
+      // avoiding DB pressure from many concurrent visitors. TTL: 60 seconds.
+      simpleCache.set(cacheKey, posts, 60 * 1000);
+      logger.debug(`[${requestId}] GET /most-read: Cached ${cacheKey} posts_count=${Array.isArray(posts) ? posts.length : 'unknown'} ttl_ms=${60 * 1000}`);
     }
     const response = convertBigInts(posts) || posts;
 
@@ -389,6 +395,8 @@ postRouter.post('/create',
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        logger.debug(`[${_id}] POST /create: invalidated caches posts:all, posts:mostRead, posts:archive`);
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error creating new blog post', error);
@@ -415,6 +423,8 @@ postRouter.put('/update/:postId',
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        logger.debug(`[${_id}] PUT /update: invalidated caches posts:all, posts:mostRead, posts:archive`);
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
@@ -443,6 +453,8 @@ postRouter.delete(
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        logger.debug(`[${_id}] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive`);
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error deleting blog post', error);

@@ -1,6 +1,7 @@
 import { showFeedback } from './feedback.js';
 import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema } from './lib/validationClient.js';
 import { makeApiRequest } from './api.js';
+import { getUrlParameter, escapeHtml } from './common.js';
 
 async function loadComments(postId) {
   if (!postId || !isValidIdSchema(postId)) {
