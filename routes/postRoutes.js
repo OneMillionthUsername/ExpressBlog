@@ -196,7 +196,15 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
-    res.status(500).json({ error: 'Server failed to load most read blog posts' });
+    // If the client expects HTML (regular browser navigation), render the
+    // `mostReadPosts` view with a friendly message. For API/JS clients, return JSON.
+    if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+      const message = (error instanceof PostControllerException)
+        ? 'No most-read blog posts found'
+        : 'Server error while loading most-read blog posts';
+      return res.status(error instanceof PostControllerException ? 404 : 500).render('mostReadPosts', { posts: null, errorMessage: message });
+    }
+    return res.status(error instanceof PostControllerException ? 404 : 500).json({ error: 'Server failed to load most read blog posts' });
   }
 });
 // Numeric ID route should come BEFORE the slug route to avoid numeric slugs being
