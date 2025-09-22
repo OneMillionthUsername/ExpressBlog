@@ -18,6 +18,8 @@ export function sanitizeHtml(html) {
       'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3',
     ],
     ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
+    FORBID_TAGS: ['script','style'],
+    FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onload', 'onerror', 'onmouseover', 'javascript'],
     ALLOW_DATA_ATTR: false,
   });
 }

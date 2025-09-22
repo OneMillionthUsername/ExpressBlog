@@ -182,11 +182,16 @@ async function displayComments(postId) {
       let safeText;
       try {
         if (typeof DOMPurify !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
-          safeUsername = DOMPurify.sanitize(String(comment.username || ''), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+          safeUsername = DOMPurify.sanitize(String(comment.username || ''), { 
+            ALLOWED_TAGS: [], 
+            ALLOWED_ATTR: [],
+            FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onload', 'onerror', 'onmouseover'],
+          });
           safeText = DOMPurify.sanitize(String(comment.text || ''), {
             ALLOWED_TAGS: ['p','br','b','i','strong','em','u','a','ul','ol','li','code','pre'],
             ALLOWED_ATTR: ['href','title','target','rel','alt'],
             FORBID_TAGS: ['script','style'],
+            FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onload', 'onerror', 'onmouseover', 'javascript'],
           });
         } else {
           // Tests or environments without DOMPurify: escape HTML and preserve line breaks
