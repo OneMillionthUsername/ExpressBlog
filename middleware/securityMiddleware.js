@@ -66,6 +66,15 @@ export function createEscapeInputMiddleware(whitelist = []) {
 }
 // --- error handler (production-safe) ---
 export function errorHandlerMiddleware(err, req, res, _next) {
+  // Special-case CSRF errors to return 403 instead of generic 500
+  const msg = String(err && err.message || '').toLowerCase();
+  const name = String(err && err.name || '').toLowerCase();
+  const isCsrf = err && (
+    err.code === 'EBADCSRFTOKEN' ||
+    (err.status === 403 && (msg.includes('csrf') || name.includes('csrf'))) ||
+    (name === 'forbiddenerror' && msg.includes('csrf'))
+  );
+
   logger.debug('errorHandlerMiddleware: Caught error', {
     url: req.url,
     method: req.method,
@@ -73,7 +82,23 @@ export function errorHandlerMiddleware(err, req, res, _next) {
     error: err.message,
     stack: err.stack,
   });
-  
+
+  if (isCsrf) {
+    try {
+      // Minimal diagnostics without leaking secrets
+      const hasHeader = Boolean(req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token'));
+      const hasCookie = Boolean(req.cookies && req.cookies._csrf);
+      logger.warn('CSRF error caught by global error handler', {
+        url: req.originalUrl,
+        method: req.method,
+        hasCsrfHeader: hasHeader,
+        hasCsrfCookie: hasCookie,
+        cookieNames: Object.keys(req.cookies || {}),
+      });
+    } catch { /* ignore */ }
+    return res.status(403).json({ error: 'Invalid or missing CSRF token' });
+  }
+
   logger.error('Error in request processing:', {
     url: req.url,
     method: req.method,

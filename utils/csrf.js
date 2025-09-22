@@ -11,7 +11,14 @@ const csrfProtection = csrf({
   },
   // CSRF-Token aus Header ODER Body akzeptieren
   value: (req) => {
-    return req.headers['x-csrf-token'] || req.body?.['_csrf'] || req.query?.['_csrf'];
+    // Accept multiple common header names to be more robust across clients/proxies
+    const headerToken = req.get?.('x-csrf-token')
+      || req.get?.('x-xsrf-token')
+      || req.get?.('csrf-token')
+      || req.headers?.['x-csrf-token']
+      || req.headers?.['x-xsrf-token']
+      || req.headers?.['csrf-token'];
+    return headerToken || req.body?.['_csrf'] || req.query?.['_csrf'];
   },
 });
 

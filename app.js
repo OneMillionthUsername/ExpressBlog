@@ -185,6 +185,33 @@ app.use((req, res, next) => {
   return csrfProtection(req, res, next);
 });
 
+// Handle CSRF errors early (must be after CSRF middleware and before other handlers)
+app.use((err, req, res, next) => {
+  const msg = String(err && err.message || '').toLowerCase();
+  const name = String(err && err.name || '').toLowerCase();
+  const isCsrf = err && (
+    err.code === 'EBADCSRFTOKEN' ||
+    err.status === 403 && (msg.includes('csrf') || name.includes('csrf')) ||
+    name === 'forbiddenerror' && msg.includes('csrf')
+  );
+  if (isCsrf) {
+    try {
+      logger.warn('CSRF validation failed', {
+        url: req.originalUrl,
+        method: req.method,
+        hasCsrfHeader: Boolean(req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token')),
+        hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
+        cookieNames: Object.keys(req.cookies || {}),
+        referer: req.get('referer') || null,
+        origin: req.get('origin') || null,
+        userAgent: req.get('user-agent') || null,
+      });
+    } catch { /* ignore logging errors */ }
+    return res.status(403).json({ error: 'Invalid or missing CSRF token' });
+  }
+  next(err);
+});
+
 // 5. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
 
@@ -319,25 +346,6 @@ function registerDatabaseRoutes() {
   const dbRouter = createDbRouter(requireDatabase, routes);
   app.use('/', dbRouter);
   
-  // Specific handler for CSRF errors (must be registered BEFORE generic error handlers)
-  app.use((err, req, res, next) => {
-    if (err && (err.code === 'EBADCSRFTOKEN' || err.name === 'EBADCSRFTOKEN')) {
-      try {
-        logger.warn('CSRF validation failed', {
-          url: req.originalUrl,
-          method: req.method,
-          hasCsrfHeader: Boolean(req.get('x-csrf-token')),
-          hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
-          cookieNames: Object.keys(req.cookies || {}),
-          referer: req.get('referer') || null,
-          origin: req.get('origin') || null,
-          userAgent: req.get('user-agent') || null,
-        });
-      } catch { /* ignore logging errors */ }
-      return res.status(403).json({ error: 'Invalid or missing CSRF token' });
-    }
-    next(err);
-  });
   
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
