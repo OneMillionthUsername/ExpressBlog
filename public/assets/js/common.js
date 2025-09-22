@@ -548,6 +548,37 @@ export async function renderAndDisplayCards(cards) {
     
   let html = '';
   cards.forEach((card, _index) => {
+    // Helpers: decode common punctuation entities (including double-escaped) and escape HTML for safe insertion
+    const decodePunctEntities = (str) => {
+      try {
+        if (typeof str !== 'string') return '';
+        const mapping = {
+          '&rsquo;': '’', '&lsquo;': '‘', '&rdquo;': '”', '&ldquo;': '“',
+          '&#39;': "'", '&apos;': "'", '&quot;': '"',
+          '&ndash;': '–', '&mdash;': '—', '&hellip;': '…',
+        };
+        let out = str;
+        for (const [ent, ch] of Object.entries(mapping)) {
+          // Replace single-escaped and double-escaped forms (e.g., &rsquo; and &amp;rsquo;)
+          const name = ent.slice(1); // e.g., 'rsquo;'
+          const re1 = new RegExp(ent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          const re2 = new RegExp('&amp;' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+          out = out.replace(re1, ch).replace(re2, ch);
+        }
+        return out;
+      } catch { return String(str || ''); }
+    };
+    const escapeHtml = (str) => {
+      if (typeof str !== 'string') return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+    const safeTitle = escapeHtml(decodePunctEntities(card.title || ''));
+    const safeSubtitle = escapeHtml(decodePunctEntities(card.subtitle || ''));
     // Prefer HTTPS for external images to avoid mixed-content/CSP issues
     const imgSrc = (typeof card.img_link === 'string' && card.img_link.startsWith('http://'))
       ? card.img_link.replace('http://', 'https://')
@@ -577,8 +608,8 @@ export async function renderAndDisplayCards(cards) {
       data-link="${card.link}"
       title="Zum Link öffnen">
                 <div class="discovery-card-body">
-                    <h5 class="discovery-title">${card.title}</h5>
-                    <h6 class="discovery-subtitle">${card.subtitle}</h6>
+                    <h5 class="discovery-title">${safeTitle}</h5>
+                    <h6 class="discovery-subtitle">${safeSubtitle}</h6>
                     <a href="${card.link}" target="_blank" class="discovery-link">
                         <i class="fas fa-external-link-alt"></i> Zur Quelle
                     </a>
