@@ -621,6 +621,15 @@ export const DatabaseService = {
       return result.map(post => {
         convertBigInts(post);
         post.tags = parseTags(post.tags);
+        // Normalize common fields expected by Post model
+        if (typeof post.published === 'number') {
+          post.published = post.published === 1;
+        } else if (post.published === null || post.published === undefined) {
+          post.published = false;
+        }
+        if (post.author === null || post.author === undefined) {
+          post.author = 'admin';
+        }
         return post;
       });
     } catch (error) {
@@ -717,13 +726,25 @@ export const DatabaseService = {
         throw new databaseError('Card is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('INSERT INTO cards SET ?', [cardData]);
+      // Use explicit column list to avoid driver-specific SET ? behavior issues
+      const insertData = {
+        title: cardData.title,
+        subtitle: cardData.subtitle ?? null,
+        link: cardData.link,
+        img_link: cardData.img_link,
+        // Ensure boolean maps correctly for MariaDB tinyint(1)/boolean
+        published: typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 0,
+      };
+      const result = await conn.query(
+        'INSERT INTO cards (title, subtitle, link, img_link, published) VALUES (?, ?, ?, ?, ?)',
+        [insertData.title, insertData.subtitle, insertData.link, insertData.img_link, insertData.published],
+      );
       if (result.affectedRows === 0) {
         throw new Error('No rows affected');
       }
       return {
         success: true,
-        card: {...cardData, id: Number(result.insertId)},
+        card: { id: Number(result.insertId), ...insertData, published: Boolean(insertData.published) },
       };
     } catch (error) {
       logger.error(`Error in createCard: ${error.message}`);
