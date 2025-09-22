@@ -87,11 +87,11 @@ async function adminLogout() {
     
   updateNavigationVisibility();
 
-  // Nur reload, wenn NICHT auf create.html
-  if (!window.location.pathname.includes('create.html')) {
+  // Nur reload, wenn NICHT auf /createPost
+  if (!window.location.pathname.includes('/createPost')) {
     reloadPageWithDelay();
   } else {
-    // Auf create.html: Editor und geschützte Bereiche ausblenden, Sperrseite zeigen
+  // Auf /createPost: Editor und geschützte Bereiche ausblenden, Sperrseite zeigen
     hideElement('create-content');
     showElement('admin-required');
   }
@@ -151,7 +151,7 @@ function updateNavigationVisibility() {
     link.style.display = isAdminLoggedIn ? 'inline-block' : 'none';
   });
     
-  // Navigation auf create.html (Admin-geschützte vs. öffentliche Navigation)
+  // Navigation auf /createPost (Admin-geschützte vs. öffentliche Navigation)
   const publicNavigation = document.getElementById('public-navigation');
   if (publicNavigation) {
     publicNavigation.style.display = isAdminLoggedIn ? 'none' : 'block';
@@ -277,11 +277,10 @@ async function adminLogin(username, password) {
       adminStatusPromise = Promise.resolve(true);
       showFeedback('Erfolgreich eingeloggt.', 'info');
       updateNavigationVisibility();
-      // Nur reload, wenn NICHT auf create.html
-      if (!window.location.pathname.includes('create.html')) {
-        reloadPageWithDelay();
-      } else {
-        // Auf create.html: Editor und geschützte Bereiche einblenden, Sperrseite ausblenden
+      // Keine Voll-Reloads mehr: UI direkt aktualisieren
+      try { addAdminMenuItemToNavbar(); } catch { /* no-op */ }
+      if (window.location.pathname.includes('/createPost')) {
+        // Auf /createPost: Editor und geschützte Bereiche einblenden, Sperrseite ausblenden
         showElement('create-content');
         hideElement('admin-required');
       }
@@ -345,7 +344,7 @@ function addAdminMenuItemToNavbar() {
     if (menu && !document.getElementById('admin-create-link')) {
       const createLi = document.createElement('li');
       createLi.id = 'admin-create-link';
-      createLi.innerHTML = '<a href="/blogpost/create.html">Post erstellen</a>';
+  createLi.innerHTML = '<a href="/createPost">Post erstellen</a>';
       menu.insertBefore(createLi, menu.firstChild.nextSibling);
     }
     if (menu && !document.getElementById('admin-createCard-modal')) {

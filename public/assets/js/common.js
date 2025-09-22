@@ -797,7 +797,7 @@ export async function loadAndDisplayRecentPosts() {
                     <div class="no-posts-icon">Posts</div>
                     <h3>Keine Posts verfügbar</h3>
                     <p>Es gibt noch keine Blog-Posts.</p>
-                    ${isAdmin ? '<a href="create.html" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+                    ${isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
                 </div>
             `;
       }
@@ -828,7 +828,7 @@ export async function loadAndDisplayRecentPosts() {
                     <div class="no-posts-icon">Posts</div>
                     <h3>Keine aktuellen Posts</h3>
                     <p>Es wurden in den letzten 3 Monaten keine Blog-Posts veröffentlicht.</p>
-                    <a href="create.html" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>
+                    <a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>
                 </div>
             `;
       return;
@@ -942,7 +942,7 @@ export async function loadAndDisplayAllPosts() {
                     <div class="no-posts-icon">Posts</div>
                     <h3>Keine Posts verfügbar</h3>
                     <p>Es gibt noch keine Blog-Posts.</p>
-                    ${isAdmin ? '<a href="/blogpost/create" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+                    ${isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
                 </div>
             `;
       return;
@@ -1118,8 +1118,8 @@ export async function redirectEditPost(postId) {
     alert(ADMIN_MESSAGES.login.required);
     return;
   }
-  // Redirect to create.html with post data
-  const createUrl = new URL('/pages/create.html', window.location.origin);
+  // Redirect to /createPost with post data
+  const createUrl = new URL('/createPost', window.location.origin);
   createUrl.searchParams.set('post', postId);
   window.location.href = createUrl.toString();
 }
