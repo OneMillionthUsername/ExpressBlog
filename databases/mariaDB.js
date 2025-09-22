@@ -783,7 +783,10 @@ export const DatabaseService = {
         throw new databaseError('Comment data is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('INSERT INTO comments ? WHERE postId = ?', [commentData, postId]);
+      const result = await conn.query(
+        'INSERT INTO comments (postId, username, text, approved, published) VALUES (?, ?, ?, 1, 1)', 
+        [postId, commentData.username, commentData.text],
+      );
 
       return {
         success: true,
@@ -808,7 +811,7 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       const result = await conn.query(`
-            SELECT id, username, text, created_at
+            SELECT id, username, text, created_at, approved, published
             FROM comments 
             WHERE postId = ? AND approved = 1
             ORDER BY created_at ASC
@@ -818,6 +821,8 @@ export const DatabaseService = {
         username: comment.username,
         text: comment.text,
         created_at: comment.created_at,
+        approved: Boolean(comment.approved),
+        published: Boolean(comment.published),
       }));
     } catch (error) {
       logger.error(`Error in getCommentsByPostId: ${error.message}`);

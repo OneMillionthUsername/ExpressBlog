@@ -1240,8 +1240,8 @@ export async function checkAndPrefillEditPostForm() {
 }
 // Fügt Delete-Buttons zu allen Posts hinzu (nur für Admins)
 export async function addDeleteButtonsToPosts() {
-  // Prüfe, ob Admin eingeloggt ist (passe ggf. an deine Logik an)
-  if (!await checkAdminStatusCached()) return;
+  // Check if admin is logged in using global variable (set by admin module)
+  if (typeof window !== 'undefined' && !window.isAdminLoggedIn) return;
 
   // Für alle Post-Karten (passe den Selektor ggf. an)
   document.querySelectorAll('.post-card').forEach(card => {
