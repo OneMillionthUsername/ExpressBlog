@@ -1,4 +1,5 @@
 import express from 'express';
+import csrfProtection from '../utils/csrf.js';
 const utilityRouter = express.Router();
 
 utilityRouter.get('/health', (req, res) => {
@@ -23,7 +24,9 @@ utilityRouter.get('/redirect', (req, res) => {
   }
 });
 
-utilityRouter.get('/csrf-token', (req, res) => {
+// Apply CSRF middleware only to this endpoint to generate a token without
+// enforcing CSRF on the token fetch itself at the global level.
+utilityRouter.get('/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
