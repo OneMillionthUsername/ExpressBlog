@@ -13,23 +13,14 @@ process.env.DB_NAME = 'test_db';
   global.TextDecoder = util.TextDecoder;
 })();
 
-// Mock DOMPurify globally for tests before any modules import it.
-// Use `globalThis.jest` guard to avoid referencing an undefined `jest` during linting.
-try {
-  const jestGlobal = typeof globalThis !== 'undefined' ? globalThis.jest : undefined;
-  if (jestGlobal && typeof jestGlobal.unstable_mockModule === 'function') {
-    jestGlobal.unstable_mockModule('dompurify', () => ({
-      default: (win) => ({
-        sanitize: jestGlobal.fn((s) => s),
-      }),
-    }));
-  }
-} catch (e) {
-  // Swallow errors in setup so tests can still attempt to run
-  // (Jest will error later if mocks are required in tests)
-   
-  console.warn('Could not register dompurify mock in setup:', e && e.message);
-}
+// Instead of globally mocking DOMPurify with unstable_mockModule, create a global mock object
+// that tests can use. This avoids ESM module linking conflicts.
+global.mockDOMPurify = {
+  sanitize: (s) => s, // Simple passthrough for tests
+};
+
+// Make DOMPurify available globally for tests that expect it
+global.DOMPurify = global.mockDOMPurify;
 
 // URL and URLSearchParams polyfills
 global.URL = URL;
