@@ -204,6 +204,39 @@
         0 0 0 1px rgba(212, 175, 55, 0.2);
 }
 
+/* Dark Mode Card Create Modal: dark shell, light inputs */
+[data-theme="dark"] #card-create-modal .modal-content {
+    background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-bg) 100%);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(212, 175, 55, 0.2);
+    color: var(--color-text);
+}
+[data-theme="dark"] #card-create-modal .modal-body,
+[data-theme="dark"] #card-create-modal .modal-label {
+    color: var(--color-text);
+}
+[data-theme="dark"] #card-create-modal input[type="text"],
+[data-theme="dark"] #card-create-modal input[type="password"],
+[data-theme="dark"] #card-create-modal input[type="number"],
+[data-theme="dark"] #card-create-modal textarea,
+[data-theme="dark"] #card-create-modal .card-input {
+    background: #ffffff;
+    color: #222222;
+    border-color: #dddddd;
+}
+[data-theme="dark"] #card-create-modal input[type="text"]:focus,
+[data-theme="dark"] #card-create-modal input[type="password"]:focus,
+[data-theme="dark"] #card-create-modal input[type="number"]:focus,
+[data-theme="dark"] #card-create-modal textarea:focus,
+[data-theme="dark"] #card-create-modal .card-input:focus {
+    background: #ffffff;
+    color: #222222;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+}
+
 [data-theme="dark"] #admin-login-modal .modal-header {
     background: linear-gradient(135deg, 
                 rgba(5,5,15,0.95) 0%, 
