@@ -371,12 +371,17 @@ function applyTinyMCETheme(editor) {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     const editorBody = editor.getBody();
     if (!editorBody) return;
+    // Also set attribute on the iframe's html element so [data-theme="dark"] selectors apply
+    const doc = editor.getDoc ? editor.getDoc() : (editorBody && editorBody.ownerDocument);
+    const editorHtml = doc && doc.documentElement;
     if (isDarkMode) {
       editorBody.setAttribute('data-theme', 'dark');
+      if (editorHtml) editorHtml.setAttribute('data-theme', 'dark');
       editorBody.style.backgroundColor = '#121212';
       editorBody.style.color = '#e0e0e0';
     } else {
       editorBody.removeAttribute('data-theme');
+      if (editorHtml) editorHtml.removeAttribute('data-theme');
       editorBody.style.backgroundColor = '#ffffff';
       editorBody.style.color = '#2c3e50';
     }
