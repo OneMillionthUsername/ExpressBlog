@@ -33,6 +33,10 @@ utilityRouter.get('/redirect', (req, res) => {
 // Apply CSRF middleware only to this endpoint to generate a token without
 // enforcing CSRF on the token fetch itself at the global level.
 utilityRouter.get('/csrf-token', csrfProtection, (req, res) => {
+  // Prevent caching of CSRF token responses (defensive headers)
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.json({ csrfToken: req.csrfToken() });
 });
 
