@@ -428,6 +428,85 @@
 .preview-box h2 { font-size: 1.8rem; }
 .preview-box h3 { font-size: 1.5rem; }
 .preview-box h4 { font-size: 1.3rem; }
+
+/* ========================================
+   Create Post page (CSS-only fixes)
+   ======================================== */
+/* Force left alignment for the create page areas to counteract row text-center */
+#admin-required.content-area,
+#create-content.content-area { text-align: left; }
+/* Toolbar container styling and responsive wrapping */
+#create-content .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 8px 10px;
+}
+/* Remove extra spacing from groups when inside the toolbar */
+#create-content .editor-toolbar .toolbar-group {
+    margin: 0;
+}
+/* Space above the editor area */
+#create-content .editor-container { margin-top: 8px; }
+/* Fallback textarea styling when TinyMCE is unavailable */
+#create-content .editor-container textarea,
+#create-content .textarea-fallback {
+    display: block;
+    width: 100%;
+    min-height: 400px;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: var(--font-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    background: #fff;
+}
+/* Suggested tags as chips */
+#create-content .suggested-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+#create-content .suggested-tags .suggested-label {
+    color: #6c757d;
+    font-weight: 600;
+    margin-right: 4px;
+}
+#create-content .tag-suggestion {
+    display: inline-block;
+    padding: 6px 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+#create-content .tag-suggestion:hover {
+    background: #f8f9fa;
+    border-color: #dfe3e7;
+    transform: translateY(-1px);
+}
+/* Neutralize heavy global transitions for form controls and editor internals on this page */
+#create-content input,
+#create-content textarea,
+#create-content .tox * { transition: none !important; }
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    /* container padding handled by .create-form-section; keep toolbar/textarea tweaks */
+    #create-content .editor-container textarea,
+    #create-content .textarea-fallback { min-height: 300px; }
+    #create-content .editor-toolbar { padding: 6px; gap: 6px; }
+}
 .preview-box h5 { font-size: 1.1rem; }
 .preview-box h6 { font-size: 1rem; }
 .preview-box p {
