@@ -1294,7 +1294,7 @@ blockquote:after {
     margin-bottom: 30px;
 }
 .create-page-container {
-    max-width: 1000px;
+    max-width: clamp(900px, 90vw, 1200px);
     margin: 0 auto;
     padding: 0 20px;
 }
@@ -1689,7 +1689,7 @@ blockquote:after {
     margin-bottom: 30px;
 }
 .create-page-container {
-    max-width: 1000px;
+    max-width: clamp(900px, 90vw, 1200px);
     margin: 0 auto;
     padding: 0 20px;
 }
