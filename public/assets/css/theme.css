@@ -186,6 +186,22 @@
     border-color: #64b5f6 !important;
 }
 
+/* Dark mode: admin-required warning on create page */
+[data-theme="dark"] #admin-required .alert.alert-warning {
+    background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-bg) 100%) !important;
+    color: var(--color-text) !important;
+    border: 2px solid var(--color-accent) !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.25);
+}
+[data-theme="dark"] #admin-required .btn.btn-outline-secondary {
+    color: var(--color-text) !important;
+    border-color: #555 !important;
+}
+[data-theme="dark"] #admin-required .btn.btn-outline-secondary:hover {
+    background: #333 !important;
+    color: #fff !important;
+}
+
 [data-theme="dark"] .tag {
     background-color: var(--color-accent);
     color: var(--color-bg);

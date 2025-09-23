@@ -24,8 +24,11 @@
     --color-bg-alt: #1e1e1e;
 }
 
-/* Base body styles matching .post-content */
-body {
+/* Base body styles matching .post-content - scoped to editor/preview/read containers */
+.mce-content-body,
+.read-post-content,
+#preview-content,
+.preview-box {
     font-family: var(--font-secondary);
     font-size: 1.2rem;
     line-height: 1.8;
@@ -238,8 +241,11 @@ em, i {
 .text-right { text-align: right; }
 .text-justify { text-align: justify; }
 
-/* Dark mode styles for editor */
-[data-theme="dark"] body {
+/* Dark mode styles for editor - scoped to editor/preview/read containers */
+[data-theme="dark"] .mce-content-body,
+[data-theme="dark"] .read-post-content,
+[data-theme="dark"] #preview-content,
+[data-theme="dark"] .preview-box {
     background-color: var(--color-bg);
     color: var(--color-text);
 }
