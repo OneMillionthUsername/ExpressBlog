@@ -16,7 +16,7 @@ import {
 } from './common.js';
 import { isValidIdSchema } from './lib/validationClient.js';
 import { isAdmin, setAdmin } from './state/adminState.js';
-import { isAdminFromServer } from '../js/config.js';
+import { isAdminFromServer } from './config.js';
 
 // Admin-Status (module-scoped via state store)
 let currentUser = null;

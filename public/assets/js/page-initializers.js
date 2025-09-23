@@ -18,7 +18,8 @@ import {
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
-import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
+import { isAdminFromServer } from './config.js';
+import { initializeBlogUtilities, initializeCommonDelegation, showElement, hideElement } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
@@ -143,7 +144,7 @@ async function initializeCreatePage() {
 
     // Admin-Status prüfen und UI anpassen
     // Use the safe server-injected flag if available. Do NOT rely on any injected secrets.
-    const isAdmin = (typeof window !== 'undefined' && window.__SERVER_CONFIG && window.__SERVER_CONFIG.isAdmin) ? !!window.__SERVER_CONFIG.isAdmin : false;
+  const isAdmin = (typeof isAdminFromServer === 'function') ? !!isAdminFromServer() : false;
     if (isAdmin) {
       showElement('create-content');
       hideElement('admin-required');

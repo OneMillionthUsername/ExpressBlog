@@ -2,7 +2,6 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { makeApiRequest } from '../api.js';
-import { checkAdminStatusCached } from '../admin.js';
 // Import AI assistant functions
 import {
   improveText,
@@ -1179,10 +1178,37 @@ function validateImageBeforeUpload(file) {
     
   return true;
 }
+// Sicherer Admin-Check mit dynamischem Import und SSR-Fallback
+async function ensureAdminAccess() {
+  // 1) Try dynamic import of admin module
+  try {
+    const mod = await import('../admin.js');
+    if (mod && typeof mod.checkAdminStatusCached === 'function') {
+      return await mod.checkAdminStatusCached();
+    }
+  } catch { /* ignore and try fallback */ }
+  // 2) Try SSR config module
+  try {
+    const cfgMod = await import('../config.js');
+    if (cfgMod && typeof cfgMod.isAdminFromServer === 'function') {
+      return !!cfgMod.isAdminFromServer();
+    }
+  } catch { /* ignore and try direct DOM */ }
+  // 3) Directly read non-executable JSON script tag
+  try {
+    const el = document.getElementById('server-config');
+    if (el && el.textContent) {
+      const cfg = JSON.parse(el.textContent);
+      return !!(cfg && cfg.isAdmin);
+    }
+  } catch { /* ignore */ }
+  return false;
+}
 // Initialisierung und Event Listener
 async function initializeBlogEditor() {
   // Prüfe Admin Status
-  if (!await checkAdminStatusCached()) {
+  const hasAdmin = await ensureAdminAccess();
+  if (!hasAdmin) {
     return;
   }
   // TinyMCE initialisieren
