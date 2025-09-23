@@ -300,10 +300,14 @@ async function adminLogin(username, password) {
 }
 function resolveCurrentPostId() {
   try {
-    // 1) Server-injected JSON
-    if (typeof window !== 'undefined' && window.__SERVER_POST && window.__SERVER_POST.id) {
-      return String(window.__SERVER_POST.id);
-    }
+    // 1) Server-injected JSON via non-executable script tag
+    try {
+      const el = document.getElementById('server-post');
+      if (el && el.textContent) {
+        const obj = JSON.parse(el.textContent);
+        if (obj && obj.id) return String(obj.id);
+      }
+    } catch { /* ignore */ }
     // 2) Meta tag
     const meta = document.querySelector('meta[name="post-id"]');
     if (meta && meta.content) return String(meta.content);

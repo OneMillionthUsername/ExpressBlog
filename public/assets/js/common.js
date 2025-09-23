@@ -631,9 +631,11 @@ export async function loadAndDisplayBlogPost() {
   // If server already injected the post object into the page (SSR), use it
   // to populate the UI immediately and avoid an extra API request.
   try {
-    if (typeof window !== 'undefined' && window.__SERVER_POST) {
-      const serverPost = window.__SERVER_POST;
-      if (serverPost) {
+    if (typeof document !== 'undefined') {
+      const el = document.getElementById('server-post');
+      if (el && el.textContent) {
+        const serverPost = JSON.parse(el.textContent);
+        if (serverPost) {
         updateBlogPostUI(serverPost);
         // Defensive: ensure loading spinner is hidden if present
         try {
@@ -643,6 +645,7 @@ export async function loadAndDisplayBlogPost() {
           if (spinner) spinner.style.display = 'none';
         } catch (e) { void e; }
         return;
+        }
       }
     }
   } catch { /* ignore issues reading server object */ }
@@ -1215,9 +1218,12 @@ export function getPostSlugFromPath() {
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
 export async function checkAndPrefillEditPostForm() {
-  // Prefer server-injected post object (SSR) to avoid an extra API call.
-  // This will be set by server when rendering create/edit forms as `window.__SERVER_POST`.
-  let post = (typeof window !== 'undefined' && window.__SERVER_POST) ? window.__SERVER_POST : null;
+  // Prefer server-injected post object (SSR) from JSON script to avoid an extra API call.
+  let post = null;
+  try {
+    const el = document.getElementById('server-post');
+    if (el && el.textContent) post = JSON.parse(el.textContent);
+  } catch { /* ignore */ }
   if (!post) {
     const postId = getPostIdFromPath();
     if (!postId) return;

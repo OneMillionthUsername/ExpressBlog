@@ -8,7 +8,7 @@ import { isAdmin } from './state/adminState.js';
  * Resolve the current post ID from multiple possible sources so the comments
  * system works for server-rendered pages, client-only pages, and test harnesses.
  * Order of checks:
- *  - window.__SERVER_POST.id (server injected JSON)
+ *  - #server-post JSON script (server injected JSON)
  *  - meta[name="post-id"]
  *  - data-post-id attribute on #post-article or #blogpost-content
  *  - URL query parameter `post`
@@ -16,9 +16,14 @@ import { isAdmin } from './state/adminState.js';
  */
 function resolvePostId() {
   try {
-    if (typeof window !== 'undefined' && window.__SERVER_POST && window.__SERVER_POST.id) {
-      return String(window.__SERVER_POST.id);
-    }
+    // server-post JSON script tag
+    try {
+      const el = document.getElementById('server-post');
+      if (el && el.textContent) {
+        const obj = JSON.parse(el.textContent);
+        if (obj && obj.id) return String(obj.id);
+      }
+    } catch { /* ignore */ }
     // meta tag
     const meta = document.querySelector('meta[name="post-id"]');
     if (meta && meta.content) return String(meta.content);

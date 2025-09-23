@@ -302,6 +302,11 @@ postRouter.get('/by-id/:postId',
               if (decoded && decoded.role === 'admin') isAdmin = true;
             }
           } catch { /* ignore token errors */ }
+          // Prevent caching of personalized HTML (admin vs non-admin)
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
           return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
@@ -315,6 +320,10 @@ postRouter.get('/by-id/:postId',
               if (decoded && decoded.role === 'admin') isAdmin = true;
             }
           } catch { /* ignore token errors */ }
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
           return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
@@ -388,6 +397,10 @@ postRouter.get('/:maybeId',
               if (decoded && decoded.role === 'admin') isAdmin = true;
             }
           } catch { /* ignore token errors */ }
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
           return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
@@ -401,6 +414,10 @@ postRouter.get('/:maybeId',
               if (decoded && decoded.role === 'admin') isAdmin = true;
             }
           } catch { /* ignore token errors */ }
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
           return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
@@ -433,6 +450,10 @@ postRouter.get('/:slug',
             if (decoded && decoded.role === 'admin') isAdmin = true;
           }
         } catch { /* ignore token errors */ }
+        res.set('Cache-Control', 'private, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.set('Vary', 'Cookie');
         return res.render('readPost', { post: convertBigInts(post) || post, isAdmin });
       }
       // Otherwise return JSON for API/JS clients
@@ -450,6 +471,10 @@ postRouter.get('/:slug',
             if (decoded && decoded.role === 'admin') isAdmin = true;
           }
         } catch { /* ignore token errors */ }
+        res.set('Cache-Control', 'private, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.set('Vary', 'Cookie');
         return res.status(error instanceof PostControllerException ? 404 : 500).render('readPost', { post: null, errorMessage: message, isAdmin });
       }
       if (error instanceof PostControllerException) {

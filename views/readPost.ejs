@@ -94,30 +94,30 @@
         </div>
     </div>
     <script src="/vendor/dompurify.min.js"></script>
-    <% // Precompute JSON on the server side to avoid template parsing issues %>
-    <% const __serverPost = JSON.stringify(typeof post !== 'undefined' ? post : null); %>
+    <% // Precompute JSON on the server side and escape unsafe sequences to avoid breaking out of the script tag %>
+    <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
     <% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
-    <!-- If the server rendered the post, expose it to the client JS so the page can
-         show the content without making an extra API request. Use unescaped EJS
-         output to inject JSON. post has been converted by the route where needed. -->
-    <script<%- __nonceAttr %>>
-        window.__SERVER_POST = <%- __serverPost %>;
+    <!-- Expose the server-rendered post via non-executable JSON (no globals) -->
+    <% if (typeof post !== 'undefined' && post) { %>
+    <script id="server-post" type="application/json"<%- __nonceAttr %>>
+        <%- __safeJson(post) %>
     </script>
+    <% } %>
                 <!-- Expose a minimal server config via non-executable JSON (no globals) -->
                 <script id="server-config" type="application/json"<%- __nonceAttr %>>
                     { "isAdmin": <%= __isAdmin ? 'true' : 'false' %> }
                 </script>
     <script<%- __nonceAttr %>>
-        // Defensive fallback: if the server injected the post JSON, remove the loading
-        // spinner element and ensure the article is visible. This helps if CSS is stale
-        // or if the client-side initializer hasn't run yet.
+        // Defensive fallback: if the server injected #server-post JSON,
+        // remove the loading spinner and ensure the article is visible.
         (function() {
             try {
-                if (window.__SERVER_POST) {
-                    const loadingEl = document.getElementById('loading');
+                var serverPostEl = document.getElementById('server-post');
+                if (serverPostEl) {
+                    var loadingEl = document.getElementById('loading');
                     if (loadingEl && loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-                    const postArticle = document.getElementById('post-article');
+                    var postArticle = document.getElementById('post-article');
                     if (postArticle) {
                         postArticle.classList.remove('hidden');
                         postArticle.style.display = 'block';
