@@ -2,6 +2,7 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { makeApiRequest } from '../api.js';
+import { showNotification } from '../common.js';
 // Import AI assistant functions
 import {
   improveText,

@@ -26,3 +26,8 @@ export function isAdminFromServer() {
   const cfg = getServerConfig();
   return !!(cfg && cfg.isAdmin);
 }
+
+export function getAssetVersion() {
+  const cfg = getServerConfig();
+  return (cfg && typeof cfg.assetVersion === 'string') ? cfg.assetVersion : '';
+}

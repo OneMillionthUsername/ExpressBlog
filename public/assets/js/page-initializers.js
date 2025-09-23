@@ -18,7 +18,7 @@ import {
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
-import { isAdminFromServer } from './config.js';
+import { isAdminFromServer, getAssetVersion } from './config.js';
 import { initializeBlogUtilities, initializeCommonDelegation, showElement, hideElement } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
@@ -130,7 +130,8 @@ async function initializeCreatePage() {
     // Dynamically import editor + AI assistant only on create page
     if (!initializeBlogEditor) {
       try {
-        const mod = await import('./tinymce/tinymce-editor.js');
+  const v = (typeof getAssetVersion === 'function' && getAssetVersion()) || 'v1';
+  const mod = await import(`./tinymce/tinymce-editor.js?v=${encodeURIComponent(v)}`);
         // Use only the high-level initializer to ensure admin gating and full wiring
         if (typeof mod.initializeBlogEditor === 'function') {
           initializeBlogEditor = mod.initializeBlogEditor;

@@ -10,6 +10,7 @@
 // app.js
 
 import express from 'express';
+import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
@@ -102,6 +103,24 @@ logger.debug(`publicDirectoryPath: ${publicDirectoryPath}`);
 
 const app = express();
 
+// Expose a stable asset version to templates for cache-busting client imports
+let __assetVersion = process.env.ASSET_VERSION || '';
+if (!__assetVersion) {
+  try {
+    const pkgJsonPath = join(__dirname, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+    if (pkg && pkg.version) __assetVersion = String(pkg.version);
+  } catch { /* ignore */ }
+}
+if (!__assetVersion) {
+  // Fallback: server start timestamp (changes on each deploy)
+  __assetVersion = String(Math.floor(Date.now() / 1000));
+}
+app.use((req, res, next) => {
+  res.locals.assetVersion = __assetVersion;
+  next();
+});
+
 // ===========================================
 // MIDDLEWARE
 // ===========================================
@@ -131,6 +150,7 @@ app.use(helmet({
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
         'https://cdn.tiny.cloud',
+        '\'unsafe-inline\'',
         // Note: 'unsafe-inline' avoided when possible
       ],
       fontSrc: [
@@ -289,9 +309,8 @@ app.use(express.static(publicDirectoryPath, {
       // Third-party libraries can be cached long-term (fingerprinted by version)
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     } else if (path.includes('/assets/js/tinymce/')) {
-      // Cache editor assets for a while to avoid re-downloading on each visit
-      // Use a moderate TTL since filenames are not fingerprinted
-      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
+      // Cache editor assets longer; cache-busting is handled via versioned query param (?v=...)
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days
     } else if (path.includes('.ico') || path.includes('.png') || path.includes('.jpg') || path.includes('.jpeg')) {
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag für Bilder
     }

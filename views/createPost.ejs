@@ -204,7 +204,7 @@
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
     <!-- Minimal server config via non-executable JSON (no globals) -->
     <script id="server-config" type="application/json"<%- __nonceAttr %>>
-        { "isAdmin": <%= isAdmin ? 'true' : 'false' %> }
+        { "isAdmin": <%= isAdmin ? 'true' : 'false' %>, "assetVersion": <%= JSON.stringify((assetVersion || '')) %> }
     </script>
     <% if (typeof post !== 'undefined' && post) { %>
     <!-- Server-provided post (for editor prefill) via non-executable JSON -->
