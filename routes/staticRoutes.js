@@ -47,6 +47,18 @@ staticRouter.get('/createPost', async (req, res) => {
     // Determine if requester is authenticated admin by extracting token
     const token = authService.extractTokenFromRequest(req);
     let isAdmin = false;
+    try {
+      const hasAuthHeader = !!(req.headers && typeof req.headers.authorization === 'string' && req.headers.authorization.startsWith('Bearer '));
+      const hasAuthCookie = !!(req.cookies && typeof req.cookies[authService.AUTH_COOKIE_NAME] === 'string');
+      // Do not log token values; only presence
+      logger.debug('[CREATEPOST] SSR auth context', {
+        hasAuthHeader,
+        hasAuthCookie,
+        cookieNames: Object.keys(req.cookies || {}),
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+      });
+    } catch { /* ignore logging errors */ }
     if (token) {
       const decoded = authService.verifyToken(token);
       if (decoded && decoded.role && decoded.role === 'admin') {
@@ -56,6 +68,10 @@ staticRouter.get('/createPost', async (req, res) => {
 
     // Only expose tinyMCE key to authenticated admins when rendering the page
     const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;
+    logger.debug('[CREATEPOST] SSR computed flags', {
+      isAdmin,
+      tinyMceKeyProvided: !!tinyMceKey,
+    });
 
     // If a `post` query parameter is provided (edit flow), try to fetch the post
     // server-side and inject it into the view so the editor can be prefilled
