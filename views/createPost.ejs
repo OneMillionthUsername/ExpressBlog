@@ -186,18 +186,18 @@
     <script src="/vendor/dompurify.min.js"></script>
     <script src="/assets/js/page-initializers.js" type="module"></script>
     <!-- Do NOT inject API keys into the browser. Expose only non-sensitive flags. -->
-    <% // Precompute JSON on the server side to avoid template parsing issues %>
-    <% const __serverConfig = JSON.stringify({ isAdmin: !!isAdmin }); %>
-    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
-        // Safely inject a minimal, non-sensitive server config object for the frontend.
-        window.__SERVER_CONFIG = <%- __serverConfig %>;
+    <% // Precompute JSON on the server side and escape unsafe sequences %>
+    <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
+    <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
+    <!-- Minimal server config via non-executable JSON (no globals) -->
+    <script id="server-config" type="application/json"<%- __nonceAttr %>>
+        { "isAdmin": <%= isAdmin ? 'true' : 'false' %> }
     </script>
-        <% if (typeof post !== 'undefined' && post) { %>
-            <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
-                // Inject the post object for client-side prefill of the editor. This
-                // is safe because post content is intended to be displayed/edited by an admin.
-                window.__SERVER_POST = <%- JSON.stringify(post) %>;
-            </script>
-        <% } %>
+    <% if (typeof post !== 'undefined' && post) { %>
+    <!-- Server-provided post (for editor prefill) via non-executable JSON -->
+    <script id="server-post" type="application/json"<%- __nonceAttr %>>
+        <%- __safeJson(post) %>
+    </script>
+    <% } %>
 </body>
 </html>
