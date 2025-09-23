@@ -16,6 +16,7 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
 import { escapeAllStrings } from '../utils/utils.js';
+import * as authService from '../services/authService.js';
 
 const postRouter = express.Router();
 
@@ -292,12 +293,29 @@ postRouter.get('/by-id/:postId',
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          return res.render('readPost', { post: sanitized });
+          // Compute admin status from JWT for SSR hinting
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          return res.render('readPost', { post: safe });
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
       }
@@ -362,12 +380,28 @@ postRouter.get('/:maybeId',
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          return res.render('readPost', { post: sanitized });
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          return res.render('readPost', { post: safe });
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
       }
@@ -391,7 +425,15 @@ postRouter.get('/:slug',
       if (post && post.id) incrementViews(req, post.id);
       // If the client expects HTML (browser), render the readPost view
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('readPost', { post: convertBigInts(post) || post });
+        const token = authService.extractTokenFromRequest(req);
+        let isAdmin = false;
+        try {
+          if (token) {
+            const decoded = authService.verifyToken(token);
+            if (decoded && decoded.role === 'admin') isAdmin = true;
+          }
+        } catch { /* ignore token errors */ }
+        return res.render('readPost', { post: convertBigInts(post) || post, isAdmin });
       }
       // Otherwise return JSON for API/JS clients
       return res.json(convertBigInts(post) || post);
@@ -400,7 +442,15 @@ postRouter.get('/:slug',
       // If the client expects HTML, render the view with a friendly message
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         const message = (error instanceof PostControllerException) ? 'Blogpost nicht gefunden' : 'Serverfehler beim Laden des Blogposts';
-        return res.status(error instanceof PostControllerException ? 404 : 500).render('readPost', { post: null, errorMessage: message });
+        const token = authService.extractTokenFromRequest(req);
+        let isAdmin = false;
+        try {
+          if (token) {
+            const decoded = authService.verifyToken(token);
+            if (decoded && decoded.role === 'admin') isAdmin = true;
+          }
+        } catch { /* ignore token errors */ }
+        return res.status(error instanceof PostControllerException ? 404 : 500).render('readPost', { post: null, errorMessage: message, isAdmin });
       }
       if (error instanceof PostControllerException) {
         return res.status(404).json({ error: 'Blogpost not found' });

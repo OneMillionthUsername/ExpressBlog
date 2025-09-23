@@ -1,5 +1,5 @@
 /* eslint-env browser, es2021 */
-/* global tinymce, isAdminLoggedIn, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, localStorage, CustomEvent */
+/* global tinymce, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
 import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
@@ -7,6 +7,7 @@ import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js'
 
 // Export imported helper so other modules can import it from this module
 export { loadAllBlogPosts };
+import { isAdmin } from './state/adminState.js';
 
 // Helper: strip HTML from a string and return plain text. Prefer DOMPurify if
 // available for better handling, otherwise fall back to a simple regex.
@@ -812,7 +813,7 @@ export async function loadAndDisplayRecentPosts() {
       throw new Error('Response is not an array');
     }
     if (posts.length === 0) {
-      const isAdmin = typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn;
+  const _isAdmin = isAdmin();
       const blogPostsListEl = document.getElementById('blogPostsList');
       if (blogPostsListEl) {
         blogPostsListEl.innerHTML = `
@@ -820,7 +821,7 @@ export async function loadAndDisplayRecentPosts() {
                     <div class="no-posts-icon">Posts</div>
                     <h3>Keine Posts verfügbar</h3>
                     <p>Es gibt noch keine Blog-Posts.</p>
-                    ${isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+                    ${_isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
                 </div>
             `;
       }
@@ -959,13 +960,13 @@ export async function loadAndDisplayAllPosts() {
     }
     
     if (posts.length === 0) {
-      const isAdmin = typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn;
+  const _isAdminAll = isAdmin();
       document.getElementById('blogPostsList').innerHTML = `
                 <div class="no-posts">
                     <div class="no-posts-icon">Posts</div>
                     <h3>Keine Posts verfügbar</h3>
                     <p>Es gibt noch keine Blog-Posts.</p>
-                    ${isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+                    ${_isAdminAll ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
                 </div>
             `;
       return;
@@ -1137,7 +1138,7 @@ export async function loadAndDisplayMostReadPosts() {
 // Post bearbeiten (spezifisch für read_post.html)
 // Edit Funktionen
 export async function redirectEditPost(postId) {
-  if(!isAdminLoggedIn) {
+  if(!isAdmin()) {
     alert(ADMIN_MESSAGES.login.required);
     return;
   }
@@ -1148,7 +1149,7 @@ export async function redirectEditPost(postId) {
 }
 // Post löschen und zur Post-Liste weiterleiten (spezifisch für read_post.html)
 export async function deletePostAndRedirect(postId) {
-  if(!isAdminLoggedIn) {
+  if(!isAdmin()) {
     alert(ADMIN_MESSAGES.login.required);
     return;
   }
@@ -1263,8 +1264,8 @@ export async function checkAndPrefillEditPostForm() {
 }
 // Fügt Delete-Buttons zu allen Posts hinzu (nur für Admins)
 export async function addDeleteButtonsToPosts() {
-  // Check if admin is logged in using global variable (set by admin module)
-  if (typeof window !== 'undefined' && !window.isAdminLoggedIn) return;
+  // Check if admin is logged in using state store
+  if (!isAdmin()) return;
 
   // Für alle Post-Karten (passe den Selektor ggf. an)
   document.querySelectorAll('.post-card').forEach(card => {

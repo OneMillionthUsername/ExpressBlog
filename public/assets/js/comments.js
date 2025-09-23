@@ -2,6 +2,7 @@ import { showFeedback } from './feedback.js';
 import { isValidIdSchema, isValidCommentSchema, isValidUsernameSchema } from './lib/validationClient.js';
 import { makeApiRequest } from './api.js';
 import { getUrlParameter, escapeHtml } from './common.js';
+import { isAdmin } from './state/adminState.js';
 
 /**
  * Resolve the current post ID from multiple possible sources so the comments
@@ -204,7 +205,7 @@ async function displayComments(postId) {
         safeText = escapeHtml(String(comment.text || '')).replace(/\n/g, '<br>');
       }
 
-      const deleteButton = (typeof isAdminLoggedIn !== 'undefined' && isAdminLoggedIn) ? 
+      const deleteButton = (isAdmin()) ? 
         `<button data-action="delete-comment" data-post-id="${postId}" data-comment-id="${comment.id}"
                 class="btn btn-sm btn-outline-danger comment-delete-btn" 
                 title="Kommentar löschen">
@@ -244,7 +245,7 @@ async function displayComments(postId) {
 // Kommentar löschen (Admin)
 async function deleteComment(postId, commentId) {
   // Prüfe Admin-Status
-  if (typeof isAdminLoggedIn === 'undefined' || !isAdminLoggedIn) {
+  if (!isAdmin()) {
     showFeedback('Nur Administratoren können Kommentare löschen.', 'error');
     return false;
   }

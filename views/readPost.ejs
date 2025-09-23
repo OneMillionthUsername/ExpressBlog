@@ -80,19 +80,34 @@
             <a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a>
             <a href="/" class="btn btn-outline-secondary ml-2">Zur Startseite</a>
             <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Post erstellen</a>
-            <div id="admin-controls" class="mt-15"></div>
+                <div id="admin-controls" class="mt-15">
+                    <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
+                    <button type="button" data-action="delete-post" data-post-id="<%= post.id %>" class="btn admin-delete-btn btn-lg ml-2">
+                        Post löschen
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="<%= post.id %>">
+                        <span class="btn-icon">✏️</span>
+                        Post bearbeiten
+                    </button>
+                    <% } %>
+                </div>
         </div>
     </div>
     <script src="/vendor/dompurify.min.js"></script>
     <% // Precompute JSON on the server side to avoid template parsing issues %>
     <% const __serverPost = JSON.stringify(typeof post !== 'undefined' ? post : null); %>
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
+    <% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
     <!-- If the server rendered the post, expose it to the client JS so the page can
          show the content without making an extra API request. Use unescaped EJS
          output to inject JSON. post has been converted by the route where needed. -->
     <script<%- __nonceAttr %>>
         window.__SERVER_POST = <%- __serverPost %>;
     </script>
+                <!-- Expose a minimal server config via non-executable JSON (no globals) -->
+                <script id="server-config" type="application/json"<%- __nonceAttr %>>
+                    { "isAdmin": <%= __isAdmin ? 'true' : 'false' %> }
+                </script>
     <script<%- __nonceAttr %>>
         // Defensive fallback: if the server injected the post JSON, remove the loading
         // spinner element and ensure the article is visible. This helps if CSS is stale

@@ -10,13 +10,15 @@ import {
   showElement,
   reloadPageWithDelay,
   getUrlParameter,
-  // deletePostAndRedirect,
+  deletePostAndRedirect,
+  redirectEditPost,
+  showCreateCardModal,
 } from './common.js';
-import { showCreateCardModal } from './common.js';
 import { isValidIdSchema } from './lib/validationClient.js';
+import { isAdmin, setAdmin } from './state/adminState.js';
+import { isAdminFromServer } from '../js/config.js';
 
-// Admin-Status Variable (muss vor allen Funktionen stehen)
-let isAdminLoggedIn = false;
+// Admin-Status (module-scoped via state store)
 let currentUser = null;
 // Admin-Status Caching
 let adminStatusPromise = null;
@@ -44,19 +46,19 @@ async function checkAdminStatus() {
   try {
     const status = await verifyAdminStatus();
     if (status.ok && status.valid) {
-      isAdminLoggedIn = true;
+      setAdmin(true);
       adminStatusPromise = Promise.resolve(true);
       currentUser = status.user || null;
       return true;
     } else {
       // Admin nicht eingeloggt oder Session abgelaufen
-      isAdminLoggedIn = false;
+      setAdmin(false);
       currentUser = null;
       return false;
     }
   }  catch (error) {
     console.warn('Admin status check failed:', error);
-    isAdminLoggedIn = false;
+    setAdmin(false);
     currentUser = null;
     return false;
   }
@@ -69,7 +71,7 @@ async function checkAdminStatusCached() {
 }
 // Cookie-basiertes Admin Logout
 async function adminLogout() {
-  if (!isAdminLoggedIn) {
+  if (!isAdmin()) {
     return;
   }
   try {
@@ -81,7 +83,7 @@ async function adminLogout() {
   }
     
   // Lokale Variablen zurücksetzen
-  isAdminLoggedIn = false;
+  setAdmin(false);
   currentUser = null;
   adminStatusPromise = null; // Cache leeren
     
@@ -97,7 +99,7 @@ async function adminLogout() {
   }
 }
 async function deletePost(postId) {
-  if (!isAdminLoggedIn) {
+  if (!isAdmin()) {
     showFeedback('Sie sind nicht eingeloggt.', 'error');
     return false;
   }
@@ -142,23 +144,23 @@ async function deletePost(postId) {
 function updateNavigationVisibility() {
   const createNavItem = document.getElementById('create-nav-item');
   if (createNavItem) {
-    createNavItem.style.display = isAdminLoggedIn ? 'block' : 'none';
+    createNavItem.style.display = isAdmin() ? 'block' : 'none';
   }
     
   // Create-Links auf anderen Seiten
   const createLinks = document.querySelectorAll('.create-link');
   createLinks.forEach(link => {
-    link.style.display = isAdminLoggedIn ? 'inline-block' : 'none';
+    link.style.display = isAdmin() ? 'inline-block' : 'none';
   });
     
   // Navigation auf /createPost (Admin-geschützte vs. öffentliche Navigation)
   const publicNavigation = document.getElementById('public-navigation');
   if (publicNavigation) {
-    publicNavigation.style.display = isAdminLoggedIn ? 'none' : 'block';
+    publicNavigation.style.display = isAdmin() ? 'none' : 'block';
   }
     
   // Admin-Toolbar und Login-Button entsprechend ein-/ausblenden
-  if (isAdminLoggedIn) {
+  if (isAdmin()) {
     createAdminToolbar();
     hideElement('admin-login-btn');
   } else {
@@ -173,7 +175,7 @@ function updateNavigationVisibility() {
 }
 // Admin-Toolbar erstellen
 function createAdminToolbar() {
-  if (!isAdminLoggedIn) return;
+  if (!isAdmin()) return;
   // Prüfen ob Toolbar bereits existiert
   if (elementExists('admin-toolbar')) return;
   const toolbar = createElement('div');
@@ -200,7 +202,7 @@ function createAdminToolbar() {
 }
 // Modal anzeigen
 function showAdminLoginModal() {
-  if (isAdminLoggedIn) {
+  if (isAdmin()) {
     showFeedback('Admin bereits eingeloggt.', 'error');
     return;
   }
@@ -258,7 +260,7 @@ function showAdminLoginModal() {
   }
 }
 async function adminLogin(username, password) {
-  if (isAdminLoggedIn) {
+  if (isAdmin()) {
     showFeedback('Admin bereits eingeloggt.', 'error');
     return true;
   }
@@ -272,7 +274,7 @@ async function adminLogin(username, password) {
     });
         
     if (result && result.success === true) {
-      isAdminLoggedIn = true;
+      setAdmin(true);
       currentUser = (result.data && result.data.user) ? result.data.user : currentUser;
       adminStatusPromise = Promise.resolve(true);
       showFeedback('Erfolgreich eingeloggt.', 'info');
@@ -296,26 +298,56 @@ async function adminLogin(username, password) {
     return false;
   }
 }
-async function addReadPostAdminControls() {
-  if (!isAdminLoggedIn) return;
-    
-  const postId = getUrlParameter('post');
-  //Error handling
-  if (!postId) return;
-  else {
-    const adminControls = document.getElementById('admin-controls');
-    if (adminControls) {
-    adminControls.innerHTML = `
-        <button type="button" data-action="delete-post" data-post-id="${postId}" class="btn admin-delete-btn btn-lg ml-2">
-          Post löschen
-        </button>
-        <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="${postId}">
-          <span class="btn-icon">✏️</span>
-          Post bearbeiten
-        </button>
-
-      `;
+function resolveCurrentPostId() {
+  try {
+    // 1) Server-injected JSON
+    if (typeof window !== 'undefined' && window.__SERVER_POST && window.__SERVER_POST.id) {
+      return String(window.__SERVER_POST.id);
     }
+    // 2) Meta tag
+    const meta = document.querySelector('meta[name="post-id"]');
+    if (meta && meta.content) return String(meta.content);
+    // 3) Any element with data-post-id (e.g., #post-article)
+    const dataEl = document.querySelector('[data-post-id]');
+    if (dataEl && dataEl.getAttribute('data-post-id')) return String(dataEl.getAttribute('data-post-id'));
+    // 4) URL pattern /blogpost/123 or /blogpost/by-id/123
+    const path = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname : '';
+    const m = path.match(/\/blogpost\/(?:by-id\/)?(\d+)/);
+    if (m && m[1]) return String(m[1]);
+    // 5) Legacy query parameter
+    const q = getUrlParameter('post');
+    if (q) return String(q);
+  } catch { /* ignore */ }
+  return null;
+}
+
+async function addReadPostAdminControls() {
+  if (!isAdmin()) return;
+  const postId = resolveCurrentPostId();
+  if (!postId) return;
+
+  let adminControls = document.getElementById('admin-controls');
+  // Fallback: create container inside navigation if missing
+  if (!adminControls) {
+    const nav = document.querySelector('.navigation') || document.querySelector('.post-footer') || document.body;
+    adminControls = document.createElement('div');
+    adminControls.id = 'admin-controls';
+    adminControls.className = 'mt-15';
+    nav.appendChild(adminControls);
+  }
+
+  if (adminControls) {
+    adminControls.innerHTML = `
+      <button type="button" data-action="delete-post" data-post-id="${postId}" class="btn admin-delete-btn btn-lg ml-2">
+        Post löschen
+      </button>
+      <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="${postId}">
+        <span class="btn-icon">✏️</span>
+        Post bearbeiten
+      </button>
+    `;
+    // Ensure controls are visible if a utility 'hidden' class is present
+    try { adminControls.classList.remove('hidden'); } catch { /* no-op */ }
   }
 }
 async function initializeAdminSystem() {
@@ -324,6 +356,8 @@ async function initializeAdminSystem() {
 
   adminSystemInitPromise = (async () => {
     try {
+      // Seed from SSR config for immediate UI correctness, then verify
+      try { setAdmin(isAdminFromServer()); } catch { /* ignore */ }
       const status = await checkAdminStatusCached();
       updateNavigationVisibility();
       adminSystemInitialized = true;
@@ -339,7 +373,7 @@ async function initializeAdminSystem() {
   return adminSystemInitPromise;
 }
 function addAdminMenuItemToNavbar() {
-  if (isAdminLoggedIn) {
+  if (isAdmin()) {
     const menu = document.getElementById('navbar-menu-items');
     if (menu && !document.getElementById('admin-create-link')) {
       const createLi = document.createElement('li');
@@ -484,3 +518,24 @@ export function initializeAdminDelegation() {
     }
   });
 }
+
+// Retry loop to ensure admin controls get injected even if admin status/postId arrive late
+let _adminControlsInjected = false;
+async function ensureAdminControls({ attempts = 10, intervalMs = 500 } = {}) {
+  if (_adminControlsInjected) return true;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const ok = await checkAdminStatusCached();
+      const postId = resolveCurrentPostId();
+      if (ok && isAdmin() && postId) {
+        await addReadPostAdminControls();
+        _adminControlsInjected = true;
+        return true;
+      }
+    } catch { /* ignore and retry */ }
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
+export { ensureAdminControls };

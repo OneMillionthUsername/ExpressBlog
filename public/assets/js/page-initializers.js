@@ -17,7 +17,7 @@ import {
 // They should only be loaded on the Create page to avoid loading large
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
-import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls } from './admin.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
 import { initializeBlogUtilities, initializeCommonDelegation } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
@@ -258,10 +258,13 @@ async function initializeReadPostPage() {
     await loadAndDisplayBlogPost();
 
     // Admin-Controls hinzufügen (vereinfacht)
-    setTimeout(() => {
-      const adminControls = document.getElementById('admin-controls');
-      if (adminControls && typeof addReadPostAdminControls === 'function') {
+    setTimeout(async () => {
+      if (typeof addReadPostAdminControls === 'function') {
         addReadPostAdminControls();
+      }
+      // Additionally run a short retry loop to handle late-arriving admin status or postId
+      if (typeof ensureAdminControls === 'function') {
+        ensureAdminControls({ attempts: 6, intervalMs: 400 });
       }
 
       // Kommentare aktivieren: remove the utility 'hidden' class (CSS uses !important)
