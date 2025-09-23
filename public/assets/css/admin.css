@@ -28,6 +28,7 @@
     overflow-y: auto;
     position: relative;
     animation: slideInModal 0.3s ease-out;
+    white-space: normal; /* prevent whitespace-only text nodes from collapsing oddly */
 }
 /* Modal Header */
 .modal-header {
@@ -140,6 +141,8 @@
     overflow: hidden;
     position: relative;
     border: 2px solid rgba(212, 175, 55, 0.2);
+    display: flex;
+    flex-direction: column;
 }
 #admin-login-modal h3 {
     margin: 0 0 32px 0;
@@ -222,6 +225,10 @@
     flex-direction: column;
     gap: 0.25rem; /* tighter vertical spacing between elements */
 }
+#admin-login-modal .modal-body > * { margin: 0; }
+#admin-login-modal .modal-body label { margin: 0 0 6px 0; line-height: 1.2; }
+#admin-login-modal .modal-body input { margin: 0 0 10px 0; }
+#admin-login-modal .modal-body .modal-actions { margin-top: 10px; }
 #admin-login-modal .modal-label,
 #card-create-modal .modal-label {
     margin-bottom: 0.1rem;
@@ -232,7 +239,7 @@
 }
 #admin-login-modal label {
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     font-weight: 700;
     color: var(--color-text);
     font-family: var(--font-primary);
@@ -243,9 +250,9 @@
 #admin-login-modal .modal-actions {
     display: flex;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 32px;
-    padding-top: 24px;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
     border-top: 2px solid #f8f9fa;
 }
 #admin-login-modal #admin-login-cancel {

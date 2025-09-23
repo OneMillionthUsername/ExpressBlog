@@ -67,29 +67,13 @@ function showTinyMceApiKeySetup() {
   document.getElementById('tinymce-api-key-modal').focus();
   return;
 }
-// TinyMCE dynamisch laden mit CDN-First Approach
+// TinyMCE dynamisch laden (prefer local/jsDelivr, then Tiny Cloud if configured)
 async function loadTinyMceScript() {
   // Prüfen ob TinyMCE bereits geladen ist
   if (typeof tinymce !== 'undefined') {
     return true;
   }
-    
-  // Für Plesk/Production: Zuerst CDN versuchen
-  if (!isLocalDevelopment()) {
-    try {
-      const cdnLoaded = await tryCloudTinyMCE();
-      if (cdnLoaded) {
-        return true;
-      }
-      else {
-        console.warn('CDN TinyMCE konnte nicht geladen werden, versuche lokalen Fallback');
-      }
-    } catch (error) {
-      console.error('CDN TinyMCE konnte nicht geladen werden:', error);
-    }
-  }
-    
-  // Fallback: Lokales TinyMCE
+  // 1) Versuch: lokale/self-hosted und jsDelivr Fallbacks
   try {
     const localLoaded = await tryLocalTinyMCE();
     if (localLoaded) {
@@ -101,12 +85,8 @@ async function loadTinyMceScript() {
   } catch (error) {
     console.error('Lokales TinyMCE konnte nicht geladen werden:', error);
   }
-    
-  // Letzter Fallback: CDN falls noch nicht versucht
-  if (isLocalDevelopment()) {
-    return await tryCloudTinyMCE();
-  }
-  throw new Error('TinyMCE konnte nicht geladen werden');
+  // 2) Letzter Fallback: Tiny Cloud (erfordert API Key oder will show limits)
+  return await tryCloudTinyMCE();
 }
 // Cloud TinyMCE laden
 async function tryCloudTinyMCE() {
@@ -140,7 +120,7 @@ async function tryCloudTinyMCE() {
     document.head.appendChild(script);
   });
 }
-// Lokaler TinyMCE Fallback mit mehreren Pfaden
+// Lokaler TinyMCE Fallback mit mehreren Pfaden (inkl. jsDelivr)
 async function tryLocalTinyMCE() {
   const localPaths = [
     '/assets/js/tinymce/tinymce.min.js',     // Hauptpfad
@@ -251,9 +231,6 @@ async function initializeTinyMCE() {
       return;
     }
   }
-  else {
-    console.warn('TinyMCE ist nicht verfügbar, versuche Fallback');
-  }
 
   // Vorherige TinyMCE Instanz entfernen falls vorhanden
   if (tinymce.get('content')) {
@@ -265,17 +242,6 @@ async function initializeTinyMCE() {
       selector: '#content',
       height: 500,
       menubar: 'edit view insert format tools help',
-            
-      // Basis-URL für TinyMCE dynamisch setzen
-      base_url: isLocalDevelopment() 
-        ? '/assets/js/tinymce' 
-        : 'https://cdn.tiny.cloud/1/' + (TINYMCE_CONFIG.apiKey || 'no-api-key') + '/tinymce/6',
-      suffix: '.min',
-            
-      // Für CDN: base_url nicht setzen
-      ...(!isLocalDevelopment() 
-        ? {} 
-        : { base_url: '/assets/js/tinymce', suffix: '.min' }),
             
       plugins: [
         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
@@ -1251,6 +1217,16 @@ async function initializeBlogEditor() {
       const action = btn.dataset.action;
       if (!action) return;
       btn.addEventListener('click', () => {
+        // Special-case actions needing parameters
+        if (action === 'add-tag') {
+          const tag = (btn.dataset && btn.dataset.tag) ? String(btn.dataset.tag).trim() : '';
+          if (tag && typeof addTag === 'function') {
+            try { addTag(tag); } catch (err) { console.error('add-tag failed:', err); }
+          } else {
+            console.warn('add-tag: missing data-tag or addTag()');
+          }
+          return;
+        }
         const fn = actionMap[action];
         if (typeof fn === 'function') {
           try {

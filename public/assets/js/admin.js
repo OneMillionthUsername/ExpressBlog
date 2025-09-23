@@ -285,6 +285,23 @@ async function adminLogin(username, password) {
         // Auf /createPost: Editor und geschützte Bereiche einblenden, Sperrseite ausblenden
         showElement('create-content');
         hideElement('admin-required');
+        // Initialize editor and optional AI assistant on demand after login
+        try {
+          const mod = await import('./tinymce/tinymce-editor.js');
+          const initFn = mod.initializeTinyMCE || mod.initializeBlogEditor || mod.initializeCreatePage || mod.default;
+          if (typeof initFn === 'function') {
+            await initFn();
+          }
+        } catch (e) {
+          console.error('Editor initialization after login failed:', e);
+        }
+        // Lazy-load AI assistant (optional)
+        try {
+          const ai = await import('./ai-assistant/ai-assistant.js');
+          if (ai && typeof ai.initAiAssistant === 'function') {
+            ai.initAiAssistant();
+          }
+        } catch { /* optional */ }
       }
       return true;
     } else {
