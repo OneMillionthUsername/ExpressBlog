@@ -131,8 +131,13 @@ async function initializeCreatePage() {
     if (!initializeBlogEditor) {
       try {
         const mod = await import('./tinymce/tinymce-editor.js');
-        // module exports initialize function under several names; support both
-        initializeBlogEditor = mod.initializeTinyMCE || mod.initializeBlogEditor || mod.initializeCreatePage || mod.initializeCreatePage;
+        // Use only the high-level initializer to ensure admin gating and full wiring
+        if (typeof mod.initializeBlogEditor === 'function') {
+          initializeBlogEditor = mod.initializeBlogEditor;
+        } else {
+          console.error('TinyMCE-Modul exportiert keine initializeBlogEditor()-Funktion. Editor-Initialisierung wird übersprungen.');
+          initializeBlogEditor = async () => {};
+        }
       } catch (err) {
         console.error('Fehler beim Laden des TinyMCE-Moduls:', err);
       }

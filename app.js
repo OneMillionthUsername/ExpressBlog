@@ -285,8 +285,13 @@ app.use(express.static(publicDirectoryPath, {
     }
     
     // Cache-Control für verschiedene Dateitypen
-    if (path.includes('/assets/js/tinymce/') || path.includes('/node_modules/')) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    if (path.includes('/node_modules/')) {
+      // Third-party libraries can be cached long-term (fingerprinted by version)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (path.includes('/assets/js/tinymce/')) {
+      // Cache editor assets for a while to avoid re-downloading on each visit
+      // Use a moderate TTL since filenames are not fingerprinted
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
     } else if (path.includes('.ico') || path.includes('.png') || path.includes('.jpg') || path.includes('.jpeg')) {
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag für Bilder
     }

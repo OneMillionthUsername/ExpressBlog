@@ -1149,40 +1149,40 @@ function validateImageBeforeUpload(file) {
     
   return true;
 }
-// Sicherer Admin-Check mit dynamischem Import und SSR-Fallback
+// Sicherer Admin-Check ohne Abhängigkeit von Admin-Modul (vermeidet zirkuläre Importe)
 async function ensureAdminAccess() {
-  // 1) Try dynamic import of admin module
+  // 1) Direkt aus non-executable JSON (#server-config), serverseitig injiziert
   try {
-    const mod = await import('../admin.js');
-    if (mod && typeof mod.checkAdminStatusCached === 'function') {
-      return await mod.checkAdminStatusCached();
+    const el = document.getElementById('server-config');
+    if (el && el.textContent) {
+      const cfg = JSON.parse(el.textContent);
+      if (cfg && typeof cfg.isAdmin !== 'undefined') {
+        return !!cfg.isAdmin;
+      }
     }
   } catch { /* ignore and try fallback */ }
-  // 2) Try SSR config module
+
+  // 2) Fallback: leichtgewichtiger Import der Config (kein Admin-Modul!)
   try {
     const cfgMod = await import('../config.js');
     if (cfgMod && typeof cfgMod.isAdminFromServer === 'function') {
       return !!cfgMod.isAdminFromServer();
     }
-  } catch { /* ignore and try direct DOM */ }
-  // 3) Directly read non-executable JSON script tag
-  try {
-    const el = document.getElementById('server-config');
-    if (el && el.textContent) {
-      const cfg = JSON.parse(el.textContent);
-      return !!(cfg && cfg.isAdmin);
-    }
   } catch { /* ignore */ }
+
+  // 3) Default: kein Admin
   return false;
 }
 // Initialisierung und Event Listener
 async function initializeBlogEditor() {
   // Prüfe Admin Status
   const hasAdmin = await ensureAdminAccess();
+  console.debug('initializeBlogEditor: admin access =', hasAdmin);
   if (!hasAdmin) {
     return;
   }
   // TinyMCE initialisieren
+  console.debug('initializeBlogEditor: initializing TinyMCE...');
   await initializeTinyMCE();
   // Event Listener für Titel und Tags
   const titleElement = document.getElementById('title');
