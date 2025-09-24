@@ -83,13 +83,7 @@
     background: var(--color-bg-alt);
 }
 
-[data-theme="dark"] .create-form-section .tox .tox-editor-container {
-    border-color: #333 !important;
-}
-
-[data-theme="dark"] .create-form-section .tox .tox-edit-area__iframe {
-    border-color: #333 !important;
-}
+/* Remove TinyMCE dark overrides so editor stays default light */
 
 [data-theme="dark"] .comment-item {
     background: var(--color-bg-alt);
@@ -101,16 +95,7 @@
     border-color: #333;
 }
 
-[data-theme="dark"] .tox .tox-toolbar,
-[data-theme="dark"] .tox .tox-toolbar__overflow {
-    background: var(--color-bg-alt) !important;
-    border-color: #333 !important;
-}
-
-[data-theme="dark"] .tox .tox-edit-area__iframe {
-    background: var(--color-bg) !important;
-    border-color: #333 !important;
-}
+/* Removed toolbar/edit area dark styling to avoid forcing dark mode inside editor */
 
 [data-theme="dark"] .navbar .hamburger-lines .line {
     background: var(--color-text);

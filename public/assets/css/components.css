@@ -241,30 +241,6 @@ body.dark .modal-container pre.modal-content::-webkit-scrollbar-thumb { backgrou
 
 /* TinyMCE Editor: Belasse Standard-Light-Theme auch in Dark Mode (kein Override nötig). */
 /* Falls andere globale Dark-Regeln greifen würden, kann man hier gezielt zurücksetzen: */
-body.dark .tox.tox-tinymce,
-.dark-theme .tox.tox-tinymce,
-body[data-theme="dark"] .tox.tox-tinymce { background: #ffffff !important; color: #1e2329 !important; }
-body.dark .tox .tox-toolbar,
-.dark-theme .tox .tox-toolbar,
-body[data-theme="dark"] .tox .tox-toolbar,
-body.dark .tox .tox-toolbar__primary,
-.dark-theme .tox .tox-toolbar__primary,
-body[data-theme="dark"] .tox .tox-toolbar__primary,
-body.dark .tox .tox-toolbar__overflow,
-.dark-theme .tox .tox-toolbar__overflow,
-body[data-theme="dark"] .tox .tox-toolbar__overflow,
-body.dark .tox .tox-statusbar,
-.dark-theme .tox .tox-statusbar,
-body[data-theme="dark"] .tox .tox-statusbar { background:#f8f9fa !important; color:#1e2329 !important; border-color:#dfe3e7 !important; }
-body.dark .tox .tox-tbtn svg,
-.dark-theme .tox .tox-tbtn svg,
-body[data-theme="dark"] .tox .tox-tbtn svg,
-body.dark .tox .tox-icon svg,
-.dark-theme .tox .tox-icon svg,
-body[data-theme="dark"] .tox .tox-icon svg { fill:#2c3e50 !important; }
-body.dark .tox .tox-edit-area__iframe,
-.dark-theme .tox .tox-edit-area__iframe,
-body[data-theme="dark"] .tox .tox-edit-area__iframe { background:#ffffff !important; }
 .ai-title-suggestion {
     margin: 10px 0;
     cursor: pointer;

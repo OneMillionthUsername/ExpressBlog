@@ -244,11 +244,6 @@ async function initializeTinyMCE() {
       height: 500,
       resize: true,
       menubar: 'edit view insert format tools help',
-      /* Force light content appearance regardless of outer dark theme */
-      content_style: `body { background:#ffffff !important; color:#222 !important; }
-        body p { color:#222; }
-        a { color:#2d6cdf; }
-      `,
             
       plugins: [
         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
