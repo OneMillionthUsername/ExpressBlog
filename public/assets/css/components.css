@@ -140,17 +140,18 @@
 
 /* Dark theme variant for outer app; apply .dark-theme or body.dark */
 body.dark .modal-container,
-.dark-theme .modal-container {
+.dark-theme .modal-container,
+body[data-theme="dark"] .modal-container,
+[data-theme="dark"] .modal-container {
     --modal-bg: #11161d;
     --modal-fg: #f0f3f7;
     --modal-border: rgba(255,255,255,0.12);
 }
 
 /* Ensure TinyMCE setup modal always light (override dark parent) */
-body.dark #tinymce-api-key-modal .modal-container,
-.dark-theme #tinymce-api-key-modal .modal-container,
-#tinymce-api-key-modal .modal-container.force-light,
-.modal-container.tinymce-setup-container {
+/* Remove forced light override so API-Key modal also darkens automatically.
+   If a specific modal should stay light, add class .force-light to its container. */
+#tinymce-api-key-modal .modal-container.force-light {
     --modal-bg: #ffffff !important;
     --modal-fg: #222c37 !important;
     --modal-border: rgba(0,0,0,0.08) !important;
@@ -240,7 +241,30 @@ body.dark .modal-container pre.modal-content::-webkit-scrollbar-thumb { backgrou
 
 /* TinyMCE Editor: Belasse Standard-Light-Theme auch in Dark Mode (kein Override nötig). */
 /* Falls andere globale Dark-Regeln greifen würden, kann man hier gezielt zurücksetzen: */
-body.dark .tox.tox-tinymce, .dark-theme .tox.tox-tinymce { background: #fff; color: #1e2329; }
+body.dark .tox.tox-tinymce,
+.dark-theme .tox.tox-tinymce,
+body[data-theme="dark"] .tox.tox-tinymce { background: #ffffff !important; color: #1e2329 !important; }
+body.dark .tox .tox-toolbar,
+.dark-theme .tox .tox-toolbar,
+body[data-theme="dark"] .tox .tox-toolbar,
+body.dark .tox .tox-toolbar__primary,
+.dark-theme .tox .tox-toolbar__primary,
+body[data-theme="dark"] .tox .tox-toolbar__primary,
+body.dark .tox .tox-toolbar__overflow,
+.dark-theme .tox .tox-toolbar__overflow,
+body[data-theme="dark"] .tox .tox-toolbar__overflow,
+body.dark .tox .tox-statusbar,
+.dark-theme .tox .tox-statusbar,
+body[data-theme="dark"] .tox .tox-statusbar { background:#f8f9fa !important; color:#1e2329 !important; border-color:#dfe3e7 !important; }
+body.dark .tox .tox-tbtn svg,
+.dark-theme .tox .tox-tbtn svg,
+body[data-theme="dark"] .tox .tox-tbtn svg,
+body.dark .tox .tox-icon svg,
+.dark-theme .tox .tox-icon svg,
+body[data-theme="dark"] .tox .tox-icon svg { fill:#2c3e50 !important; }
+body.dark .tox .tox-edit-area__iframe,
+.dark-theme .tox .tox-edit-area__iframe,
+body[data-theme="dark"] .tox .tox-edit-area__iframe { background:#ffffff !important; }
 .ai-title-suggestion {
     margin: 10px 0;
     cursor: pointer;
