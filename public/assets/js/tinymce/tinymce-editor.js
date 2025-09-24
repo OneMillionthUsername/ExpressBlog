@@ -233,9 +233,6 @@ async function initializeTinyMCE() {
     }
   }
 
-  // Vor der TinyMCE-Initialisierung: Entwürfe prüfen und Felder füllen
-  checkForDrafts();
-
   // Vorherige TinyMCE Instanz entfernen falls vorhanden
   if (tinymce.get('content')) {
     tinymce.remove('#content');
@@ -338,6 +335,37 @@ async function initializeTinyMCE() {
           applyTinyMCETheme(editor);
                     
           showNotification('Editor bereit!', 'success');
+          
+          // Entwürfe prüfen und wiederherstellen
+          const draftKey = 'blogpost_draft_content';
+          const savedDraft = localStorage.getItem(draftKey);
+          if (savedDraft) {
+            if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
+              try {
+                const draftData = JSON.parse(savedDraft);
+                
+                // Titel und Tags wiederherstellen
+                if (draftData.title) {
+                  document.getElementById('title').value = draftData.title;
+                }
+                if (draftData.tags) {
+                  document.getElementById('tags').value = draftData.tags;
+                }
+                
+                // Content wiederherstellen
+                if (draftData.content) {
+                  editor.setContent(draftData.content);
+                }
+                
+                showNotification('Entwurf wiederhergestellt 📄', 'success');
+                updatePreview();
+              } catch (error) {
+                console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
+                showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
+              }
+            }
+          }
+          
           if (typeof checkAndPrefillEditPostForm === 'function') {
             checkAndPrefillEditPostForm();
           }
@@ -415,46 +443,6 @@ function enableTextareaFallback(contentElement) {
 }
 
 // Draft-Management-Funktionen
-function checkForDrafts() {
-  const draftKey = 'blogpost_draft_content';
-  const savedDraft = localStorage.getItem(draftKey);
-    
-  if (savedDraft) {
-    if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
-      try {
-        const draftData = JSON.parse(savedDraft);
-                
-        // Titel und Tags wiederherstellen
-        if (draftData.title) {
-          document.getElementById('title').value = draftData.title;
-        }
-        if (draftData.tags) {
-          document.getElementById('tags').value = draftData.tags;
-        }
-                
-        // Inhalt wiederherstellen (TinyMCE oder Textarea)
-        if (draftData.content) {
-          const tinymceEditor = tinymce.get('content');
-          if (tinymceEditor) {
-            tinymceEditor.setContent(draftData.content);
-          } else {
-            // Fallback: In Textarea wiederherstellen
-            const contentElement = document.getElementById('content');
-            if (contentElement) {
-              contentElement.value = draftData.content.replace(/<[^>]*>/g, ''); // HTML-Tags entfernen
-            }
-          }
-        }
-                
-        showNotification('Entwurf wiederhergestellt 📄', 'success');
-        updatePreview();
-      } catch (error) {
-        console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
-        showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
-      }
-    }
-  }
-}
 function saveDraft() {
   const title = document.getElementById('title').value;
   let content = '';
@@ -941,7 +929,6 @@ function safeSuccess(success, imageUrl, _context = 'Upload') {
 // Internal functions are prefixed with '_' to indicate they are internal but
 // we export them under public names for other modules/tests to consume.
 export {
-  checkForDrafts,
   addTag,
   initializeDragAndDrop,
   compressAndUploadImage,
