@@ -342,7 +342,39 @@ postRouter.get('/by-id/:postId',
     } catch (error) {
       console.error('Error loading the blog post by id', error);
       if (error instanceof PostControllerException) {
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          // Render hübsche Fehlerseite für HTML-Anfragen
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
+          return res.status(404).render('notFound', { isAdmin });
+        }
         return res.status(404).json({ error: 'Blogpost not found' });
+      }
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        // Render generische Fehlerseite für HTML-Anfragen
+        const token = authService.extractTokenFromRequest(req);
+        let isAdmin = false;
+        try {
+          if (token) {
+            const decoded = authService.verifyToken(token);
+            if (decoded && decoded.role === 'admin') isAdmin = true;
+          }
+        } catch { /* ignore token errors */ }
+        res.set('Cache-Control', 'private, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.set('Vary', 'Cookie');
+        return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
       }
       res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
@@ -515,9 +547,27 @@ postRouter.get('/:slug',
       return res.json(convertBigInts(post) || post);
     } catch (error) {
       console.error('Error loading the blog post by slug', error);
-      // If the client expects HTML, render the view with a friendly message
+      if (error instanceof PostControllerException) {
+        if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+          // Render hübsche Fehlerseite für HTML-Anfragen
+          const token = authService.extractTokenFromRequest(req);
+          let isAdmin = false;
+          try {
+            if (token) {
+              const decoded = authService.verifyToken(token);
+              if (decoded && decoded.role === 'admin') isAdmin = true;
+            }
+          } catch { /* ignore token errors */ }
+          res.set('Cache-Control', 'private, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
+          res.set('Vary', 'Cookie');
+          return res.status(404).render('notFound', { isAdmin });
+        }
+        return res.status(404).json({ error: 'Blogpost not found' });
+      }
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        const message = (error instanceof PostControllerException) ? 'Blogpost nicht gefunden' : 'Serverfehler beim Laden des Blogposts';
+        // Render generische Fehlerseite für HTML-Anfragen
         const token = authService.extractTokenFromRequest(req);
         let isAdmin = false;
         try {
@@ -530,10 +580,7 @@ postRouter.get('/:slug',
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0');
         res.set('Vary', 'Cookie');
-        return res.status(error instanceof PostControllerException ? 404 : 500).render('readPost', { post: null, errorMessage: message, isAdmin });
-      }
-      if (error instanceof PostControllerException) {
-        return res.status(404).json({ error: 'Blogpost not found' });
+        return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
       }
       return res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
