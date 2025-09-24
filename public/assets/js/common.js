@@ -337,7 +337,7 @@ export function initializeBlogPostForm() {
     }
 
   const postId = getPostIdFromPath();
-    const url = postId ? `/blogpost/update/${postId}` : '/create';
+  const url = postId ? `/blogpost/update/${postId}` : '/blogpost/create';
     const method = postId ? 'PUT' : 'POST';
 
     const title = document.getElementById('title').value;
