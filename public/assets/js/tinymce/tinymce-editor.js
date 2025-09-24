@@ -233,6 +233,9 @@ async function initializeTinyMCE() {
     }
   }
 
+  // Vor der TinyMCE-Initialisierung: Entwürfe prüfen und Felder füllen
+  checkForDrafts();
+
   // Vorherige TinyMCE Instanz entfernen falls vorhanden
   if (tinymce.get('content')) {
     tinymce.remove('#content');
@@ -241,7 +244,7 @@ async function initializeTinyMCE() {
   try {
     await tinymce.init({
       selector: '#content',
-      height: 500,
+      height: 650,
       resize: true,
       menubar: 'edit view insert format tools help',
             
