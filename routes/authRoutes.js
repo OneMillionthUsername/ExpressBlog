@@ -100,6 +100,7 @@ authRouter.post('/login',
         path: '/',                 // Für ganze Domain
       });
       logger.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.json({
         success: true,
         message: 'Login successful',
@@ -198,6 +199,7 @@ authRouter.post('/logout', (req, res) => {
   //console.info(`[AUTH AUDIT] Logout for user: ${req.user?.username || 'unknown'}`);
 
   // Klare Antwort für das Frontend
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.status(200).json({
     success: true,
     message: 'Logout erfolgreich. Sie wurden abgemeldet.',

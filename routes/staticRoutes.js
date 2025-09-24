@@ -33,19 +33,23 @@ staticRouter.get('/', (req, res) => {
         return { title: decodedTitle, slug: p.slug, excerpt };
       });
       logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.render('index', { featuredPosts });
       logger.debug('[HOME] GET / - Successfully rendered index.ejs');
     }).catch(err => {
       logger.error('[HOME] GET / - Error fetching featured posts, rendering without dynamic posts:', err);
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.render('index', { featuredPosts: [] });
     });
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.status(500).send('Error rendering homepage');
   }
 });
 
 staticRouter.get('/about', (req, res) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.render('about');
 });
 
@@ -102,10 +106,12 @@ staticRouter.get('/createPost', async (req, res) => {
     }
 
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.render('createPost', { tinyMceKey, isAdmin, post: serverPost });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
   }
 });
@@ -120,10 +126,12 @@ staticRouter.get('/posts', async (req, res) => {
     // HTML-first experience and avoid client-side JSON-only rendering.
     const posts = await postController.getAllPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     return res.render('listCurrentPosts', { posts });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     // Fallback: render without posts so client-side JS can still attempt to fetch
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     return res.render('listCurrentPosts');
   }
 });
