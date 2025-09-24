@@ -185,6 +185,29 @@
     border-color: #3565b3 !important;
 }
 
+/* Comment feedback container + alerts (reusing same palette) */
+[data-theme="dark"] #comment-feedback .alert { 
+    background: rgba(25,30,38,0.9) !important; 
+    color:#e3e8ef !important; 
+    border: 1px solid rgba(255,255,255,0.12) !important; 
+    backdrop-filter: blur(4px) saturate(140%); 
+}
+[data-theme="dark"] #comment-feedback .alert-success { 
+    background: rgba(23,52,37,0.85) !important; 
+    color:#7ad49c !important; 
+    border-color:#2f6f4c !important; 
+}
+[data-theme="dark"] #comment-feedback .alert-danger { 
+    background: rgba(78,28,28,0.85) !important; 
+    color:#ff8a80 !important; 
+    border-color:#b84242 !important; 
+}
+[data-theme="dark"] #comment-feedback .alert-info { 
+    background: rgba(26,42,96,0.85) !important; 
+    color:#7bb6ff !important; 
+    border-color:#3565b3 !important; 
+}
+
 /* Dark mode: admin-required warning on create page */
 [data-theme="dark"] #admin-required .alert.alert-warning {
     background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-bg) 100%) !important;
