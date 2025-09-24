@@ -1,5 +1,10 @@
-// Simple in-memory cache with TTL and basic LRU protections for single-instance use.
-// Not suitable for multi-process deployments (use Redis or similar there).
+/**
+ * Simple in-memory cache with TTL and basic LRU protections for single-instance use.
+ * Not suitable for multi-process deployments (use Redis or similar there).
+ *
+ * Exposes `set`, `get`, `del`, `clear` and `getStats` helpers. Values are
+ * deep-cloned on retrieval to avoid accidental mutation by callers.
+ */
 
 import { sanitizeFields } from './sanitizer.js';
 

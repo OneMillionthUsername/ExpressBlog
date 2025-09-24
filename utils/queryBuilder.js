@@ -1,20 +1,9 @@
 /**
  * Universal SQL Query Builder
  *
- * @param {string} method - SQL-Operation: 'create', 'get', 'update', 'delete'
- * @param {string} table - Name der Tabelle
- * @param {Object} conditions -
- *   Für 'get' und 'delete': Objekt mit Spaltennamen als Keys und gesuchten Werten als Values (z.B. { id: 5, author: 'admin' })
- *   Für 'create' und 'update': Objekt mit Spaltennamen als Keys und zu setzenden Werten als Values (z.B. { title: 'foo', content: 'bar' })
- * @param {Object} options -
- *   Für 'get':
- *     - orderBy: (string) SQL ORDER BY-Klausel, z.B. 'created_at DESC'
- *     - limit: (number) maximale Anzahl der Ergebnisse
- *     - offset: (number) Offset für die Ergebnisse
- *   Für 'update':
- *     - conditions: Objekt mit WHERE-Bedingungen (z.B. { id: 5 })
- *
- * @returns {{ query: string, params: any[] }} SQL-Query und Parameter-Array
+ * Lightweight helper that produces parametrized SQL and parameter arrays
+ * for simple CRUD operations. This helps centralize query construction
+ * and keeps raw SQL usage minimal across the codebase.
  */
 export default function queryBuilder(method, table, conditions = {}, options = {}) {
   switch (method.toLowerCase()) {

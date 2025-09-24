@@ -6,6 +6,15 @@ const window = new JSDOM('').window;
 const DOMPurifyServer = DOMPurify(window);
 
 /**
+ * HTML sanitization helpers using server-side DOMPurify.
+ *
+ * - `sanitizeHtml` sanitizes a single HTML string with a conservative
+ *   whitelist.
+ * - `sanitizeFields` recursively sanitizes specific fields inside objects
+ *   (useful before caching or saving to DB).
+ */
+
+/**
  * Sanitize a single HTML string using server-side DOMPurify with a safe whitelist.
  * @param {string} html
  * @returns {string}

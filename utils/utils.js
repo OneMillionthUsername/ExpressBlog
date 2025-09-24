@@ -3,6 +3,15 @@ import { DatabaseService } from '../databases/mariaDB.js';
 import { UtilsException } from '../models/customExceptions.js';
 import { sanitizeHtml } from './sanitizer.js';
 
+/**
+ * General purpose utility helpers used across the application.
+ *
+ * - Escaping and sanitization helpers
+ * - Simple slug creation and truncation
+ * - BigInt conversion helpers for DB rows
+ * - Small helpers that avoid pulling large dependencies into routes
+ */
+
 const FORBIDDEN_KEYS = new Set([
   '__proto__',
   'constructor',
@@ -15,6 +24,12 @@ export function sanitizeFilename(name) {
     .replace(/[^a-zA-Z0-9._-]/g, '_')      // nur erlaubte Zeichen
     .substring(0, 255);                     // Länge begrenzen
 }
+/**
+ * Escapes HTML entities in a string to prevent injection when rendering
+ * untrusted content into templates.
+ * @param {string} str
+ * @returns {string}
+ */
 export function escapeHtml(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -86,6 +101,11 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
   }
   throw new UtilsException('Unsupported input type');
 }
+/**
+ * Create a URL-friendly slug from a title.
+ * Handles German umlauts and diacritics, strips control characters,
+ * and collapses whitespace.
+ */
 export function createSlug(title, { maxLength = 50 /*, addHash = true */ } = {}) {
   if (!title) return '';
 

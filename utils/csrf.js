@@ -1,5 +1,9 @@
 import csrf from '@dr.pogodin/csurf';
 
+/**
+ * CSRF protection middleware factory configured to use cookie-based tokens.
+ * Accepts tokens from common header names as well as `req.body._csrf`.
+ */
 const csrfProtection = csrf({
   cookie: {
     httpOnly: true,           // Cookie nicht per JavaScript lesbar

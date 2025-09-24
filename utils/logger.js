@@ -1,8 +1,9 @@
-//Contains helper functions like logging or error handling that can be reused throughout the app.
-
 /**
- - Reusable Functions: Stores commonly used functions to avoid code duplication.
-- Utility Focus: Contains utility functions that enhance code readability and maintainability.
+ * Application logger singleton.
+ *
+ * Writes logs into per-purpose files under `logs/` and also prints to
+ * the console. Provides `error`, `warn`, `info`, `debug`, `access` and
+ * `auth` helpers and performs daily rotation of files.
  */
 
 import { createWriteStream, existsSync, mkdirSync } from 'fs';

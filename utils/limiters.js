@@ -1,5 +1,10 @@
 import rateLimit from 'express-rate-limit';
 
+/**
+ * Rate limiter helpers used across routes.
+ * Exposes `strictLimiter`, `globalLimiter` and `loginLimiter` with
+ * sensible defaults and expressive error messages.
+ */
 // --- Rate limiters ---
 // Basis-Konfiguration für alle Limiter
 const baseLimiterConfig = {

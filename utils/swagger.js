@@ -2,6 +2,10 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
+/**
+ * Swagger/OpenAPI helper. Exposes `swaggerSpec`, `swaggerUiMiddleware` and
+ * `swaggerUiSetup` which can be mounted in `app.js` for interactive API docs.
+ */
 const options = {
   definition: {
     openapi: '3.0.0',
