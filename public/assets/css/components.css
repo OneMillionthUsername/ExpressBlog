@@ -399,6 +399,40 @@ body.dark .modal-container pre.modal-content::-webkit-scrollbar-thumb { backgrou
     border-radius: 4px;
     transition: width 0.3s ease;
 }
+
+/* Confirm modal (used by admin delegated delete confirmation) */
+.confirm-modal {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    z-index: 99999;
+}
+.confirm-modal .modal-content {
+    max-width: 520px;
+    width: min(92%, 520px);
+    padding: 18px 20px;
+    border-radius: 10px;
+    background: var(--modal-bg, #ffffff);
+    color: var(--modal-fg, #1e2329);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+.confirm-modal .modal-body p { margin: 0 0 6px 0; font-size: 15px; }
+.confirm-modal .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+
+/* Dark theme variant — uses same variables as other modals */
+body.dark .confirm-modal .modal-content,
+body[data-theme="dark"] .confirm-modal .modal-content,
+[data-theme="dark"] .confirm-modal .modal-content {
+    background: var(--modal-bg, #11161d);
+    color: var(--modal-fg, #f0f3f7);
+    border: 1px solid rgba(255,255,255,0.06);
+}
 .upload-progress-text {
     text-align: center;
     margin-top: 5px;
