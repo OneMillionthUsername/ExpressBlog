@@ -575,13 +575,21 @@ postRouter.delete(
   requireAdmin,
   validateId,
   async (req, res) => {
+    logger.debug('DELETE /delete: Route reached');
     const postId = req.params.postId;
-    logger.debug(`DELETE /delete: Attempting to delete post ${postId}`);
-    if (validationService.validateId(postId) === false) {
+    logger.debug('DELETE /delete: req.params: ' + JSON.stringify(req.params));
+    logger.debug('DELETE /delete: Attempting to delete post ' + postId);
+    logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
+    logger.debug('DELETE /delete: validationService: ' + validationService);
+    if (validationService.isValidIdSchema(postId) === false) {
+      logger.debug('DELETE /delete: Invalid postId ' + postId);
       return res.status(400).json({ error: 'Invalid post ID' });
     }
+    logger.debug('DELETE /delete: postId valid, proceeding to delete');
     try {
+      logger.debug('DELETE /delete: Calling postController.deletePost for ' + postId);
       const result = await postController.deletePost(postId);
+      logger.debug('DELETE /delete: postController.deletePost returned ' + JSON.stringify(result));
       if (!result) {
         return res.status(400).json({ error: 'Failed to delete blog post' });
       }
@@ -591,10 +599,10 @@ postRouter.delete(
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive`);
+        logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive');
       } catch (e) { void e; }
     } catch (error) {
-      console.error('Error deleting blog post', error);
+      logger.error('Error deleting blog post', error);
       res.status(500).json({ error: 'Server failed to delete the blogpost' });
     }
   });

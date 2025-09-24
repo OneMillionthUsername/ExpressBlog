@@ -3,6 +3,7 @@
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
 import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
+import { showFeedback } from './feedback.js';
 // Logger not available in frontend - use console instead
 
 // Export imported helper so other modules can import it from this module
@@ -1163,13 +1164,17 @@ export async function deletePostAndRedirect(postId) {
   const apiResult = await apiRequest(`/blogpost/delete/${postId}`, { method: 'DELETE' });
     const deleted = apiResult && (apiResult.success === true || apiResult.status === 200);
     if (deleted) {
+      showFeedback('Post erfolgreich gelöscht.', 'success');
       // Redirect to the SSR-rendered posts listing (avoid raw JSON endpoint)
-      window.location.href = '/posts';
+      setTimeout(() => {
+        window.location.href = '/posts';
+      }, 2000); // Delay to show feedback
     } else {
-      console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
+      showFeedback('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.', 'error');
     }
   } catch (err) {
     console.error('Fehler beim Löschen des Posts:', err);
+    showFeedback('Fehler beim Löschen des Posts.', 'error');
   }
 }
 export function reloadPageWithDelay(delay = 1000) {
