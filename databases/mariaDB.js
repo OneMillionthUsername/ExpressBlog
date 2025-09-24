@@ -772,7 +772,7 @@ export const DatabaseService = {
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to create post');
       }
-      return { success: true, id: result.insertId, ...postData };
+      return { id: Number(result.insertId), ...postData };
     } catch (error) {
       logger.error(`Error in createPost: ${error.message}`);
       throw new databaseError(`Error in createPost: ${error.message}`, error);

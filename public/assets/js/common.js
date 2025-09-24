@@ -453,7 +453,7 @@ export function showCreateCardModal() {
 
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
-  cancelBtn.classList = 'btn btn-outline-secondary ml-2';
+  cancelBtn.classList = 'btn btn-outline-secondary';
   cancelBtn.textContent = 'Cancel';
   // Use delegated data-action instead of inline onclick
   cancelBtn.dataset.action = 'close-modal';
