@@ -3,6 +3,14 @@ import { Media } from '../models/mediaModel.js';
 import fs from 'fs/promises';
 import _path from 'path';
 
+/**
+ * Fügt ein neues Media-Objekt zur Datenbank hinzu, validiert das Ergebnis
+ * und gibt die vollständige `Media`-Instanz zurück.
+ *
+ * @param {Object} mediaData - Metadata für das Medium (path, filename, postId, etc.).
+ * @returns {Promise<Media>} Die erstellte und validierte `Media`-Instanz.
+ * @throws {Error} Bei Validierungs- oder DB-Fehlern.
+ */
 const addMedia = async (mediaData) => {
   const { error, value } = Media.validate(mediaData);
   if (error) {
@@ -24,6 +32,13 @@ const addMedia = async (mediaData) => {
     throw error;
   }
 };
+/**
+ * Löscht ein Medium aus Datenbank und, falls vorhanden, die zugehörige Datei vom Filesystem.
+ *
+ * @param {number} media_id - Die ID des Mediums.
+ * @returns {Promise<Object>} Ergebnisobjekt mit Erfolgsmeldung.
+ * @throws {Error} Bei Fehlern beim Löschen.
+ */
 const deleteMedia = async (media_id) => {
   try {
     // Erst Media-Info holen für Dateipfad
@@ -52,6 +67,14 @@ const deleteMedia = async (media_id) => {
     throw error;
   }
 };
+/**
+ * Liefert alle Media-Einträge zu einem Post und validiert jedes Element.
+ * Ungültige Einträge werden übersprungen.
+ *
+ * @param {number} postId - Die ID des Posts.
+ * @returns {Promise<Media[]>} Array gültiger `Media`-Instanzen.
+ * @throws {Error} Bei DB-Fehlern.
+ */
 const getMediaByPostId = async (postId) => {
   try {
     const mediaList = await DatabaseService.getMediaByPostId(postId);

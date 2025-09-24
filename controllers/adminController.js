@@ -12,6 +12,15 @@ import bcrypt from 'bcrypt';
 import { AdminControllerException } from '../models/customExceptions.js';
 import logger from '../utils/logger.js';
 
+/**
+ * Holt einen Admin-Datensatz anhand des Benutzernamens aus der Datenbank,
+ * validiert das Ergebnis und gibt eine Instanz von `Admin` zurück.
+ *
+ * @param {string} username - Der Benutzername des Administrators.
+ * @returns {Promise<Admin>} Geladene und validierte `Admin`-Instanz.
+ * @throws {AdminControllerException} Bei fehlenden Eingaben, Validierungsfehlern
+ *   oder wenn der Admin nicht gefunden werden kann.
+ */
 const getAdminByUsername = async (username) => {
   try {
     logger.debug('[ADMIN] getAdminByUsername called', { username });
@@ -32,6 +41,14 @@ const getAdminByUsername = async (username) => {
     throw new AdminControllerException(`Error fetching admin by username: ${error.message}`, error);
   }
 };
+/**
+ * Markiert einen erfolgreichen Login-Versuch für den angegebenen Admin
+ * und aktualisiert entsprechende Felder (z.B. last_login, failed_attempts zurücksetzen).
+ *
+ * @param {number|string} adminId - Die interne ID des Admins.
+ * @returns {Promise<boolean>} Wahr, wenn die Aktualisierung erfolgreich war.
+ * @throws {AdminControllerException} Wenn die Aktualisierung fehlschlägt.
+ */
 const updateAdminLoginSuccess = async (adminId) => {
   try {
     logger.debug('[ADMIN] updateAdminLoginSuccess called', { adminId });
@@ -44,6 +61,14 @@ const updateAdminLoginSuccess = async (adminId) => {
     throw new AdminControllerException(`Error updating admin login success: ${error.message}`, error);
   }
 };
+/**
+ * Protokolliert einen fehlgeschlagenen Login-Versuch für den angegebenen Admin
+ * (z.B. erhöht failed_attempts und setzt ggf. Sperrzeit).
+ *
+ * @param {number|string} adminId - Die interne ID des Admins.
+ * @returns {Promise<boolean>} Wahr, wenn die Aktualisierung erfolgreich war.
+ * @throws {AdminControllerException} Wenn die Aktualisierung fehlschlägt.
+ */
 const updateAdminLoginFailure = async (adminId) => {
   try {
     logger.debug('[ADMIN] updateAdminLoginFailure called', { adminId });
@@ -56,6 +81,14 @@ const updateAdminLoginFailure = async (adminId) => {
     throw new AdminControllerException(`Error updating admin login failure: ${error.message}`, error);
   }
 };
+/**
+ * Aktualisiert den Aktiv-/Sperrstatus eines Admin-Kontos.
+ *
+ * @param {number|string} adminId - Die interne ID des Admins.
+ * @param {Object} status - Objekt mit Status-Attributen (z.B. { active: true }).
+ * @returns {Promise<boolean>} Wahr, wenn die Aktualisierung erfolgreich war.
+ * @throws {AdminControllerException} Wenn die Aktualisierung fehlschlägt.
+ */
 const updateAdminStatus = async (adminId, status) => {
   try {
     const update = await DatabaseService.updateAdminStatus(adminId, status);
@@ -67,7 +100,22 @@ const updateAdminStatus = async (adminId, status) => {
     throw new AdminControllerException(`Error updating admin status: ${error.message}`, error);
   }
 };
-// Admin-Login
+/**
+ * Führt die Authentifizierung eines Admin-Benutzers durch.
+ *
+ * Ablauf:
+ * 1. Eingabevalidierung für `username` und `password`.
+ * 2. Laden und Validieren des Admin-Datensatzes aus der Datenbank.
+ * 3. Prüfung des Account-Status (aktiv / gesperrt).
+ * 4. Passwortvergleich mittels `bcrypt.compare`.
+ * 5. Bei Erfolg wird `updateAdminLoginSuccess` ausgeführt und ein schmaler
+ *    Benutzer-Payload zurückgegeben; bei Fehlschlag `updateAdminLoginFailure` und `null`.
+ *
+ * @param {string} username - Benutzernamen des Admins.
+ * @param {string} password - Klartext-Passwort zur Überprüfung.
+ * @returns {Promise<Object|null>} Bei Erfolg: Objekt mit Admin-Metadaten (id, username, role, email, full_name), sonst `null`.
+ * @throws {AdminControllerException} Bei Validierungsfehlern oder internen Fehlern.
+ */
 const authenticateAdmin = async (username, password) => {
   // 1. Input-Validierung
   if (!username || typeof username !== 'string' || username.trim() === '' || username === null) {

@@ -4,6 +4,16 @@ import { CommentControllerException } from '../models/customExceptions.js';
 import { sanitizeHtml } from '../utils/sanitizer.js';
 import { escapeHtml } from '../utils/utils.js';
 
+/**
+ * Express-Handler: Erstellt einen Kommentar für einen Blog-Post.
+ *
+ * Erwartet `postId` als URL-Parameter und Kommentar-Daten im Request-Body.
+ * Führt serverseitige Validierung und Sanitization durch bevor in der DB gespeichert wird.
+ *
+ * @param {import('express').Request} req - Express Request-Objekt.
+ * @param {import('express').Response} res - Express Response-Objekt.
+ * @returns {Promise<void>} Sendet JSON-Antwort mit Erfolg oder Fehler.
+ */
 const createComment = async (req, res) => {
   try {
     const postId = parseInt(req.params.postId);
@@ -59,6 +69,14 @@ const createComment = async (req, res) => {
     res.status(500).json({ error: 'Failed to create comment' });
   }
 };
+/**
+ * Express-Handler: Liest alle Kommentare zu einem bestimmten Post und gibt
+ * nur validierte Kommentare als JSON zurück.
+ *
+ * @param {import('express').Request} req - Express Request-Objekt.
+ * @param {import('express').Response} res - Express Response-Objekt.
+ * @returns {Promise<void>} Sendet JSON-Array von Kommentaren oder Fehler.
+ */
 const getCommentsByPostId = async (req, res) => {
   try {
     const postId = parseInt(req.params.postId);
@@ -104,6 +122,14 @@ const getCommentsByPostId = async (req, res) => {
     res.status(500).json({ error: 'Failed to load comments' });
   }
 };
+/**
+ * Express-Handler: Löscht einen Kommentar zu einem Post. Erwartet `postId` und
+ * `commentId` als URL-Parameter.
+ *
+ * @param {import('express').Request} req - Express Request-Objekt.
+ * @param {import('express').Response} res - Express Response-Objekt.
+ * @returns {Promise<void>} Sendet JSON-Antwort mit Erfolg oder Fehler.
+ */
 const deleteComment = async (req, res) => {
   try {
     const commentId = parseInt(req.params.commentId);

@@ -2,6 +2,13 @@ import { DatabaseService } from '../databases/mariaDB.js';
 import { Card } from '../models/cardModel.js';
 import { CardControllerException } from '../models/customExceptions.js';
 
+/**
+ * Erstellt eine neue Karte (Card) nach Validierung der Eingabedaten.
+ *
+ * @param {Object} cardData - Rohdaten für die Karte (title, description, img_link, etc.).
+ * @returns {Promise<Card>} Die erstellte und validierte `Card`-Instanz.
+ * @throws {CardControllerException} Wenn die Validierung oder DB-Operation fehlschlägt.
+ */
 const createCard = async (cardData) => {
   const { error, value } = Card.validate(cardData);
   if (error) {
@@ -16,6 +23,13 @@ const createCard = async (cardData) => {
     throw new CardControllerException(`Error creating card: ${error.message}`, error);
   }
 };
+/**
+ * Liest alle Karten aus der Datenbank, validiert jede Karte und gibt
+ * ein Array von `Card`-Instanzen zurück. Ungültige Einträge werden übersprungen.
+ *
+ * @returns {Promise<Card[]>} Array gültiger `Card`-Instanzen (leer wenn keine Karten).
+ * @throws {CardControllerException} Bei internen Fehlern beim Lesen aus der DB.
+ */
 const getAllCards = async () => {
   try {
     const cards = await DatabaseService.getAllCards();
@@ -37,6 +51,14 @@ const getAllCards = async () => {
     throw new CardControllerException(`Error getting all cards: ${error.message}`, error);
   }
 };
+/**
+ * Holt eine Karte anhand ihrer numerischen ID, validiert sie und gibt
+ * die `Card`-Instanz zurück.
+ *
+ * @param {number} id - Numerische ID der Karte (größer als 0).
+ * @returns {Promise<Card>} Validierte `Card`-Instanz.
+ * @throws {CardControllerException} Bei ungültiger ID, nicht gefunden oder Validierungsfehler.
+ */
 const getCardById = async (id) => {
   try {
     if (!Number.isInteger(id) || id <= 0) {
@@ -55,6 +77,13 @@ const getCardById = async (id) => {
     throw new CardControllerException(`Error getting card by id: ${error.message}`, error);
   }
 };
+/**
+ * Löscht eine Karte anhand ihrer ID.
+ *
+ * @param {number} id - Numerische ID der Karte.
+ * @returns {Promise<Object>} Ergebnisobjekt mit Erfolgsmeldung.
+ * @throws {CardControllerException} Bei ungültiger ID oder wenn das Löschen fehlschlägt.
+ */
 const deleteCard = async (id) => {
   try {
     if (!Number.isInteger(id) || id <= 0) {

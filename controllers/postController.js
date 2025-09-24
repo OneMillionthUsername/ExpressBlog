@@ -10,17 +10,35 @@ import logger from '../utils/logger.js';
 import crypto from 'crypto';
 
 // Lightweight posts checksum/version - updated on mutations to avoid hashing full payload
+/**
+ * Lightweight posts checksum/version - updated on mutations to avoid hashing full payload
+ * @type {string|null}
+ */
 let postsChecksum = null;
+
+/**
+ * Erhöht die interne Checksum/Version für Posts, damit Caches/ETags aktualisiert werden.
+ */
 function bumpPostsChecksum() {
   try {
     // Use current time + random to produce a new checksum
     postsChecksum = crypto.createHash('sha1').update(String(Date.now()) + Math.random().toString(36).substr(2, 9)).digest('hex');
   } catch (e) { void e; postsChecksum = String(Date.now()); }
 }
+/**
+ * Liefert die aktuelle Posts-Checksum (oder `null`, falls noch nicht gesetzt).
+ * @returns {string|null}
+ */
 function getPostsChecksum() {
   return postsChecksum;
 }
 
+/**
+ * Holt einen veröffentlichten Post anhand des Slugs.
+ * @param {string} slug - URL-Slug des Posts.
+ * @returns {Promise<Post>} Validierte `Post`-Instanz.
+ * @throws {PostControllerException} Wenn Post nicht gefunden oder fehlerhaft ist.
+ */
 const getPostBySlug = async (slug) => {
   try {
     const post = await DatabaseService.getPostBySlug(slug);
@@ -34,6 +52,12 @@ const getPostBySlug = async (slug) => {
     throw new PostControllerException(`Error fetching post by slug: ${error.message}`, error);
   }
 };
+/**
+ * Erstellt einen neuen Post nach Validierung und bump der Posts-Checksum.
+ * @param {Object} postData - Postdaten (title, content, etc.).
+ * @returns {Promise<Post>} Die erstellte `Post`-Instanz.
+ * @throws {PostControllerException} Bei Validierungs- oder DB-Fehlern.
+ */
 const createPost = async (postData) => {
   const { error, value } = Post.validate(postData);
   if (error) {
@@ -53,6 +77,12 @@ const createPost = async (postData) => {
     throw new PostControllerException(`Error creating post: ${error.message}`, error);
   }
 };
+/**
+ * Holt einen Post anhand seiner ID.
+ * @param {number} postId - Numerische Post-ID.
+ * @returns {Promise<Post>} Validierte `Post`-Instanz.
+ * @throws {PostControllerException} Wenn Post nicht gefunden oder fehlerhaft.
+ */
 const getPostById = async (postId) => {
   try {
     logger.debug(`postController.getPostById: Received postId=${postId} (type=${typeof postId})`);
@@ -70,6 +100,12 @@ const getPostById = async (postId) => {
     throw new PostControllerException(`Error fetching post by id: ${error.message}`, error);
   }
 };
+/**
+ * Aktualisiert einen vorhandenen Post und bump die Posts-Checksum.
+ * @param {Object} postData - Aktualisierte Postdaten, inklusive `id`.
+ * @returns {Promise<Post>} Die aktualisierte `Post`-Instanz.
+ * @throws {PostControllerException} Bei Validierungs- oder DB-Fehlern.
+ */
 const updatePost = async (postData) => {
   const { error, value } = Post.validate(postData);
   if (error) {
@@ -91,6 +127,11 @@ const updatePost = async (postData) => {
     throw new PostControllerException(`Error in updatePost: ${error.message}`, error);
   }
 };
+/**
+ * Liest alle Posts aus der DB, validiert sie und gibt nur veröffentlichte zurück.
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts.
+ * @throws {PostControllerException} Bei kritischen DB-Fehlern.
+ */
 const getAllPosts = async () => {
   logger.debug('getAllPosts: Starting to fetch all posts');
   try {
@@ -149,6 +190,11 @@ const getAllPosts = async () => {
     throw new PostControllerException(`Error fetching all posts: ${error.message}`, error);
   }
 };
+/**
+ * Liest die meistgelesenen Posts aus der DB, validiert und filtert veröffentlichte Posts.
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts.
+ * @throws {PostControllerException} Bei Fehlern.
+ */
 const getMostReadPosts = async () => {
   try {
     const posts = await DatabaseService.getMostReadPosts();
@@ -175,6 +221,11 @@ const getMostReadPosts = async () => {
     throw new PostControllerException(`Error fetching most read posts: ${error.message}`, error);
   }
 };
+/**
+ * Liest archivierte Posts (z.B. ältere/archivierte) und validiert sie.
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts.
+ * @throws {PostControllerException} Bei Fehlern.
+ */
 const getArchivedPosts = async () => {
   try {
     const posts = await DatabaseService.getArchivedPosts();
@@ -201,6 +252,12 @@ const getArchivedPosts = async () => {
     throw new PostControllerException(`Error fetching archived posts: ${error.message}`, error);
   }
 };
+/**
+ * Löscht einen Post anhand seiner ID und bump die Posts-Checksum.
+ * @param {number} postId - Numerische Post-ID.
+ * @returns {Promise<Object>} Ergebnisobjekt mit Erfolgsinfo.
+ * @throws {PostControllerException} Bei Fehlern.
+ */
 const deletePost = async (postId) => {
   try {
     const result = await DatabaseService.deletePost(postId);
