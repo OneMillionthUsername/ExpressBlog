@@ -291,12 +291,3 @@ sequenceDiagram
 ```
 
 ---
-
-# Ende der Dokumentation
-
-**Hinweis:**
-- Diagramme können mit [Mermaid Live Editor](https://mermaid-js.github.io/mermaid-live-editor/) oder VS Code Extensions gerendert werden.
-- Für PDF-Export: Mit VS Code Markdown-PDF Extension oder `pandoc` konvertieren.
-
-
-
