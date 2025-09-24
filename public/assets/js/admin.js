@@ -90,14 +90,8 @@ async function adminLogout() {
     
   updateNavigationVisibility();
 
-  // Nur reload, wenn NICHT auf /createPost
-  if (!window.location.pathname.includes('/createPost')) {
-    reloadPageWithDelay();
-  } else {
-  // Auf /createPost: Editor und geschützte Bereiche ausblenden, Sperrseite zeigen
-    hideElement('create-content');
-    showElement('admin-required');
-  }
+  // Seite neu laden, um server-seitigen Status zu aktualisieren
+  reloadPageWithDelay();
 }
 async function deletePost(postId) {
   if (!isAdmin()) {
@@ -143,9 +137,13 @@ async function deletePost(postId) {
 }
 // Funktion zum Aktualisieren der Navigation basierend auf Admin-Status
 function updateNavigationVisibility() {
-  const createNavItem = document.getElementById('create-nav-item');
+  const createNavItem = document.getElementById('admin-create-link');
   if (createNavItem) {
     createNavItem.style.display = isAdmin() ? 'block' : 'none';
+  }
+  const createCardItem = document.getElementById('admin-createCard-modal');
+  if (createCardItem) {
+    createCardItem.style.display = isAdmin() ? 'block' : 'none';
   }
     
   // Create-Links auf anderen Seiten
