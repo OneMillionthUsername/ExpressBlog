@@ -4,6 +4,9 @@
 
 import { jest, beforeEach, afterEach, describe, it, expect } from '@jest/globals';
 
+// Ensure test env flag so makeApiRequest skips CSRF token fetch logic (reduces noise)
+process.env.NODE_ENV = 'test';
+
 beforeEach(() => {
   document.body.innerHTML = '';
   jest.clearAllMocks();
@@ -16,18 +19,39 @@ afterEach(() => {
 
 describe('delegation initializers', () => {
   it('should open admin login modal via delegated action and submit via delegation', async () => {
-    // Reset module registry to avoid cross-test ESM linking issues
+    // Reset module registry to ensure a clean import context
     jest.resetModules();
 
-    // Mock API module before importing other modules so their imported bindings are mocked
-    await jest.unstable_mockModule('../public/assets/js/api.js', () => ({
-      makeApiRequest: async () => ({ success: true, data: { token: 'abc', user: { name: 'x' } } }),
-      resetCsrfToken: () => {},
-      loadAllBlogPosts: async () => [],
-    }));
+    // Stub fetch BEFORE importing modules that will use makeApiRequest / adminLogin
+    const successfulLoginPayload = {
+      success: true,
+      data: {
+        data: { valid: true, user: { name: 'x', role: 'admin' } },
+        token: 'abc',
+      },
+    };
+    global.fetch = jest.fn(async (url, opts) => {
+      if (url === '/auth/login') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => successfulLoginPayload,
+        };
+      }
+      if (url === '/auth/verify') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => successfulLoginPayload,
+        };
+      }
+      // Default minimal JSON response
+      return { ok: true, status: 200, json: async () => ({}) };
+    });
 
-    const adminModule = await import('../public/assets/js/admin.js');
+    // Load common first (less dependencies), then admin
     const commonModule = await import('../public/assets/js/common.js');
+    const adminModule = await import('../public/assets/js/admin.js');
 
     // Ensure delegation is initialized
     commonModule.initializeCommonDelegation();
@@ -44,22 +68,16 @@ describe('delegation initializers', () => {
     const modal = document.getElementById('admin-login-modal');
     expect(modal).toBeTruthy();
 
-    // Fill credentials
+    // Fill credentials (values read by delegated handler)
     modal.querySelector('#admin-username').value = 'testuser';
     modal.querySelector('#admin-password').value = 'testpass123';
-
-    // Mock makeApiRequest to succeed before importing admin/common to ensure the module uses the mock
-    await jest.unstable_mockModule('../public/assets/js/api.js', () => ({
-      makeApiRequest: async () => ({ success: true, data: { token: 'abc', user: { name: 'x' } } }),
-      resetCsrfToken: () => {},
-      loadAllBlogPosts: async () => [],
-    }));
 
     // Trigger delegated submit
     const submitBtn = modal.querySelector('#admin-login-submit');
     submitBtn.click();
 
-    // wait a tick for async handler
+    // wait a couple of ticks for async IIFE inside delegation to finish
+    await new Promise(r => setTimeout(r, 0));
     await Promise.resolve();
 
     // Modal should be removed on success
