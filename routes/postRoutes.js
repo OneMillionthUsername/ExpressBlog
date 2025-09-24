@@ -558,8 +558,13 @@ postRouter.post('/create',
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        // Also clear year-specific archive caches
+        const currentYear = new Date().getFullYear();
+        for (let year = 2020; year <= currentYear + 1; year++) {
+          simpleCache.del(`posts:archive:${year}`);
+        }
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] POST /create: invalidated caches posts:all, posts:mostRead, posts:archive`);
+        logger.debug(`[${_id}] POST /create: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error creating new blog post', error);
@@ -586,8 +591,13 @@ postRouter.put('/update/:postId',
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        // Also clear year-specific archive caches
+        const currentYear = new Date().getFullYear();
+        for (let year = 2020; year <= currentYear + 1; year++) {
+          simpleCache.del(`posts:archive:${year}`);
+        }
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] PUT /update: invalidated caches posts:all, posts:mostRead, posts:archive`);
+        logger.debug(`[${_id}] PUT /update: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives`);
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
@@ -623,8 +633,13 @@ postRouter.delete(
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
+        // Also clear year-specific archive caches
+        const currentYear = new Date().getFullYear();
+        for (let year = 2020; year <= currentYear + 1; year++) {
+          simpleCache.del(`posts:archive:${year}`);
+        }
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive');
+        logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives');
       } catch (e) { void e; }
     } catch (error) {
       logger.error('Error deleting blog post', error);
