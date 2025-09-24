@@ -571,12 +571,12 @@ postRouter.put('/update/:postId',
 postRouter.delete(
   '/delete/:postId',
   strictLimiter,
-  requireJsonContent,
   authenticateToken,
   requireAdmin,
   validateId,
   async (req, res) => {
     const postId = req.params.postId;
+    logger.debug(`DELETE /delete: Attempting to delete post ${postId}`);
     if (validationService.validateId(postId) === false) {
       return res.status(400).json({ error: 'Invalid post ID' });
     }
@@ -585,7 +585,7 @@ postRouter.delete(
       if (!result) {
         return res.status(400).json({ error: 'Failed to delete blog post' });
       }
-      res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(result.postId) });
+      res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(postId) });
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');

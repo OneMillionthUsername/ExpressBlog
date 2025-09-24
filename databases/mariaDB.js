@@ -201,7 +201,7 @@ export async function initializeDatabaseSchema() {
             tags JSON DEFAULT NULL,
             author VARCHAR(100) DEFAULT 'admin',
             views BIGINT DEFAULT 0,
-            published BOOLEAN DEFAULT 0,
+            published BOOLEAN DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
@@ -680,7 +680,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
+      logger.debug(`DatabaseService.deletePost: Deleting post ${id}`);
       const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
+      logger.debug(`DatabaseService.deletePost: Query result - affectedRows: ${result.affectedRows}`);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
