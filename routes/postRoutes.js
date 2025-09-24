@@ -431,6 +431,35 @@ postRouter.get('/:maybeId',
     }
   });
 
+// Explicit archive route must come BEFORE the slug route so '/archive' is not
+// interpreted as a slug. Register it here (after numeric id handler).
+postRouter.get('/archive', globalLimiter, async (req, res) => {
+  try {
+    const cacheKey = 'posts:archive';
+    let posts = simpleCache.get(cacheKey);
+    if (!posts) {
+      posts = await postController.getArchivedPosts();
+      simpleCache.set(cacheKey, posts);
+    }
+    const response = convertBigInts(posts) || posts;
+    try {
+      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: safeResponse });
+      }
+      return res.json(safeResponse);
+    } catch (_e) {
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: response });
+      }
+      return res.json(response);
+    }
+  } catch (error) {
+    console.error('Error loading archived blog posts', error);
+    res.status(500).json({ error: 'Server failed to load archived blog posts' });
+  }
+});
+
 // Slug-based route (human readable) - validated via validateSlug
 postRouter.get('/:slug', 
   globalLimiter, 
@@ -483,32 +512,6 @@ postRouter.get('/:slug',
       return res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
   });
-postRouter.get('/archive', globalLimiter, async (req, res) => {
-  try {
-    const cacheKey = 'posts:archive';
-    let posts = simpleCache.get(cacheKey);
-    if (!posts) {
-      posts = await postController.getArchivedPosts();
-      simpleCache.set(cacheKey, posts);
-    }
-    const response = convertBigInts(posts) || posts;
-    try {
-      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: safeResponse });
-      }
-      return res.json(safeResponse);
-    } catch (_e) {
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: response });
-      }
-      return res.json(response);
-    }
-  } catch (error) {
-    console.error('Error loading archived blog posts', error);
-    res.status(500).json({ error: 'Server failed to load archived blog posts' });
-  }
-});
 postRouter.post('/create', 
   strictLimiter,
   requireJsonContent,
