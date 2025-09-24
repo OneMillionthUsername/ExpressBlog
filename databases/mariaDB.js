@@ -15,7 +15,16 @@ import { dbConfig } from '../config/dbConfig.js';
 import logger from '../utils/logger.js';
 import { databaseError } from '../models/customExceptions.js';
 
+/**
+ * Connection pool used for MariaDB queries. Can be a real mariadb pool or a mock pool.
+ * @type {import('mariadb').Pool|undefined}
+ */
 let pool;
+
+/**
+ * Flag indicating whether the module is running in mock mode (no real DB).
+ * @type {boolean}
+ */
 let isMockMode = false;
 
 function createMockPool() {
@@ -84,6 +93,12 @@ function createMockPool() {
 }
 
 // Prüfen ob Mock-Modus aktiv ist
+/**
+ * Gibt zurück, ob die Datenbank im Mock-Modus läuft.
+ * Im Mock-Modus werden keine echten DB-Verbindungen verwendet,
+ * sondern ein In-Memory-Stub für Entwicklung/Tests.
+ * @returns {boolean}
+ */
 export function isMockDatabase() {
   return isMockMode;
 }
@@ -182,6 +197,12 @@ export async function testConnection() {
     if (conn) conn.release();
   }
 }
+/**
+ * Erstellt die erforderlichen Datenbank-Schemata (Tabellen, Indizes) falls sie nicht existieren.
+ * In Mock-Mode wird die Schema-Erstellung übersprungen.
+ * @returns {Promise<boolean>} True wenn Schema erstellt/validiert wurde.
+ * @throws {databaseError} Bei kritischen Fehlern während der Schema-Erstellung.
+ */
 export async function initializeDatabaseSchema() {
   let conn;
   try {
@@ -730,6 +751,12 @@ export const DatabaseService = {
     }
   },
   // Cards
+  /**
+   * Erstellt eine neue Card in der DB.
+   * @param {Object} cardData - card-Daten (title, subtitle, link, img_link, published).
+   * @returns {Promise<Object>} Objekt mit `success: true` und dem erstellten `card`.
+   * @throws {databaseError} Bei DB-Fehlern.
+   */
   async createCard(cardData) {
     let conn;
     try {
@@ -838,6 +865,13 @@ export const DatabaseService = {
     }
   },
   // Comments
+  /**
+   * Fügt einen Kommentar zu einem Post hinzu und gibt das neue Kommentar-Objekt zurück.
+   * @param {number} postId - ID des Posts.
+   * @param {Object} commentData - Kommentardaten (username, text, ...).
+   * @returns {Promise<Object>} Objekt mit `success: true` und `comment`.
+   * @throws {databaseError} Bei DB-Fehlern.
+   */
   async createComment(postId, commentData) {
     let conn;
     try {
@@ -916,6 +950,12 @@ export const DatabaseService = {
     }
   }, 
   // Media
+  /**
+   * Legt ein Media-Objekt in der DB an und gibt die neue Media-ID zurück.
+   * @param {Object} mediaData - Media-Metadaten.
+   * @returns {Promise<Object>} Objekt mit `success: true` und `mediaId`.
+   * @throws {databaseError} Bei DB-Fehlern.
+   */
   async addMedia(mediaData) {
     let conn;
     try {
@@ -968,6 +1008,13 @@ export const DatabaseService = {
     }
   },
   // Admin
+  /**
+   * Lädt einen Admin-Benutzer anhand des Benutzernamens und normalisiert Felder
+   * (z.B. Typkonvertierungen, Standardwerte) für Konsistenz mit Modellen.
+   * @param {string} username - Admin-Benutzername.
+   * @returns {Promise<Object|null>} Normalisiertes Admin-Objekt oder `null` wenn nicht gefunden.
+   * @throws {databaseError} Bei DB-Fehlern.
+   */
   async getAdminByUsername(username) {
     let conn;
     try {
