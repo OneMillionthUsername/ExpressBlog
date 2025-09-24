@@ -4,6 +4,11 @@ import express from 'express';
  * Factory that returns a router with DB-dependent routes mounted.
  * Accepts the `requireDatabase` middleware so app.js keeps lifecycle control.
  */
+/**
+ * Create a router that mounts application routers behind a DB readiness
+ * middleware. This factory keeps DB lifecycle concerns in one place so
+ * `app.js` can control when the application starts accepting requests.
+ */
 export default function createDbRouter(requireDatabase, routes) {
   const dbRouter = express.Router();
 

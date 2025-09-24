@@ -5,6 +5,13 @@ import * as authService from '../services/authService.js';
 import postController from '../controllers/postController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 
+/**
+ * Routes serving site pages and server-side rendered views.
+ *
+ * These endpoints primarily render EJS templates (home, about, posts,
+ * createPost editor) and perform minimal server-side composition like
+ * fetching featured posts for the homepage.
+ */
 const staticRouter = express.Router();
 
 staticRouter.get('/', (req, res) => {

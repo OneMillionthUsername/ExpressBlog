@@ -3,6 +3,13 @@ import logger from '../utils/logger.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { isAppReady } from '../app.js';
 
+/**
+ * Routes for generating sitemap and robots.txt.
+ *
+ * - `GET /sitemap.xml` produces an XML sitemap including static pages,
+ *   blog posts and cards where available.
+ * - `GET /robots.txt` returns a permissive robots file pointing to the sitemap.
+ */
 const sitemapRouter = express.Router();
 
 // XML Sitemap generieren

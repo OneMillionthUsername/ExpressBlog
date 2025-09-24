@@ -4,6 +4,12 @@ import logger from '../utils/logger.js';
 import { GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
+/**
+ * AI helper routes (protected admin-only endpoints).
+ *
+ * Example: POST /generate - forwards prompt to upstream Gemini API and
+ * returns generated text. These endpoints are admin-only and expect JSON.
+ */
 const router = express.Router();
 
 // POST /api/ai/generate

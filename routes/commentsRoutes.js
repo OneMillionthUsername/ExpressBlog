@@ -6,6 +6,17 @@ import { requireAdmin, authenticateToken } from '../middleware/authMiddleware.js
 import csrfProtection from '../utils/csrf.js';
 import { celebrate, Joi, Segments } from 'celebrate';
 
+/**
+ * Routes for managing comments on posts.
+ *
+ * - `GET /:postId` returns comments for a post.
+ * - `POST /:postId` creates a new comment (CSRF-protected, JSON).
+ * - `DELETE /:postId/:commentId` deletes a comment (admin only).
+ *
+ * Validation and rate limiting are applied per-route. Controller errors
+ * are expected to be thrown as exceptions and are handled by the route
+ * level callers.
+ */
 const commentsRouter = express.Router();
 
 commentsRouter.get('/:postId',

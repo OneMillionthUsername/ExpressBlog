@@ -12,6 +12,16 @@ import { celebrate, Joi, Segments } from 'celebrate';
 import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
 
+/**
+ * Authentication routes
+ *
+ * - `POST /login`  : authenticate admin credentials and set auth cookie
+ * - `POST /verify` : verify a token from header, cookie or body
+ * - `POST /logout` : clear auth cookie and sign out
+ *
+ * These routes apply rate limiting and input validation. Login responses
+ * explicitly avoid leaking token details and carefully log audit info.
+ */
 const authRouter = express.Router();
 // authRouter.all('*', requireJsonContent, async (req, res) => {
 //   //hier allgemeine Logik ausführen

@@ -7,6 +7,14 @@ import { celebrate, Joi, Segments } from 'celebrate';
 import csrfProtection from '../utils/csrf.js';
 import logger from '../utils/logger.js';
 
+/**
+ * Routes for Cards (small discoverable items shown on the site).
+ *
+ * - `GET /` returns all cards
+ * - `GET /:id` returns a single card
+ * - `POST /` creates a card (admin only)
+ * - `DELETE /:id` deletes a card (admin only)
+ */
 const cardRouter = express.Router();
 
 // GET /cards - Alle Cards abrufen

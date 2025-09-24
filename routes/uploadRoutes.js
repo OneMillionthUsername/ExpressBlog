@@ -6,6 +6,13 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 import { strictLimiter } from '../utils/limiters.js';
 import { validateMediaFile } from '../middleware/validationMiddleware.js';
 
+/**
+ * Routes for media uploads.
+ *
+ * - `POST /image` accepts multipart/form-data with an `image` field and
+ *   stores metadata in the media table. Only authenticated admins may
+ *   create media entries.
+ */
 const uploadRouter = express.Router();
 
 uploadRouter.post('/image', 
