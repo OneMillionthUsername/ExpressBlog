@@ -367,7 +367,7 @@ export function initializeBlogPostForm() {
     try {
       // Prefer test mocks: globalThis.makeApiRequest if present, otherwise use window.fetch in tests
       let apiResult;
-      const options = { method, body: JSON.stringify(postData) };
+  const options = { method, body: JSON.stringify(postData), headers: { 'Content-Type': 'application/json' } };
       if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
         apiResult = await globalThis.makeApiRequest(url, options);
       } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
@@ -487,7 +487,7 @@ export function showCreateCardModal() {
     }, {});
 
     try {
-      const options = { method: 'POST', body: JSON.stringify(cardData) };
+  const options = { method: 'POST', body: JSON.stringify(cardData), headers: { 'Content-Type': 'application/json' } };
       let response;
       if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
         response = await globalThis.makeApiRequest('/cards', options);
