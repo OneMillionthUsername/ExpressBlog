@@ -1,5 +1,6 @@
 import express from 'express';
 import * as config from '../config/config.js';
+import logger from '../middleware/loggerMiddleware.js';
 const utilityRouter = express.Router();
 
 /**
@@ -39,14 +40,26 @@ utilityRouter.get('/redirect', (req, res) => {
   }
 });
 
-// The app-level CSRF middleware controls protection for `/api/csrf-token`.
-// Do not apply `csrfProtection` here so clients can fetch a token.
+// CSRF token endpoint - creates a new token for clients to use
 utilityRouter.get('/csrf-token', (req, res) => {
-  // Prevent caching of CSRF token responses (defensive headers)
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.set('Pragma', 'no-cache');
-  res.set('Expires', '0');
-  res.json({ csrfToken: req.csrfToken() });
+  try {
+    // Prevent caching of CSRF token responses (defensive headers)
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
+    // Check if csrfToken function is available
+    if (typeof req.csrfToken === 'function') {
+      res.json({ csrfToken: req.csrfToken() });
+    } else {
+      // Fallback - this shouldn't happen but provides graceful degradation
+      logger.warn('req.csrfToken function not available in csrf-token endpoint');
+      res.status(500).json({ error: 'CSRF token generation unavailable' });
+    }
+  } catch (error) {
+    logger.error('Error generating CSRF token', { error: error.message });
+    res.status(500).json({ error: 'Failed to generate CSRF token' });
+  }
 });
 
 export default utilityRouter;

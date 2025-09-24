@@ -212,14 +212,8 @@ app.use(express.urlencoded({
 }));
 
 // 4. CSRF-Schutz (needs cookies AND parsed body!)
-// Exclude CSRF token endpoint from CSRF protection to avoid chicken-and-egg problem
-app.use((req, res, next) => {
-  // Skip CSRF protection for the CSRF token endpoint
-  if (req.path === '/api/csrf-token' && req.method === 'GET') {
-    return next();
-  }
-  return csrfProtection(req, res, next);
-});
+// Apply CSRF middleware to all routes - it will attach req.csrfToken() function
+app.use(csrfProtection);
 
 // Handle CSRF errors early (must be after CSRF middleware and before other handlers)
 app.use((err, req, res, next) => {
@@ -243,6 +237,12 @@ app.use((err, req, res, next) => {
         userAgent: req.get('user-agent') || null,
       });
     } catch { /* ignore logging errors */ }
+    
+    // For CSRF token endpoint, allow it to proceed without CSRF validation
+    if (req.path === '/api/csrf-token' && req.method === 'GET') {
+      return next();
+    }
+    
     return res.status(403).json({ error: 'Invalid or missing CSRF token' });
   }
   next(err);
