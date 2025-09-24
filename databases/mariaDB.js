@@ -201,7 +201,7 @@ export async function initializeDatabaseSchema() {
             tags JSON DEFAULT NULL,
             author VARCHAR(100) DEFAULT 'admin',
             views BIGINT DEFAULT 0,
-            published BOOLEAN DEFAULT 0,
+            published BOOLEAN DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
@@ -680,7 +680,9 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
+      logger.debug(`DatabaseService.deletePost: Deleting post ${id}`);
       const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
+      logger.debug(`DatabaseService.deletePost: Query result - affectedRows: ${result.affectedRows}`);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to delete post');
       }
@@ -699,7 +701,23 @@ export const DatabaseService = {
         throw new databaseError('Post is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('INSERT INTO posts SET ?', [postData]);
+      // Build explicit parameterized INSERT to avoid driver-specific 'SET ?' expansion issues
+      const allowedFields = ['title','slug','content','tags','author','views','published','created_at','updated_at'];
+      const keys = Object.keys(postData).filter(k => allowedFields.includes(k));
+      if (keys.length === 0) {
+        throw new Error('No valid fields provided for insert');
+      }
+      const cols = keys.map(k => `\`${k}\``).join(', ');
+      const placeholders = keys.map(() => '?').join(', ');
+      const values = keys.map(k => {
+        if (k === 'tags' && postData[k] !== undefined && postData[k] !== null && typeof postData[k] !== 'string') {
+          // store tags as JSON string
+          try { return JSON.stringify(postData[k]); } catch (_e) { return null; }
+        }
+        return postData[k];
+      });
+      const insertSql = `INSERT INTO posts (${cols}) VALUES (${placeholders})`;
+      const result = await conn.query(insertSql, values);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to create post');
       }

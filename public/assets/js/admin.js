@@ -14,6 +14,7 @@ import {
   redirectEditPost,
   showCreateCardModal,
 } from './common.js';
+import { confirmModal } from './ui/confirmModal.js';
 import { isValidIdSchema } from './lib/validationClient.js';
 import { isAdmin, setAdmin } from './state/adminState.js';
 import { isAdminFromServer } from './config.js';
@@ -529,7 +530,16 @@ export function initializeAdminDelegation() {
     }
     if (action === 'delete-post') {
       const postId = btn.dataset.postId;
-      if (postId && typeof deletePostAndRedirect === 'function') deletePostAndRedirect(postId);
+      if (!postId) return;
+      (async () => {
+        try {
+          const confirmed = await confirmModal('Möchten Sie diesen Beitrag wirklich löschen?');
+          if (!confirmed) return;
+          if (typeof deletePostAndRedirect === 'function') deletePostAndRedirect(postId);
+        } catch (err) {
+          console.error('Delete confirmation failed', err);
+        }
+      })();
       return;
     }
     if (action === 'edit-post') {

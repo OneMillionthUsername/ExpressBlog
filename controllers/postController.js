@@ -229,8 +229,9 @@ const getMostReadPosts = async () => {
 const getArchivedPosts = async () => {
   try {
     const posts = await DatabaseService.getArchivedPosts();
-    if (!posts) {
-      throw new PostControllerException('No posts found');
+    if (!posts || posts.length === 0) {
+      // No archived posts available — return empty array (not an exception)
+      return [];
     }
     const validPosts = [];
     for (const post of posts) {
@@ -245,10 +246,15 @@ const getArchivedPosts = async () => {
       validPosts.push(new Post(value));
     }
     if (validPosts.length === 0) {
-      throw new PostControllerException('No valid published posts found');
+      // No valid published archived posts — return empty array (not an exception)
+      return [];
     }
     return validPosts;
   } catch (error) {
+    // If the database explicitly returned no posts, treat as empty; otherwise wrap and rethrow
+    if (error && error.message && error.message.includes('No posts found')) {
+      return [];
+    }
     throw new PostControllerException(`Error fetching archived posts: ${error.message}`, error);
   }
 };

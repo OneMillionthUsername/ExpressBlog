@@ -11,7 +11,7 @@ import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
-import * as validationService from '../services/validationService.js';
+import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
@@ -431,6 +431,35 @@ postRouter.get('/:maybeId',
     }
   });
 
+// Explicit archive route must come BEFORE the slug route so '/archive' is not
+// interpreted as a slug. Register it here (after numeric id handler).
+postRouter.get('/archive', globalLimiter, async (req, res) => {
+  try {
+    const cacheKey = 'posts:archive';
+    let posts = simpleCache.get(cacheKey);
+    if (!posts) {
+      posts = await postController.getArchivedPosts();
+      simpleCache.set(cacheKey, posts);
+    }
+    const response = convertBigInts(posts) || posts;
+    try {
+      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: safeResponse });
+      }
+      return res.json(safeResponse);
+    } catch (_e) {
+      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
+        return res.render('archiv', { posts: response });
+      }
+      return res.json(response);
+    }
+  } catch (error) {
+    console.error('Error loading archived blog posts', error);
+    res.status(500).json({ error: 'Server failed to load archived blog posts' });
+  }
+});
+
 // Slug-based route (human readable) - validated via validateSlug
 postRouter.get('/:slug', 
   globalLimiter, 
@@ -483,38 +512,12 @@ postRouter.get('/:slug',
       return res.status(500).json({ error: 'Server failed to load the blogpost' });
     }
   });
-postRouter.get('/archive', globalLimiter, async (req, res) => {
-  try {
-    const cacheKey = 'posts:archive';
-    let posts = simpleCache.get(cacheKey);
-    if (!posts) {
-      posts = await postController.getArchivedPosts();
-      simpleCache.set(cacheKey, posts);
-    }
-    const response = convertBigInts(posts) || posts;
-    try {
-      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: safeResponse });
-      }
-      return res.json(safeResponse);
-    } catch (_e) {
-      if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: response });
-      }
-      return res.json(response);
-    }
-  } catch (error) {
-    console.error('Error loading archived blog posts', error);
-    res.status(500).json({ error: 'Server failed to load archived blog posts' });
-  }
-});
 postRouter.post('/create', 
   strictLimiter,
   requireJsonContent,
-  validatePostBody, 
-  requireAdmin, 
-  authenticateToken, 
+  authenticateToken,
+  requireAdmin,
+  validatePostBody,
   async (req, res) => {
     const { title, content, tags } = req.body;
     const slug = createSlug(title);
@@ -540,10 +543,10 @@ postRouter.post('/create',
 postRouter.put('/update/:postId',
   strictLimiter,
   requireJsonContent,
+  authenticateToken,
+  requireAdmin,
   validateId,
   validatePostBody,
-  requireAdmin,
-  authenticateToken,
   async (req, res) => {
     const postId = req.params.postId;
     const { title, content, tags } = req.body;
@@ -568,30 +571,37 @@ postRouter.put('/update/:postId',
 postRouter.delete(
   '/delete/:postId',
   strictLimiter,
-  requireJsonContent,
-  validateId,
-  requireAdmin,
   authenticateToken,
+  requireAdmin,
+  validateId,
   async (req, res) => {
+    logger.debug('DELETE /delete: Route reached');
     const postId = req.params.postId;
-    if (validationService.validateId(postId) === false) {
+    logger.debug('DELETE /delete: req.params: ' + JSON.stringify(req.params));
+    logger.debug('DELETE /delete: Attempting to delete post ' + postId);
+    logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
+    if (validationService.isValidIdSchema(postId) === false) {
+      logger.debug('DELETE /delete: Invalid postId ' + postId);
       return res.status(400).json({ error: 'Invalid post ID' });
     }
+    logger.debug('DELETE /delete: postId valid, proceeding to delete');
     try {
+      logger.debug('DELETE /delete: Calling postController.deletePost for ' + postId);
       const result = await postController.deletePost(postId);
+      logger.debug('DELETE /delete: postController.deletePost returned ' + JSON.stringify(result));
       if (!result) {
         return res.status(400).json({ error: 'Failed to delete blog post' });
       }
-      res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(result.postId) });
+      res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(postId) });
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
         simpleCache.del('posts:archive');
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        logger.debug(`[${_id}] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive`);
+        logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive');
       } catch (e) { void e; }
     } catch (error) {
-      console.error('Error deleting blog post', error);
+      logger.error('Error deleting blog post', error);
       res.status(500).json({ error: 'Server failed to delete the blogpost' });
     }
   });

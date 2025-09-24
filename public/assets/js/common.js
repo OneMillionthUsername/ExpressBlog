@@ -3,6 +3,7 @@
 // Import dependencies as ES6 modules
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
 import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
+import { showFeedback } from './feedback.js';
 // Logger not available in frontend - use console instead
 
 // Export imported helper so other modules can import it from this module
@@ -337,7 +338,7 @@ export function initializeBlogPostForm() {
     }
 
   const postId = getPostIdFromPath();
-    const url = postId ? `/blogpost/update/${postId}` : '/create';
+  const url = postId ? `/blogpost/update/${postId}` : '/blogpost/create';
     const method = postId ? 'PUT' : 'POST';
 
     const title = document.getElementById('title').value;
@@ -367,7 +368,7 @@ export function initializeBlogPostForm() {
     try {
       // Prefer test mocks: globalThis.makeApiRequest if present, otherwise use window.fetch in tests
       let apiResult;
-      const options = { method, body: JSON.stringify(postData) };
+  const options = { method, body: JSON.stringify(postData), headers: { 'Content-Type': 'application/json' } };
       if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
         apiResult = await globalThis.makeApiRequest(url, options);
       } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
@@ -487,7 +488,7 @@ export function showCreateCardModal() {
     }, {});
 
     try {
-      const options = { method: 'POST', body: JSON.stringify(cardData) };
+  const options = { method: 'POST', body: JSON.stringify(cardData), headers: { 'Content-Type': 'application/json' } };
       let response;
       if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
         response = await globalThis.makeApiRequest('/cards', options);
@@ -513,26 +514,29 @@ export function showCreateCardModal() {
 }
 // Hilfsfunktionen für erweiterte Funktionalität
 export function showNotification(message, type = 'info') {
+  const baseType = (type === 'success') ? 'success' : (type === 'error' ? 'danger' : 'info');
   const notification = document.createElement('div');
-  notification.className = `notification alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
-  notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
-        ${message}
-    `;
+  notification.className = `notification alert alert-${baseType}`;
+  const safe = (typeof message === 'string') ? message.replace(/</g, '&lt;').replace(/>/g, '&gt;') : String(message);
+  const icon = baseType === 'success' ? 'check-circle' : baseType === 'danger' ? 'exclamation-triangle' : 'info-circle';
+  notification.innerHTML = `<i class="fas fa-${icon}"></i> <span class="notif-text">${safe.replace(/\n/g,'<br>')}</span>`;
+
+  // Dynamic stacking without wrapper: compute vertical offset below existing notifications
+  const existing = Array.from(document.querySelectorAll('.notification'));
+  let offset = 60; // base top from CSS expectation
+  existing.forEach(n => { offset += n.offsetHeight + 8; });
+  notification.style.top = offset + 'px';
+  notification.style.right = '20px';
+  notification.style.position = 'fixed';
+  notification.style.zIndex = '9999';
+
   document.body.appendChild(notification);
-  // Force layout so tests observing DOM immediately can see the element
   notification.getBoundingClientRect();
 
-  // Entferne die Benachrichtigung nach 3 Sekunden
   setTimeout(() => {
     notification.style.animation = 'slideOut 0.3s ease-out';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
+    setTimeout(() => { notification.remove(); }, 300);
   }, 3000);
-
   return notification;
 }
 // Funktion zum Anzeigen der Karten
@@ -1160,13 +1164,17 @@ export async function deletePostAndRedirect(postId) {
   const apiResult = await apiRequest(`/blogpost/delete/${postId}`, { method: 'DELETE' });
     const deleted = apiResult && (apiResult.success === true || apiResult.status === 200);
     if (deleted) {
+      showFeedback('Post erfolgreich gelöscht.', 'success');
       // Redirect to the SSR-rendered posts listing (avoid raw JSON endpoint)
-      window.location.href = '/posts';
+      setTimeout(() => {
+        window.location.href = '/posts';
+      }, 2000); // Delay to show feedback
     } else {
-      console.error('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
+      showFeedback('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.', 'error');
     }
   } catch (err) {
     console.error('Fehler beim Löschen des Posts:', err);
+    showFeedback('Fehler beim Löschen des Posts.', 'error');
   }
 }
 export function reloadPageWithDelay(delay = 1000) {
@@ -1693,6 +1701,33 @@ if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 't
   } else {
     initializeDarkMode();
   }
+}
+
+// Einheitliche Alert-Modal Funktion
+export function showAlertModal(message) {
+  const modalHtml = `
+    <div class="modal-overlay" id="alert-modal">
+      <div class="modal-container">
+        <div class="modal-content">${message}</div>
+        <div class="modal-footer">
+          <button id="alert-close" class="modal-button">OK</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('alert-modal');
+  const closeBtn = document.getElementById('alert-close');
+
+  const closeModal = () => modal.remove();
+
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  closeBtn.focus();
 }
 
 // Re-export shared escapeHtml to keep existing imports working
