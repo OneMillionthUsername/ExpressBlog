@@ -7,6 +7,12 @@ import staticRouter from './staticRoutes.js';
 import cardRouter from './cardRoutes.js';
 import sitemapRouter from './sitemapRoutes.js';
 
+/**
+ * Central export of routers used by `app.js`.
+ *
+ * Each property is an Express Router responsible for a related set of
+ * endpoints. `app.js` mounts these routers under appropriate base paths.
+ */
 export default {
   postRouter,
   uploadRouter,

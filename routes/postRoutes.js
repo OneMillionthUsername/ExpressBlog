@@ -3,6 +3,17 @@
  * in der Route abfangen und an das Frontend zurückgeben
  */
 
+/**
+ * Routes for blog posts and related API endpoints.
+ *
+ * - Serves both HTML (server-side rendered) and JSON API variants.
+ * - Provides ETag handling, caching, and content negotiation.
+ * - Exports `getAllHandler` for integration testing.
+ *
+ * Handler functions map controller-layer exceptions to appropriate HTTP
+ * responses (e.g. 404 for not found, 500 for server errors).
+ */
+
 import express from 'express';
 import crypto from 'crypto';
 import postController from '../controllers/postController.js';

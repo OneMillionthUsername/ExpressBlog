@@ -1,7 +1,16 @@
 import express from 'express';
-import csrfProtection from '../utils/csrf.js';
 import * as config from '../config/config.js';
 const utilityRouter = express.Router();
+
+/**
+ * Utility endpoints (health, redirect, csrf-token).
+ *
+ * The CSRF token endpoint is intentionally left without route-level
+ * enforcement so the application-level CSRF middleware can centrally
+ * decide when to skip protection (see `app.js`). This avoids the
+ * chicken-and-egg problem where the token endpoint itself would be
+ * protected and therefore unavailable to clients.
+ */
 
 utilityRouter.get('/health', (req, res) => {
   res.status(200).json({
@@ -30,9 +39,9 @@ utilityRouter.get('/redirect', (req, res) => {
   }
 });
 
-// Apply CSRF middleware only to this endpoint to generate a token without
-// enforcing CSRF on the token fetch itself at the global level.
-utilityRouter.get('/csrf-token', csrfProtection, (req, res) => {
+// The app-level CSRF middleware controls protection for `/api/csrf-token`.
+// Do not apply `csrfProtection` here so clients can fetch a token.
+utilityRouter.get('/csrf-token', (req, res) => {
   // Prevent caching of CSRF token responses (defensive headers)
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.set('Pragma', 'no-cache');
