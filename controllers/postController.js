@@ -226,9 +226,10 @@ const getMostReadPosts = async () => {
  * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts.
  * @throws {PostControllerException} Bei Fehlern.
  */
-const getArchivedPosts = async () => {
+const getArchivedPosts = async (year) => {
   try {
-    const posts = await DatabaseService.getArchivedPosts();
+    // If a year is provided, request DB for that specific year; otherwise get all archived posts
+    const posts = typeof year !== 'undefined' && year !== null ? await DatabaseService.getArchivedPosts(year) : await DatabaseService.getArchivedPosts();
     if (!posts || posts.length === 0) {
       // No archived posts available — return empty array (not an exception)
       return [];
@@ -258,6 +259,19 @@ const getArchivedPosts = async () => {
     throw new PostControllerException(`Error fetching archived posts: ${error.message}`, error);
   }
 };
+/*
+ * Returns an array of years for which archived posts exist. Sorted descending.
+ */
+const getArchivedYears = async () => {
+  try {
+    if (typeof DatabaseService.getArchivedYears !== 'function') return [];
+    const years = await DatabaseService.getArchivedYears();
+    if (!years || years.length === 0) return [];
+    return Array.isArray(years) ? years.sort((a, b) => b - a) : [];
+  } catch (error) {
+    throw new PostControllerException(`Error fetching archived years: ${error.message}`, error);
+  }
+};
 /**
  * Löscht einen Post anhand seiner ID und bump die Posts-Checksum.
  * @param {number} postId - Numerische Post-ID.
@@ -282,6 +296,7 @@ export default {
   createPost,
   getPostById,
   getArchivedPosts,
+  getArchivedYears,
   updatePost,
   getAllPosts,
   getMostReadPosts,

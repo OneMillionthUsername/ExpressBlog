@@ -1319,7 +1319,9 @@ export async function renderSidebarArchive(posts) {
   Object.keys(archive).sort((a, b) => b - a).forEach(year => {
     const a = document.createElement('a');
     a.className = 'dropdown-item';
-    a.href = `pages/archiv.html?year=${year}`;
+    // No year query param — server currently returns archived posts (older than threshold)
+    // so we link to the archive page and show the year as context in the label only.
+    a.href = `/blogpost/archive`;
     a.textContent = `${year} (${archive[year].length})`;
     dropdown.appendChild(a);
   });

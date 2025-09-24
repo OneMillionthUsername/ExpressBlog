@@ -446,22 +446,37 @@ postRouter.get('/:maybeId',
 // interpreted as a slug. Register it here (after numeric id handler).
 postRouter.get('/archive', globalLimiter, async (req, res) => {
   try {
-    const cacheKey = 'posts:archive';
+    // Support optional year filter via ?year=YYYY. Use distinct cache keys for year-specific results.
+    const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
+    const cacheKey = yearParam ? `posts:archive:${yearParam}` : 'posts:archive';
     let posts = simpleCache.get(cacheKey);
     if (!posts) {
-      posts = await postController.getArchivedPosts();
+      const year = yearParam ? Number(yearParam) : undefined;
+      posts = await postController.getArchivedPosts(year);
+      // Cache per-year and overall archive lists; no TTL -> default inside simpleCache
       simpleCache.set(cacheKey, posts);
+    }
+    // Also provide the list of available archive years for client-side UI
+    const yearsCacheKey = 'posts:archive:years';
+    let archiveYears = simpleCache.get(yearsCacheKey);
+    if (!archiveYears) {
+      try {
+        archiveYears = await postController.getArchivedYears();
+        simpleCache.set(yearsCacheKey, archiveYears, 60 * 60 * 1000); // cache years for 1h
+      } catch (_e) {
+        archiveYears = [];
+      }
     }
     const response = convertBigInts(posts) || posts;
     try {
       const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: safeResponse });
+        return res.render('archiv', { posts: safeResponse, archiveYears });
       }
       return res.json(safeResponse);
     } catch (_e) {
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: response });
+        return res.render('archiv', { posts: response, archiveYears: archiveYears || [] });
       }
       return res.json(response);
     }

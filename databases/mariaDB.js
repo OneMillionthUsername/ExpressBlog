@@ -582,11 +582,25 @@ export const DatabaseService = {
       }
     }
   },
-  async getArchivedPosts() {
+  async getArchivedPosts(year) {
+    // Optional year argument: when provided, return archived posts only for that year.
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH');
+      let result;
+      if (typeof year !== 'undefined' && year !== null && year !== '') {
+        const y = Number(year);
+        // Defensive: ensure year is a number
+        if (Number.isNaN(y)) {
+          logger.warn(`Invalid year provided: ${year}`);
+          return [];
+        }
+        // Select posts for the given year that are considered archived (older than 3 months)
+        result = await conn.query('SELECT * FROM posts WHERE YEAR(created_at) = ? AND created_at < NOW() - INTERVAL 3 MONTH', [y]);
+      } else {
+        // Return all archived posts (older than 3 months)
+        result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH');
+      }
       if (!result || result.length === 0) {
         return [];
       }
@@ -598,6 +612,22 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in getArchivedPosts: ${error.message}`);
       throw new databaseError(`Error in getArchivedPosts: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getArchivedYears() {
+    // Returns an array of distinct years (number) for which archived posts exist
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const rows = await conn.query('SELECT DISTINCT YEAR(created_at) AS year FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH ORDER BY year DESC');
+      if (!rows || rows.length === 0) return [];
+      // Normalize to array of numbers
+      return rows.map(r => Number(r.year)).filter(y => !Number.isNaN(y));
+    } catch (error) {
+      logger.error(`Error in getArchivedYears: ${error.message}`);
+      throw new databaseError(`Error in getArchivedYears: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }

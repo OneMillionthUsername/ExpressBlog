@@ -45,15 +45,38 @@
                           };
                         %>
 
-                        <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
-                            <% posts.forEach(function(post) { %>
-                                <div class="archive-post-item">
-                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
-                                    <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
-                                    <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
-                                </div>
-                            <% }); %>
-                        <% } else { %>
+                                                <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                                                        <%
+                                                            // Server may have filtered posts by year; group by year for display if multiple years present
+                                                            const grouped = {};
+                                                            posts.forEach(function(post) {
+                                                                const y = new Date(post.created_at).getFullYear();
+                                                                if (!grouped[y]) grouped[y] = [];
+                                                                grouped[y].push(post);
+                                                            });
+                                                            const yearKeys = Object.keys(grouped).sort((a,b) => b - a);
+                                                        %>
+                                                        <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
+                                                            <div class="archive-years mb-3">
+                                                                <label for="archive-year-select">Archiv nach Jahr:</label>
+                                                                <div class="btn-group ml-2" role="group" aria-label="Archive years">
+                                                                    <% archiveYears.forEach(function(y) { %>
+                                                                        <a class="btn btn-sm btn-outline-secondary <%= (yearKeys.length === 1 && Number(yearKeys[0]) === Number(y)) ? 'active' : '' %>" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                                                                    <% }); %>
+                                                                </div>
+                                                            </div>
+                                                        <% } %>
+                                                        <% yearKeys.forEach(function(year) { %>
+                                                            <h2 class="archive-year-heading"><%= year %></h2>
+                                                            <% grouped[year].forEach(function(post) { %>
+                                                                <div class="archive-post-item">
+                                                                        <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
+                                                                        <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
+                                                                        <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                                                </div>
+                                                            <% }); %>
+                                                        <% }); %>
+                                                <% } else { %>
                             <div class="no-posts-card text-center py-5">
                                 <div class="mb-3">
                                     <svg width="72" height="72" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
