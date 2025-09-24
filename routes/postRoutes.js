@@ -11,7 +11,7 @@ import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
-import * as validationService from '../services/validationService.js';
+import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
@@ -580,7 +580,6 @@ postRouter.delete(
     logger.debug('DELETE /delete: req.params: ' + JSON.stringify(req.params));
     logger.debug('DELETE /delete: Attempting to delete post ' + postId);
     logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
-    logger.debug('DELETE /delete: validationService: ' + validationService);
     if (validationService.isValidIdSchema(postId) === false) {
       logger.debug('DELETE /delete: Invalid postId ' + postId);
       return res.status(400).json({ error: 'Invalid post ID' });
