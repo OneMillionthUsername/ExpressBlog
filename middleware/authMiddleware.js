@@ -7,7 +7,19 @@
  */
 import * as authService from '../services/authService.js';
 
-// JWT-Middleware für Express
+/**
+ * Express middleware to authenticate requests using JWT stored in cookies or headers.
+ *
+ * Behavior:
+ * - Extracts token via `authService.extractTokenFromRequest`.
+ * - Verifies token with `authService.verifyToken`.
+ * - Attaches `req.user` on success and calls `next()`.
+ * - Returns `401` JSON response when missing/invalid/expired token.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 export function authenticateToken(req, res, next) {
   const token = authService.extractTokenFromRequest(req);
 
@@ -38,7 +50,15 @@ export function authenticateToken(req, res, next) {
     });
   }
 }
-// Admin-Only Middleware
+
+/**
+ * Middleware that enforces administrative privileges.
+ * Expects `req.user` to be populated (e.g. via `authenticateToken`).
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 export function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ 

@@ -2,8 +2,13 @@ import { appStatus } from '../app.js';
 import logger from '../utils/logger.js';
 
 /**
- * Middleware that ensures database is ready before processing request
- * Returns 503 Service Unavailable if database is still initializing
+ * Middleware that ensures the application database is initialized and ready.
+ * Wenn die Datenbank noch initialisiert wird, wird ein `503 Service Unavailable`
+ * mit einer kurzen Nachricht an den Client zurückgegeben.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 export function requireDatabase(req, res, next) {
   logger.debug('requireDatabase: Checking database readiness', {

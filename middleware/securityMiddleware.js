@@ -4,6 +4,14 @@ import * as utils from '../utils/utils.js';
 import logger from '../utils/logger.js';
 
 // --- Helper: safer content-type check ---
+/**
+ * Middleware to enforce `Content-Type: application/json` for requests.
+ * Returns `415 Unsupported Media Type` when the header doesn't match.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 export function requireJsonContent(req, res, next) {
   const contentType = (req.get('content-type') || '').toLowerCase();
 
@@ -17,6 +25,13 @@ export function requireJsonContent(req, res, next) {
 /**
  * Factory to create middleware
  * @param {string[]} whitelist - names of fields that contain HTML (e.g. ['content'])
+ */
+/**
+ * Factory that returns middleware to escape/sanitize incoming input objects
+ * (body, query, params, cookies, headers) to reduce XSS/HTML injection risks.
+ *
+ * @param {string[]} whitelist - Feldnamen, die HTML erlauben (z.B. ['content']).
+ * @returns {import('express').RequestHandler} Middleware-Funktion.
  */
 export function createEscapeInputMiddleware(whitelist = []) {
   return function escapeInputMiddleware(req, res, next) {
@@ -65,6 +80,16 @@ export function createEscapeInputMiddleware(whitelist = []) {
   };
 }
 // --- error handler (production-safe) ---
+/**
+ * Global error-handling middleware.
+ * - Converts CSRF-related errors to 403 with a minimal message.
+ * - Logs internal errors and returns a generic 500 response to clients.
+ *
+ * @param {Error} err - Der aufgetretene Fehler.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} _next
+ */
 export function errorHandlerMiddleware(err, req, res, _next) {
   // Special-case CSRF errors to return 403 instead of generic 500
   const msg = String(err && err.message || '').toLowerCase();

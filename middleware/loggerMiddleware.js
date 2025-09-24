@@ -1,6 +1,14 @@
 import logger from '../utils/logger.js';
 
-// Logger-Middleware mit verbessertem Logging
+/**
+ * Middleware für strukturiertes Request-/Access-Logging.
+ * - Protokolliert eingehende Requests (Methode, URL, IP, User-Agent, Referer)
+ * - Misst die Antwortzeit und schreibt einen Access-Log beim `finish`-Event
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
 export function loggerMiddleware(req, res, next) {
   const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
