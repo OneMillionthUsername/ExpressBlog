@@ -515,9 +515,9 @@ postRouter.get('/:slug',
 postRouter.post('/create', 
   strictLimiter,
   requireJsonContent,
-  validatePostBody, 
   authenticateToken,
   requireAdmin,
+  validatePostBody,
   async (req, res) => {
     const { title, content, tags } = req.body;
     const slug = createSlug(title);
@@ -543,10 +543,10 @@ postRouter.post('/create',
 postRouter.put('/update/:postId',
   strictLimiter,
   requireJsonContent,
-  validateId,
-  validatePostBody,
   authenticateToken,
   requireAdmin,
+  validateId,
+  validatePostBody,
   async (req, res) => {
     const postId = req.params.postId;
     const { title, content, tags } = req.body;
@@ -572,9 +572,9 @@ postRouter.delete(
   '/delete/:postId',
   strictLimiter,
   requireJsonContent,
-  validateId,
   authenticateToken,
   requireAdmin,
+  validateId,
   async (req, res) => {
     const postId = req.params.postId;
     if (validationService.validateId(postId) === false) {

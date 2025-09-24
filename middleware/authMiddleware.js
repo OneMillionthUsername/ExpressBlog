@@ -31,9 +31,10 @@ export function authenticateToken(req, res, next) {
     next();
   } catch (error) {
     console.error('Error during token authentication:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: 'Token authentication failed', 
+    // Treat verification/parsing errors as authentication failures, not internal server errors
+    return res.status(401).json({ 
+      error: 'Invalid token',
+      message: 'Token verification failed', 
     });
   }
 }

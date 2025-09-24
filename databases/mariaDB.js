@@ -699,7 +699,23 @@ export const DatabaseService = {
         throw new databaseError('Post is null or invalid');
       }
       conn = await getDatabasePool().getConnection();
-      const result = await conn.query('INSERT INTO posts SET ?', [postData]);
+      // Build explicit parameterized INSERT to avoid driver-specific 'SET ?' expansion issues
+      const allowedFields = ['title','slug','content','tags','author','views','published','created_at','updated_at'];
+      const keys = Object.keys(postData).filter(k => allowedFields.includes(k));
+      if (keys.length === 0) {
+        throw new Error('No valid fields provided for insert');
+      }
+      const cols = keys.map(k => `\`${k}\``).join(', ');
+      const placeholders = keys.map(() => '?').join(', ');
+      const values = keys.map(k => {
+        if (k === 'tags' && postData[k] !== undefined && postData[k] !== null && typeof postData[k] !== 'string') {
+          // store tags as JSON string
+          try { return JSON.stringify(postData[k]); } catch (_e) { return null; }
+        }
+        return postData[k];
+      });
+      const insertSql = `INSERT INTO posts (${cols}) VALUES (${placeholders})`;
+      const result = await conn.query(insertSql, values);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to create post');
       }
