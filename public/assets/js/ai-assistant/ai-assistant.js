@@ -1,6 +1,8 @@
 // AI-Unterstützung für den Blog mit Google Gemini
 // Kostenlose AI-Integration für Schreibhilfe und Content-Verbesserung
 
+// (Vereinfacht) Keine mehrfachen Lade-Guards mehr – Modul wird idempotent gehalten.
+
 // NOTE: This file runs in the browser; importing server-side config files here
 // causes the browser to attempt to fetch `/config/config` which can return
 // HTML and produce a MIME-type error. Instead, obtain any API keys at
@@ -41,8 +43,9 @@ async function preloadDOMPurify() {
 }
 
 // Start background preload (best-effort)
-preloadDOMPurify();
+try { preloadDOMPurify(); } catch { /* ignore */ }
 import { makeApiRequest } from '../api.js';
+import { showAlertModal } from '../common.js';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
@@ -86,11 +89,11 @@ function showApiKeySetup() {
         '3. Kopiere den Schlüssel in die .env Datei\n\n' +
         `Aktueller Schlüssel: ${currentKey ? currentKey.substring(0, 10) + '...' : 'Nicht gesetzt'}`;
   const modalHtml = `
-        <div class="google-api-key-modal-overlay" id="google-api-key-modal">
-            <div class="google-api-key-modal-container">
-                <pre class="google-api-key-modal-content">${message}</pre>
-                <div class="google-api-key-modal-footer">
-                    <button id="google-api-key-close" class="google-api-key-modal-button">Schließen</button>
+        <div class="modal-overlay" id="api-key-modal">
+            <div class="modal-container">
+                <pre class="modal-content">${message}</pre>
+                <div class="modal-footer">
+                    <button id="api-key-close" class="modal-button">Schließen</button>
                 </div>
             </div>
         </div>
@@ -98,10 +101,10 @@ function showApiKeySetup() {
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 
   // Event Listener für Schließen-Button
-  document.getElementById('google-api-key-close').addEventListener('click', () => {
-    document.getElementById('google-api-key-modal').remove();
+  document.getElementById('api-key-close').addEventListener('click', () => {
+    document.getElementById('api-key-modal').remove();
   });
-  document.getElementById('google-api-key-close').focus();
+  document.getElementById('api-key-close').focus();
 }
 
 // Server-proxied AI call - key never touches browser
@@ -184,7 +187,7 @@ async function improveText() {
   const textToImprove = selectedText || allText;
     
   if (!textToImprove || textToImprove.trim().length === 0) {
-    alert('Bitte markiere einen Text oder schreibe etwas, das verbessert werden soll.');
+    showAlertModal('Bitte markiere einen Text oder schreibe etwas, das verbessert werden soll.');
     return;
   }
     
@@ -230,24 +233,25 @@ Regeln:
 // Tags automatisch generieren
 async function generateTags() {
   const titleElement = document.getElementById('title');
-  const editor = tinymce.get('content');
-    
-  if (!titleElement || !editor) return;
-    
-  const title = titleElement.value;
-  const content = editor.getContent({format: 'text'});
-    
+  const editor = tinymce.get && tinymce.get('content');
+  if (!titleElement) return;
+  const title = titleElement.value || '';
+  let content = '';
+  if (editor) {
+    content = editor.getContent({ format: 'text' });
+  } else {
+    const ta = document.getElementById('content');
+    if (ta) content = ta.value || ta.textContent || '';
+  }
   if (!title && !content) {
-    alert('Bitte schreibe zuerst einen Titel oder Inhalt.');
+    showAlertModal('Bitte schreibe zuerst einen Titel oder Inhalt.');
     return;
   }
-    
   const tagsBtn = document.getElementById('ai-tags-btn');
   if (tagsBtn) {
     tagsBtn.disabled = true;
     tagsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generiere...';
   }
-    
   try {
     const systemInstruction = `Du bist ein Experte für Content-Kategorisierung. Analysiere den folgenden Blogpost und generiere passende Tags.
 
@@ -258,12 +262,8 @@ Regeln:
 - Antworte NUR mit den Tags, getrennt durch Kommas und Abstand
 - Keine Hashtags
 - Keine Erklärungen oder zusätzlicher Text`;
-        
     const textToAnalyze = `Titel: ${title}\n\nInhalt: ${content.substring(0, 1000)}`;
-        
-  const generatedTags = await callGeminiAPIWithFetchFallback(textToAnalyze, systemInstruction);
-        
-    // Show tags in a modal and offer to apply or copy
+    const generatedTags = await callGeminiAPIWithFetchFallback(textToAnalyze, systemInstruction);
     const tagsModal = `
       <div class="ai-tags-modal-container">
         <h4 class="ai-tags-modal-header">AI-Tags</h4>
@@ -273,12 +273,9 @@ Regeln:
           <button data-action="copy-tags" data-text="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-copy ml-2">Kopieren</button>
           <button data-action="close" class="ai-tags-modal-button-close ml-2">Schließen</button>
         </div>
-      </div>
-    `;
-
+      </div>`;
     showModal(tagsModal);
     showNotification('Tags wurden automatisch generiert!', 'success');
-        
   } catch (error) {
     console.error('Fehler beim Tag-Generieren:', error);
   } finally {
@@ -291,13 +288,18 @@ Regeln:
 
 // Zusammenfassung erstellen
 async function generateSummary() {
-  const editor = tinymce.get('content');
-  if (!editor) return;
-    
-  const content = editor.getContent({format: 'text'});
+  const editor = tinymce.get && tinymce.get('content');
+  // Support fallback to a plain textarea (#content) if TinyMCE not initialised (e.g. unit tests)
+  let content = '';
+  if (editor) {
+    content = editor.getContent({format: 'text'});
+  } else {
+    const ta = document.getElementById('content');
+    if (ta) content = ta.value || ta.textContent || '';
+  }
     
   if (!content || content.trim().length < 100) {
-    alert('Bitte schreibe zuerst einen längeren Text (mindestens 100 Zeichen).');
+    showAlertModal('Bitte schreibe zuerst einen längeren Text (mindestens 100 Zeichen).');
     return;
   }
     
@@ -309,7 +311,7 @@ async function generateSummary() {
     
   try {
     // Use the HTML content for summarization but validate using plain text length
-    const htmlContent = editor.getContent();
+  const htmlContent = editor ? editor.getContent() : content;
     const systemInstruction = `Du bist ein erfahrener Philosoph. Erstelle eine prägnante, HTML-formatierte Zusammenfassung des folgenden Beitrags.
 
 Regeln:
@@ -361,7 +363,7 @@ async function generateTitleSuggestions() {
   const content = editor.getContent({format: 'text'});
     
   if (!content || content.trim().length < 50) {
-    alert('Bitte schreibe zuerst etwas Inhalt (mindestens 50 Zeichen).');
+    showAlertModal('Bitte schreibe zuerst etwas Inhalt (mindestens 50 Zeichen).');
     return;
   }
     
@@ -499,24 +501,21 @@ function showModal(content) {
           ALLOWED_ATTR: ['href','target','rel'],
         }) : html;
 
-        const editor = tinymce.get('content');
-        if (editor) {
-          const selected = editor.selection && editor.selection.getContent({ format: 'text' });
+        const editorInstance = tinymce.get && tinymce.get('content');
+        if (editorInstance) {
+          const selected = editorInstance.selection && editorInstance.selection.getContent({ format: 'text' });
           if (selected && selected.trim().length > 0) {
-            editor.selection.setContent(safeHtml);
+            editorInstance.selection.setContent(safeHtml);
           } else {
-            editor.setContent(safeHtml);
-          }
-          updatePreview();
-          showNotification('Zusammenfassung eingefügt!', 'success');
-        } else {
-          const textarea = document.getElementById('content');
-          if (textarea) {
-            textarea.value = safeHtml;
-            updatePreview();
-            showNotification('Zusammenfassung eingefügt!', 'success');
+            editorInstance.setContent(safeHtml);
           }
         }
+        const textarea = document.getElementById('content');
+        if (textarea) {
+          textarea.value = safeHtml;
+        }
+        updatePreview();
+        showNotification('Zusammenfassung eingefügt!', 'success');
       } catch (err) {
         console.error('Fehler beim Einfügen der Zusammenfassung:', err);
         showNotification('Fehler beim Einfügen der Zusammenfassung', 'error');
@@ -591,12 +590,8 @@ async function initializeAISystem() {
 
 // AI-System beim Laden der Seite initialisieren
 document.addEventListener('DOMContentLoaded', function() {
-  // Kurz warten, damit andere Module geladen sind
-  setTimeout(initializeAISystem, 500);
+  setTimeout(initializeAISystem, 300);
 });
-
-//mark module as loaded
-// AI Assistant module loaded
 
 // Export selected functions for use in other modules (and for unit testing)
 export {

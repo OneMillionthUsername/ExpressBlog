@@ -242,6 +242,7 @@ async function initializeTinyMCE() {
     await tinymce.init({
       selector: '#content',
       height: 500,
+      resize: true,
       menubar: 'edit view insert format tools help',
             
       plugins: [

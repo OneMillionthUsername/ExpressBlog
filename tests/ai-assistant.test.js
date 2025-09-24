@@ -1,127 +1,95 @@
+/**
+ * @jest-environment jsdom
+ */
 import { jest } from '@jest/globals';
-import fs from 'fs';
-import path from 'path';
 
-// Load DOM environment from jest-environment-jsdom automatically provided
-// We'll mock the shared API client so ai-assistant's internal calls go through
-// the mocked `makeApiRequest`. This is more stable than mocking functions
-// declared inside the same module when using ESM + Jest's VM.
-jest.mock('../public/assets/js/api.js', () => {
-  return {
-    makeApiRequest: jest.fn(),
-  };
-});
+// Minimal mocks BEFORE importing module
+await jest.unstable_mockModule('../public/assets/js/common.js', () => ({
+  __esModule: true,
+  showAlertModal: jest.fn(),
+}));
+await jest.unstable_mockModule('../public/assets/js/api.js', () => ({
+  __esModule: true,
+  makeApiRequest: jest.fn(async () => ({ success: true, data: {} })),
+  clearGetResponseCache: jest.fn(),
+  getCachedPosts: jest.fn(),
+  refreshPosts: jest.fn(async () => []),
+  resetCsrfToken: jest.fn(),
+  loadAllBlogPosts: jest.fn(async () => []),
+  loadCards: jest.fn(async () => []),
+}));
 
-describe('AI assistant generateSummary integration', () => {
+global.DOMPurify = { sanitize: (h) => h };
+
+const { generateSummary, generateTags } = await import('../public/assets/js/ai-assistant/ai-assistant.js');
+
+describe('ai-assistant basic integration', () => {
   beforeEach(() => {
-    // reset DOM
-    document.body.innerHTML = '<textarea id="content"></textarea>' +
-      '<button id="ai-summary-btn">Summary</button>';
+    document.body.innerHTML = '';
+    const textarea = document.createElement('textarea');
+    textarea.id = 'content';
+    textarea.value = 'Lorem ipsum '.repeat(20);
+    document.body.appendChild(textarea);
+    const title = document.createElement('input');
+    title.id = 'title';
+    title.value = 'Test Titel';
+    document.body.appendChild(title);
+    const tags = document.createElement('input');
+    tags.id = 'tags';
+    document.body.appendChild(tags);
+    const summaryBtn = document.createElement('button');
+    summaryBtn.id = 'ai-summary-btn';
+    document.body.appendChild(summaryBtn);
+    const tagsBtn = document.createElement('button');
+    tagsBtn.id = 'ai-tags-btn';
+    document.body.appendChild(tagsBtn);
 
-    // stub global helper functions used by the module
     global.showNotification = jest.fn();
     global.updatePreview = jest.fn();
-    global.alert = jest.fn();
-
-    // create a fake tinymce with minimal API
     global.tinymce = {
       get: jest.fn(() => ({
-        // return a longer HTML string to satisfy the 100-char minimum check
-        getContent: () => '<p><strong>Wichtig</strong> Text mit <em>Formatierung</em>. '.repeat(10) + '</p>',
-        selection: {
-          getContent: jest.fn(() => ''),
-          setContent: jest.fn(),
-        },
-        setContent: jest.fn(function (html) {
-          // simulate setting content by updating textarea
-          const ta = document.getElementById('content');
-          if (ta) ta.value = html;
-        }),
+        getContent: () => '<p>' + 'Wichtig '.repeat(80) + '</p>',
+        selection: { getContent: jest.fn(() => ''), setContent: jest.fn() },
+        setContent: jest.fn((html) => { textarea.value = html; }),
       })),
     };
-
-    // Re-import module functions to ensure mocks apply
-    jest.resetModules();
   });
 
-  it('generateSummary displays modal and apply-summary inserts HTML into editor', async () => {
-    // Arrange: get the mocked API client and set its behavior
-    const api = jest.requireMock('../public/assets/js/api.js');
-    api.makeApiRequest.mockResolvedValue({
-      success: true,
-      data: '<p><strong>Zusammenfassung:</strong> Kurzer Text.</p>',
-    });
-
-    // Keep fetch mocked as a fallback for other code paths
-    global.fetch = jest.fn().mockResolvedValue({
+  it('generateSummary inserts summary', async () => {
+    global.fetch = jest.fn(async () => ({
       ok: true,
+      status: 200,
       json: async () => ({
-        candidates: [
-          { content: { parts: [{ text: '<p><strong>Zusammenfassung:</strong> Kurzer Text.</p>' }] } },
-        ],
+        text: '<p><strong>Zusammenfassung:</strong> Kurzer Test.</p>',
+        data: { text: '<p><strong>Zusammenfassung:</strong> Kurzer Test.</p>' },
+        candidates: [ { content: { parts: [ { text: '<p><strong>Zusammenfassung:</strong> Kurzer Test.</p>' } ] } } ],
       }),
-    });
-
-    const mod = await import('../public/assets/js/ai-assistant/ai-assistant.js');
-
-    // Act: call generateSummary (it will call callGeminiAPI which uses mocked fetch)
-    await mod.generateSummary();
-
-    // Modal should be present
-    const modal = document.querySelector('.ai-modal-container') || document.querySelector('.ai-summary-modal-container') || document.querySelector('.ai-modal-overlay');
-    expect(modal).toBeTruthy();
-
-    // find apply button
+    }));
+    await generateSummary();
+    await Promise.resolve();
     const applyBtn = document.querySelector('[data-action="apply-summary"]');
     expect(applyBtn).toBeTruthy();
-
-    // Click apply button
     applyBtn.click();
-
-    // Check that textarea (simulated editor content) was updated
-    const ta = document.getElementById('content');
-    expect(ta.value).toContain('Zusammenfassung');
+    await Promise.resolve();
+    expect(document.getElementById('content').value).toContain('Zusammenfassung');
   });
 
-  it('generateTags shows modal and apply-tags inserts into #tags', async () => {
-    // Arrange: get the mocked API client and set its behavior for tags
-    const api = jest.requireMock('../public/assets/js/api.js');
-    api.makeApiRequest.mockResolvedValue({
-      success: true,
-      data: 'philosophie, wissenschaft, technik',
-    });
-
-    // Keep fetch mocked as a fallback for other code paths
-    global.fetch = jest.fn().mockResolvedValue({
+  it('generateTags inserts tags', async () => {
+    global.fetch = jest.fn(async () => ({
       ok: true,
+      status: 200,
       json: async () => ({
-        candidates: [
-          { content: { parts: [{ text: 'philosophie, wissenschaft, technik' }] } },
-        ],
+        text: 'philosophie, wissenschaft, technik',
+        data: { text: 'philosophie, wissenschaft, technik' },
+        candidates: [ { content: { parts: [ { text: 'philosophie, wissenschaft, technik' } ] } } ],
       }),
-    });
-
-    const mod = await import('../public/assets/js/ai-assistant/ai-assistant.js');
-
-    // ensure a tags input exists
-    const tagsInput = document.createElement('input');
-    tagsInput.id = 'tags';
-    document.body.appendChild(tagsInput);
-    // ensure a title input exists so generateTags proceeds
-    const titleInput = document.createElement('input');
-    titleInput.id = 'title';
-    titleInput.value = 'Test Title';
-    document.body.appendChild(titleInput);
-
-    await mod.generateTags();
-
-    const modal = document.querySelector('.ai-modal-container') || document.querySelector('.ai-tags-modal-container') || document.querySelector('.ai-modal-overlay');
-    expect(modal).toBeTruthy();
-
+    }));
+    await generateTags();
+    await Promise.resolve();
     const applyBtn = document.querySelector('[data-action="apply-tags"]');
     expect(applyBtn).toBeTruthy();
-
     applyBtn.click();
+    await Promise.resolve();
     expect(document.getElementById('tags').value).toContain('philosophie');
   });
 });

@@ -1695,5 +1695,32 @@ if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 't
   }
 }
 
+// Einheitliche Alert-Modal Funktion
+export function showAlertModal(message) {
+  const modalHtml = `
+    <div class="modal-overlay" id="alert-modal">
+      <div class="modal-container">
+        <div class="modal-content">${message}</div>
+        <div class="modal-footer">
+          <button id="alert-close" class="modal-button">OK</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('alert-modal');
+  const closeBtn = document.getElementById('alert-close');
+
+  const closeModal = () => modal.remove();
+
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  closeBtn.focus();
+}
+
 // Re-export shared escapeHtml to keep existing imports working
 export { _escapeHtml as escapeHtml };
