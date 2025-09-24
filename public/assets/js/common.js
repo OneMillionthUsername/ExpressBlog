@@ -513,26 +513,29 @@ export function showCreateCardModal() {
 }
 // Hilfsfunktionen für erweiterte Funktionalität
 export function showNotification(message, type = 'info') {
+  const baseType = (type === 'success') ? 'success' : (type === 'error' ? 'danger' : 'info');
   const notification = document.createElement('div');
-  notification.className = `notification alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'}`;
-  notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
-        ${message}
-    `;
+  notification.className = `notification alert alert-${baseType}`;
+  const safe = (typeof message === 'string') ? message.replace(/</g, '&lt;').replace(/>/g, '&gt;') : String(message);
+  const icon = baseType === 'success' ? 'check-circle' : baseType === 'danger' ? 'exclamation-triangle' : 'info-circle';
+  notification.innerHTML = `<i class="fas fa-${icon}"></i> <span class="notif-text">${safe.replace(/\n/g,'<br>')}</span>`;
+
+  // Dynamic stacking without wrapper: compute vertical offset below existing notifications
+  const existing = Array.from(document.querySelectorAll('.notification'));
+  let offset = 60; // base top from CSS expectation
+  existing.forEach(n => { offset += n.offsetHeight + 8; });
+  notification.style.top = offset + 'px';
+  notification.style.right = '20px';
+  notification.style.position = 'fixed';
+  notification.style.zIndex = '9999';
+
   document.body.appendChild(notification);
-  // Force layout so tests observing DOM immediately can see the element
   notification.getBoundingClientRect();
 
-  // Entferne die Benachrichtigung nach 3 Sekunden
   setTimeout(() => {
     notification.style.animation = 'slideOut 0.3s ease-out';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
+    setTimeout(() => { notification.remove(); }, 300);
   }, 3000);
-
   return notification;
 }
 // Funktion zum Anzeigen der Karten
