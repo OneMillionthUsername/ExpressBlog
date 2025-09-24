@@ -53,7 +53,7 @@ staticRouter.get('/about', (req, res) => {
   res.render('about');
 });
 
-staticRouter.get('/createPost', async (req, res) => {
+staticRouter.get('/createPost/:postId?', async (req, res) => {
   try {
     // Determine if requester is authenticated admin by extracting token
     const token = authService.extractTokenFromRequest(req);
@@ -84,10 +84,10 @@ staticRouter.get('/createPost', async (req, res) => {
       tinyMceKeyProvided: !!tinyMceKey,
     });
 
-    // If a `post` query parameter is provided (edit flow), try to fetch the post
+    // If a `postId` route parameter is provided (edit flow), try to fetch the post
     // server-side and inject it into the view so the editor can be prefilled
     // without an extra client request. Support numeric id or slug.
-    const postParam = req.query.post;
+    const postParam = req.params.postId;
     let serverPost = null;
     if (postParam) {
       try {

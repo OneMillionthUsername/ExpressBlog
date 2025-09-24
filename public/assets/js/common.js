@@ -1150,9 +1150,7 @@ export async function redirectEditPost(postId) {
     return;
   }
   // Redirect to /createPost with post data
-  const createUrl = new URL('/createPost', window.location.origin);
-  createUrl.searchParams.set('post', postId);
-  window.location.href = createUrl.toString();
+  window.location.href = `/createPost/${postId}`;
 }
 // Post löschen und zur Post-Liste weiterleiten (spezifisch für read_post.html)
 export async function deletePostAndRedirect(postId) {
@@ -1217,6 +1215,9 @@ export function getPostIdFromPath() {
   if (match) return match[1];
   // Also support the shorthand numeric URL /blogpost/123
   match = window.location.pathname.match(/\/blogpost\/(\d+)(?:\/|$)/);
+  if (match) return match[1];
+  // Support createPost edit URLs like /createPost/123
+  match = window.location.pathname.match(/\/createPost\/(\d+)(?:\/|$)/);
   return match ? match[1] : null;
 }
 export function getPostSlugFromPath() {
