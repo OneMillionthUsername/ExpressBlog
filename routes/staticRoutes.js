@@ -53,7 +53,9 @@ staticRouter.get('/about', (req, res) => {
   res.render('about');
 });
 
-staticRouter.get('/createPost/:postId?', async (req, res) => {
+// Use a shared handler for both '/createPost' and '/createPost/:postId' to avoid
+// using an optional parameter token ("?") which some path parsers reject.
+async function handleCreatePost(req, res) {
   try {
     // Determine if requester is authenticated admin by extracting token
     const token = authService.extractTokenFromRequest(req);
@@ -87,7 +89,7 @@ staticRouter.get('/createPost/:postId?', async (req, res) => {
     // If a `postId` route parameter is provided (edit flow), try to fetch the post
     // server-side and inject it into the view so the editor can be prefilled
     // without an extra client request. Support numeric id or slug.
-    const postParam = req.params.postId;
+    const postParam = req.params && req.params.postId;
     let serverPost = null;
     if (postParam) {
       try {
@@ -96,9 +98,6 @@ staticRouter.get('/createPost/:postId?', async (req, res) => {
         } else {
           serverPost = await postController.getPostBySlug(postParam);
         }
-        // Convert bigints if controller returns them (controller functions
-        // usually return raw DB objects; controller's callers normally handle converting)
-        // But keep it simple and pass through the object as-is; views will treat fields as strings
       } catch (fetchErr) {
         logger.debug('[CREATEPOST] Could not fetch post for prefill:', fetchErr && fetchErr.message);
         serverPost = null;
@@ -114,7 +113,12 @@ staticRouter.get('/createPost/:postId?', async (req, res) => {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
   }
-});
+}
+
+// Explicit routes: one without parameter and one with the parameter. Some
+// environments' path parsers can't handle '?' tokens in route strings.
+staticRouter.get('/createPost', handleCreatePost);
+staticRouter.get('/createPost/:postId', handleCreatePost);
 
 staticRouter.get('/about.html', (req, res) => {
   res.redirect('/about');
