@@ -59,13 +59,20 @@ class AppStatus extends EventEmitter {
     return this.dbReady;
   }
 
-  waitForReady() {
-    return new Promise((resolve) => {
+  waitForReady(timeouts = 30000) {
+    return new Promise((resolve, reject) => {
       if (this.appReady) {
         resolve();
-      } else {
-        this.once('ready', resolve);
-      }
+      } 
+      const onReady = (...args) => {
+        clearTimeout(timer);
+        resolve(args.length ? args[0] : undefined);
+      };
+      this.once('ready', onReady);
+      const timer = setTimeout(() => {
+        this.removeListener('ready', onReady);
+        reject(new Error('waitForReady timed out'));
+      }, timeouts);
     });
   }
 }
