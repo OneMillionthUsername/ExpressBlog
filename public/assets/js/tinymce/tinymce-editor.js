@@ -70,107 +70,104 @@ function showTinyMceApiKeySetup() {
 }
 // TinyMCE dynamisch laden (prefer local/jsDelivr, then Tiny Cloud if configured)
 async function loadTinyMceScript() {
-  // Prüfen ob TinyMCE bereits geladen ist
   if (typeof tinymce !== 'undefined') {
     return true;
   }
-  // 1) Versuch: lokale/self-hosted und jsDelivr Fallbacks
   try {
     const localLoaded = await tryLocalTinyMCE();
     if (localLoaded) {
       return true;
-    }
-    else {
-      console.warn('Lokales TinyMCE konnte nicht geladen werden, versuche Cloud-Fallback');
+    } else {
+      showNotification('Warning', 'Local TinyMCE could not be loaded, attempting cloud fallback.');
     }
   } catch (error) {
-    console.error('Lokales TinyMCE konnte nicht geladen werden:', error);
+    showNotification('Error', `Local TinyMCE loading failed: ${error.message}`);
   }
-  // 2) Letzter Fallback: Tiny Cloud (erfordert API Key oder will show limits)
   return await tryCloudTinyMCE();
 }
-// Cloud TinyMCE laden
+
 async function tryCloudTinyMCE() {
   const apiKey = TINYMCE_CONFIG.apiKey || TINYMCE_CONFIG.defaultKey;
   const scriptUrl = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6/tinymce.min.js`;
-    
+  const timeoutDuration = 10000; // Parameterized timeout
+
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = scriptUrl;
     script.referrerPolicy = 'origin';
-        
-    // Timeout für Cloud-Loading
+
     const timeout = setTimeout(() => {
-      console.error('TinyMCE Cloud Loading Timeout');
+      showNotification('Error', 'TinyMCE Cloud Loading Timeout');
       document.head.removeChild(script);
       reject(new Error('TinyMCE Cloud Loading Timeout'));
-    }, 10000); // 10 Sekunden Timeout
-        
+    }, timeoutDuration);
+
     script.onload = () => {
       clearTimeout(timeout);
       resolve(true);
     };
-        
+
     script.onerror = () => {
       clearTimeout(timeout);
-      console.error('Fehler beim Laden des TinyMCE Scripts von Cloud');
+      showNotification('Error', 'Failed to load TinyMCE script from Cloud');
       document.head.removeChild(script);
       reject(new Error('TinyMCE Cloud Loading Failed'));
     };
-        
+
     document.head.appendChild(script);
   });
 }
-// Lokaler TinyMCE Fallback mit mehreren Pfaden (inkl. jsDelivr)
+
 async function tryLocalTinyMCE() {
   const localPaths = [
-    '/assets/js/tinymce/tinymce.min.js',     // Hauptpfad
-    '/node_modules/tinymce/tinymce.min.js',  // npm Installation
-    'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js', // CDN Fallback
+    '/assets/js/tinymce/tinymce.min.js',
+    '/node_modules/tinymce/tinymce.min.js',
+    'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js',
   ];
-    
+  const errors = [];
+
   for (const path of localPaths) {
     try {
       const success = await loadScriptFromPath(path);
       if (success) {
         return true;
-      }
-      else {
-        console.warn(`TinyMCE konnte nicht von ${path} geladen werden, versuche nächsten Pfad`);
+      } else {
+        errors.push(`Failed to load from ${path}`);
       }
     } catch (error) {
-      console.error(`Fehler bei ${path}:`, error.message);
+      errors.push(`Error at ${path}: ${error.message}`);
     }
   }
-  throw new Error('Alle lokalen TinyMCE Pfade fehlgeschlagen');
+
+  showNotification('Error', `All local TinyMCE paths failed:\n${errors.join('\n')}`);
+  throw new Error('All local TinyMCE paths failed');
 }
-// Hilfsfunktion zum Laden von Scripts mit Promise
-function loadScriptFromPath(src) {
+
+function loadScriptFromPath(src, timeoutDuration = 5000) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-        
+
     const timeout = setTimeout(() => {
       document.head.removeChild(script);
       reject(new Error('Script loading timeout'));
-    }, 5000);
-        
+    }, timeoutDuration);
+
     script.onload = () => {
       clearTimeout(timeout);
-      // Prüfen ob TinyMCE wirklich verfügbar ist
       if (typeof tinymce !== 'undefined') {
         resolve(true);
       } else {
         reject(new Error('TinyMCE not available after script load'));
       }
     };
-        
+
     script.onerror = () => {
       clearTimeout(timeout);
       document.head.removeChild(script);
       reject(new Error('Script failed to load'));
     };
-        
+
     document.head.appendChild(script);
   });
 }
@@ -371,9 +368,9 @@ async function initializeTinyMCE() {
           }
         });
                 
-        editor.on('input keyup paste', function() {
-          updatePreview();
-        });
+        // editor.on('input keyup paste', function() {
+        //   // updatePreview removed from here
+        // });
                 
         // Listen for theme changes
         if (typeof window.addEventListener === 'function') {
@@ -443,49 +440,96 @@ function enableTextareaFallback(contentElement) {
 }
 
 // Draft-Management-Funktionen
-function saveDraft() {
-  const title = document.getElementById('title').value;
-  let content = '';
-    
-  // Content aus TinyMCE oder Textarea holen
-  const tinymceEditor = tinymce.get('content');
-  if (tinymceEditor) {
-    content = tinymceEditor.getContent();
-  } else {
-    // Fallback: Direkt aus dem Textarea
-    const contentElement = document.getElementById('content');
-    if (contentElement) {
-      content = contentElement.value;
+// Silent draft saver: writes draft to localStorage but does NOT notify the user.
+function saveDraftSilent() {
+  try {
+    const title = document.getElementById('title')?.value || '';
+    let content = '';
+
+    // Content aus TinyMCE oder Textarea holen
+    const tinymceEditor = tinymce.get('content');
+    if (tinymceEditor) {
+      content = tinymceEditor.getContent();
+    } else {
+      // Fallback: Direkt aus dem Textarea
+      const contentElement = document.getElementById('content');
+      if (contentElement) {
+        content = contentElement.value;
+      }
     }
+
+    const tags = document.getElementById('tags')?.value || '';
+
+    const draftData = {
+      title: title,
+      content: content,
+      tags: tags,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Attempt to write to localStorage - this may throw (quota, disabled, etc.)
+    localStorage.setItem('blogpost_draft_content', JSON.stringify(draftData));
+    return true;
+  } catch (err) {
+    // If silent save fails (e.g. localStorage disabled/quota), inform the user
+    showNotification('saveDraftSilent: Entwurf konnte nicht gespeichert werden', 'error');
+    showNotification(err.message, 'error');
+    return false;
   }
-    
-  const tags = document.getElementById('tags').value;
-    
-  const draftData = {
-    title: title,
-    content: content,
-    tags: tags,
-    timestamp: new Date().toISOString(),
-  };
-    
-  localStorage.setItem('blogpost_draft_content', JSON.stringify(draftData));
-  //showNotification('Entwurf gespeichert', 'success');
+}
+
+// Visible draft saver: uses the silent saver then shows a notification. This is
+// intended for explicit user actions (e.g. Save button). Autosave should call
+// saveDraftSilent() to avoid spamming notifications.
+function saveDraft() {
+  const ok = saveDraftSilent();
+  if (ok) {
+    try {
+      showNotification('Entwurf gespeichert', 'success');
+    } catch (e) { void e; }
+  } else {
+    // On explicit save failure, we already attempted to notify inside saveDraftSilent;
+    // keep this as a fallback in case the inner notification couldn't run.
+    try {
+      showNotification('Entwurf konnte nicht gespeichert werden', 'error');
+    } catch (e) { void e; }
+  }
 }
 function clearDraft() {
-  localStorage.removeItem('blogpost_draft_content');
-  const tinymceEditor = tinymce.get('content');
-  if (tinymceEditor) {
-    tinymceEditor.setContent('');
-  } else {
-    const contentElement = document.getElementById('content');
-    if (contentElement) {
-      contentElement.value = '';
-    }
+  let removed = true;
+  try {
+    localStorage.removeItem('blogpost_draft_content');
+  } catch (err) {
+    removed = false;
+    console.error('clearDraft: could not remove draft from localStorage', err);
+    try { showNotification('Entwurf konnte nicht gelöscht werden', 'error'); } catch (e) { void e; }
   }
-  document.getElementById('title').value = '';
-  document.getElementById('tags').value = '';
+
+  // Clear editor/UI regardless of localStorage result so the user sees the form cleared
+  try {
+    const tinymceEditor = tinymce.get('content');
+    if (tinymceEditor) {
+      tinymceEditor.setContent('');
+    } else {
+      const contentElement = document.getElementById('content');
+      if (contentElement) {
+        contentElement.value = '';
+      }
+    }
+  } catch (err) {
+    console.warn('clearDraft: failed to clear editor content', err);
+  }
+
+  try { document.getElementById('title').value = ''; } catch (err) { void err; }
+  try { document.getElementById('tags').value = ''; } catch (err) { void err; }
   updatePreview();
-  showNotification('Entwurf gelöscht 🗑️', 'info');
+
+  if (removed) {
+    try { showNotification('Entwurf gelöscht 🗑️', 'info'); } catch (e) { void e; }
+    return true;
+  }
+
+  return false;
 }
 
 // Template-Funktionen
@@ -581,7 +625,6 @@ function addTag(tagName) {
   }
     
   updatePreview();
-  saveDraft();
 }
 
 // Vorschau-Funktionen
@@ -671,7 +714,11 @@ function resetForm() {
 
 // Autosave-Intervall (alle 60 Sekunden)
 let lastDraft = '';
+let autosaveInProgress = false;
+
 setInterval(() => {
+  if (autosaveInProgress) return;
+
   const title = document.getElementById('title')?.value || '';
   const tags = document.getElementById('tags')?.value || '';
   const tinymceEditor = tinymce.get('content');
@@ -679,10 +726,20 @@ setInterval(() => {
   const currentDraft = JSON.stringify({ title, content, tags });
 
   if (currentDraft !== lastDraft) {
-    saveDraft();
+    autosaveInProgress = true;
+    saveDraftSilent();
+    updatePreview(); // Update preview during autosave
     lastDraft = currentDraft;
+    autosaveInProgress = false;
   }
 }, 60000); // 60 Sekunden
+
+// Add a button to manually trigger preview updates
+const previewButton = document.createElement('button');
+previewButton.textContent = 'Update Preview';
+previewButton.className = 'btn btn-outline-info';
+previewButton.addEventListener('click', updatePreview);
+document.body.appendChild(previewButton);
 
 // Erweiterte Bild-Management-Funktionen
 
@@ -830,8 +887,8 @@ async function compressAndUploadImage(blobInfo, success, failure, progress) {
         finalBase64 = await compressImage(blob, 0.4, 1024, 768);
                 
         if (progress) {
-              progress(30);
-            }
+          progress(30);
+        }
       }
             
       // Zu Server senden mit Retry-Logik - übergebe das ursprüngliche Blob für weitere Komprimierung
@@ -1182,7 +1239,8 @@ async function initializeBlogEditor() {
   if (titleElement) {
     titleElement.addEventListener('input', function() {
       updatePreview();
-      saveDraft();
+      // User typing should trigger a silent save to localStorage
+      saveDraftSilent();
     });
   } else {
     console.error('Title-Element nicht gefunden');
@@ -1190,7 +1248,8 @@ async function initializeBlogEditor() {
   if (tagsElement) {
     tagsElement.addEventListener('input', function() {
       updatePreview();
-      saveDraft();
+      // Tag edits should also be saved silently
+      saveDraftSilent();
     });
   } else {
     console.error('Tags-Element nicht gefunden');
