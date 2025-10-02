@@ -179,6 +179,7 @@ app.use(helmet({
         '\'self\'',
         'https://generativelanguage.googleapis.com/v1beta/',
         'https://cdn.tiny.cloud/1/',
+        'https://formspree.io',
       ],
       // Allow TinyMCE editor iframe (same-origin) and safe blob/data contexts
       // Old value was ['none'], which prevented TinyMCE from rendering its editor iframe
@@ -186,7 +187,7 @@ app.use(helmet({
       childSrc: ['\'self\'', 'blob:', 'data:'],
       objectSrc: ['\'none\''],
       baseUri: ['\'self\''],
-      formAction: ['\'self\''],
+      formAction: ['\'self\'', 'https://formspree.io'],
       frameAncestors: ['\'none\''],
     },
   },
