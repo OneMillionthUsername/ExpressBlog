@@ -72,25 +72,25 @@ export async function makeApiRequest(url, options = {}) {
   const _requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   
   try {
-  const method = options.method || 'GET';
-  const methodUp = method.toUpperCase();
-  // Detect FormData bodies — do not set Content-Type so browser can add the correct boundary
-  const isFormData = typeof FormData !== 'undefined' && options.body && options.body instanceof FormData;
-  // Default headers: request JSON by default; tests may override global.makeApiRequest
-  const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
-  // Ensure we also ask explicitly for JSON responses to avoid server-side HTML rendering
-  defaultHeaders['Accept'] = 'application/json';
-  // Mark the request as an XMLHttpRequest so servers can distinguish browser navigation from API/XHR
-  // This helps proxies and middleware detect API calls and avoid rendering HTML responses.
-  defaultHeaders['X-Requested-With'] = 'XMLHttpRequest';
-  let headers = { ...(defaultHeaders), ...(options.headers || {}) };
+    const method = options.method || 'GET';
+    const methodUp = method.toUpperCase();
+    // Detect FormData bodies — do not set Content-Type so browser can add the correct boundary
+    const isFormData = typeof FormData !== 'undefined' && options.body && options.body instanceof FormData;
+    // Default headers: request JSON by default; tests may override global.makeApiRequest
+    const defaultHeaders = isFormData ? {} : { 'Content-Type': 'application/json' };
+    // Ensure we also ask explicitly for JSON responses to avoid server-side HTML rendering
+    defaultHeaders['Accept'] = 'application/json';
+    // Mark the request as an XMLHttpRequest so servers can distinguish browser navigation from API/XHR
+    // This helps proxies and middleware detect API calls and avoid rendering HTML responses.
+    defaultHeaders['X-Requested-With'] = 'XMLHttpRequest';
+    let headers = { ...(defaultHeaders), ...(options.headers || {}) };
 
     // During unit tests we avoid requesting a CSRF token to prevent
     // the extra /api/csrf-token fetch from breaking expectations.
     const isTestEnv = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') || false;
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(methodUp)) {
       // invalidate GET cache on mutating requests
-  try { clearGetResponseCache(); } catch (e) { void e; }
+      try { clearGetResponseCache(); } catch (e) { void e; }
       if (!isTestEnv) {
         const token = await getCsrfToken();
         if (token) {
@@ -123,11 +123,13 @@ export async function makeApiRequest(url, options = {}) {
       headers, // our merged headers include options.headers and x-csrf-token
     });
     const response = await fetch(url, finalOptions);
+    console.debug(`[API][${_requestId}] ${methodUp} ${url} - Status: ${response.status}`);
     if (typeof response === 'undefined' || response === null) {
       throw new Error('No response from fetch');
     }
 
   const fetchEndTime = performance.now();
+  // add some future benchmark for request duration logging if needed
   const _fetchDuration = Math.round(fetchEndTime - fetchStartTime);
 
     let result;
@@ -138,7 +140,7 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     if (!response.ok) {
-      
+      console.debug(`[API][${_requestId}] ${methodUp} ${url} - Error: ${response.status}`);
       if (response.status === 403 && result?.error?.includes('csrf')) {
         csrfToken = null;
       }

@@ -41,6 +41,7 @@ class AppStatus extends EventEmitter {
   setDatabaseReady() {
     this.dbReady = true;
     this.checkAppReady();
+    logger.info('Database is ready');
   }
 
   checkAppReady() {
@@ -62,7 +63,7 @@ class AppStatus extends EventEmitter {
   waitForReady(timeouts = 30000) {
     return new Promise((resolve, reject) => {
       if (this.appReady) {
-        resolve();
+        return resolve();
       } 
       const onReady = (...args) => {
         clearTimeout(timer);
