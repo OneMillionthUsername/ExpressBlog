@@ -1,5 +1,6 @@
 services:
   app:
+    image: nullhasvalue/expressblog:latest
     networks:
       - expressblog_db
     build:
