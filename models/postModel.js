@@ -38,7 +38,7 @@ export const postSchema = Joi.object({
   tags: Joi.array().items(Joi.string().max(50)).optional(),
   author: Joi.string().max(100).optional(),
   views: Joi.number().integer().min(0).optional(),
-  published: Joi.boolean().optional(),
+  published: Joi.alternatives().try(Joi.boolean(), Joi.number().integer().valid(0, 1)).optional(),
   created_at: Joi.date().optional(),
   updated_at: Joi.date().optional(),
   media: Joi.array().items(Joi.object({

@@ -28,7 +28,7 @@ let pool;
 let isMockMode = false;
 
 function createMockPool() {
-  logger.warn('Using mock database pool for testing');
+  logger.info('Using mock database pool for testing');
   return {
     getConnection: async () => {
       return {
@@ -104,18 +104,18 @@ export function isMockDatabase() {
 }
 
 export async function initializeDatabase() {
-  logger.debug('initializeDatabase: Starting database initialization');
+  logger.info('initializeDatabase: Starting database initialization');
   
-  if (process.env.NODE_ENV === 'development') {
-    logger.warn('Keine lokale Datenbank konfiguriert. Überspringe Datenbank-Initialisierung.');
-    logger.debug('initializeDatabase: Using mock mode for development');
-    pool = createMockPool();
-    isMockMode = true;
-    return;
-  }
+  // if (process.env.NODE_ENV === 'development') {
+  //   logger.warn('Keine lokale Datenbank konfiguriert. Überspringe Datenbank-Initialisierung.');
+  //   logger.debug('initializeDatabase: Using mock mode for development');
+  //   pool = createMockPool();
+  //   isMockMode = true;
+  //   return;
+  // }
   
   // Prüfe ob alle notwendigen DB-Umgebungsvariablen gesetzt sind
-  logger.debug('initializeDatabase: Checking environment variables');
+  logger.info('initializeDatabase: Checking environment variables');
   if (!dbConfig.user || !dbConfig.password || !dbConfig.database) {
     logger.warn('Database environment variables not fully configured. Using mock mode.');
     logger.warn('Missing variables:', {
@@ -130,7 +130,7 @@ export async function initializeDatabase() {
   }
   
   try {
-    logger.debug('initializeDatabase: Creating MariaDB connection pool', {
+    logger.info('initializeDatabase: Creating MariaDB connection pool', {
       host: dbConfig.host,
       port: dbConfig.port,
       user: dbConfig.user,
@@ -140,14 +140,13 @@ export async function initializeDatabase() {
     
     pool = mariadb.createPool(dbConfig);
 
-    logger.debug('initializeDatabase: Testing initial connection');
+    logger.info('initializeDatabase: Testing initial connection');
     const connection = await pool.getConnection();
     connection.release();
 
-    logger.debug('initializeDatabase: Database pool created successfully');
+    logger.info('initializeDatabase: Database pool created successfully');
   } catch (error) {
-    logger.debug(`initializeDatabase: Database connection failed: ${error.message}`, { stack: error.stack });
-    logger.error(`Error creating MariaDB pool connection: ${error.message}`);
+    logger.error(`initializeDatabase: Database connection failed: ${error.message}`, { stack: error.stack });
     logger.warn('Falling back to mock mode due to database connection failure');
     pool = createMockPool();
     isMockMode = true;

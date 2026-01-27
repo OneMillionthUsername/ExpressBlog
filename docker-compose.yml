@@ -1,5 +1,6 @@
 services:
   app:
+    image: nullhasvalue/expressblog:latest
     networks:
       - expressblog_db
     build:
@@ -24,12 +25,18 @@ services:
     image: mariadb:latest
     container_name: expressblog_db
     restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
     env_file:
       - .env
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   db_data:
