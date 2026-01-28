@@ -14,12 +14,15 @@ import { convertBigInts, parseTags, createSlug } from '../utils/utils.js';
 import { dbConfig } from '../config/dbConfig.js';
 import logger from '../utils/logger.js';
 import { databaseError } from '../models/customExceptions.js';
+import { normalizePublished } from '../utils/normalizers.js';
 
 /**
  * Connection pool used for MariaDB queries. Can be a real mariadb pool or a mock pool.
  * @type {import('mariadb').Pool|undefined}
  */
 let pool;
+
+
 
 /**
  * Flag indicating whether the module is running in mock mode (no real DB).
@@ -91,7 +94,6 @@ function createMockPool() {
     },
   };
 }
-
 // Prüfen ob Mock-Modus aktiv ist
 /**
  * Gibt zurück, ob die Datenbank im Mock-Modus läuft.
@@ -440,11 +442,7 @@ export const DatabaseService = {
         post.author = 'admin';
       }
       // Published: Integer (0/1) zu Boolean konvertieren
-      if (typeof post.published === 'number') {
-        post.published = post.published === 1;
-      } else if (post.published === null || post.published === undefined) {
-        post.published = false;
-      }
+      post.published = normalizePublished(post.published);
 
       logger.debug(`DatabaseService.getPostBySlug: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
 
@@ -504,14 +502,9 @@ export const DatabaseService = {
 
       // Normalize some fields to match other getters
       if (post.author === null || post.author === undefined) {
-        post.author = 'admin';
+        post.author = 'unknown';
       }
-      if (typeof post.published === 'number') {
-        post.published = post.published === 1;
-      } else if (post.published === null || post.published === undefined) {
-        post.published = false;
-      }
-
+      post.published = normalizePublished(post.published);
       logger.debug(`DatabaseService.getPostById: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
 
       return post;
@@ -553,15 +546,11 @@ export const DatabaseService = {
         // Datentyp-Konvertierung für Validation
         // Autor: NULL oder undefined zu String konvertieren
         if (post.author === null || post.author === undefined) {
-          post.author = 'admin'; // Default-Autor
+          post.author = 'unknown'; // Default-Autor
         }
         
         // Published: Integer (0/1) zu Boolean konvertieren
-        if (typeof post.published === 'number') {
-          post.published = post.published === 1;
-        } else if (post.published === null || post.published === undefined) {
-          post.published = false; // Default zu false
-        }
+        post.published = normalizePublished(post.published);
         
         logger.debug(`DatabaseService.getAllPosts: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
         
@@ -606,6 +595,7 @@ export const DatabaseService = {
       return result.map(post => {
         convertBigInts(post);
         post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
         return post;
       });
     } catch (error) {
@@ -644,6 +634,7 @@ export const DatabaseService = {
       return result.map(post => {
         convertBigInts(post);
         post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
         return post;
       });
     } catch (error) {
@@ -665,11 +656,7 @@ export const DatabaseService = {
         convertBigInts(post);
         post.tags = parseTags(post.tags);
         // Normalize common fields expected by Post model
-        if (typeof post.published === 'number') {
-          post.published = post.published === 1;
-        } else if (post.published === null || post.published === undefined) {
-          post.published = false;
-        }
+        post.published = normalizePublished(post.published);
         if (post.author === null || post.author === undefined) {
           post.author = 'admin';
         }
@@ -832,13 +819,7 @@ export const DatabaseService = {
       return result.map(card => {
         const converted = { ...convertBigInts(card) };
         // Normalize published to boolean consistently
-        if (typeof converted.published === 'number') {
-          converted.published = converted.published === 1;
-        } else if (converted.published === null || converted.published === undefined) {
-          converted.published = false;
-        } else {
-          converted.published = Boolean(converted.published);
-        }
+        converted.published = normalizePublished(converted.published);
         return converted;
       });
     } catch (error) {
@@ -858,13 +839,7 @@ export const DatabaseService = {
       const result = await conn.query('SELECT * FROM cards WHERE id = ?', [cardId]);
       if (result.length === 0) return null;
       const converted = { ...convertBigInts(result[0]) };
-      if (typeof converted.published === 'number') {
-        converted.published = converted.published === 1;
-      } else if (converted.published === null || converted.published === undefined) {
-        converted.published = false;
-      } else {
-        converted.published = Boolean(converted.published);
-      }
+      converted.published = normalizePublished(converted.published);
       return converted;
     } catch (error) {
       logger.error(`Error in getCardById: ${error.message}`);

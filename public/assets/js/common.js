@@ -1339,18 +1339,18 @@ export async function renderPopularPostsSidebar(posts) {
     const listEl = document.getElementById('popular-posts');
     if (!listEl) return;
 
-    const resp = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
+    const response = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
       globalThis.makeApiRequest('/blogpost/most-read', { method: 'GET' }) : await apiRequest('/blogpost/most-read', { method: 'GET' }));
 
-    const serverPosts = resp && resp.success === true ? resp.data : null;
+    const serverPosts = response && response.success === true ? response.data : null;
     if (Array.isArray(serverPosts) && serverPosts.length > 0) {
       const list = document.getElementById('popular-posts');
       if (!list) return;
       list.innerHTML = '';
       serverPosts.slice(0, 5).forEach(p => {
-          //const _views = Number(p.views || 0);
-          const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
-        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.id}">${title}</a>`);
+        //const _views = Number(p.views || 0);
+        const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
+        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.slug}">${title}</a>`);
         list.appendChild(li);
       });
       return;
@@ -1378,6 +1378,7 @@ export async function renderPopularPostsSidebar(posts) {
   });
 
   // Sortiere nach Klicks/Views (nutze post.clicks oder post.views)
+  // Sortierung sollte in der DB stattfinden.
   recent.sort((a, b) => (b.clicks || b.views || 0) - (a.clicks || a.views || 0));
   old.sort((a, b) => (b.clicks || b.views || 0) - (a.clicks || a.views || 0));
 
@@ -1392,7 +1393,7 @@ export async function renderPopularPostsSidebar(posts) {
   if (!list) return;
   list.innerHTML = '';
   popular.forEach(post => {
-    const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${post.id}">${post.title}</a>`);
+    const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${post.slug}">${post.title}</a>`);
     list.appendChild(li);
   });
 }

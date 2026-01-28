@@ -3,6 +3,7 @@ import Comment from '../models/commentModel.js';
 import { CommentControllerException } from '../models/customExceptions.js';
 import { sanitizeHtml } from '../utils/sanitizer.js';
 import { escapeHtml } from '../utils/utils.js';
+import { normalizePublished } from '../utils/normalizers.js';
 
 /**
  * Express-Handler: Erstellt einen Kommentar für einen Blog-Post.
@@ -106,6 +107,10 @@ const getCommentsByPostId = async (req, res) => {
         continue;
       }
       
+      value.published = normalizePublished(value.published);
+      if (!value.published) {
+        continue;
+      }
       validComments.push(new Comment(value));
     }
     res.json(validComments);

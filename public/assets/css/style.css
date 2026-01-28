@@ -1777,12 +1777,7 @@ blockquote:after {
     text-align: center;
     margin-bottom: 30px;
 }
-.popular-posts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
-    margin-top: 30px;
-}
+
 .popular-post-card {
     background: #fff;
     border-radius: 12px;
@@ -2219,7 +2214,7 @@ blockquote:after {
     .blog-posts-grid,
     .featured-posts-grid {
         grid-template-columns: 1fr;
-        gap: 1.5rem;
+        gap: 1rem;
         padding: 0;
     }
 
