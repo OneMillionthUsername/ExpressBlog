@@ -68,7 +68,7 @@
                                                             </div>
                                                         <% } %>
                                                         <% yearKeys.forEach(function(year) { %>
-                                                            <h2 class="archive-year-heading"><%= year %></h2>
+                                                            <h2 class="archive-year-heading">Beiträge aus dem Jahr <%= year %></h2>
                                                             <% grouped[year].forEach(function(post) { %>
                                                                 <div class="archive-post-item">
                                                                         <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>

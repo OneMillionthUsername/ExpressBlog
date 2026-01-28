@@ -250,7 +250,7 @@ const getArchivedPosts = async (year) => {
       // No valid published archived posts — return empty array (not an exception)
       return [];
     }
-    return validPosts;
+    return validPosts; // Return in reverse chronological order
   } catch (error) {
     // If the database explicitly returned no posts, treat as empty; otherwise wrap and rethrow
     if (error && error.message && error.message.includes('No posts found')) {

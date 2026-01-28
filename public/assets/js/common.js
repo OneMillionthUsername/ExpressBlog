@@ -738,8 +738,9 @@ export async function loadAndDisplayArchivePosts() {
     }
   } catch (e) { void e; }
 
+  // TODO - Blogposts laden via zentrale API-Wrapper? Ich habe doch schon ein getarchiveposts endpoint.
   try {
-    const apiResult = await apiRequest('/blogposts', { method: 'GET' });
+    const apiResult = await apiRequest('/archive', { method: 'GET' });
     const posts = apiResult && apiResult.success === true ? apiResult.data : null;
     // Error handling
     if (!apiResult || apiResult.success !== true) {

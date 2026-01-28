@@ -1523,9 +1523,9 @@ blockquote:after {
     background: #fff;
 }
 .archive-post-item {
-    display: flex;
+    /* display: flex; 
     justify-content: space-between;
-    align-items: center;
+    align-items: center; */
     padding: 15px 0;
     border-bottom: 1px solid #e9ecef;
     transition: var(--transition);
@@ -1929,25 +1929,6 @@ blockquote:after {
     background: #fff;
 }
 
-.archive-post-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid #e9ecef;
-    transition: var(--transition);
-}
-
-.archive-post-item:last-child {
-    border-bottom: none;
-}
-
-.archive-post-item:hover {
-    background: var(--color-bg-alt);
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 5px;
-}
 
 .archive-post-title-link {
     font-family: var(--font-primary);
@@ -2433,12 +2414,6 @@ blockquote:after {
 
     .archive-post-card {
         margin-bottom: 1rem;
-    }
-
-    .archive-post-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
     }
 
     .read-post-meta {

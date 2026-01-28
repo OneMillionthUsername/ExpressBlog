@@ -595,10 +595,10 @@ export const DatabaseService = {
           return [];
         }
         // Select posts for the given year that are considered archived (older than 3 months)
-        result = await conn.query('SELECT * FROM posts WHERE YEAR(created_at) = ? AND created_at < NOW() - INTERVAL 3 MONTH', [y]);
+        result = await conn.query('SELECT * FROM posts WHERE YEAR(created_at) = ? AND created_at < NOW() - INTERVAL 3 MONTH ORDER BY created_at DESC', [y]);
       } else {
-        // Return all archived posts (older than 3 months)
-        result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH');
+        // Return all archived posts (older than 3 months), newest first
+        result = await conn.query('SELECT * FROM posts WHERE created_at < NOW() - INTERVAL 3 MONTH ORDER BY created_at DESC');
       }
       if (!result || result.length === 0) {
         return [];
