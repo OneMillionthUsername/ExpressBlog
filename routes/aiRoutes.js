@@ -22,10 +22,18 @@ router.post('/generate', authenticateToken, requireAdmin, async (req, res) => {
 
     // TODO: add rate limiting here
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const requestBody = {
-      contents: [{ parts: [{ text: systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+      contents: [{
+        role: 'user',
+        parts: [{ text: systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        topP: 0.8,
+        topK: 10
+      }
     };
 
     const r = await fetch(url, {
