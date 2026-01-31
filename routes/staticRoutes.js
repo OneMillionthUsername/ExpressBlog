@@ -74,7 +74,7 @@ async function handleCreatePost(req, res) {
     } catch { /* ignore logging errors */ }
     if (token) {
       const decoded = authService.verifyToken(token);
-      if (decoded && decoded.role && decoded.role === 'admin') {
+      if (decoded && decoded.isAdmin) {
         isAdmin = true;
       }
     }

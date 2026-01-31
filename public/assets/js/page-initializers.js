@@ -144,33 +144,32 @@ async function initializeCreatePage() {
       }
     }
 
-    if (typeof initializeBlogEditor === 'function') {
-      await initializeBlogEditor();
-    }
-
-    // Admin-Status prüfen und UI anpassen
+    // Admin-Status prüfen und UI anpassen FIRST
     // Use the safe server-injected flag if available. Do NOT rely on any injected secrets.
-  const isAdmin = (typeof isAdminFromServer === 'function') ? !!isAdminFromServer() : false;
-    if (isAdmin) {
-      showElement('create-content');
-      hideElement('admin-required');
-
-      // Lazy-load AI assistant only for admins (separate module)
-      try {
-        import('./ai-assistant/ai-assistant.js')
-          .then(m => {
-            if (m && typeof m.initAiAssistant === 'function') {
-              m.initAiAssistant();
-            }
-          })
-          .catch(err => console.error('Fehler beim Laden des AI-Assistant-Moduls:', err));
-      } catch (err) {
-        console.error('Dynamischer Import für AI-Assistant fehlgeschlagen:', err);
-      }
-
-    } else {
+    const isAdmin = (typeof isAdminFromServer === 'function') ? !!isAdminFromServer() : false;
+    if (!isAdmin) {
       hideElement('create-content');
       showElement('admin-required');
+      return;  // Exit early if not admin
+    }
+
+    showElement('create-content');
+    hideElement('admin-required');
+
+    // IMPORTANT: Load AI assistant BEFORE tinymce-editor to ensure action registration
+    // happens before click handlers are attached
+    try {
+      const aiMod = await import('./ai-assistant/ai-assistant.js');
+      if (aiMod && typeof aiMod.initAiAssistant === 'function') {
+        aiMod.initAiAssistant();
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden des AI-Assistant-Moduls:', err);
+    }
+
+    // NOW initialize TinyMCE editor (which attaches click handlers to already-registered actions)
+    if (typeof initializeBlogEditor === 'function') {
+      await initializeBlogEditor();
     }
 
   } catch (error) {

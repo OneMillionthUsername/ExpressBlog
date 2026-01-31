@@ -310,7 +310,7 @@ postRouter.get('/by-id/:postId',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           // Prevent caching of personalized HTML (admin vs non-admin)
@@ -328,7 +328,7 @@ postRouter.get('/by-id/:postId',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -349,7 +349,7 @@ postRouter.get('/by-id/:postId',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -367,7 +367,7 @@ postRouter.get('/by-id/:postId',
         try {
           if (token) {
             const decoded = authService.verifyToken(token);
-            if (decoded && decoded.role === 'admin') isAdmin = true;
+            if (decoded && decoded.isAdmin) isAdmin = true;
           }
         } catch { /* ignore token errors */ }
         res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -437,7 +437,7 @@ postRouter.get('/:maybeId',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -454,7 +454,7 @@ postRouter.get('/:maybeId',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -534,7 +534,7 @@ postRouter.get('/:slug',
         try {
           if (token) {
             const decoded = authService.verifyToken(token);
-            if (decoded && decoded.role === 'admin') isAdmin = true;
+            if (decoded && decoded.isAdmin) isAdmin = true;
           }
         } catch { /* ignore token errors */ }
         res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -555,7 +555,7 @@ postRouter.get('/:slug',
           try {
             if (token) {
               const decoded = authService.verifyToken(token);
-              if (decoded && decoded.role === 'admin') isAdmin = true;
+              if (decoded && decoded.isAdmin) isAdmin = true;
             }
           } catch { /* ignore token errors */ }
           res.set('Cache-Control', 'private, no-store, must-revalidate');
@@ -573,7 +573,7 @@ postRouter.get('/:slug',
         try {
           if (token) {
             const decoded = authService.verifyToken(token);
-            if (decoded && decoded.role === 'admin') isAdmin = true;
+            if (decoded && decoded.isAdmin) isAdmin = true;
           }
         } catch { /* ignore token errors */ }
         res.set('Cache-Control', 'private, no-store, must-revalidate');

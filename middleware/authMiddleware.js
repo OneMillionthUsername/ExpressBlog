@@ -60,7 +60,7 @@ export function authenticateToken(req, res, next) {
  * @param {import('express').NextFunction} next
  */
 export function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
+  if (!req.user || !req.user.isAdmin) {
     return res.status(403).json({ 
       error: 'Admin privileges required',
       message: 'Only administrators have access to this function', 

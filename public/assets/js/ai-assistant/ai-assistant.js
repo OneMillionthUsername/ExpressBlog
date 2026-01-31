@@ -4,10 +4,10 @@
 // (Vereinfacht) Keine mehrfachen Lade-Guards mehr – Modul wird idempotent gehalten.
 
 // NOTE: This file runs in the browser; importing server-side config files here
-// causes the browser to attempt to fetch `/config/config` which can return
+// causes the browser to attempt to fetch `/api/config/google-api-key` which can return
 // HTML and produce a MIME-type error. Instead, obtain any API keys at
-// runtime via an API endpoint or from an injected global (server-rendered)
-// variable. We will prefer a runtime fetch from `/config/google-api-key`.
+// runtime via an API endpoint. The /api/google-api-key endpoint fetches
+// the server-side GEMINI_API_KEY securely for authenticated admins.
 
 // The Gemini API key MUST never be present in browser code. All AI calls go
 // through a server-proxied endpoint (`/api/ai/generate`) that uses the
@@ -21,6 +21,17 @@ let GEMINI_API_KEY = '';
 function getDOMPurifySync() {
   if (typeof window === 'undefined') return null;
   return (typeof window.DOMPurify !== 'undefined') ? window.DOMPurify : null;
+}
+
+// Notify other modules to refresh preview without relying on globals
+function safeUpdatePreview() {
+  try {
+    if (typeof document !== 'undefined') {
+      document.dispatchEvent(new CustomEvent('ai-assistant:refresh-preview'));
+    }
+  } catch {
+    // ignore preview update failures
+  }
 }
 
 // Background loader: try to populate window.DOMPurify asynchronously. This
@@ -45,12 +56,13 @@ async function preloadDOMPurify() {
 // Start background preload (best-effort)
 try { preloadDOMPurify(); } catch { /* ignore */ }
 import { makeApiRequest } from '../api.js';
-import { showAlertModal } from '../common.js';
+import { showAlertModal, showNotification } from '../common.js';
+import { registerAction } from '../actions/actionRegistry.js';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
   apiKey: (GEMINI_API_KEY && GEMINI_API_KEY.length > 0) ? GEMINI_API_KEY : '', // Wird vom Admin gesetzt
-  model: 'gemini-1.5-flash', // Kostenloses Modell
+  model: 'gemini-2.5-flash', // Standardmodell (Server-Proxy nutzt dieses Modell)
   maxTokens: 2048,
   temperature: 0.7,
 };
@@ -59,16 +71,19 @@ const GEMINI_CONFIG = {
 async function loadGeminiApiKey() {
   // Versuche, den API-Key vom Server zu laden
   try {
-    const apiResult = await makeApiRequest('/config/google-api-key', { method: 'GET' });
+    const apiResult = await makeApiRequest('/api/google-api-key', { method: 'GET' });
     if (apiResult && apiResult.success === true) {
-      const data = apiResult.data;
-      if (data.apiKey && data.apiKey.trim() !== '' && data.apiKey.length > 10) {
-        GEMINI_CONFIG.apiKey = data.apiKey;
-        return true;
-      } else {
-        console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
-        return false;
+      // apiResult.data ist das Server-JSON: {success: true, data: {apiKey: "..."}}
+      const serverResponse = apiResult.data;
+      if (serverResponse && serverResponse.success && serverResponse.data && serverResponse.data.apiKey) {
+        const apiKey = serverResponse.data.apiKey;
+        if (apiKey.trim() !== '' && apiKey.length > 10) {
+          GEMINI_CONFIG.apiKey = apiKey;
+          return true;
+        }
       }
+      console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
+      return false;
     }
     // Kein gültiger Key vom Server, zeige Setup
     console.warn('Kein gültiger Gemini API-Schlüssel gefunden. Bitte API-Schlüssel eingeben.');
@@ -110,7 +125,17 @@ function showApiKeySetup() {
 // Server-proxied AI call - key never touches browser
 async function callGeminiAPI(prompt, systemInstruction = '') {
   try {
-    const body = { prompt, systemInstruction };
+    const body = {
+      prompt,
+      systemInstruction,
+      model: GEMINI_CONFIG.model,
+      generationConfig: {
+        temperature: GEMINI_CONFIG.temperature,
+        maxOutputTokens: GEMINI_CONFIG.maxTokens,
+        topP: 0.8,
+        topK: 10,
+      },
+    };
     const result = await makeApiRequest('/api/ai/generate', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -141,7 +166,17 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
   if (typeof fetch === 'function' && fetch.mock) {
     const resp = await fetch('/api/ai/generate', {
       method: 'POST',
-      body: JSON.stringify({ prompt, systemInstruction }),
+      body: JSON.stringify({
+        prompt,
+        systemInstruction,
+        model: GEMINI_CONFIG.model,
+        generationConfig: {
+          temperature: GEMINI_CONFIG.temperature,
+          maxOutputTokens: GEMINI_CONFIG.maxTokens,
+          topP: 0.8,
+          topK: 10,
+        },
+      }),
       headers: { 'Content-Type': 'application/json' },
     });
     if (!resp || !resp.ok) throw new Error('Fetch failed');
@@ -161,7 +196,17 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
   // fallback: try to use global fetch (unmocked)
   const resp = await fetch('/api/ai/generate', {
     method: 'POST',
-    body: JSON.stringify({ prompt, systemInstruction }),
+    body: JSON.stringify({
+      prompt,
+      systemInstruction,
+      model: GEMINI_CONFIG.model,
+      generationConfig: {
+        temperature: GEMINI_CONFIG.temperature,
+        maxOutputTokens: GEMINI_CONFIG.maxTokens,
+        topP: 0.8,
+        topK: 10,
+      },
+    }),
     headers: { 'Content-Type': 'application/json' },
   });
   if (!resp || !resp.ok) throw new Error('Fetch failed');
@@ -217,7 +262,7 @@ Regeln:
       editor.setContent(improvedText);
     }
         
-    updatePreview();
+    safeUpdatePreview();
     showNotification('Text wurde von AI verbessert!', 'success');
         
   } catch (error) {
@@ -264,18 +309,14 @@ Regeln:
 - Keine Erklärungen oder zusätzlicher Text`;
     const textToAnalyze = `Titel: ${title}\n\nInhalt: ${content.substring(0, 1000)}`;
     const generatedTags = await callGeminiAPIWithFetchFallback(textToAnalyze, systemInstruction);
-    const tagsModal = `
-      <div class="ai-tags-modal-container">
-        <h4 class="ai-tags-modal-header">AI-Tags</h4>
-        <p class="ai-tags-modal-content">${generatedTags}</p>
-        <div class="ai-tags-modal-footer">
-          <button data-action="apply-tags" data-tags="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-apply">Einfügen</button>
-          <button data-action="copy-tags" data-text="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-copy ml-2">Kopieren</button>
-          <button data-action="close" class="ai-tags-modal-button-close ml-2">Schließen</button>
-        </div>
-      </div>`;
-    showModal(tagsModal);
-    showNotification('Tags wurden automatisch generiert!', 'success');
+    
+    // Direkt ins Formular einfügen
+    const tagsInput = document.getElementById('tags');
+    if (tagsInput) {
+      tagsInput.value = generatedTags.trim();
+      safeUpdatePreview();
+      showNotification('Tags eingefügt!', 'success');
+    }
   } catch (error) {
     console.error('Fehler beim Tag-Generieren:', error);
   } finally {
@@ -374,41 +415,23 @@ async function generateTitleSuggestions() {
   }
     
   try {
-    const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle 5 ansprechende Titel für den folgenden Blogpost.
+    const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle einen ansprechenden Titel für den folgenden Blogpost.
 
 Regeln:
-- Jeder Titel in einer neuen Zeile
 - Prägnant und neugierig machend
 - Philosophisch oder wissenschaftlich angemessen
 - Deutsche Sprache
-- Nummeriere die Titel (1. 2. 3. etc.)`;
+- Nur der Titel, keine Nummerierung oder Erklärungen`;
         
-    const titleSuggestions = await callGeminiAPI(content.substring(0, 500), systemInstruction);
-        
-  // Titel-Vorschläge in einem Modal anzeigen (use data-action attributes)
-  const titlesArray = titleSuggestions.split('\n').filter(line => line.trim());
-  const titlesHtml = titlesArray.map(title => {
-    const cleanTitle = title.replace(/^\d+\.\s*/, '').trim();
-    return `<div class="ai-title-suggestion" data-action="select-title" data-title="${encodeURIComponent(cleanTitle)}">
-          ${cleanTitle}
-        </div>`;
-  }).join('');
-
-  const titleModal = `
-      <div class="ai-modal-overlay" id="ai-modal-overlay">
-        <div class="ai-modal-container">
-          <h4 class="ai-modal-header">AI-Titel-Vorschläge</h4>
-          <p class="ai-modal-content">Klicke auf einen Titel, um ihn zu übernehmen:</p>
-          <div class="ai-title-suggestions">${titlesHtml}</div>
-          <div class="ai-modal-footer">
-            <button data-action="close" class="ai-modal-button">Schließen</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-  showModal(titleModal);
-    showNotification('Titel-Vorschläge wurden generiert!', 'success');
+    const title = await callGeminiAPI(content.substring(0, 500), systemInstruction);
+    
+    // Direkt ins Formular einfügen
+    const titleInput = document.getElementById('title');
+    if (titleInput) {
+      titleInput.value = title.trim();
+      safeUpdatePreview();
+      showNotification('Titel eingefügt!', 'success');
+    }
         
   } catch (error) {
     console.error('Fehler beim Titel-Generieren:', error);
@@ -421,16 +444,6 @@ Regeln:
 }
 
 // Hilfsfunktionen
-// Titel auswählen
-function selectTitle(title) {
-  const titleInput = document.getElementById('title');
-  if (titleInput) {
-    titleInput.value = title;
-    updatePreview();
-    showNotification('Titel übernommen!', 'success');
-  }
-  closeModal();
-}
 // Text in Zwischenablage kopieren
 function copyToClipboard(text) {
   if (navigator.clipboard) {
@@ -514,7 +527,7 @@ function showModal(content) {
         if (textarea) {
           textarea.value = safeHtml;
         }
-        updatePreview();
+        safeUpdatePreview();
         showNotification('Zusammenfassung eingefügt!', 'success');
       } catch (err) {
         console.error('Fehler beim Einfügen der Zusammenfassung:', err);
@@ -530,7 +543,7 @@ function showModal(content) {
       const tagsInput = document.getElementById('tags');
       if (tagsInput) {
         tagsInput.value = tags.trim();
-        updatePreview();
+        safeUpdatePreview();
         showNotification('Tags eingefügt!', 'success');
       }
       closeModal();
@@ -543,13 +556,6 @@ function showModal(content) {
       closeModal();
       return;
     }
-    if (action === 'select-title') {
-      const encoded = actionEl.getAttribute('data-title') || '';
-      const title = decodeURIComponent(encoded);
-      selectTitle(title);
-      // closeModal is called by selectTitle
-      return;
-    }
   });
 }
 // Modal schließen
@@ -557,11 +563,15 @@ function closeModal() {
   const modal = document.querySelector('.ai-modal-overlay');
   if (modal) {
     modal.classList.add('hidden');
-    setTimeout(() => {
+    // Remove immediately, don't wait for animation
+    try {
+      modal.remove();
+    } catch (e) {
+      // Fallback for older browsers
       if (modal.parentNode) {
         modal.parentNode.removeChild(modal);
       }
-    }, 300);
+    }
   }
 }
 // AI-Button-Status aktualisieren
@@ -588,10 +598,24 @@ async function initializeAISystem() {
   updateAIButtons();
 }
 
-// AI-System beim Laden der Seite initialisieren
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(initializeAISystem, 300);
-});
+let _aiActionsRegistered = false;
+function registerAiActions() {
+  if (_aiActionsRegistered) return;
+  _aiActionsRegistered = true;
+  registerAction('improveText', improveText);
+  registerAction('generateTags', generateTags);
+  registerAction('generateSummary', generateSummary);
+  registerAction('generateTitleSuggestions', generateTitleSuggestions);
+  registerAction('showApiKeySetup', showApiKeySetup);
+}
+
+function initAiAssistant() {
+  registerAiActions();
+  initializeAISystem();
+}
+
+// Note: initAiAssistant() is now called explicitly from page-initializers.js
+// This ensures registration happens BEFORE tinymce-editor attaches event listeners.
 
 // Export selected functions for use in other modules (and for unit testing)
 export {
@@ -600,11 +624,11 @@ export {
   generateSummary,
   generateTitleSuggestions,
   showApiKeySetup,
-  selectTitle,
   copyToClipboard,
   fallbackCopy,
   updateAIButtons,
   initializeAISystem,
+  initAiAssistant,
   loadGeminiApiKey,
   callGeminiAPI,
 };

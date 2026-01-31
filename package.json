@@ -38,10 +38,12 @@
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
     "@dr.pogodin/csurf": "^1.16.5",
+    "@google/genai": "^1.39.0",
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "celebrate": "^15.0.3",
-    "cookie-parser": "^1.4.7",
     "compression": "^1.7.4",
+    "cookie-parser": "^1.4.7",
     "dompurify": "^3.2.7",
     "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
