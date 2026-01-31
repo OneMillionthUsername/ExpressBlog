@@ -67,18 +67,19 @@ const GEMINI_CONFIG = {
   temperature: 0.7,
 };
 
-// API-Schlüssel aus localStorage laden
+// API-Schlüssel vom Server laden
 async function loadGeminiApiKey() {
   // Versuche, den API-Key vom Server zu laden
   try {
     const apiResult = await makeApiRequest('/api/google-api-key', { method: 'GET' });
     if (apiResult && apiResult.success === true) {
-      // apiResult.data ist das Server-JSON: {success: true, data: {apiKey: "..."}}
-      const serverResponse = apiResult.data;
-      if (serverResponse && serverResponse.success && serverResponse.data && serverResponse.data.apiKey) {
-        const apiKey = serverResponse.data.apiKey;
+      // apiResult.data ist das Server-JSON: {data: {apiKey: "..."}}
+      const serverData = apiResult.data;
+      if (serverData && serverData.data && serverData.data.apiKey) {
+        const apiKey = serverData.data.apiKey;
         if (apiKey.trim() !== '' && apiKey.length > 10) {
           GEMINI_CONFIG.apiKey = apiKey;
+          console.log('Gemini API key loaded successfully');
           return true;
         }
       }
@@ -142,13 +143,19 @@ async function callGeminiAPI(prompt, systemInstruction = '') {
       headers: { 'Content-Type': 'application/json' },
     });
 
+    console.log('callGeminiAPI result:', result);
+
     if (!result || result.success !== true) {
       const err = result?.error || 'AI proxy error';
       showNotification(`AI-Fehler: ${err}`, 'error');
       throw new Error(err);
     }
 
-    return result.data?.text || '';
+    // result.data ist die Server-Antwort: {success: true, data: {text: "..."}}
+    const serverResponse = result.data;
+    const text = serverResponse?.data?.text || serverResponse?.text || '';
+    console.log('Extracted text:', text);
+    return text;
   } catch (error) {
     console.error('AI proxy error:', error);
     showNotification(`AI-Fehler: ${error.message || error}`, 'error');
@@ -398,8 +405,13 @@ Regeln:
 
 // Titel-Vorschläge generieren
 async function generateTitleSuggestions() {
+  console.log('generateTitleSuggestions called');
   const editor = tinymce.get('content');
-  if (!editor) return;
+  if (!editor) {
+    console.warn('No TinyMCE editor found');
+    showAlertModal('Editor nicht gefunden');
+    return;
+  }
     
   const content = editor.getContent({format: 'text'});
     
@@ -415,6 +427,7 @@ async function generateTitleSuggestions() {
   }
     
   try {
+    console.log('API Key:', GEMINI_CONFIG.apiKey ? 'SET' : 'EMPTY');
     const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle einen ansprechenden Titel für den folgenden Blogpost.
 
 Regeln:
@@ -423,7 +436,9 @@ Regeln:
 - Deutsche Sprache
 - Nur der Titel, keine Nummerierung oder Erklärungen`;
         
+    console.log('Calling Gemini API...');
     const title = await callGeminiAPI(content.substring(0, 500), systemInstruction);
+    console.log('Gemini response:', title);
     
     // Direkt ins Formular einfügen
     const titleInput = document.getElementById('title');
@@ -431,10 +446,13 @@ Regeln:
       titleInput.value = title.trim();
       safeUpdatePreview();
       showNotification('Titel eingefügt!', 'success');
+    } else {
+      console.warn('Title input field not found');
     }
         
   } catch (error) {
     console.error('Fehler beim Titel-Generieren:', error);
+    showNotification(`Fehler: ${error.message}`, 'error');
   } finally {
     if (titleBtn) {
       titleBtn.disabled = false;
@@ -611,7 +629,9 @@ function registerAiActions() {
 
 function initAiAssistant() {
   registerAiActions();
-  initializeAISystem();
+  // Note: initializeAISystem is async but we don't need to wait for it here
+  // The API key loading and button updates will happen after actions are registered
+  initializeAISystem().catch(err => console.error('AI system initialization failed:', err));
 }
 
 // Note: initAiAssistant() is now called explicitly from page-initializers.js
