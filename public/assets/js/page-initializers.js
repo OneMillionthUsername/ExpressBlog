@@ -19,7 +19,7 @@ import {
 let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
 import { isAdminFromServer, getAssetVersion } from './config.js';
-import { initializeBlogUtilities, initializeCommonDelegation, showElement, hideElement } from './common.js';
+import { initializeCommonDelegation, showElement, hideElement } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
@@ -38,12 +38,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       addAdminMenuItemToNavbar();
     }
 
-    // 3. Blog-Utilities initialisieren
-    if (typeof initializeBlogUtilities === 'function') {
-      await initializeBlogUtilities();
-    }
-
-    // Initialize common delegation (data-action handlers)
+    // 3. Initialize common delegation (data-action handlers)
     if (typeof initializeCommonDelegation === 'function') {
       initializeCommonDelegation();
     }
@@ -187,7 +182,6 @@ async function initializeIndexPage() {
       // Sidebar-Elemente rendern
       if (typeof renderSidebarArchive === 'function') {
         try {
-          console.debug('initializeIndexPage: calling renderSidebarArchive, posts.length=', posts.length);
           await renderSidebarArchive(posts);
         } catch (err) {
           console.error('initializeIndexPage: renderSidebarArchive threw:', err);
@@ -196,17 +190,11 @@ async function initializeIndexPage() {
 
       if (typeof renderPopularPostsSidebar === 'function') {
         try {
-          console.debug('initializeIndexPage: calling renderPopularPostsSidebar, posts.length=', posts.length);
-          // Sanity-check: ensure target container exists (function may be no-op if missing)
-          const popularEl = document.getElementById('popular-posts');
-          if (!popularEl) console.info('initializeIndexPage: #popular-posts element not found in DOM');
           await renderPopularPostsSidebar(posts);
         } catch (err) {
           console.error('initializeIndexPage: renderPopularPostsSidebar threw:', err);
         }
       }
-    } else {
-      console.info('No posts available - skipping sidebar rendering');
     }
 
     // Cards laden only if the page contains a cards container or the renderer is present

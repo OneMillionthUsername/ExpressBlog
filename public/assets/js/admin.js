@@ -20,8 +20,13 @@ import { isAdminFromServer } from './config.js';
 
 // Admin-Status (module-scoped via state store)
 let currentUser = null;
-// Admin-Status Caching
-let adminStatusPromise = null;
+// Admin-Status Caching mit Timestamp
+let adminStatusCache = {
+  promise: null,
+  result: null,
+  timestamp: 0,
+  ttl: 5 * 60 * 1000 // 5 Minuten Cache
+};
 // Admin-System Initialisierung
 let adminSystemInitialized = false;
 let adminSystemInitPromise = null;
@@ -38,36 +43,71 @@ async function verifyAdminStatus() {
     const user = payload && payload.data && payload.data.user ? payload.data.user : null;
     return { ok: envelope && envelope.success === true, valid, user };
   } catch (error) {
-    console.warn('Admin status check failed:', error);
+    // Nur loggen wenn es ein echter Fehler ist, nicht 401
+    if (error.status !== 401) {
+      console.warn('Admin status check failed:', error);
+    }
     return { ok: false, valid: false, user: null };
   }
 }
+
 async function checkAdminStatus() {
   try {
     const status = await verifyAdminStatus();
-    if (status.ok && status.valid) {
+    const result = status.ok && status.valid;
+    
+    if (result) {
       setAdmin(true);
-      adminStatusPromise = Promise.resolve(true);
       currentUser = status.user || null;
-      return true;
     } else {
       // Admin nicht eingeloggt oder Session abgelaufen
       setAdmin(false);
       currentUser = null;
-      return false;
     }
-  }  catch (error) {
+    
+    // Cache das Ergebnis
+    adminStatusCache.result = result;
+    adminStatusCache.timestamp = Date.now();
+    
+    return result;
+  } catch (error) {
     console.warn('Admin status check failed:', error);
     setAdmin(false);
     currentUser = null;
+    adminStatusCache.result = false;
+    adminStatusCache.timestamp = Date.now();
     return false;
   }
 }
+
 async function checkAdminStatusCached() {
-  if (!adminStatusPromise) {
-    adminStatusPromise = checkAdminStatus();
+  // Wenn SSR sagt nicht-Admin, skip den API-Call
+  if (!isAdminFromServer()) {
+    // Nur cachen wenn noch kein Cache oder Cache ist alt
+    if (!adminStatusCache.result && (Date.now() - adminStatusCache.timestamp > adminStatusCache.ttl)) {
+      setAdmin(false);
+      adminStatusCache.result = false;
+      adminStatusCache.timestamp = Date.now();
+    }
+    return false;
   }
-  return adminStatusPromise;
+  
+  // Prüfe ob Cache noch gültig ist
+  if (adminStatusCache.result !== null && (Date.now() - adminStatusCache.timestamp < adminStatusCache.ttl)) {
+    return adminStatusCache.result;
+  }
+  
+  // Wenn bereits ein Request läuft, warte darauf
+  if (adminStatusCache.promise) {
+    return adminStatusCache.promise;
+  }
+  
+  // Neuer Request
+  adminStatusCache.promise = checkAdminStatus().finally(() => {
+    adminStatusCache.promise = null;
+  });
+  
+  return adminStatusCache.promise;
 }
 // Cookie-basiertes Admin Logout
 async function adminLogout() {
@@ -85,7 +125,12 @@ async function adminLogout() {
   // Lokale Variablen zurücksetzen
   setAdmin(false);
   currentUser = null;
-  adminStatusPromise = null; // Cache leeren
+  adminStatusCache = {
+    promise: null,
+    result: null,
+    timestamp: 0,
+    ttl: 5 * 60 * 1000
+  };
     
   updateNavigationVisibility();
 
@@ -274,7 +319,9 @@ async function adminLogin(username, password) {
     if (result && result.success === true) {
       setAdmin(true);
       currentUser = (result.data && result.data.user) ? result.data.user : currentUser;
-      adminStatusPromise = Promise.resolve(true);
+      adminStatusCache.result = true;
+      adminStatusCache.timestamp = Date.now();
+      adminStatusCache.promise = null;
       showFeedback('Erfolgreich eingeloggt.', 'info');
       updateNavigationVisibility();
       // Auf anderen Seiten: Navbar direkt aktualisieren

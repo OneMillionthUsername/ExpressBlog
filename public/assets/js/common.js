@@ -4,6 +4,7 @@
 import { loadAllBlogPosts, makeApiRequest as _makeApiRequest } from './api.js';
 import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
 import { showFeedback } from './feedback.js';
+import { isAdminFromServer } from './config.js';
 // Logger not available in frontend - use console instead
 
 // Export imported helper so other modules can import it from this module
@@ -723,6 +724,226 @@ export async function loadAndDisplayBlogPost() {
     } catch (e) { void e; }
   }
 }
+
+// ===========================================
+// HELPER FUNCTIONS FOR POST LOADING
+// ===========================================
+
+// Helper: Filters posts by date range
+function filterPostsByDateRange(posts, monthsBack = null) {
+  if (!monthsBack) return posts;
+  
+  const thresholdDate = new Date();
+  thresholdDate.setMonth(thresholdDate.getMonth() - monthsBack);
+  
+  return posts.filter(post => {
+    const postDate = new Date(post.created_at);
+    return postDate >= thresholdDate;
+  });
+}
+
+// Helper: Renders "no posts" message with optional admin button
+function renderNoPostsMessage(container, message, subtitle = '', showArchiveLink = false) {
+  const _isAdmin = isAdminFromServer();
+  container.innerHTML = `
+    <div class="no-posts">
+      <div class="no-posts-icon">Posts</div>
+      <h3>${message}</h3>
+      ${subtitle ? `<p>${subtitle}</p>` : ''}
+      ${showArchiveLink ? '<p class="text-muted">Schauen Sie im <a href="/blogpost/archive">Archiv</a> nach älteren Beiträgen.</p>' : ''}
+      ${_isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
+    </div>
+  `;
+}
+
+// Helper: Renders recent posts list with time badges
+function renderRecentPostsList(container, posts) {
+  container.innerHTML = '';
+  
+  let html = '';
+  posts.forEach((post) => {
+    const postDate = new Date(post.created_at);
+    const formattedDate = postDate.toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    // Zeitabstand berechnen
+    const now = new Date();
+    const daysDiff = Math.floor((now - postDate) / (1000 * 60 * 60 * 24));
+    
+    let timeAgo = '';
+    if (daysDiff < 1) timeAgo = 'Heute';
+    else if (daysDiff === 1) timeAgo = 'Gestern';
+    else if (daysDiff < 7) timeAgo = `vor ${daysDiff} Tag${daysDiff !== 1 ? 'en' : ''}`;
+    else if (daysDiff < 30) {
+      const weeksDiff = Math.floor(daysDiff / 7);
+      timeAgo = `vor ${weeksDiff} Woche${weeksDiff !== 1 ? 'n' : ''}`;
+    } else {
+      const monthsDiff = Math.floor(daysDiff / 30);
+      timeAgo = `vor ${monthsDiff} Monat${monthsDiff !== 1 ? 'en' : ''}`;
+    }
+    
+    const isNew = daysDiff <= 7;
+    const isVeryNew = daysDiff < 1;
+    const isHot = daysDiff <= 3;
+    
+    html += `
+      <article class="post-card ${isNew ? 'post-card-new' : ''} ${isVeryNew ? 'post-card-very-new' : ''} ${isHot ? 'post-card-hot' : ''}">
+        <h3 class="post-card-title">
+          <a class="post-link-style" href="/blogpost/${post.id}">${post.title}</a>
+        </h3>
+        <div class="post-card-meta">
+          <span class="post-date">${formattedDate}</span>
+          <span class="post-time-ago ${daysDiff < 1 ? 'today-highlight' : ''}">${timeAgo}</span>
+          ${isVeryNew ? '<span class="new-badge very-new inline">Gerade veröffentlicht</span>' : ''}
+          ${isHot && !isVeryNew ? '<span class="hot-indicator">Trending</span>' : ''}
+          ${isNew && !isHot && !isVeryNew ? '<span class="new-indicator">Neu</span>' : ''}
+        </div>
+        <div class="post-card-content">
+          ${Array.isArray(post.tags) && post.tags.length > 0 ? `
+            <div class="post-card-tags">
+              Tags: ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}
+            </div>
+          ` : ''}
+        </div>
+      </article>
+    `;
+  });
+  
+  container.innerHTML = html;
+  
+  // Admin delete buttons
+  if (typeof addDeleteButtonsToPosts === 'function') {
+    setTimeout(addDeleteButtonsToPosts, 50);
+  }
+}
+
+// Helper: Renders all posts list with excerpts
+function renderAllPostsList(container, posts) {
+  container.innerHTML = '';
+  
+  let html = '';
+  posts.forEach((post) => {
+    if (!post || typeof post !== 'object') return;
+    
+    const { postDate } = formatPostDate(post.created_at || new Date());
+    const excerpt = createExcerptFromHtml(post.content, 150) || 'Kein Inhalt verfügbar';
+    
+    let href = '#';
+    if (post.slug) {
+      href = `/blogpost/${post.slug}`;
+    } else if (post.id !== undefined && post.id !== null) {
+      href = `/blogpost/by-id/${post.id}`;
+    }
+
+    html += `
+      <article class="blog-post-card">
+        <div class="post-meta">
+          <span class="post-date">${postDate}</span>
+          <span class="post-author">von ${post.author || 'Unbekannt'}</span>
+        </div>
+        <h2 class="post-title">
+          <a href="${href}" class="post-link">${post.title || 'Untitled'}</a>
+        </h2>
+        <div class="post-excerpt">${excerpt}</div>
+        <div class="post-footer">
+          <span class="post-views">${post.views || 0} Aufrufe</span>
+          ${post.tags && post.tags.length > 0 ? 
+            `<div class="post-tags">
+              ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>` : ''}
+        </div>
+      </article>
+    `;
+  });
+  
+  container.innerHTML = html;
+  
+  // Admin delete buttons
+  if (typeof addDeleteButtonsToPosts === 'function') {
+    setTimeout(addDeleteButtonsToPosts, 50);
+  }
+}
+
+// UNIFIED: Load and display posts with optional filtering
+async function loadAndDisplayPosts(options = {}) {
+  const {
+    monthsFilter = null,
+    renderStyle = 'recent', // 'recent' or 'all'
+    actionName = 'load-posts',
+    showNewPostNotifications = false
+  } = options;
+  
+  try {
+    const posts = await loadAllBlogPosts();
+    const listContainer = document.getElementById('blogPostsList');
+    
+    if (!listContainer) {
+      console.error('Blog posts list container not found');
+      return;
+    }
+    
+    if (!Array.isArray(posts)) {
+      throw new Error('Response is not an array');
+    }
+    
+    // No posts at all
+    if (posts.length === 0) {
+      renderNoPostsMessage(listContainer, 'Keine Posts verfügbar', 'Es gibt noch keine Blog-Posts.');
+      return;
+    }
+    
+    // Apply filter if specified
+    const filteredPosts = filterPostsByDateRange(posts, monthsFilter);
+    
+    // No posts after filtering
+    if (filteredPosts.length === 0 && monthsFilter) {
+      renderNoPostsMessage(
+        listContainer, 
+        'Keine aktuellen Posts', 
+        `Es wurden in den letzten ${monthsFilter} Monaten keine Blog-Posts veröffentlicht.`,
+        true // show archive link
+      );
+      return;
+    }
+    
+    // Render posts based on style
+    if (renderStyle === 'recent') {
+      renderRecentPostsList(listContainer, filteredPosts);
+      
+      // Check for very new posts notification
+      if (showNewPostNotifications) {
+        const veryNewPosts = filteredPosts.filter(post => {
+          const daysDiff = Math.floor((new Date() - new Date(post.created_at)) / (1000 * 60 * 60 * 24));
+          return daysDiff < 1;
+        });
+        
+        if (veryNewPosts.length > 0) {
+          showNewPostNotification(veryNewPosts);
+        }
+      }
+    } else {
+      renderAllPostsList(listContainer, filteredPosts);
+    }
+    
+  } catch (error) {
+    console.error('Fehler beim Laden der Blogposts:', error);
+    const listContainer = document.getElementById('blogPostsList');
+    if (listContainer) {
+      listContainer.innerHTML = `
+        <div class="error-message">
+          <div class="error-icon">Error</div>
+          <h3>Laden fehlgeschlagen</h3>
+          <p>Die Blog-Posts konnten nicht geladen werden.</p>
+          <button data-action="${actionName}" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
+        </div>
+      `;
+    }
+  }
+}
+
 // Funktion zum Laden und Anzeigen von Archiv-Posts (älter als 3 Monate)
 export async function loadAndDisplayArchivePosts() {
   // Show loading spinner by injecting spinner markup into the archive container
@@ -814,233 +1035,22 @@ export async function loadAndDisplayArchivePosts() {
 }
 // Funktion zum Laden und Anzeigen von aktuellen Posts (für list_posts.html)
 export async function loadAndDisplayRecentPosts() {
-  try {
-    const posts = await loadAllBlogPosts();
-    
-    if (!Array.isArray(posts)) {
-      throw new Error('Response is not an array');
-    }
-    if (posts.length === 0) {
-  const _isAdmin = isAdmin();
-      const blogPostsListEl = document.getElementById('blogPostsList');
-      if (blogPostsListEl) {
-        blogPostsListEl.innerHTML = `
-                <div class="no-posts">
-                    <div class="no-posts-icon">Posts</div>
-                    <h3>Keine Posts verfügbar</h3>
-                    <p>Es gibt noch keine Blog-Posts.</p>
-                    ${_isAdmin ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
-                </div>
-            `;
-      }
-      return;
-    }
-    // Container für die Blogposts      
-    const listContainer = document.getElementById('blogPostsList');
-    if (!listContainer) {
-      console.error('Blog posts list container not found');
-      return;
-    }
-    listContainer.innerHTML = ''; // Leeren vor dem Rendern
-    let html = '';
-    // Filtere Posts der letzten 3 Monate
-    const threeMonthsAgo = new Date();
-    //debug
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-        
-    const recentPosts = posts.filter(post => {
-      const postDate = new Date(post.created_at);
-      return postDate >= threeMonthsAgo;
-    });
-        
-
-    if (recentPosts.length === 0) {
-      listContainer.innerHTML = `
-                <div class="no-posts">
-                    <div class="no-posts-icon">Posts</div>
-                    <h3>Keine aktuellen Posts</h3>
-                    <p>Es wurden in den letzten 3 Monaten keine Blog-Posts veröffentlicht.</p>
-                    <a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>
-                </div>
-            `;
-      return;
-    }
-        
-  recentPosts.forEach((post, _index) => {
-      const postDate = new Date(post.created_at);
-      const formattedDate = postDate.toLocaleDateString('de-DE', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-            
-      // Zeitabstand berechnen
-      const now = new Date();
-      const postDateOnly = new Date(postDate.getFullYear(), postDate.getMonth(), postDate.getDate());
-      const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const daysDiff = Math.floor((nowDateOnly - postDateOnly) / (1000 * 60 * 60 * 24));
-      let timeAgo = '';
-            
-      if (daysDiff < 1) {
-        timeAgo = 'Heute';
-      } else if (daysDiff === 1) {
-        timeAgo = 'Gestern';
-      } else if (daysDiff < 7) {
-        timeAgo = `vor ${daysDiff} Tag${daysDiff !== 1 ? 'en' : ''}`;
-      } else if (daysDiff < 30) {
-        const weeksDiff = Math.floor(daysDiff / 7);
-        timeAgo = `vor ${weeksDiff} Woche${weeksDiff !== 1 ? 'n' : ''}`;
-      } else {
-        const monthsDiff = Math.floor(daysDiff / 30);
-        timeAgo = `vor ${monthsDiff} Monat${monthsDiff !== 1 ? 'en' : ''}`;
-      }
-      //TODO: Vor-x-Jahren als Parameter hinzufügen
-            
-      const isNew = daysDiff <= 7;
-            
-      // Zusätzliche neue Post Eigenschaften
-      const isVeryNew = daysDiff < 1; // "Gerade veröffentlicht" nur für heute (weniger als 1 Tag)
-      const isHot = daysDiff <= 3; // Hot Posts der letzten 3 Tage
-            
-      // HTML für den Post
-      html += `
-                <article class="post-card ${isNew ? 'post-card-new' : ''} ${isVeryNew ? 'post-card-very-new' : ''} ${isHot ? 'post-card-hot' : ''}">
-                        <h3 class="post-card-title">
-                            <a class="post-link-style" href="/blogpost/${post.id}">${post.title}</a>
-                        </h3>
-                        <div class="post-card-meta">
-                            <span class="post-date">${formattedDate}</span>
-                            <span class="post-time-ago ${daysDiff < 1 ? 'today-highlight' : ''}">${timeAgo}</span>
-                            ${isVeryNew ? '<span class="new-badge very-new inline">Gerade veröffentlicht</span>' : ''}
-                            ${isHot && !isVeryNew ? '<span class="hot-indicator">Trending</span>' : ''}
-                            ${isNew && !isHot && !isVeryNew ? '<span class="new-indicator">Neu</span>' : ''}
-                        </div>
-                        <div class="post-card-content">
-                          ${Array.isArray(post.tags) && post.tags.length > 0 ? `
-                            <div class="post-card-tags">
-                              Tags: ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}
-                            </div>
-                          ` : ''}
-                        </div>
-                </article>
-            `;
-    });
-        
-    html += '</div>';
-    listContainer.innerHTML = html;
-        
-    // Check for very new posts and show notification modal
-    const veryNewPosts = recentPosts.filter(post => {
-      const postDate = new Date(post.created_at);
-      const daysDiff = Math.floor((new Date() - postDate) / (1000 * 60 * 60 * 24));
-      return daysDiff < 1;
-    });
-        
-    if (veryNewPosts.length > 0) {
-      showNewPostNotification(veryNewPosts);
-    }
-        
-    // Admin-Delete-Buttons hinzufügen (falls verfügbar)
-    if (typeof addDeleteButtonsToPosts === 'function') {
-      setTimeout(addDeleteButtonsToPosts, 50);
-    }
-        
-  } catch (error) {
-    console.error('Fehler beim Laden der Blogposts:', error);
-  document.getElementById('blogPostsList').innerHTML = `
-      <div class="error-message">
-        <div class="error-icon">Error</div>
-        <h3>Laden fehlgeschlagen</h3>
-        <p>Die Blog-Posts konnten nicht geladen werden.</p>
-        <button data-action="load-recent-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-      </div>
-    `;
-  }
+  await loadAndDisplayPosts({
+    monthsFilter: 3,
+    renderStyle: 'recent',
+    actionName: 'load-recent-posts',
+    showNewPostNotifications: true
+  });
 }
 
 // Funktion zum Laden und Anzeigen aller Posts (für /blogpost/all)
 export async function loadAndDisplayAllPosts() {
-  try {
-    const posts = await loadAllBlogPosts();
-    if (!Array.isArray(posts)) {
-      console.error('loadAndDisplayAllPosts: Response is not an array:', typeof posts);
-      throw new Error('Response is not an array');
-    }
-    
-    if (posts.length === 0) {
-  const _isAdminAll = isAdmin();
-      document.getElementById('blogPostsList').innerHTML = `
-                <div class="no-posts">
-                    <div class="no-posts-icon">Posts</div>
-                    <h3>Keine Posts verfügbar</h3>
-                    <p>Es gibt noch keine Blog-Posts.</p>
-                    ${_isAdminAll ? '<a href="/createPost" class="btn btn-outline-primary mt-3">Ersten Post erstellen</a>' : ''}
-                </div>
-            `;
-      return;
-    }
-    
-    const listContainer = document.getElementById('blogPostsList');
-    if (!listContainer) {
-      console.error('loadAndDisplayAllPosts: Blog posts list container not found');
-      return;
-    }
-    listContainer.innerHTML = ''; // Leeren vor dem Rendern
-    let html = '';
-    // Alle Posts anzeigen (keine 3-Monats-Filterung)
-  posts.forEach((post, _index) => {
-      // Defensive: skip invalid items
-      if (!post || typeof post !== 'object') return;
-      const { postDate } = formatPostDate(post.created_at || new Date());
-  const excerpt = createExcerptFromHtml(post.content, 150) || 'Kein Inhalt verfügbar';
-      // Determine href: prefer slug, fallback to by-id if missing
-      let href = '#';
-      if (post.slug) {
-        href = `/blogpost/${post.slug}`;
-      } else if (post.id !== undefined && post.id !== null) {
-        href = `/blogpost/by-id/${post.id}`;
-      }
-
-      html += `
-        <article class="blog-post-card">
-          <div class="post-meta">
-            <span class="post-date">${postDate}</span>
-            <span class="post-author">von ${post.author || 'Unbekannt'}</span>
-          </div>
-          <h2 class="post-title">
-            <a href="${href}" class="post-link">${post.title || 'Untitled'}</a>
-          </h2>
-          <div class="post-excerpt">${excerpt}</div>
-          <div class="post-footer">
-            <span class="post-views">${post.views || 0} Aufrufe</span>
-            ${post.tags && post.tags.length > 0 ? 
-              `<div class="post-tags">
-                ${post.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-              </div>` : ''}
-          </div>
-        </article>
-      `;
-    });
-    
-    listContainer.innerHTML = html;
-    
-    // Admin-Delete-Buttons hinzufügen (falls verfügbar)
-    if (typeof addDeleteButtonsToPosts === 'function') {
-      setTimeout(addDeleteButtonsToPosts, 50);
-    }
-        
-  } catch (error) {
-    console.error('loadAndDisplayAllPosts: Error occurred:', error);
-    console.error('Fehler beim Laden aller Posts:', error);
-    document.getElementById('blogPostsList').innerHTML = `
-            <div class="error-state">
-                <div class="error-icon">Error</div>
-                <h3>Laden fehlgeschlagen</h3>
-                <p>Die Blog-Posts konnten nicht geladen werden.</p>
-                <button data-action="load-all-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-            </div>
-        `;
-  }
+  await loadAndDisplayPosts({
+    monthsFilter: null,
+    renderStyle: 'all',
+    actionName: 'load-all-posts',
+    showNewPostNotifications: false
+  });
 }
 
 // Funktion zum Laden und Anzeigen der meistgelesenen Posts (für most_read.html)
@@ -1143,50 +1153,7 @@ export async function loadAndDisplayMostReadPosts() {
         `;
   }
 }
-// Post bearbeiten (spezifisch für read_post.html)
-// Edit Funktionen
-export async function redirectEditPost(postId) {
-  if(!isAdmin()) {
-    alert(ADMIN_MESSAGES.login.required);
-    return;
-  }
-  // Redirect to /createPost with post data
-  window.location.href = `/createPost/${postId}`;
-}
-// Post löschen und zur Post-Liste weiterleiten (spezifisch für read_post.html)
-export async function deletePostAndRedirect(postId) {
-  if(!isAdmin()) {
-    alert(ADMIN_MESSAGES.login.required);
-    return;
-  }
-  try {
-  const apiResult = await apiRequest(`/blogpost/delete/${postId}`, { method: 'DELETE' });
-    const deleted = apiResult && (apiResult.success === true || apiResult.status === 200);
-    if (deleted) {
-      showFeedback('Post erfolgreich gelöscht.', 'success');
-      // Redirect to the SSR-rendered posts listing (avoid raw JSON endpoint)
-      setTimeout(() => {
-        window.location.href = '/posts';
-      }, 2000); // Delay to show feedback
-    } else {
-      showFeedback('Post konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.', 'error');
-    }
-  } catch (err) {
-    console.error('Fehler beim Löschen des Posts:', err);
-    showFeedback('Fehler beim Löschen des Posts.', 'error');
-  }
-}
-export function reloadPageWithDelay(delay = 1000) {
-  setTimeout(() => location.reload(), delay);
-}
-// Blog Utilities initialisieren
-export async function initializeBlogUtilities() {
-  if (document.getElementById('blogPostForm')) {
-    initializeBlogPostForm();
-  }
-  // ...weitere Utilities...
-  return;
-}
+
 // Utility-Funktion zum Abrufen von URL-Parametern
 export function getUrlParameter(paramName) {
   try {
@@ -1733,6 +1700,54 @@ export function showAlertModal(message) {
   });
 
   closeBtn.focus();
+}
+
+// ===========================================
+// ADMIN HELPER FUNCTIONS
+// ===========================================
+
+// Reload page after a delay
+export function reloadPageWithDelay(delayMs = 1000) {
+  setTimeout(() => {
+    window.location.reload();
+  }, delayMs);
+}
+
+// Redirect to edit post page
+export function redirectEditPost(postId) {
+  if (!postId) {
+    console.error('redirectEditPost: No postId provided');
+    return;
+  }
+  window.location.href = `/createPost/${postId}`;
+}
+
+// Delete post and redirect to home page
+export async function deletePostAndRedirect(postId) {
+  if (!postId) {
+    console.error('deletePostAndRedirect: No postId provided');
+    return;
+  }
+
+  try {
+    const response = await _makeApiRequest(`/blogpost/delete/${postId}`, {
+      method: 'DELETE',
+    });
+
+    if (response && response.success) {
+      showFeedback('Post erfolgreich gelöscht', 'success');
+      // Redirect to home page after 1 second
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } else {
+      const errorMsg = response && response.error ? response.error : 'Unbekannter Fehler beim Löschen';
+      showFeedback(errorMsg, 'error');
+    }
+  } catch (error) {
+    console.error('deletePostAndRedirect error:', error);
+    showFeedback('Fehler beim Löschen des Posts', 'error');
+  }
 }
 
 // Re-export shared escapeHtml to keep existing imports working

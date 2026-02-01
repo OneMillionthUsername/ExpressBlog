@@ -123,7 +123,6 @@ export async function makeApiRequest(url, options = {}) {
       headers, // our merged headers include options.headers and x-csrf-token
     });
     const response = await fetch(url, finalOptions);
-    console.debug(`[API][${_requestId}] ${methodUp} ${url} - Status: ${response.status}`);
     if (typeof response === 'undefined' || response === null) {
       throw new Error('No response from fetch');
     }
@@ -140,7 +139,6 @@ export async function makeApiRequest(url, options = {}) {
     }
 
     if (!response.ok) {
-      console.debug(`[API][${_requestId}] ${methodUp} ${url} - Error: ${response.status}`);
       if (response.status === 403 && result?.error?.includes('csrf')) {
         csrfToken = null;
       }
