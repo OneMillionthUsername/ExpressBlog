@@ -1206,7 +1206,10 @@ export async function checkAndPrefillEditPostForm() {
     if (!postId) return;
 
     // Postdaten laden via zentraler API-Wrapper
-    const apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
+    let apiResult = await apiRequest(`/blogpost/api/by-id/${postId}`, { method: 'GET' });
+    if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
+      apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
+    }
     if (!apiResult || apiResult.success !== true) return;
     post = apiResult.data;
   }
@@ -1235,7 +1238,10 @@ export async function checkAndPrefillEditPostForm() {
     if (editor) {
       document.getElementById('title').value = post.title;
       editor.setContent(post.content);
-      document.getElementById('tags').value = (post.tags || []).join(',');
+      const tagsValue = Array.isArray(post.tags)
+        ? post.tags.join(',')
+        : (typeof post.tags === 'string' ? post.tags : '');
+      document.getElementById('tags').value = tagsValue;
     } else if (retries > 0) {
       setTimeout(() => prefillWhenReady(retries - 1), 200); // 200ms warten, dann nochmal versuchen
     } else {

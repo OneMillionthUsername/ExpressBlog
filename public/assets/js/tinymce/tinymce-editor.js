@@ -2,7 +2,7 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { makeApiRequest } from '../api.js';
-import { showNotification } from '../common.js';
+import { showNotification, getPostIdFromPath, checkAndPrefillEditPostForm } from '../common.js';
 import { getAssetVersion } from '../config.js';
 import { registerAction, getAction, getActionMap as getRegisteredActionMap } from '../actions/actionRegistry.js';
 
@@ -331,32 +331,48 @@ async function initializeTinyMCE() {
                     
           showNotification('Editor bereit!', 'success');
           
-          // Entwürfe prüfen und wiederherstellen
-          const draftKey = 'blogpost_draft_content';
-          const savedDraft = localStorage.getItem(draftKey);
-          if (savedDraft) {
-            if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
-              try {
-                const draftData = JSON.parse(savedDraft);
-                
-                // Titel und Tags wiederherstellen
-                if (draftData.title) {
-                  document.getElementById('title').value = draftData.title;
+          // Entwürfe nur im Erstellen-Modus anbieten, nicht beim Bearbeiten
+          const isEditMode = (() => {
+            try {
+              if (document.getElementById('server-post')) return true;
+              const path = window.location && window.location.pathname ? window.location.pathname : '';
+              if (/\/createPost\//.test(path)) return true;
+              const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
+              if (postId) return true;
+              const search = window.location && window.location.search ? window.location.search : '';
+              const params = new URLSearchParams(search);
+              return !!params.get('post');
+            } catch {
+              return false;
+            }
+          })();
+          if (!isEditMode) {
+            const draftKey = 'blogpost_draft_content';
+            const savedDraft = localStorage.getItem(draftKey);
+            if (savedDraft) {
+              if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
+                try {
+                  const draftData = JSON.parse(savedDraft);
+                  
+                  // Titel und Tags wiederherstellen
+                  if (draftData.title) {
+                    document.getElementById('title').value = draftData.title;
+                  }
+                  if (draftData.tags) {
+                    document.getElementById('tags').value = draftData.tags;
+                  }
+                  
+                  // Content wiederherstellen
+                  if (draftData.content) {
+                    editor.setContent(draftData.content);
+                  }
+                  
+                  showNotification('Entwurf wiederhergestellt 📄', 'success');
+                  updatePreview();
+                } catch (error) {
+                  console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
+                  showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
                 }
-                if (draftData.tags) {
-                  document.getElementById('tags').value = draftData.tags;
-                }
-                
-                // Content wiederherstellen
-                if (draftData.content) {
-                  editor.setContent(draftData.content);
-                }
-                
-                showNotification('Entwurf wiederhergestellt 📄', 'success');
-                updatePreview();
-              } catch (error) {
-                console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
-                showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
               }
             }
           }

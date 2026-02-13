@@ -102,7 +102,7 @@ function getCurrentPageType() {
 
   // Exakte Übereinstimmungen mit tatsächlichen Dateinamen
   if (path === '/' || page === '') return 'index';
-  if (page === 'createPost') return 'create';
+  if (page === 'createPost' || /^\/createPost\//.test(path)) return 'create';
   if (page === 'archiv') return 'archiv';
   if (page === 'listCurrentPosts') return 'list_posts';
   if (page === 'mostReadPosts' || path === '/blogpost/most-read' || path.endsWith('/most-read')) return 'most_read';
