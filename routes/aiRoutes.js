@@ -3,6 +3,7 @@ import logger from '../utils/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * AI helper routes (protected admin-only endpoints).
@@ -14,7 +15,7 @@ const router = express.Router();
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // POST /api/ai/generate
-router.post('/generate', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { prompt, systemInstruction, model, generationConfig } = req.body || {};
     

@@ -367,19 +367,8 @@ export function initializeBlogPostForm() {
     };
 
     try {
-      // Prefer test mocks: globalThis.makeApiRequest if present, otherwise use window.fetch in tests
-      let apiResult;
-  const options = { method, body: JSON.stringify(postData), headers: { 'Content-Type': 'application/json' } };
-      if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
-        apiResult = await globalThis.makeApiRequest(url, options);
-      } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
-        const resp = await window.fetch(url, options);
-        let data = null;
-        try { data = await resp.json(); } catch (_e) { void _e; }
-        apiResult = resp.ok ? { success: true, data, status: resp.status } : { success: false, error: data?.error || resp.statusText, status: resp.status };
-      } else {
-        apiResult = await apiRequest(url, options);
-      }
+      const options = { method, body: JSON.stringify(postData), headers: { 'Content-Type': 'application/json' } };
+      const apiResult = await apiRequest(url, options);
 
       if (!apiResult || apiResult.success !== true) {
         const errorMessage = apiResult && (apiResult.error || (apiResult.data && apiResult.data.message)) || 'Unbekannter Fehler';
@@ -490,17 +479,7 @@ export function showCreateCardModal() {
 
     try {
   const options = { method: 'POST', body: JSON.stringify(cardData), headers: { 'Content-Type': 'application/json' } };
-      let response;
-      if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
-        response = await globalThis.makeApiRequest('/cards', options);
-      } else if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
-        const resp = await window.fetch('/cards', options);
-        let data = null;
-        try { data = await resp.json(); } catch (_e) { void _e; }
-        response = resp.ok ? { success: true, data } : { success: false, error: data?.error || resp.statusText };
-      } else {
-        response = await apiRequest('/cards', options);
-      }
+      const response = await apiRequest('/cards', options);
       if (response && response.success) {
         modal.remove();
         showNotification('Card erstellt!', 'success');

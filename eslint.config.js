@@ -1,8 +1,16 @@
 import js from '@eslint/js';
+import requireAdminAfterAuth from './eslint-rules/require-admin-after-auth.js';
 
 export default [
   js.configs.recommended,
   {
+    plugins: {
+      local: {
+        rules: {
+          'require-admin-after-auth': requireAdminAfterAuth,
+        },
+      },
+    },
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -27,6 +35,7 @@ export default [
       }
     },
     rules: {
+      'local/require-admin-after-auth': 'error',
       'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',

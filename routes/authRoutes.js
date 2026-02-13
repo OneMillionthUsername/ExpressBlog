@@ -11,6 +11,7 @@ import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import { celebrate, Joi, Segments } from 'celebrate';
 import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * Authentication routes
@@ -185,7 +186,7 @@ authRouter.post('/verify',
     }
   });
 // POST /auth/logout - Abmeldung
-authRouter.post('/logout', (req, res) => {
+authRouter.post('/logout', csrfProtection, (req, res) => {
   // Cookie entfernen (auch wenn nicht vorhanden, ist das idempotent)
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,

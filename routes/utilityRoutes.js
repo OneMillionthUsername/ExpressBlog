@@ -2,6 +2,7 @@ import express from 'express';
 import * as config from '../config/config.js';
 import logger from '../middleware/loggerMiddleware.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import csrfProtection from '../utils/csrf.js';
 const utilityRouter = express.Router();
 
 /**
@@ -45,7 +46,7 @@ utilityRouter.get('/redirect', (req, res) => {
 });
 
 // CSRF token endpoint - creates a new token for clients to use
-utilityRouter.get('/csrf-token', (req, res) => {
+utilityRouter.get('/csrf-token', csrfProtection, (req, res) => {
   try {
     // Prevent caching of CSRF token responses (defensive headers)
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');

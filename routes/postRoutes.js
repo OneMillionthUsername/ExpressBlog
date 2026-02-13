@@ -21,6 +21,7 @@ import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug, parseTags } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
+import csrfProtection from '../utils/csrf.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
@@ -30,6 +31,10 @@ import { escapeAllStrings } from '../utils/utils.js';
 import * as authService from '../services/authService.js';
 
 const postRouter = express.Router();
+
+function getSsrAdmin(res) {
+  return Boolean(res && res.locals && res.locals.isAdmin);
+}
 
 // commentsRouter.all();
 async function getAllHandler(req, res) {
@@ -277,7 +282,7 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
   }
 });
 // Admin-only endpoint to clear the most-read cache
-postRouter.post('/admin/cache/clear-most-read', globalLimiter, authenticateToken, requireAdmin, async (req, res) => {
+postRouter.post('/admin/cache/clear-most-read', globalLimiter, csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
   try {
     simpleCache.del('posts:mostRead');
     // Return 204 No Content to avoid exposing payload
@@ -304,15 +309,7 @@ postRouter.get('/by-id/:postId',
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          // Compute admin status from JWT for SSR hinting
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           // Prevent caching of personalized HTML (admin vs non-admin)
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
@@ -323,14 +320,7 @@ postRouter.get('/by-id/:postId',
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
           res.set('Expires', '0');
@@ -344,14 +334,7 @@ postRouter.get('/by-id/:postId',
       if (error instanceof PostControllerException) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           // Render hübsche Fehlerseite für HTML-Anfragen
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
           res.set('Expires', '0');
@@ -362,14 +345,7 @@ postRouter.get('/by-id/:postId',
       }
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         // Render generische Fehlerseite für HTML-Anfragen
-        const token = authService.extractTokenFromRequest(req);
-        let isAdmin = false;
-        try {
-          if (token) {
-            const decoded = authService.verifyToken(token);
-            if (decoded && decoded.isAdmin) isAdmin = true;
-          }
-        } catch { /* ignore token errors */ }
+        const isAdmin = getSsrAdmin(res);
         res.set('Cache-Control', 'private, no-store, must-revalidate');
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0');
@@ -432,14 +408,7 @@ postRouter.get('/:maybeId',
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
           res.set('Expires', '0');
@@ -449,14 +418,7 @@ postRouter.get('/:maybeId',
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
           res.set('Expires', '0');
@@ -529,14 +491,7 @@ postRouter.get('/:slug',
       if (post && post.id) incrementViews(req, post.id);
       // If the client expects HTML (browser), render the readPost view
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        const token = authService.extractTokenFromRequest(req);
-        let isAdmin = false;
-        try {
-          if (token) {
-            const decoded = authService.verifyToken(token);
-            if (decoded && decoded.isAdmin) isAdmin = true;
-          }
-        } catch { /* ignore token errors */ }
+        const isAdmin = getSsrAdmin(res);
         res.set('Cache-Control', 'private, no-store, must-revalidate');
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0');
@@ -550,14 +505,7 @@ postRouter.get('/:slug',
       if (error instanceof PostControllerException) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           // Render hübsche Fehlerseite für HTML-Anfragen
-          const token = authService.extractTokenFromRequest(req);
-          let isAdmin = false;
-          try {
-            if (token) {
-              const decoded = authService.verifyToken(token);
-              if (decoded && decoded.isAdmin) isAdmin = true;
-            }
-          } catch { /* ignore token errors */ }
+          const isAdmin = getSsrAdmin(res);
           res.set('Cache-Control', 'private, no-store, must-revalidate');
           res.set('Pragma', 'no-cache');
           res.set('Expires', '0');
@@ -568,14 +516,7 @@ postRouter.get('/:slug',
       }
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         // Render generische Fehlerseite für HTML-Anfragen
-        const token = authService.extractTokenFromRequest(req);
-        let isAdmin = false;
-        try {
-          if (token) {
-            const decoded = authService.verifyToken(token);
-            if (decoded && decoded.isAdmin) isAdmin = true;
-          }
-        } catch { /* ignore token errors */ }
+        const isAdmin = getSsrAdmin(res);
         res.set('Cache-Control', 'private, no-store, must-revalidate');
         res.set('Pragma', 'no-cache');
         res.set('Expires', '0');
@@ -587,6 +528,7 @@ postRouter.get('/:slug',
   });
 postRouter.post('/create', 
   strictLimiter,
+  csrfProtection,
   requireJsonContent,
   authenticateToken,
   requireAdmin,
@@ -620,6 +562,7 @@ postRouter.post('/create',
   });
 postRouter.put('/update/:postId',
   strictLimiter,
+  csrfProtection,
   requireJsonContent,
   authenticateToken,
   requireAdmin,
@@ -657,6 +600,7 @@ postRouter.put('/update/:postId',
 postRouter.delete(
   '/delete/:postId',
   strictLimiter,
+  csrfProtection,
   authenticateToken,
   requireAdmin,
   validateId,
