@@ -66,6 +66,12 @@
     background-attachment: fixed;
 }
 
+[data-theme="dark"] .content-area
+{
+    background: transparent;
+}
+
+
 [data-theme="dark"] .featured-post-card,
 [data-theme="dark"] .post-card,
 [data-theme="dark"] .blog-post-card,
@@ -73,10 +79,10 @@
 [data-theme="dark"] .sidebar,
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .create-form-section,
-[data-theme="dark"] .content-area,
 [data-theme="dark"] .post-preview-card,
 [data-theme="dark"] .popular-post-card,
 [data-theme="dark"] .archive-year-section,
+[data-theme="dark"] .about-page-content .content-area,
 [data-theme="dark"] .archive-post-item {
     background: linear-gradient(135deg, var(--color-bg-alt) 0%, rgba(44, 62, 80, 0.3) 100%);
     border-color: rgba(162, 127, 77, 0.15);

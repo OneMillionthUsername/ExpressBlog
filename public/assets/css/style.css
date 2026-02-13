@@ -356,6 +356,10 @@ body {
 /* ========================================
    BLOG POSTS & CONTENT
    ======================================== */
+.content-area {
+    padding: 20px 15px;
+}
+
 .blog-posts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -763,6 +767,7 @@ body {
 }
 /* Individual Most Read Item */
 .most-read-item {
+    margin: 20px;
     display: flex;
     align-items: center;
     gap: 1rem;
