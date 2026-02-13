@@ -118,11 +118,6 @@ export function initializeCommonDelegation() {
       const modal = e.target.closest('.modal, .modal-overlay');
       if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
     }
-
-    if (e.target && e.target.id === 'admin-login-submit') {
-      const modal = document.getElementById('admin-login-modal');
-      if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
-    }
   });
 }
 
