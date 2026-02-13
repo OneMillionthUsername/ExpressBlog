@@ -704,8 +704,27 @@ export const DatabaseService = {
       const keys = updatableFields.filter(field => field in post);
       const setClause = keys.map(k => `\`${k}\` = ?`).join(', ');
       const values = keys.map(k => {
-        if (k === 'tags' && post[k] !== undefined && post[k] !== null && typeof post[k] !== 'string') {
-          try { return JSON.stringify(post[k]); } catch (_e) { return null; }
+        if (k === 'tags') {
+          const raw = post[k];
+          if (raw === undefined || raw === null) return null;
+          if (Array.isArray(raw)) {
+            try { return JSON.stringify(raw); } catch (_e) { return null; }
+          }
+          if (typeof raw === 'string') {
+            const trimmed = raw.trim();
+            if (trimmed === '') return null;
+            try {
+              const parsed = JSON.parse(trimmed);
+              if (Array.isArray(parsed)) return JSON.stringify(parsed);
+              if (typeof parsed === 'string') {
+                return JSON.stringify(parsed.split(',').map(t => t.trim()).filter(Boolean));
+              }
+            } catch {
+              return JSON.stringify(trimmed.split(',').map(t => t.trim()).filter(Boolean));
+            }
+            return null;
+          }
+          return null;
         }
         return post[k];
       });

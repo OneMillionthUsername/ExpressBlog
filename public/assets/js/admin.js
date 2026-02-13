@@ -324,10 +324,8 @@ async function adminLogin(username, password) {
       updateNavigationVisibility();
       // Auf anderen Seiten: Navbar direkt aktualisieren
       try { addAdminMenuItemToNavbar(); } catch { /* no-op */ }
-      if (window.location.pathname.includes('/createPost')) {
-        // Auf /createPost: Seite neu laden, um server-seitigen Status zu aktualisieren
-        reloadPageWithDelay();
-      }
+      // Seite neu laden, um server-seitigen Status zu aktualisieren
+      reloadPageWithDelay(300);
       return true;
     } else {
       const errorMsg = result.error || (result.data && result.data.error) || 'Unbekannter Fehler';

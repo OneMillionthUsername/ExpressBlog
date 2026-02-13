@@ -160,10 +160,32 @@ export function convertBigInts(obj) {
   return obj;
 }
 export function parseTags(tags) {
+  if (Array.isArray(tags)) return tags;
+  if (tags === null || typeof tags === 'undefined') return [];
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(tags)) {
+    return parseTags(tags.toString('utf8'));
+  }
+  if (tags instanceof Uint8Array) {
+    try {
+      return parseTags(Buffer.from(tags).toString('utf8'));
+    } catch {
+      return [];
+    }
+  }
+  if (tags && typeof tags === 'object' && Array.isArray(tags.data)) {
+    try {
+      return parseTags(Buffer.from(tags.data).toString('utf8'));
+    } catch {
+      return [];
+    }
+  }
   if (typeof tags === 'string' && tags.trim() !== '') {
     try {
       const parsed = JSON.parse(tags);
       if (Array.isArray(parsed)) return parsed;
+      if (typeof parsed === 'string') {
+        return parsed.split(',').map(tag => tag.trim()).filter(Boolean);
+      }
     } catch {
       return tags.split(',').map(tag => tag.trim()).filter(Boolean);
     }

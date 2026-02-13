@@ -18,7 +18,7 @@ import express from 'express';
 import crypto from 'crypto';
 import postController from '../controllers/postController.js';
 import { PostControllerException } from '../models/customExceptions.js';
-import { convertBigInts, incrementViews, createSlug } from '../utils/utils.js';
+import { convertBigInts, incrementViews, createSlug, parseTags } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
@@ -627,7 +627,10 @@ postRouter.put('/update/:postId',
   validatePostBody,
   async (req, res) => {
     const postId = req.params.postId;
-    const { title, content, tags } = req.body;
+    const source = req.validatedPost || req.body || {};
+    const title = source.title;
+    const content = source.content;
+    const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     try {
       const result = await postController.updatePost({ id: postId, title, content, tags });
       if (!result) {
