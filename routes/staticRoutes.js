@@ -3,6 +3,7 @@ import logger from '../utils/logger.js';
 import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
 import postController from '../controllers/postController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
+import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
 
 /**
  * Routes serving site pages and server-side rendered views.
@@ -16,6 +17,7 @@ const staticRouter = express.Router();
 staticRouter.get('/', (req, res) => {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
   logger.debug('[HOME] GET / - Rendering index.ejs');
+  const isAdmin = getSsrAdmin(res);
   
   try {
     // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
@@ -32,31 +34,32 @@ staticRouter.get('/', (req, res) => {
         return { title: decodedTitle, slug: p.slug, excerpt };
       });
       logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.render('index', { featuredPosts });
+      applySsrNoCache(res, { varyCookie: true });
+      res.render('index', { featuredPosts, isAdmin });
       logger.debug('[HOME] GET / - Successfully rendered index.ejs');
     }).catch(err => {
       logger.error('[HOME] GET / - Error fetching featured posts, rendering without dynamic posts:', err);
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.render('index', { featuredPosts: [] });
+      applySsrNoCache(res, { varyCookie: true });
+      res.render('index', { featuredPosts: [], isAdmin });
     });
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    applySsrNoCache(res, { varyCookie: true });
     res.status(500).send('Error rendering homepage');
   }
 });
 
 staticRouter.get('/about', (req, res) => {
-  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.render('about');
+  const isAdmin = getSsrAdmin(res);
+  applySsrNoCache(res, { varyCookie: true });
+  res.render('about', { isAdmin });
 });
 
 // Use a shared handler for both '/createPost' and '/createPost/:postId' to avoid
 // using an optional parameter token ("?") which some path parsers reject.
 async function handleCreatePost(req, res) {
   try {
-    const isAdmin = Boolean(res && res.locals && res.locals.isAdmin);
+    const isAdmin = getSsrAdmin(res);
     try {
       logger.debug('[CREATEPOST] SSR auth context', {
         isAdmin,
@@ -92,12 +95,12 @@ async function handleCreatePost(req, res) {
     }
 
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    applySsrNoCache(res, { varyCookie: true });
     res.render('createPost', { tinyMceKey, isAdmin, post: serverPost });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    applySsrNoCache(res, { varyCookie: true });
     res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
   }
 }
@@ -113,17 +116,19 @@ staticRouter.get('/about.html', (req, res) => {
 
 staticRouter.get('/posts', async (req, res) => {
   try {
+    const isAdmin = getSsrAdmin(res);
     // Server-side render the list of current posts to preserve the
     // HTML-first experience and avoid client-side JSON-only rendering.
     const posts = await postController.getAllPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.render('listCurrentPosts', { posts });
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { posts, isAdmin });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     // Fallback: render without posts so client-side JS can still attempt to fetch
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.render('listCurrentPosts');
+    const isAdmin = getSsrAdmin(res);
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { isAdmin });
   }
 });
 

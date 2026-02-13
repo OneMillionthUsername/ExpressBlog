@@ -18,7 +18,7 @@ import express from 'express';
 import crypto from 'crypto';
 import postController from '../controllers/postController.js';
 import { PostControllerException } from '../models/customExceptions.js';
-import { convertBigInts, incrementViews, createSlug, parseTags } from '../utils/utils.js';
+import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache, prefersJsonResponse } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
 import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
@@ -31,10 +31,6 @@ import { escapeAllStrings } from '../utils/utils.js';
 import * as authService from '../services/authService.js';
 
 const postRouter = express.Router();
-
-function getSsrAdmin(res) {
-  return Boolean(res && res.locals && res.locals.isAdmin);
-}
 
 // commentsRouter.all();
 async function getAllHandler(req, res) {
@@ -133,13 +129,8 @@ async function getAllHandler(req, res) {
       // - explicit ?format=json query parameter
       // - X-Requested-With header set to XMLHttpRequest (typical for XHR/fetch)
       // - Accept header explicitly asks for JSON or does not explicitly prefer HTML
-      const wantsJsonParam = req.query && String(req.query.format).toLowerCase() === 'json';
-      const isAjax = (req.get && String(req.get('X-Requested-With') || '').toLowerCase()) === 'xmlhttprequest';
-      const acceptsHtml = req.accepts && req.accepts('html');
-      const acceptsJson = req.accepts && req.accepts('json');
-
       // If the request is clearly an API/XHR request, return JSON
-      if (wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson)) {
+      if (prefersJsonResponse(req)) {
         try {
           const safe = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
           return res.json(safe);
@@ -151,9 +142,13 @@ async function getAllHandler(req, res) {
       // Otherwise render HTML for human-driven browser navigation
       try {
         const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-        return res.render('listCurrentPosts', { posts: safePosts });
+        const isAdmin = getSsrAdmin(res);
+        applySsrNoCache(res, { varyCookie: true });
+        return res.render('listCurrentPosts', { posts: safePosts, isAdmin });
       } catch (_e) {
-        return res.render('listCurrentPosts', { posts: response });
+        const isAdmin = getSsrAdmin(res);
+        applySsrNoCache(res, { varyCookie: true });
+        return res.render('listCurrentPosts', { posts: response, isAdmin });
       }
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
@@ -227,12 +222,7 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
 
     // Content negotiation: prefer JSON if explicit ?format=json, X-Requested-With is XHR,
     // or Accept header prefers JSON over HTML. Otherwise render HTML view for browsers.
-    const wantsJsonParam = req.query && String(req.query.format || '').toLowerCase() === 'json';
-    const isAjax = (req.get && String(req.get('X-Requested-With') || '').toLowerCase()) === 'xmlhttprequest';
-    const acceptsHtml = req.accepts && req.accepts('html');
-    const acceptsJson = req.accepts && req.accepts('json');
-
-    if (wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson)) {
+    if (prefersJsonResponse(req)) {
       try {
         const safe = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
         return res.json(safe);
@@ -243,9 +233,13 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
 
     try {
       const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-      return res.render('mostReadPosts', { posts: safePosts });
+      const isAdmin = getSsrAdmin(res);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('mostReadPosts', { posts: safePosts, isAdmin });
     } catch (_e) {
-      return res.render('mostReadPosts', { posts: response });
+      const isAdmin = getSsrAdmin(res);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('mostReadPosts', { posts: response, isAdmin });
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
@@ -269,7 +263,9 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
       // Render a friendly page for browsers. When there are simply no most-read
       // posts, return 200 so the browser doesn't treat the page as a missing
       // resource. Server errors still return 500.
-      return res.status(error instanceof PostControllerException ? 200 : 500).render('mostReadPosts', { posts: null, errorMessage: message });
+      const isAdmin = getSsrAdmin(res);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(error instanceof PostControllerException ? 200 : 500).render('mostReadPosts', { posts: null, errorMessage: message, isAdmin });
     }
 
     // API / XHR clients
@@ -311,20 +307,14 @@ postRouter.get('/by-id/:postId',
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           const isAdmin = getSsrAdmin(res);
           // Prevent caching of personalized HTML (admin vs non-admin)
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           const isAdmin = getSsrAdmin(res);
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
@@ -335,10 +325,7 @@ postRouter.get('/by-id/:postId',
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           // Render hübsche Fehlerseite für HTML-Anfragen
           const isAdmin = getSsrAdmin(res);
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.status(404).render('notFound', { isAdmin });
         }
         return res.status(404).json({ error: 'Blogpost not found' });
@@ -346,10 +333,7 @@ postRouter.get('/by-id/:postId',
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         // Render generische Fehlerseite für HTML-Anfragen
         const isAdmin = getSsrAdmin(res);
-        res.set('Cache-Control', 'private, no-store, must-revalidate');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-        res.set('Vary', 'Cookie');
+        applySsrNoCache(res, { varyCookie: true });
         return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
       }
       res.status(500).json({ error: 'Server failed to load the blogpost' });
@@ -409,20 +393,14 @@ postRouter.get('/:maybeId',
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           const isAdmin = getSsrAdmin(res);
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.render('readPost', { post: sanitized, isAdmin });
         }
         return res.json(sanitized);
       } catch (_e) {
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           const isAdmin = getSsrAdmin(res);
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.render('readPost', { post: safe, isAdmin });
         }
         return res.json(safe);
@@ -465,12 +443,16 @@ postRouter.get('/archive', globalLimiter, async (req, res) => {
     try {
       const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: safeResponse, archiveYears });
+        const isAdmin = getSsrAdmin(res);
+        applySsrNoCache(res, { varyCookie: true });
+        return res.render('archiv', { posts: safeResponse, archiveYears, isAdmin });
       }
       return res.json(safeResponse);
     } catch (_e) {
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
-        return res.render('archiv', { posts: response, archiveYears: archiveYears || [] });
+        const isAdmin = getSsrAdmin(res);
+        applySsrNoCache(res, { varyCookie: true });
+        return res.render('archiv', { posts: response, archiveYears: archiveYears || [], isAdmin });
       }
       return res.json(response);
     }
@@ -492,10 +474,7 @@ postRouter.get('/:slug',
       // If the client expects HTML (browser), render the readPost view
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         const isAdmin = getSsrAdmin(res);
-        res.set('Cache-Control', 'private, no-store, must-revalidate');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-        res.set('Vary', 'Cookie');
+        applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: convertBigInts(post) || post, isAdmin });
       }
       // Otherwise return JSON for API/JS clients
@@ -506,10 +485,7 @@ postRouter.get('/:slug',
         if (req.accepts && req.accepts('html') && !req.is('application/json')) {
           // Render hübsche Fehlerseite für HTML-Anfragen
           const isAdmin = getSsrAdmin(res);
-          res.set('Cache-Control', 'private, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.set('Vary', 'Cookie');
+          applySsrNoCache(res, { varyCookie: true });
           return res.status(404).render('notFound', { isAdmin });
         }
         return res.status(404).json({ error: 'Blogpost not found' });
@@ -517,10 +493,7 @@ postRouter.get('/:slug',
       if (req.accepts && req.accepts('html') && !req.is('application/json')) {
         // Render generische Fehlerseite für HTML-Anfragen
         const isAdmin = getSsrAdmin(res);
-        res.set('Cache-Control', 'private, no-store, must-revalidate');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-        res.set('Vary', 'Cookie');
+        applySsrNoCache(res, { varyCookie: true });
         return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
       }
       return res.status(500).json({ error: 'Server failed to load the blogpost' });

@@ -198,6 +198,25 @@ export function truncateSlug(slug, maxLength = 50) {
   const lastDash = truncated.lastIndexOf('-');
   return lastDash > 0 ? truncated.slice(0, lastDash) : truncated;
 }
+export function getSsrAdmin(res) {
+  return Boolean(res && res.locals && res.locals.isAdmin);
+}
+export function applySsrNoCache(res, { varyCookie = false } = {}) {
+  if (!res || typeof res.set !== 'function') return;
+  res.set('Cache-Control', 'private, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  if (varyCookie) {
+    res.set('Vary', 'Cookie');
+  }
+}
+export function prefersJsonResponse(req) {
+  const wantsJsonParam = req && req.query && String(req.query.format || '').toLowerCase() === 'json';
+  const isAjax = (req && req.get && String(req.get('X-Requested-With') || '').toLowerCase()) === 'xmlhttprequest';
+  const acceptsHtml = req && req.accepts && req.accepts('html');
+  const acceptsJson = req && req.accepts && req.accepts('json');
+  return Boolean(wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson));
+}
 export function incrementViews(req, postId) {
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const userAgent = req.get('User-Agent');
