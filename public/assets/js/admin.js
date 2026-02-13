@@ -273,30 +273,6 @@ const ADMIN_CONFIG = {
 // Exporting showAdminLoginModal is enough for modules to import it;
 // avoid attaching to `window` to keep modules pure.
 
-/*
-  Admin delegation & testing notes:
-  - Use `initializeAdminDelegation()` to wire admin-specific `data-action` handlers.
-    This keeps markup free of inline `onclick` attributes and centralizes admin UI
-    behavior (login modal, create-card, delete/edit post, etc.).
-
-  - Optimistic UI for login modal in delegated submit:
-    * The delegated `admin-login-submit` handler removes the modal optimistically and
-      triggers `adminLogin()` in the background. This improves UX and reduces test
-      timing flakiness (tests don't need to wait for animations or modal states).
-    * If login fails the code attempts to reopen the modal as a best-effort UX recovery.
-
-  - Testing guidance (Jest + ESM):
-    * If tests mock `makeApiRequest` or other imported functions, perform the mock before
-      importing `admin.js` using `jest.unstable_mockModule(...)`. Then `await import(...)`
-      the module under test. This prevents errors caused by overwriting read-only ESM bindings.
-    * Call `initializeAdminDelegation()` in your test setup to ensure delegated handlers are
-      attached to the document before simulating clicks.
-
-  - Exposing helpers:
-    * Exported functions like `showAdminLoginModal`, `deletePost`, and `getCurrentUser`
-      are intentionally exported so tests and other modules can call them without relying on
-      `window` globals.
-*/
 
 function getCurrentUser() {
   return currentUser;
@@ -324,23 +300,3 @@ export function initializeAdminDelegation() {
   });
 }
 
-// Retry loop to ensure admin controls get injected even if admin status/postId arrive late
-let _adminControlsInjected = false;
-async function ensureAdminControls({ attempts = 10, intervalMs = 500 } = {}) {
-  if (_adminControlsInjected) return true;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const ok = await checkAdminStatusCached();
-      const postId = resolveCurrentPostId();
-      if (ok && isAdmin() && postId) {
-        await addReadPostAdminControls();
-        _adminControlsInjected = true;
-        return true;
-      }
-    } catch { /* ignore and retry */ }
-    await new Promise(r => setTimeout(r, intervalMs));
-  }
-  return false;
-}
-
-export { ensureAdminControls };

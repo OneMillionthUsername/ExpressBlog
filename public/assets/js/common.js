@@ -2,11 +2,9 @@
 /* global tinymce, ADMIN_MESSAGES, adminLogout, document, window, fetch, MutationObserver, location, localStorage, CustomEvent */
 // Import dependencies as ES6 modules
 import { makeApiRequest as _makeApiRequest } from './api.js';
-import { decodeHtmlEntities, escapeHtml as _escapeHtml } from './shared/text.js';
-import { showFeedback } from './feedback.js';
+import { escapeHtml as _escapeHtml } from './shared/text.js';
 // Logger not available in frontend - use console instead
 
-import { isAdmin } from './state/adminState.js';
 
 // Helper: strip HTML from a string and return plain text. Prefer DOMPurify if
 // available for better handling, otherwise fall back to a simple regex.
@@ -31,14 +29,116 @@ export function createExcerptFromHtml(html = '', maxLength = 150) {
   return text.substring(0, maxLength) + '...';
 }
 
-// Use globalThis.makeApiRequest when present (tests sometimes mock global.makeApiRequest)
+export function createElement(tagName, attributes = {}, html = '') {
+  const el = document.createElement(tagName);
+  Object.entries(attributes || {}).forEach(([key, value]) => {
+    if (key === 'class') {
+      el.className = String(value);
+    } else if (key === 'style' && typeof value === 'object' && value) {
+      Object.assign(el.style, value);
+    } else if (value !== undefined && value !== null) {
+      el.setAttribute(key, String(value));
+    }
+  });
+  if (html) {
+    el.innerHTML = html;
+  }
+  return el;
+}
+
+export function elementExists(elementId) {
+  return !!document.getElementById(elementId);
+}
+
+export function showElement(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.style.display = '';
+  el.classList.add('d-block');
+  el.classList.remove('d-none');
+}
+
+export function hideElement(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.style.display = 'none';
+  el.classList.add('d-none');
+  el.classList.remove('d-block');
+}
+
+export function showNotification(message, type = 'info', durationMs = 3000) {
+  if (typeof document === 'undefined') return;
+  const containerId = 'notification-container';
+  let container = document.getElementById(containerId);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = containerId;
+    container.className = 'notification-container';
+    document.body.appendChild(container);
+  }
+
+  const note = document.createElement('div');
+  note.className = `notification ${type}`.trim();
+  note.textContent = String(message || '');
+  container.appendChild(note);
+
+  setTimeout(() => note.classList.add('show'), 10);
+  setTimeout(() => {
+    if (note && note.parentElement) note.parentElement.removeChild(note);
+  }, Math.max(500, Number(durationMs) || 0));
+}
+
+export function formatContent(content = '') {
+  return String(content || '').trim();
+}
+
+export function formatPostDate(dateInput) {
+  const date = dateInput ? new Date(dateInput) : new Date();
+  const postDate = date.toLocaleDateString('de-DE');
+  const postTime = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return { postDate, postTime };
+}
+
+export function calculateReadingTime(text = '') {
+  const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+  const minutes = Math.ceil(words.length / 200);
+  return Math.max(1, minutes);
+}
+
+let _commonDelegationInitialized = false;
+export function initializeCommonDelegation() {
+  if (_commonDelegationInitialized) return;
+  _commonDelegationInitialized = true;
+
+  document.addEventListener('click', (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    const action = actionEl ? actionEl.getAttribute('data-action') : '';
+
+    if (action === 'close-modal') {
+      const modal = e.target.closest('.modal, .modal-overlay');
+      if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
+    }
+
+    if (e.target && e.target.id === 'admin-login-submit') {
+      const modal = document.getElementById('admin-login-modal');
+      if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
+    }
+  });
+}
+
+export function initializeBlogPostForm() {
+  const form = document.getElementById('blogPostForm');
+  if (!form) return;
+  form.addEventListener('submit', () => {
+    if (typeof tinymce !== 'undefined' && tinymce && typeof tinymce.triggerSave === 'function') {
+      tinymce.triggerSave();
+    }
+  });
+}
+
+// Wrapper for api.js to centralize request behavior
 async function apiRequest(path, options) {
   const isTestEnv = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test');
-
-  // If a global makeApiRequest is provided (tests often mock this), use it directly
-  if (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function') {
-    return await globalThis.makeApiRequest(path, options);
-  }
 
   // In tests, if window.fetch is mocked, use it directly so expectations about calls succeed
   if (isTestEnv && typeof window !== 'undefined' && typeof window.fetch === 'function') {
@@ -53,96 +153,6 @@ async function apiRequest(path, options) {
 
   // Fallback to internal wrapper
   return await _makeApiRequest(path, options);
-}
-    let posts = apiResult && apiResult.success === true ? apiResult.data : null;
-    // Error handling
-    if (!apiResult || apiResult.success !== true) {
-      console.error('Fehler beim Laden der meistgelesenen Posts:', apiResult && apiResult.error);
-      // Fallback: try to compute most-read from the all-posts endpoint to keep UI working
-      try {
-        const allResult = await apiRequest('/api/blogpost/all', { method: 'GET' });
-        if (allResult && allResult.success === true && Array.isArray(allResult.data)) {
-          // sort by views desc and take top N
-          posts = allResult.data.slice().sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 10);
-        }
-      } catch (err) {
-        void err;
-      }
-      const listContainer = document.getElementById('mostReadPosts');
-      listContainer.innerHTML = `
-                <div class="error-message">
-                    <div class="error-icon">Error</div>
-                    <h3>Laden fehlgeschlagen</h3>
-                    <p>Die Posts konnten nicht geladen werden.</p>
-                    <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-                </div>
-            `;
-      return;
-    }
-    const listContainer = document.getElementById('mostReadPosts');
-    if (!listContainer) {
-      console.error('Container for most read posts not found');
-      return;
-    }
-    // Prüfen, ob posts ein Array ist
-    if (!Array.isArray(posts)) {
-      console.error('Backend returned no array for most-read posts:', posts);
-      listContainer.innerHTML = `
-                <div class="error-message">
-                    <div class="error-icon">Error</div>
-                    <h3>Laden fehlgeschlagen</h3>
-                    <p>Die Statistiken konnten nicht geladen werden.</p>
-                    <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-                </div>
-            `;
-      return;
-    }
-
-    if (posts.length === 0) {
-      listContainer.innerHTML = `
-                <div class="no-posts">
-                    <div class="no-posts-icon">Statistiken</div>
-                    <h3>Keine Statistiken verfügbar</h3>
-                    <p>Es gibt noch keine Blog-Post-Ansichten.</p>
-                </div>
-            `;
-      return;
-    }
-
-    let html = '<div class="most-read-list">';
-    posts.forEach((post, index) => {
-      const rank = index + 1;
-      const postDate = new Date(post.created_at).toLocaleDateString('de-DE');
-      html += `
-                <div class="most-read-item">
-                    <span class="rank">#${rank}</span>
-                    <div class="most-read-content">
-                        <h3><a class="post-link-style" href="/blogpost/${post.id}">${post.title}</a></h3>
-                        <p>${Number(post.views)} views | ${postDate}</p>
-                    </div>
-                </div>
-            `;
-    });
-    html += '</div>';
-
-    listContainer.innerHTML = html;
-
-    // Admin-Delete-Buttons hinzufügen (falls verfügbar)
-    if (typeof addDeleteButtonsToPosts === 'function') {
-      setTimeout(addDeleteButtonsToPosts, 50);
-    }
-
-  } catch (error) {
-    console.error('Fehler beim Laden der Posts:', error);
-    document.getElementById('mostReadPosts').innerHTML = `
-            <div class="error-message">
-                <div class="error-icon">Error</div>
-                <h3>Laden fehlgeschlagen</h3>
-                <p>Die Posts konnten nicht geladen werden.</p>
-                <button data-action="load-mostread-posts" class="btn btn-outline-primary mt-3">Erneut versuchen</button>
-            </div>
-        `;
-  }
 }
 
 // Utility-Funktion zum Abrufen von URL-Parametern
@@ -178,11 +188,6 @@ export function getPostIdFromPath() {
   // Support createPost edit URLs like /createPost/123
   match = window.location.pathname.match(/\/createPost\/(\d+)(?:\/|$)/);
   return match ? match[1] : null;
-}
-export function getPostSlugFromPath() {
-  const match = window.location.pathname.match(/\/blogpost\/([^\/]+)/);
-  const slug = match ? match[1] : null;
-  return slug;
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
 export async function checkAndPrefillEditPostForm() {
@@ -241,135 +246,6 @@ export async function checkAndPrefillEditPostForm() {
     }
   }
   prefillWhenReady();
-}
-// Fügt Delete-Buttons zu allen Posts hinzu (nur für Admins)
-export async function addDeleteButtonsToPosts() {
-  // Check if admin is logged in using state store
-  if (!isAdmin()) return;
-
-  // Für alle Post-Karten (passe den Selektor ggf. an)
-  document.querySelectorAll('.post-card').forEach(card => {
-    // Verhindere doppelte Buttons
-    if (card.querySelector('.admin-delete-btn')) return;
-
-    // Hole die Post-ID (passe an, falls du sie anders speicherst)
-    const link = card.querySelector('a[href*="/blogpost/"]');
-    if (!link) return;
-    const url = new URL(link.href, window.location.origin);
-    const postId = url.pathname.split('/').pop();
-    if (!postId) return;
-
-    // Button erstellen
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-danger btn-sm admin-delete-btn ml-2';
-    btn.textContent = 'Löschen';
-    // Delegate delete action via data-action so admin module can handle it
-    btn.dataset.action = 'delete-post';
-    btn.dataset.postId = postId;
-
-    // Button anhängen (z.B. ans Ende der Karte)
-    card.appendChild(btn);
-  });
-}
-// Funktion zum Rendern des Seitenleisten-Archivs
-export async function renderSidebarArchive(posts) {
-  const archive = {};
-  posts.forEach((post, _index) => {
-    const year = new Date(post.created_at).getFullYear();
-    if (!archive[year]) archive[year] = [];
-    archive[year].push(post);
-  });
-  const dropdown = document.getElementById('year-archive-dropdown');
-  if (!dropdown) return;
-  dropdown.innerHTML = '';
-  Object.keys(archive).sort((a, b) => b - a).forEach(year => {
-    const a = document.createElement('a');
-    a.className = 'dropdown-item';
-    // No year query param — server currently returns archived posts (older than threshold)
-    // so we link to the archive page and show the year as context in the label only.
-    a.href = `/blogpost/archive`;
-    a.textContent = `${year} (${archive[year].length})`;
-    dropdown.appendChild(a);
-  });
-}
-// Funktion zum Rendern der Sidebar mit den beliebtesten Posts
-// Diese Funktion lädt alle Blogposts, filtert die letzten 3 Monate und sortiert sie
-export async function renderPopularPostsSidebar(posts) {
-  if (!Array.isArray(posts)) return;
-  // Prefer server-provided most-read posts (ordered by views). If it fails,
-  // fall back to the existing client-side selection logic.
-  try {
-    // If the sidebar element is not present, avoid making the server call.
-    const listEl = document.getElementById('popular-posts');
-    if (!listEl) return;
-
-    const response = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
-      globalThis.makeApiRequest('/api/blogpost/most-read', { method: 'GET' }) : await apiRequest('/api/blogpost/most-read', { method: 'GET' }));
-
-    const serverPosts = response && response.success === true ? response.data : null;
-    if (Array.isArray(serverPosts) && serverPosts.length > 0) {
-      const list = document.getElementById('popular-posts');
-      if (!list) return;
-      list.innerHTML = '';
-      serverPosts.slice(0, 5).forEach(p => {
-        //const _views = Number(p.views || 0);
-        const title = (typeof DOMPurify !== 'undefined' && DOMPurify) ? DOMPurify.sanitize(p.title) : p.title;
-        const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${p.slug}">${title}</a>`);
-        list.appendChild(li);
-      });
-      return;
-    }
-  } catch (err) {
-    // If server call fails, fall back to client-side logic below
-    console.debug('renderPopularPostsSidebar: could not fetch /most-read, falling back to client-side selection', err);
-  }
-
-  // --- Fallback: client-side selection (as before) ---
-  const now = new Date();
-  const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(now.getMonth() - 3);
-
-  // Trenne neue und alte Beiträge
-  const recent = [];
-  const old = [];
-  posts.forEach(post => {
-    const created = new Date(post.created_at);
-    if (created >= threeMonthsAgo) {
-      recent.push(post);
-    } else {
-      old.push(post);
-    }
-  });
-
-  // Sortiere nach Klicks/Views (nutze post.clicks oder post.views)
-  // Sortierung sollte in der DB stattfinden.
-  recent.sort((a, b) => (b.clicks || b.views || 0) - (a.clicks || a.views || 0));
-  old.sort((a, b) => (b.clicks || b.views || 0) - (a.clicks || a.views || 0));
-
-  // Bis zu 5 neue, dann alte auffüllen
-  let popular = recent.slice(0, 5);
-  if (popular.length < 5) {
-    popular = popular.concat(old.slice(0, 5 - popular.length));
-  }
-
-  // Rendern
-  const list = document.getElementById('popular-posts');
-  if (!list) return;
-  list.innerHTML = '';
-  popular.forEach(post => {
-    const li = createElement('li', {}, `<a class="featured-post-title" href="/blogpost/${post.slug}">${post.title}</a>`);
-    list.appendChild(li);
-  });
-}
-// Hover-Effekte für Buttons (wiederverwendbar)
-export function addHoverEffects(element, scaleUp = 1.1, scaleDown = 1) {
-  element.addEventListener('mouseenter', () => {
-    element.style.transform = `scale(${scaleUp})`;
-  });
-    
-  element.addEventListener('mouseleave', () => {
-    element.style.transform = `scale(${scaleDown})`;
-  });
 }
 // AJAX-Formular-Handling für Formspree-Kontaktformulare
 (function() {
@@ -577,14 +453,6 @@ function updateToggleButtonIcon(button = null) {
   if (darkModeBtn) {
     updateDarkModeButtonIcon(darkModeBtn);
   }
-    
-  // Legacy support for old toggle button
-  const toggleButton = button || document.getElementById('dark-mode-toggle');
-  if (toggleButton) {
-    toggleButton.innerHTML = isDarkMode ? '○' : '●';
-    toggleButton.title = isDarkMode ? 'Light Mode aktivieren' : 'Dark Mode aktivieren';
-    toggleButton.setAttribute('aria-label', isDarkMode ? 'Light Mode aktivieren' : 'Dark Mode aktivieren');
-  }
 }
 // Update toggle button after theme change
 function updateToggleButton() {
@@ -613,51 +481,6 @@ function toggleDarkMode() {
     isDarkMode ? 'Dark Mode aktiviert 🌙' : 'Light Mode aktiviert ☀️', 
     'success',
   );
-    
-  // Animate toggle button
-  const toggleButton = document.getElementById('dark-mode-toggle');
-  if (toggleButton) {
-    toggleButton.style.transform = 'translateY(-3px) scale(1.2) rotate(360deg)';
-    setTimeout(() => {
-      toggleButton.style.transform = '';
-    }, 300);
-  }
-}
-// Function to show spectacular notification for new posts
-function showNewPostNotification(newPosts) {
-  // Don't show if user has already seen today's posts
-  const today = new Date().toDateString();
-  const lastSeen = localStorage.getItem('lastSeenNewPosts');
-    
-  if (lastSeen === today) return;
-    
-  // Create the notification modal
-  const modal = document.createElement('div');
-  modal.className = 'new-post-modal';
-  modal.innerHTML = `
-        <span>Neue Posts verfügbar! ${newPosts.length} brandneue${newPosts.length > 1 ? ' Beiträge' : 'r Beitrag'}</span>
-        <button data-action="close-modal" class="modal-close-btn">✕</button>
-    `;
-    
-  document.body.appendChild(modal);
-    
-  // Add click event to navigate to first new post
-  modal.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'BUTTON') {
-      window.location.href = '/';  // Navigate to index page instead of API route
-    }
-  });
-    
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    if (modal.parentElement) {
-      modal.style.animation = 'slideOut 0.3s ease-out';
-      setTimeout(() => modal.remove(), 300);
-    }
-  }, 5000);
-    
-  // Mark as seen
-  localStorage.setItem('lastSeenNewPosts', today);
 }
 // Auto-initialize dark mode when DOM is loaded
 // Skip automatic initialization during tests to avoid manipulating a minimal jsdom
@@ -710,42 +533,6 @@ export function reloadPageWithDelay(delayMs = 1000) {
   }, delayMs);
 }
 
-// Redirect to edit post page
-export function redirectEditPost(postId) {
-  if (!postId) {
-    console.error('redirectEditPost: No postId provided');
-    return;
-  }
-  window.location.href = `/createPost/${postId}`;
-}
-
-// Delete post and redirect to home page
-export async function deletePostAndRedirect(postId) {
-  if (!postId) {
-    console.error('deletePostAndRedirect: No postId provided');
-    return;
-  }
-
-  try {
-    const response = await _makeApiRequest(`/api/blogpost/delete/${postId}` , {
-      method: 'DELETE',
-    });
-
-    if (response && response.success) {
-      showFeedback('Post erfolgreich gelöscht', 'success');
-      // Redirect to home page after 1 second
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
-    } else {
-      const errorMsg = response && response.error ? response.error : 'Unbekannter Fehler beim Löschen';
-      showFeedback(errorMsg, 'error');
-    }
-  } catch (error) {
-    console.error('deletePostAndRedirect error:', error);
-    showFeedback('Fehler beim Löschen des Posts', 'error');
-  }
-}
 
 // Re-export shared escapeHtml to keep existing imports working
 export { _escapeHtml as escapeHtml };

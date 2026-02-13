@@ -193,11 +193,6 @@ async function initializeReadPostPage() {
   }
 }
 
-// ===========================================
-// LEGACY CODE - WIRD NICHT MEHR VERWENDET
-// Kann später entfernt werden
-// ===========================================
-
 // Export the initializers so other modules/importers can use them directly
 export {
   initializeCreatePage,
@@ -209,8 +204,3 @@ export {
   initializeCurrentPage as initializePage,
   getCurrentPageType,
 };
-
-// Backwards compatibility note: legacy consumers that relied on
-// `window.pageInitializers` or `window.moduleLoader` should be updated
-// to import the named exports above. This keeps the module ESM-only and
-// avoids creating new globals.

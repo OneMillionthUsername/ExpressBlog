@@ -93,12 +93,3 @@ export async function makeApiRequest(url, options = {}) {
   }
 }
 
-// Expose makeApiRequest on global/window for legacy tests that mock global.makeApiRequest
-try {
-  if (typeof window !== 'undefined') {
-    window.makeApiRequest = makeApiRequest;
-  }
-} catch (_err) {
-  void _err;
-  // ignore in non-browser environments
-}
