@@ -68,6 +68,7 @@
 
 [data-theme="dark"] .featured-post-card,
 [data-theme="dark"] .post-card,
+[data-theme="dark"] .blog-post-card,
 [data-theme="dark"] .discovery-card,
 [data-theme="dark"] .sidebar,
 [data-theme="dark"] .modal-content,
@@ -75,19 +76,14 @@
 [data-theme="dark"] .content-area,
 [data-theme="dark"] .post-preview-card,
 [data-theme="dark"] .popular-post-card,
-[data-theme="dark"] .archive-year-section {
-    background: var(--color-bg-alt);
-    border-color: #333;
+[data-theme="dark"] .archive-year-section,
+[data-theme="dark"] .archive-post-item {
+    background: linear-gradient(135deg, var(--color-bg-alt) 0%, rgba(44, 62, 80, 0.3) 100%);
+    border-color: rgba(162, 127, 77, 0.15);
 }
 
 [data-theme="dark"] .archive-posts-list {
     background: var(--color-bg-alt);
-}
-[data-theme="dark"] .archive-post-item {
-    border-bottom-color: #2b2b2b;
-}
-[data-theme="dark"] .archive-post-item:hover {
-    background: #1b1b1b;
 }
 [data-theme="dark"] .archive-year-heading,
 [data-theme="dark"] .archive-years,
@@ -501,17 +497,14 @@
    ======================================== */
 /* Dark Mode Adjustments */
 [data-theme="dark"] .post-card-very-new {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, var(--color-bg) 100%);
     border-left-color: #dc3545;
 }
 
 [data-theme="dark"] .post-card-hot {
-    background: linear-gradient(135deg, rgba(231, 76, 60, 0.05) 0%, var(--color-bg) 100%);
     border-left-color: #e74c3c;
 }
 
 [data-theme="dark"] .post-card-new {
-    background: linear-gradient(135deg, rgba(162, 127, 77, 0.05) 0%, var(--color-bg) 100%);
     border-left-color: var(--color-secondary);
 }
 

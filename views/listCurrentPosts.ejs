@@ -75,13 +75,6 @@
                                                                         <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
                                                                         <div class="post-footer">
                                                                             <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
-                                                                            <% if (post.tags && post.tags.length > 0) { %>
-                                                                                <div class="post-tags">
-                                                                                    <% post.tags.forEach(function(tag){ %>
-                                                                                        <span class="tag"><%= tag %></span>
-                                                                                    <% }); %>
-                                                                                </div>
-                                                                            <% } %>
                                                                         </div>
                                                                     </article>
                                                             <% }); %>
