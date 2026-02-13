@@ -1,21 +1,25 @@
 <!-- Comments partial: renders comment form and list for a post. Expects `post` to be defined -->
-<section id="comments-section" class="comments-section hidden">
+<section id="comments-section" class="comments-section">
     <div class="comments-divider">
         <hr>
     </div>
 
     <h3 id="comments-title" class="comments-title">
-        💬 Kommentare <span class="badge badge-secondary" id="comment-count">0</span>
+        💬 Kommentare <span class="badge badge-secondary" id="comment-count"><%= typeof commentCount !== 'undefined' ? commentCount : 0 %></span>
     </h3>
 
     <!-- Kommentar-Formular -->
     <div class="comment-form-container">
         <h4 class="mb-3">Kommentar schreiben</h4>
-        <form id="comment-form" class="comment-form">
+        <form id="comment-form" class="comment-form" method="POST" action="/comments/<%= post.id %>">
+            <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% } %>
             <div class="form-group">
                 <label for="comment-username">Name (optional):</label>
                 <input type="text" 
                        id="comment-username" 
+                       name="username"
                        class="form-control" 
                        placeholder="Dein Name oder lasse es leer für 'Anonym'"
                        maxlength="50">
@@ -27,6 +31,7 @@
             <div class="form-group">
                 <label for="comment-text">Kommentar: <span class="text-danger">*</span></label>
                 <textarea id="comment-text" 
+                          name="text"
                           class="form-control" 
                           rows="4" 
                           placeholder="Teile deine Gedanken zu diesem Blogpost..."
@@ -50,7 +55,35 @@
     <div class="comments-list-container">
         <h4 class="mb-3">💭 Diskussion</h4>
         <div id="comments-list" class="comments-list">
-            <!-- Kommentare werden hier dynamisch eingefügt -->
+            <% if (typeof comments !== 'undefined' && Array.isArray(comments) && comments.length > 0) { %>
+                <% comments.forEach(function(comment) { %>
+                    <div class="comment-item" data-comment-id="<%= comment.id %>">
+                        <div class="comment-header">
+                            <span class="comment-username">
+                                <i class="fas fa-user-circle"></i> <%= comment.username || 'Anonym' %>
+                            </span>
+                            <span class="comment-time"><%= new Date(comment.created_at || comment.createdAt || Date.now()).toLocaleDateString('de-DE') %></span>
+                            <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+                                <form method="POST" action="/comments/<%= post.id %>/<%= comment.id %>/delete" class="d-inline">
+                                    <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <% } %>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger comment-delete-btn" title="Kommentar löschen">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            <% } %>
+                        </div>
+                        <div class="comment-text"><%- comment.text || '' %></div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="no-comments">
+                    <p class="text-muted text-center">
+                        <em>💭 Noch keine Kommentare vorhanden. Sei der erste, der kommentiert!</em>
+                    </p>
+                </div>
+            <% } %>
         </div>
     </div>
 </section>

@@ -2,6 +2,7 @@ import postRouter from './postRoutes.js';
 import uploadRouter from './uploadRoutes.js';
 import authRouter from './authRoutes.js';
 import commentsRouter from './commentsRoutes.js';
+import commentsApiRouter from './commentsApiRoutes.js';
 import utilityRouter from './utilityRoutes.js';
 import staticRouter from './staticRoutes.js';
 import cardRouter from './cardRoutes.js';
@@ -18,6 +19,7 @@ export default {
   uploadRouter,
   authRouter,
   commentsRouter,
+  commentsApiRouter,
   utilityRouter,
   staticRouter,
   cardRouter,

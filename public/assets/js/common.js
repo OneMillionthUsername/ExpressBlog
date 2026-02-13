@@ -72,18 +72,6 @@ export function initializeCommonDelegation() {
     const action = btn.dataset.action;
     if (!action) return;
     switch (action) {
-      case 'load-recent-posts':
-        e.preventDefault();
-        if (typeof loadAndDisplayRecentPosts === 'function') loadAndDisplayRecentPosts();
-        break;
-      case 'load-all-posts':
-        e.preventDefault();
-        if (typeof loadAndDisplayAllPosts === 'function') loadAndDisplayAllPosts();
-        break;
-      case 'load-mostread-posts':
-        e.preventDefault();
-        if (typeof loadAndDisplayMostReadPosts === 'function') loadAndDisplayMostReadPosts();
-        break;
       case 'show-admin-login': {
         e.preventDefault();
         if (typeof showAdminLoginModal === 'function') showAdminLoginModal();

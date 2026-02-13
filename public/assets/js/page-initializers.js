@@ -2,17 +2,6 @@
 // EINFACHES & ROBUSTES PAGE INITIALISIERUNGSSYSTEM
 // ===========================================
 
-import { loadAllBlogPosts, loadCards } from './api.js';
-import { 
-  //loadAndDisplayAllPosts, 
-  loadAndDisplayRecentPosts, 
-  loadAndDisplayArchivePosts, 
-  loadAndDisplayMostReadPosts,
-  loadAndDisplayBlogPost,
-  renderAndDisplayCards,
-  renderPopularPostsSidebar,
-  renderSidebarArchive,
-} from './common.js';
 // Do NOT statically import the TinyMCE editor or AI assistant here.
 // They should only be loaded on the Create page to avoid loading large
 // modules (and accidental server-side imports) on every page.
@@ -20,7 +9,6 @@ let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
 import { isAdminFromServer, getAssetVersion } from './config.js';
 import { initializeCommonDelegation, showElement, hideElement, initializeBlogPostForm } from './common.js';
-import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
 // da sie aus separaten Modulen kommen können
@@ -49,11 +37,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 4. Seiten-spezifische Initialisierung
     await initializeCurrentPage();
-
-    // Initialize comments delegation (used on read_post pages)
-    if (typeof initializeCommentsDelegation === 'function') {
-      initializeCommentsDelegation();
-    }
 
   } catch (error) {
     console.error('Fehler bei der globalen Initialisierung:', error);
@@ -179,83 +162,27 @@ async function initializeCreatePage() {
 
 // Index Page - vereinfacht
 async function initializeIndexPage() {
-
-  try {
-    // Posts laden
-    const posts = await loadAllBlogPosts();
-    if (posts && posts.length > 0) {
-      // Sidebar-Elemente rendern
-      if (typeof renderSidebarArchive === 'function') {
-        try {
-          await renderSidebarArchive(posts);
-        } catch (err) {
-          console.error('initializeIndexPage: renderSidebarArchive threw:', err);
-        }
-      }
-
-      if (typeof renderPopularPostsSidebar === 'function') {
-        try {
-          await renderPopularPostsSidebar(posts);
-        } catch (err) {
-          console.error('initializeIndexPage: renderPopularPostsSidebar threw:', err);
-        }
-      }
-    }
-
-    // Cards laden only if the page contains a cards container or the renderer is present
-  // Support multiple possible containers used across templates (discoveries-grid is used on index.ejs)
-  const hasCardsContainer = document.getElementById('cards-container') || document.getElementById('cards') || document.querySelector('.cards-list') || document.getElementById('discoveries-grid');
-    if (hasCardsContainer) {
-      const cards = await loadCards();
-      if (cards && cards.length > 0) {
-        if (typeof renderAndDisplayCards === 'function') {
-          await renderAndDisplayCards(cards);
-        }
-      } else {
-        console.info('No cards available - skipping card rendering');
-      }
-    }
-
-  } catch (error) {
-    console.error('Index Page Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Archiv Page - vereinfacht
 async function initializeArchivePage() {
-
-  try {
-    await loadAndDisplayArchivePosts();
-  } catch (error) {
-    console.error('Archiv Page Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Recent Posts - vereinfacht
 async function initializeRecentPostsPage() {
-  try {
-    await loadAndDisplayRecentPosts();
-  } catch (error) {
-    console.error('initializeRecentPostsPage: Error occurred:', error);
-    console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Most Read Posts - vereinfacht
 async function initializeMostReadPostsPage() {
-  try {
-    await loadAndDisplayMostReadPosts();
-  } catch (error) {
-    console.error('Most Read Posts Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Read Post Page - vereinfacht
 async function initializeReadPostPage() {
   try {
-    // Post laden
-    await loadAndDisplayBlogPost();
-
     // Admin-Controls hinzufügen (vereinfacht)
     setTimeout(async () => {
       if (typeof addReadPostAdminControls === 'function') {
@@ -264,16 +191,6 @@ async function initializeReadPostPage() {
       // Additionally run a short retry loop to handle late-arriving admin status or postId
       if (typeof ensureAdminControls === 'function') {
         ensureAdminControls({ attempts: 6, intervalMs: 400 });
-      }
-
-      // Kommentare aktivieren: remove the utility 'hidden' class (CSS uses !important)
-      const commentsSection = document.getElementById('comments-section');
-      if (commentsSection) {
-        commentsSection.classList.remove('hidden');
-        if (typeof initializeCommentsSystem === 'function') {
-          // initializeCommentsSystem will attach event handlers and load comments
-          initializeCommentsSystem();
-        }
       }
     }, 500); // Kurze Verzögerung für DOM-Updates
 

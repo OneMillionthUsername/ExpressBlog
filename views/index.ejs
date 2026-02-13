@@ -45,7 +45,21 @@
                     <!-- Beliebte Beiträge -->
                     <h2 class="sidebar-title mt-4">Beliebte Beiträge</h2>
                     <ul class="nav-list" id="popular-posts">
-                        <!-- Dynamisch per JS befüllt -->
+                        <% if (typeof popularPosts !== 'undefined' && Array.isArray(popularPosts) && popularPosts.length > 0) { %>
+                            <% popularPosts.forEach(function(p) { %>
+                                <li>
+                                    <% if (p.slug) { %>
+                                        <a class="sidebar-link-style" href="/blogpost/<%= p.slug %>"><%= p.title %></a>
+                                    <% } else if (p.id !== undefined && p.id !== null) { %>
+                                        <a class="sidebar-link-style" href="/blogpost/by-id/<%= p.id %>"><%= p.title %></a>
+                                    <% } else { %>
+                                        <span class="sidebar-link-style"><%= p.title %></span>
+                                    <% } %>
+                                </li>
+                            <% }); %>
+                        <% } else { %>
+                            <li class="text-muted small">Keine Daten</li>
+                        <% } %>
                     </ul>
 
                     <!-- Kategorien -->
@@ -64,7 +78,13 @@
                             Jahr wählen
                         </button>
                         <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="archiveDropdown" id="year-archive-dropdown">
-                            <!-- Dynamisch per JS befüllt -->
+                            <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
+                                <% archiveYears.forEach(function(y) { %>
+                                    <a class="dropdown-item" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                                <% }); %>
+                            <% } else { %>
+                                <span class="dropdown-item text-muted">Keine Jahre</span>
+                            <% } %>
                         </div>
                     </div>
                 </div>
@@ -108,7 +128,28 @@
     <div class="container my-5">
     <h3 class="featured-title">Fundstücke & Empfehlungen</h3>
     <div class="row" id="discoveries-grid">
-        <!-- Platzhalter für bis zu 9 Cards -->
+        <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
+            <% cards.slice(0, 9).forEach(function(card) { %>
+                <div class="col-md-4 mb-4">
+                    <div class="card discovery-card h-100">
+                        <% if (card.img_link) { %>
+                            <img class="card-img-top" src="<%= card.img_link %>" alt="<%= card.title %>">
+                        <% } %>
+                        <div class="card-body">
+                            <h5 class="card-title"><%= card.title %></h5>
+                            <% if (card.subtitle) { %>
+                                <p class="card-text"><%= card.subtitle %></p>
+                            <% } %>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="<%= card.link %>" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">Mehr lesen</a>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="col-12 text-muted">Keine Empfehlungen verfuegbar.</div>
+        <% } %>
     </div>
     </div>
     </main>
