@@ -629,7 +629,7 @@ postRouter.put('/update/:postId',
     const postId = req.params.postId;
     const { title, content, tags } = req.body;
     try {
-      const result = await postController.updatePost(postId, { title, content, tags });
+      const result = await postController.updatePost({ id: postId, title, content, tags });
       if (!result) {
         return res.status(400).json({ error: 'Failed to update blog post' });
       }

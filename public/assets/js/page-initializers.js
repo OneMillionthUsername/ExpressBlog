@@ -19,7 +19,7 @@ import {
 let initializeBlogEditor = null;
 import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
 import { isAdminFromServer, getAssetVersion } from './config.js';
-import { initializeCommonDelegation, showElement, hideElement } from './common.js';
+import { initializeCommonDelegation, showElement, hideElement, initializeBlogPostForm } from './common.js';
 import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
@@ -165,6 +165,11 @@ async function initializeCreatePage() {
     // NOW initialize TinyMCE editor (which attaches click handlers to already-registered actions)
     if (typeof initializeBlogEditor === 'function') {
       await initializeBlogEditor();
+    }
+
+    // Blogpost-Formular-Submit-Handler aktivieren
+    if (typeof initializeBlogPostForm === 'function') {
+      initializeBlogPostForm();
     }
 
   } catch (error) {

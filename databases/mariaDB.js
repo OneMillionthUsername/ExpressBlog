@@ -701,7 +701,18 @@ export const DatabaseService = {
 
       conn = await getDatabasePool().getConnection();
 
-      const result = await conn.query('UPDATE posts SET ? WHERE id = ?', [post, post.id]);
+      const keys = updatableFields.filter(field => field in post);
+      const setClause = keys.map(k => `\`${k}\` = ?`).join(', ');
+      const values = keys.map(k => {
+        if (k === 'tags' && post[k] !== undefined && post[k] !== null && typeof post[k] !== 'string') {
+          try { return JSON.stringify(post[k]); } catch (_e) { return null; }
+        }
+        return post[k];
+      });
+      values.push(post.id);
+      const updateSql = `UPDATE posts SET ${setClause} WHERE id = ?`;
+
+      const result = await conn.query(updateSql, values);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to update post');
       }

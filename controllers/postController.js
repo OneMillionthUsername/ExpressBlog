@@ -107,6 +107,21 @@ const getPostById = async (postId) => {
  * @throws {PostControllerException} Bei Validierungs- oder DB-Fehlern.
  */
 const updatePost = async (postData) => {
+  if (!postData || typeof postData !== 'object' || Array.isArray(postData)) {
+    throw new PostControllerException('Validation failed: postData missing');
+  }
+  if (!postData.id) {
+    throw new PostControllerException('Validation failed: id missing');
+  }
+  // Always preserve slug on update to keep links stable.
+  const existing = await DatabaseService.getPostById(postData.id);
+  if (!existing || !existing.slug) {
+    throw new PostControllerException('Validation failed: slug missing');
+  }
+  postData.slug = existing.slug;
+  if (typeof postData.author === 'undefined') postData.author = existing.author;
+  if (typeof postData.published === 'undefined') postData.published = existing.published;
+
   const { error, value } = Post.validate(postData);
   if (error) {
     throw new PostControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
