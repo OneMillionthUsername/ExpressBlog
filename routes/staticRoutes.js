@@ -1,7 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
-import * as authService from '../services/authService.js';
 import postController from '../controllers/postController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 
@@ -57,27 +56,15 @@ staticRouter.get('/about', (req, res) => {
 // using an optional parameter token ("?") which some path parsers reject.
 async function handleCreatePost(req, res) {
   try {
-    // Determine if requester is authenticated admin by extracting token
-    const token = authService.extractTokenFromRequest(req);
-    let isAdmin = false;
+    const isAdmin = Boolean(res && res.locals && res.locals.isAdmin);
     try {
-      const hasAuthHeader = !!(req.headers && typeof req.headers.authorization === 'string' && req.headers.authorization.startsWith('Bearer '));
-      const hasAuthCookie = !!(req.cookies && typeof req.cookies[authService.AUTH_COOKIE_NAME] === 'string');
-      // Do not log token values; only presence
       logger.debug('[CREATEPOST] SSR auth context', {
-        hasAuthHeader,
-        hasAuthCookie,
+        isAdmin,
         cookieNames: Object.keys(req.cookies || {}),
         ip: req.ip,
         userAgent: req.get('User-Agent') || null,
       });
     } catch { /* ignore logging errors */ }
-    if (token) {
-      const decoded = authService.verifyToken(token);
-      if (decoded && decoded.isAdmin) {
-        isAdmin = true;
-      }
-    }
 
     // Only expose tinyMCE key to authenticated admins when rendering the page
     const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;

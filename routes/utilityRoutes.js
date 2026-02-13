@@ -8,11 +8,8 @@ const utilityRouter = express.Router();
 /**
  * Utility endpoints (health, redirect, csrf-token, google-api-key).
  *
- * The CSRF token endpoint is intentionally left without route-level
- * enforcement so the application-level CSRF middleware can centrally
- * decide when to skip protection (see `app.js`). This avoids the
- * chicken-and-egg problem where the token endpoint itself would be
- * protected and therefore unavailable to clients.
+ * The CSRF token endpoint is intentionally unauthenticated so clients
+ * can fetch a token before making protected POST/PUT/DELETE requests.
  *
  * The google-api-key endpoint requires authentication and exposes the
  * server-side Gemini API key only to authenticated admins.
