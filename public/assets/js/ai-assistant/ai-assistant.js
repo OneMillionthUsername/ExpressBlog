@@ -4,10 +4,10 @@
 // (Vereinfacht) Keine mehrfachen Lade-Guards mehr – Modul wird idempotent gehalten.
 
 // NOTE: This file runs in the browser; importing server-side config files here
-// causes the browser to attempt to fetch `/config/config` which can return
+// causes the browser to attempt to fetch `/api/config/google-api-key` which can return
 // HTML and produce a MIME-type error. Instead, obtain any API keys at
-// runtime via an API endpoint or from an injected global (server-rendered)
-// variable. We will prefer a runtime fetch from `/config/google-api-key`.
+// runtime via an API endpoint. The /api/google-api-key endpoint fetches
+// the server-side GEMINI_API_KEY securely for authenticated admins.
 
 // The Gemini API key MUST never be present in browser code. All AI calls go
 // through a server-proxied endpoint (`/api/ai/generate`) that uses the
@@ -21,6 +21,17 @@ let GEMINI_API_KEY = '';
 function getDOMPurifySync() {
   if (typeof window === 'undefined') return null;
   return (typeof window.DOMPurify !== 'undefined') ? window.DOMPurify : null;
+}
+
+// Notify other modules to refresh preview without relying on globals
+function safeUpdatePreview() {
+  try {
+    if (typeof document !== 'undefined') {
+      document.dispatchEvent(new CustomEvent('ai-assistant:refresh-preview'));
+    }
+  } catch {
+    // ignore preview update failures
+  }
 }
 
 // Background loader: try to populate window.DOMPurify asynchronously. This
@@ -45,30 +56,35 @@ async function preloadDOMPurify() {
 // Start background preload (best-effort)
 try { preloadDOMPurify(); } catch { /* ignore */ }
 import { makeApiRequest } from '../api.js';
-import { showAlertModal } from '../common.js';
+import { showAlertModal, showNotification } from '../common.js';
+import { registerAction } from '../actions/actionRegistry.js';
 
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
   apiKey: (GEMINI_API_KEY && GEMINI_API_KEY.length > 0) ? GEMINI_API_KEY : '', // Wird vom Admin gesetzt
-  model: 'gemini-1.5-flash', // Kostenloses Modell
+  model: 'gemini-2.5-flash', // Standardmodell (Server-Proxy nutzt dieses Modell)
   maxTokens: 2048,
   temperature: 0.7,
 };
 
-// API-Schlüssel aus localStorage laden
+// API-Schlüssel vom Server laden
 async function loadGeminiApiKey() {
   // Versuche, den API-Key vom Server zu laden
   try {
-    const apiResult = await makeApiRequest('/config/google-api-key', { method: 'GET' });
+    const apiResult = await makeApiRequest('/api/google-api-key', { method: 'GET' });
     if (apiResult && apiResult.success === true) {
-      const data = apiResult.data;
-      if (data.apiKey && data.apiKey.trim() !== '' && data.apiKey.length > 10) {
-        GEMINI_CONFIG.apiKey = data.apiKey;
-        return true;
-      } else {
-        console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
-        return false;
+      // apiResult.data ist das Server-JSON: {data: {apiKey: "..."}}
+      const serverData = apiResult.data;
+      if (serverData && serverData.data && serverData.data.apiKey) {
+        const apiKey = serverData.data.apiKey;
+        if (apiKey.trim() !== '' && apiKey.length > 10) {
+          GEMINI_CONFIG.apiKey = apiKey;
+          console.log('Gemini API key loaded successfully');
+          return true;
+        }
       }
+      console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
+      return false;
     }
     // Kein gültiger Key vom Server, zeige Setup
     console.warn('Kein gültiger Gemini API-Schlüssel gefunden. Bitte API-Schlüssel eingeben.');
@@ -110,12 +126,24 @@ function showApiKeySetup() {
 // Server-proxied AI call - key never touches browser
 async function callGeminiAPI(prompt, systemInstruction = '') {
   try {
-    const body = { prompt, systemInstruction };
+    const body = {
+      prompt,
+      systemInstruction,
+      model: GEMINI_CONFIG.model,
+      generationConfig: {
+        temperature: GEMINI_CONFIG.temperature,
+        maxOutputTokens: GEMINI_CONFIG.maxTokens,
+        topP: 0.8,
+        topK: 10,
+      },
+    };
     const result = await makeApiRequest('/api/ai/generate', {
       method: 'POST',
       body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json' },
     });
+
+    console.log('callGeminiAPI result:', result);
 
     if (!result || result.success !== true) {
       const err = result?.error || 'AI proxy error';
@@ -123,7 +151,11 @@ async function callGeminiAPI(prompt, systemInstruction = '') {
       throw new Error(err);
     }
 
-    return result.data?.text || '';
+    // result.data ist die Server-Antwort: {success: true, data: {text: "..."}}
+    const serverResponse = result.data;
+    const text = serverResponse?.data?.text || serverResponse?.text || '';
+    console.log('Extracted text:', text);
+    return text;
   } catch (error) {
     console.error('AI proxy error:', error);
     showNotification(`AI-Fehler: ${error.message || error}`, 'error');
@@ -141,7 +173,17 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
   if (typeof fetch === 'function' && fetch.mock) {
     const resp = await fetch('/api/ai/generate', {
       method: 'POST',
-      body: JSON.stringify({ prompt, systemInstruction }),
+      body: JSON.stringify({
+        prompt,
+        systemInstruction,
+        model: GEMINI_CONFIG.model,
+        generationConfig: {
+          temperature: GEMINI_CONFIG.temperature,
+          maxOutputTokens: GEMINI_CONFIG.maxTokens,
+          topP: 0.8,
+          topK: 10,
+        },
+      }),
       headers: { 'Content-Type': 'application/json' },
     });
     if (!resp || !resp.ok) throw new Error('Fetch failed');
@@ -161,7 +203,17 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
   // fallback: try to use global fetch (unmocked)
   const resp = await fetch('/api/ai/generate', {
     method: 'POST',
-    body: JSON.stringify({ prompt, systemInstruction }),
+    body: JSON.stringify({
+      prompt,
+      systemInstruction,
+      model: GEMINI_CONFIG.model,
+      generationConfig: {
+        temperature: GEMINI_CONFIG.temperature,
+        maxOutputTokens: GEMINI_CONFIG.maxTokens,
+        topP: 0.8,
+        topK: 10,
+      },
+    }),
     headers: { 'Content-Type': 'application/json' },
   });
   if (!resp || !resp.ok) throw new Error('Fetch failed');
@@ -181,45 +233,73 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
 async function improveText() {
   const editor = tinymce.get('content');
   if (!editor) return;
-    
-  const selectedText = editor.selection.getContent({format: 'text'});
-  const allText = editor.getContent({format: 'text'});
-  const textToImprove = selectedText || allText;
-    
-  if (!textToImprove || textToImprove.trim().length === 0) {
+
+  const selectedHtml = editor.selection.getContent({ format: 'html' });
+  const htmlToImprove = (selectedHtml && selectedHtml.trim().length > 0)
+    ? selectedHtml
+    : editor.getContent({ format: 'html' });
+
+  if (!htmlToImprove || htmlToImprove.trim().length === 0) {
     showAlertModal('Bitte markiere einen Text oder schreibe etwas, das verbessert werden soll.');
     return;
   }
-    
+
   const improveBtn = document.getElementById('ai-improve-btn');
   if (improveBtn) {
     improveBtn.disabled = true;
     improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI arbeitet...';
   }
-    
-  try {
-    const systemInstruction = `Du bist ein erfahrener deutscher Autor und Philosoph. Verbessere den folgenden Text stilistisch und inhaltlich:
 
-Regeln:
-- Behalte die Formatierung bei
-- Behalte die ursprüngliche Bedeutung bei
-- Verwende elegante, philosophische Sprache
-- Verbessere Struktur und Lesbarkeit
-- Korrigiere Grammatik und Rechtschreibung
-- Antworte NUR mit dem verbesserten Text, keine Erklärungen`;
-        
-    const improvedText = await callGeminiAPI(textToImprove, systemInstruction);
-        
-    // Text in Editor einfügen
-    if (selectedText) {
-      editor.selection.setContent(improvedText);
-    } else {
-      editor.setContent(improvedText);
+  try {
+    const container = document.createElement('div');
+    container.innerHTML = htmlToImprove;
+
+    const textNodes = collectTextNodes(container)
+      .filter(node => node && typeof node.nodeValue === 'string' && node.nodeValue.length > 0);
+
+    if (textNodes.length === 0) {
+      showAlertModal('Kein verbesserbarer Text gefunden.');
+      return;
     }
-        
-    updatePreview();
+
+    const originalSegments = textNodes.map(node => protectInvisibleChars(node.nodeValue));
+
+    const systemInstruction = `Du bist ein deutschsprachiger Lektor.
+
+Aufgabe:
+- Verbessere NUR Grammatik, Rechtschreibung und Interpunktion.
+
+Zwingende Regeln:
+- Aendere NICHT die Anzahl und Reihenfolge der Segmente.
+- Behalte ALLE Whitespaces, Zeilenumbrueche und Satzzeichen-Positionen bei.
+- Entferne KEINE unsichtbaren Zeichen (NBSP, ZWSP, ZWJ, ZWNJ, BOM, SHY) und fuege keine neuen hinzu.
+- Keine stilistischen Umschreibungen, keine Strukturverbesserungen, keine inhaltlichen Aenderungen.
+- Gib NUR ein JSON-Array mit exakt gleicher Laenge zurueck.
+- Keine Erklaerungen, kein Markdown, nur JSON.`;
+
+    const prompt = JSON.stringify(originalSegments);
+    const improvedJson = await callGeminiAPI(prompt, systemInstruction);
+    const improvedSegments = parseJsonArray(improvedJson);
+
+    if (!Array.isArray(improvedSegments) || improvedSegments.length !== originalSegments.length) {
+      console.warn('AI response did not match expected segment count. Using original text.');
+      return;
+    }
+
+    for (let i = 0; i < textNodes.length; i += 1) {
+      const restored = restoreInvisibleChars(String(improvedSegments[i] ?? originalSegments[i]));
+      textNodes[i].nodeValue = restored;
+    }
+
+    if (selectedHtml && selectedHtml.trim().length > 0) {
+      editor.selection.setContent(container.innerHTML);
+    } else {
+      editor.setContent(container.innerHTML);
+    }
+
+    safeUpdatePreview();
     showNotification('Text wurde von AI verbessert!', 'success');
-        
+
   } catch (error) {
     console.error('Fehler beim Textverbessern:', error);
   } finally {
@@ -227,6 +307,51 @@ Regeln:
       improveBtn.disabled = false;
       improveBtn.innerHTML = '<i class="fas fa-magic"></i> Text verbessern';
     }
+  }
+}
+
+function protectInvisibleChars(input) {
+  if (!input) return input;
+  return input
+    .replace(/\u00A0/g, '[[NBSP]]')
+    .replace(/\u00AD/g, '[[SHY]]')
+    .replace(/\u200B/g, '[[ZWSP]]')
+    .replace(/\u200C/g, '[[ZWNJ]]')
+    .replace(/\u200D/g, '[[ZWJ]]')
+    .replace(/\uFEFF/g, '[[BOM]]')
+    .replace(/&nbsp;/g, '[[NBSP]]')
+    .replace(/&shy;/g, '[[SHY]]');
+}
+
+function restoreInvisibleChars(input) {
+  if (!input) return input;
+  return input
+    .replace(/\[\[NBSP\]\]/g, '\u00A0')
+    .replace(/\[\[SHY\]\]/g, '\u00AD')
+    .replace(/\[\[ZWSP\]\]/g, '\u200B')
+    .replace(/\[\[ZWNJ\]\]/g, '\u200C')
+    .replace(/\[\[ZWJ\]\]/g, '\u200D')
+    .replace(/\[\[BOM\]\]/g, '\uFEFF');
+}
+
+function collectTextNodes(root) {
+  const nodes = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  let node = walker.nextNode();
+  while (node) {
+    nodes.push(node);
+    node = walker.nextNode();
+  }
+  return nodes;
+}
+
+function parseJsonArray(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn('AI response is not valid JSON:', err);
+    return null;
   }
 }
 
@@ -264,18 +389,14 @@ Regeln:
 - Keine Erklärungen oder zusätzlicher Text`;
     const textToAnalyze = `Titel: ${title}\n\nInhalt: ${content.substring(0, 1000)}`;
     const generatedTags = await callGeminiAPIWithFetchFallback(textToAnalyze, systemInstruction);
-    const tagsModal = `
-      <div class="ai-tags-modal-container">
-        <h4 class="ai-tags-modal-header">AI-Tags</h4>
-        <p class="ai-tags-modal-content">${generatedTags}</p>
-        <div class="ai-tags-modal-footer">
-          <button data-action="apply-tags" data-tags="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-apply">Einfügen</button>
-          <button data-action="copy-tags" data-text="${encodeURIComponent(generatedTags)}" class="ai-tags-modal-button-copy ml-2">Kopieren</button>
-          <button data-action="close" class="ai-tags-modal-button-close ml-2">Schließen</button>
-        </div>
-      </div>`;
-    showModal(tagsModal);
-    showNotification('Tags wurden automatisch generiert!', 'success');
+    
+    // Direkt ins Formular einfügen
+    const tagsInput = document.getElementById('tags');
+    if (tagsInput) {
+      tagsInput.value = generatedTags.trim();
+      safeUpdatePreview();
+      showNotification('Tags eingefügt!', 'success');
+    }
   } catch (error) {
     console.error('Fehler beim Tag-Generieren:', error);
   } finally {
@@ -357,8 +478,13 @@ Regeln:
 
 // Titel-Vorschläge generieren
 async function generateTitleSuggestions() {
+  console.log('generateTitleSuggestions called');
   const editor = tinymce.get('content');
-  if (!editor) return;
+  if (!editor) {
+    console.warn('No TinyMCE editor found');
+    showAlertModal('Editor nicht gefunden');
+    return;
+  }
     
   const content = editor.getContent({format: 'text'});
     
@@ -374,44 +500,32 @@ async function generateTitleSuggestions() {
   }
     
   try {
-    const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle 5 ansprechende Titel für den folgenden Blogpost.
+    console.log('API Key:', GEMINI_CONFIG.apiKey ? 'SET' : 'EMPTY');
+    const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle einen ansprechenden Titel für den folgenden Blogpost.
 
 Regeln:
-- Jeder Titel in einer neuen Zeile
 - Prägnant und neugierig machend
 - Philosophisch oder wissenschaftlich angemessen
 - Deutsche Sprache
-- Nummeriere die Titel (1. 2. 3. etc.)`;
+- Nur der Titel, keine Nummerierung oder Erklärungen`;
         
-    const titleSuggestions = await callGeminiAPI(content.substring(0, 500), systemInstruction);
-        
-  // Titel-Vorschläge in einem Modal anzeigen (use data-action attributes)
-  const titlesArray = titleSuggestions.split('\n').filter(line => line.trim());
-  const titlesHtml = titlesArray.map(title => {
-    const cleanTitle = title.replace(/^\d+\.\s*/, '').trim();
-    return `<div class="ai-title-suggestion" data-action="select-title" data-title="${encodeURIComponent(cleanTitle)}">
-          ${cleanTitle}
-        </div>`;
-  }).join('');
-
-  const titleModal = `
-      <div class="ai-modal-overlay" id="ai-modal-overlay">
-        <div class="ai-modal-container">
-          <h4 class="ai-modal-header">AI-Titel-Vorschläge</h4>
-          <p class="ai-modal-content">Klicke auf einen Titel, um ihn zu übernehmen:</p>
-          <div class="ai-title-suggestions">${titlesHtml}</div>
-          <div class="ai-modal-footer">
-            <button data-action="close" class="ai-modal-button">Schließen</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-  showModal(titleModal);
-    showNotification('Titel-Vorschläge wurden generiert!', 'success');
+    console.log('Calling Gemini API...');
+    const title = await callGeminiAPI(content.substring(0, 500), systemInstruction);
+    console.log('Gemini response:', title);
+    
+    // Direkt ins Formular einfügen
+    const titleInput = document.getElementById('title');
+    if (titleInput) {
+      titleInput.value = title.trim();
+      safeUpdatePreview();
+      showNotification('Titel eingefügt!', 'success');
+    } else {
+      console.warn('Title input field not found');
+    }
         
   } catch (error) {
     console.error('Fehler beim Titel-Generieren:', error);
+    showNotification(`Fehler: ${error.message}`, 'error');
   } finally {
     if (titleBtn) {
       titleBtn.disabled = false;
@@ -421,16 +535,6 @@ Regeln:
 }
 
 // Hilfsfunktionen
-// Titel auswählen
-function selectTitle(title) {
-  const titleInput = document.getElementById('title');
-  if (titleInput) {
-    titleInput.value = title;
-    updatePreview();
-    showNotification('Titel übernommen!', 'success');
-  }
-  closeModal();
-}
 // Text in Zwischenablage kopieren
 function copyToClipboard(text) {
   if (navigator.clipboard) {
@@ -514,7 +618,7 @@ function showModal(content) {
         if (textarea) {
           textarea.value = safeHtml;
         }
-        updatePreview();
+        safeUpdatePreview();
         showNotification('Zusammenfassung eingefügt!', 'success');
       } catch (err) {
         console.error('Fehler beim Einfügen der Zusammenfassung:', err);
@@ -530,7 +634,7 @@ function showModal(content) {
       const tagsInput = document.getElementById('tags');
       if (tagsInput) {
         tagsInput.value = tags.trim();
-        updatePreview();
+        safeUpdatePreview();
         showNotification('Tags eingefügt!', 'success');
       }
       closeModal();
@@ -543,13 +647,6 @@ function showModal(content) {
       closeModal();
       return;
     }
-    if (action === 'select-title') {
-      const encoded = actionEl.getAttribute('data-title') || '';
-      const title = decodeURIComponent(encoded);
-      selectTitle(title);
-      // closeModal is called by selectTitle
-      return;
-    }
   });
 }
 // Modal schließen
@@ -557,11 +654,15 @@ function closeModal() {
   const modal = document.querySelector('.ai-modal-overlay');
   if (modal) {
     modal.classList.add('hidden');
-    setTimeout(() => {
+    // Remove immediately, don't wait for animation
+    try {
+      modal.remove();
+    } catch (e) {
+      // Fallback for older browsers
       if (modal.parentNode) {
         modal.parentNode.removeChild(modal);
       }
-    }, 300);
+    }
   }
 }
 // AI-Button-Status aktualisieren
@@ -588,10 +689,26 @@ async function initializeAISystem() {
   updateAIButtons();
 }
 
-// AI-System beim Laden der Seite initialisieren
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(initializeAISystem, 300);
-});
+let _aiActionsRegistered = false;
+function registerAiActions() {
+  if (_aiActionsRegistered) return;
+  _aiActionsRegistered = true;
+  registerAction('improveText', improveText);
+  registerAction('generateTags', generateTags);
+  registerAction('generateSummary', generateSummary);
+  registerAction('generateTitleSuggestions', generateTitleSuggestions);
+  registerAction('showApiKeySetup', showApiKeySetup);
+}
+
+function initAiAssistant() {
+  registerAiActions();
+  // Note: initializeAISystem is async but we don't need to wait for it here
+  // The API key loading and button updates will happen after actions are registered
+  initializeAISystem().catch(err => console.error('AI system initialization failed:', err));
+}
+
+// Note: initAiAssistant() is now called explicitly from page-initializers.js
+// This ensures registration happens BEFORE tinymce-editor attaches event listeners.
 
 // Export selected functions for use in other modules (and for unit testing)
 export {
@@ -600,11 +717,11 @@ export {
   generateSummary,
   generateTitleSuggestions,
   showApiKeySetup,
-  selectTitle,
   copyToClipboard,
   fallbackCopy,
   updateAIButtons,
   initializeAISystem,
+  initAiAssistant,
   loadGeminiApiKey,
   callGeminiAPI,
 };

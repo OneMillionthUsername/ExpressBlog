@@ -24,10 +24,10 @@ import { globalLimiter } from './utils/limiters.js';
 import routes from './routes/routesExport.js';
 import createDbRouter from './routes/dbRouter.js';
 import aiRoutes from './routes/aiRoutes.js';
-import csrfProtection from './utils/csrf.js';
 import nonceMiddleware from './middleware/nonceMiddleware.js';
 import compression from 'compression';
 import { authenticateToken, requireAdmin } from './middleware/authMiddleware.js';
+import * as authService from './services/authService.js';
 import { errors as celebrateErrors } from 'celebrate';
 
 // App-Status Management
@@ -208,9 +208,22 @@ app.use(nonceMiddleware);
 // Enable gzip/deflate compression for responses
 app.use(compression());
 
-// 2. Cookie Parser (required BEFORE CSRF!)
+// 2. Cookie Parser
 app.use(cookieParser());
-// 3. Request-Parsing (with security limits) - must run before CSRF middleware so req.body is available
+// Inject admin flag for all SSR templates based on auth cookie/header
+app.use((req, res, next) => {
+  let isAdmin = false;
+  try {
+    const token = authService.extractTokenFromRequest(req);
+    if (token) {
+      const decoded = authService.verifyToken(token);
+      if (decoded && decoded.isAdmin) isAdmin = true;
+    }
+  } catch { /* ignore token errors */ }
+  res.locals.isAdmin = isAdmin;
+  next();
+});
+// 3. Request-Parsing (with security limits)
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
 app.use(express.urlencoded({
   extended: true,
@@ -220,44 +233,7 @@ app.use(express.urlencoded({
   type: 'application/x-www-form-urlencoded',
 }));
 
-// 4. CSRF-Schutz (needs cookies AND parsed body!)
-// Apply CSRF middleware to all routes - it will attach req.csrfToken() function
-app.use(csrfProtection);
-
-// Handle CSRF errors early (must be after CSRF middleware and before other handlers)
-app.use((err, req, res, next) => {
-  const msg = String(err && err.message || '').toLowerCase();
-  const name = String(err && err.name || '').toLowerCase();
-  const isCsrf = err && (
-    err.code === 'EBADCSRFTOKEN' ||
-    err.status === 403 && (msg.includes('csrf') || name.includes('csrf')) ||
-    name === 'forbiddenerror' && msg.includes('csrf')
-  );
-  if (isCsrf) {
-    try {
-      logger.warn('CSRF validation failed', {
-        url: req.originalUrl,
-        method: req.method,
-        hasCsrfHeader: Boolean(req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token')),
-        hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
-        cookieNames: Object.keys(req.cookies || {}),
-        referer: req.get('referer') || null,
-        origin: req.get('origin') || null,
-        userAgent: req.get('user-agent') || null,
-      });
-    } catch { /* ignore logging errors */ }
-    
-    // For CSRF token endpoint, allow it to proceed without CSRF validation
-    if (req.path === '/api/csrf-token' && req.method === 'GET') {
-      return next();
-    }
-    
-    return res.status(403).json({ error: 'Invalid or missing CSRF token' });
-  }
-  next(err);
-});
-
-// 5. Input-Sanitization (NACH json parsing!)
+// 4. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
 
 // 6. Rate Limiting (statische Dateien ausgenommen)

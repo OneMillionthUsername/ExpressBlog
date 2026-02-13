@@ -2,15 +2,9 @@
 // Diese Datei enthält alle TinyMCE-spezifischen Funktionen für create.html
 
 import { makeApiRequest } from '../api.js';
-import { showNotification } from '../common.js';
-// Import AI assistant functions
-import {
-  improveText,
-  generateTags,
-  generateSummary,
-  generateTitleSuggestions,
-  showApiKeySetup,
-} from '../ai-assistant/ai-assistant.js';
+import { showNotification, getPostIdFromPath, checkAndPrefillEditPostForm } from '../common.js';
+import { getAssetVersion } from '../config.js';
+import { registerAction, getAction, getActionMap as getRegisteredActionMap } from '../actions/actionRegistry.js';
 
 // TinyMCE API-Schlüssel Konfiguration (client uses default; server injects CDN script when allowed)
 const defaultTinyMceKey = 'no-api-key';
@@ -236,11 +230,15 @@ async function initializeTinyMCE() {
   }
 
   try {
+    const assetVersion = (typeof getAssetVersion === 'function' && getAssetVersion()) || '';
+    const cacheSuffix = assetVersion ? `?v=${encodeURIComponent(assetVersion)}` : '';
     await tinymce.init({
       selector: '#content',
       height: 650,
       resize: true,
       menubar: 'edit view insert format tools help',
+      referrer_policy: 'origin',
+      cache_suffix: cacheSuffix,
             
       plugins: [
         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
@@ -333,32 +331,48 @@ async function initializeTinyMCE() {
                     
           showNotification('Editor bereit!', 'success');
           
-          // Entwürfe prüfen und wiederherstellen
-          const draftKey = 'blogpost_draft_content';
-          const savedDraft = localStorage.getItem(draftKey);
-          if (savedDraft) {
-            if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
-              try {
-                const draftData = JSON.parse(savedDraft);
-                
-                // Titel und Tags wiederherstellen
-                if (draftData.title) {
-                  document.getElementById('title').value = draftData.title;
+          // Entwürfe nur im Erstellen-Modus anbieten, nicht beim Bearbeiten
+          const isEditMode = (() => {
+            try {
+              if (document.getElementById('server-post')) return true;
+              const path = window.location && window.location.pathname ? window.location.pathname : '';
+              if (/\/createPost\//.test(path)) return true;
+              const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
+              if (postId) return true;
+              const search = window.location && window.location.search ? window.location.search : '';
+              const params = new URLSearchParams(search);
+              return !!params.get('post');
+            } catch {
+              return false;
+            }
+          })();
+          if (!isEditMode) {
+            const draftKey = 'blogpost_draft_content';
+            const savedDraft = localStorage.getItem(draftKey);
+            if (savedDraft) {
+              if (confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
+                try {
+                  const draftData = JSON.parse(savedDraft);
+                  
+                  // Titel und Tags wiederherstellen
+                  if (draftData.title) {
+                    document.getElementById('title').value = draftData.title;
+                  }
+                  if (draftData.tags) {
+                    document.getElementById('tags').value = draftData.tags;
+                  }
+                  
+                  // Content wiederherstellen
+                  if (draftData.content) {
+                    editor.setContent(draftData.content);
+                  }
+                  
+                  showNotification('Entwurf wiederhergestellt 📄', 'success');
+                  updatePreview();
+                } catch (error) {
+                  console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
+                  showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
                 }
-                if (draftData.tags) {
-                  document.getElementById('tags').value = draftData.tags;
-                }
-                
-                // Content wiederherstellen
-                if (draftData.content) {
-                  editor.setContent(draftData.content);
-                }
-                
-                showNotification('Entwurf wiederhergestellt 📄', 'success');
-                updatePreview();
-              } catch (error) {
-                console.error('Fehler beim Wiederherstellen des Entwurfs:', error);
-                showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
               }
             }
           }
@@ -677,6 +691,15 @@ function updatePreview() {
   previewBox.innerHTML = previewHtml;
 }
 
+// Listen for AI assistant refresh events to update preview
+try {
+  if (typeof document !== 'undefined') {
+    document.addEventListener('ai-assistant:refresh-preview', () => {
+      try { updatePreview(); } catch { /* ignore */ }
+    });
+  }
+} catch { /* ignore */ }
+
 let previewVisible = true;
 function togglePreview() {
   const preview = document.querySelector('.form-preview');
@@ -733,13 +756,6 @@ setInterval(() => {
     autosaveInProgress = false;
   }
 }, 60000); // 60 Sekunden
-
-// Add a button to manually trigger preview updates
-const previewButton = document.createElement('button');
-previewButton.textContent = 'Update Preview';
-previewButton.className = 'btn btn-outline-info';
-previewButton.addEventListener('click', updatePreview);
-document.body.appendChild(previewButton);
 
 // Erweiterte Bild-Management-Funktionen
 
@@ -1265,9 +1281,8 @@ async function initializeBlogEditor() {
       });
     });
 
-    // Generic data-action bindings — use an explicit action map instead of eval/global lookups
-      // actionMap is exposed via getActionMap for testing and easier wiring
-      const actionMap = getActionMap();
+    // Generic data-action bindings — resolve via action registry
+    registerCoreActions();
 
     document.querySelectorAll('[data-action]').forEach(btn => {
       const action = btn.dataset.action;
@@ -1283,7 +1298,7 @@ async function initializeBlogEditor() {
           }
           return;
         }
-        const fn = actionMap[action];
+        const fn = getAction(action);
         if (typeof fn === 'function') {
           try {
             fn();
@@ -1422,20 +1437,21 @@ function runTinyMCEDiagnostics() {
   return diagnostics;
 }
 // Globale Test-Funktion verfügbar machen
+let _coreActionsRegistered = false;
+function registerCoreActions() {
+  if (_coreActionsRegistered) return;
+  _coreActionsRegistered = true;
+  registerAction('saveDraft', saveDraft);
+  registerAction('clearDraft', clearDraft);
+  registerAction('showTinyMceApiKeySetup', showTinyMceApiKeySetup);
+  registerAction('resetForm', resetForm);
+  registerAction('togglePreview', togglePreview);
+}
+
 // Expose action map for unit testing and reuse
 function getActionMap() {
-  return {
-    improveText: (typeof improveText === 'function') ? improveText : undefined,
-    generateTitleSuggestions: (typeof generateTitleSuggestions === 'function') ? generateTitleSuggestions : undefined,
-    generateTags: (typeof generateTags === 'function') ? generateTags : undefined,
-    generateSummary: (typeof generateSummary === 'function') ? generateSummary : undefined,
-    saveDraft: (typeof saveDraft === 'function') ? saveDraft : undefined,
-    clearDraft: (typeof clearDraft === 'function') ? clearDraft : undefined,
-    showApiKeySetup: (typeof showApiKeySetup === 'function') ? showApiKeySetup : undefined,
-    showTinyMceApiKeySetup: (typeof showTinyMceApiKeySetup === 'function') ? showTinyMceApiKeySetup : undefined,
-    resetForm: (typeof resetForm === 'function') ? resetForm : undefined,
-    togglePreview: (typeof togglePreview === 'function') ? togglePreview : undefined,
-  };
+  registerCoreActions();
+  return getRegisteredActionMap();
 }
 
 export { testImageUploadHandler, initializeBlogEditor, runTinyMCEDiagnostics, getActionMap };

@@ -37,6 +37,9 @@
         <div class="row justify-content-center">
             <div class="col-md-10">
                 <div class="content-area">
+                    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                        <p class="text-muted small"><%= errorMessage %></p>
+                    <% } %>
                     <div id="mostReadPosts">
                         <% 
                           const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');

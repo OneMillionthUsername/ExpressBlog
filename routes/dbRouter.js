@@ -23,6 +23,9 @@ export default function createDbRouter(requireDatabase, routes) {
   // Utility routes (e.g., CSRF token endpoint)
   // Expose under /api so clients can fetch /api/csrf-token before making POST requests
   dbRouter.use('/api', routes.utilityRouter);
+  dbRouter.use('/api/blogpost', routes.postApiRouter);
+  dbRouter.use('/api/comments', routes.commentsApiRouter);
+  dbRouter.use('/api/cards', routes.cardApiRouter);
 
   dbRouter.use('/auth', routes.authRouter);
   dbRouter.use('/blogpost', routes.postRouter);

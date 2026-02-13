@@ -72,7 +72,11 @@
                                 <div id="tags" class="post-tags-container">
                                     <% if (post && Array.isArray(post.tags) && post.tags.length > 0) { %>
                                         <div class="tags-label">Tags:</div>
-                                        <div class="tags-list"><%= post.tags.map(tag => tag).join(' ') %></div>
+                                        <div class="tags-list">
+                                            <% post.tags.forEach(function(tag) { %>
+                                                <span class="tag"><%= tag %></span>
+                                            <% }); %>
+                                        </div>
                                     <% } %>
                                 </div>
                             </footer>
@@ -94,13 +98,18 @@
             <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Post erstellen</a>
                 <div id="admin-controls" class="mt-15">
                     <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
-                    <button type="button" data-action="delete-post" data-post-id="<%= post.id %>" class="btn admin-delete-btn btn-lg ml-2">
-                        Post löschen
-                    </button>
-                    <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="<%= post.id %>">
+                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline">
+                        <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <% } %>
+                        <button type="submit" class="btn admin-delete-btn btn-lg ml-2" onclick="return confirm('Möchten Sie diesen Beitrag wirklich löschen?');">
+                            Post löschen
+                        </button>
+                    </form>
+                    <a href="/createPost/<%= post.id %>" class="btn btn-outline-warning btn-lg ml-2">
                         <span class="btn-icon">✏️</span>
                         Post bearbeiten
-                    </button>
+                    </a>
                     <% } %>
                 </div>
         </div>
@@ -109,17 +118,12 @@
     <% // Precompute JSON on the server side and escape unsafe sequences to avoid breaking out of the script tag %>
     <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
-    <% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
     <!-- Expose the server-rendered post via non-executable JSON (no globals) -->
     <% if (typeof post !== 'undefined' && post) { %>
     <script id="server-post" type="application/json"<%- __nonceAttr %>>
         <%- __safeJson(post) %>
     </script>
     <% } %>
-                <!-- Expose a minimal server config via non-executable JSON (no globals) -->
-                <script id="server-config" type="application/json"<%- __nonceAttr %>>
-                    { "isAdmin": <%= __isAdmin ? 'true' : 'false' %> }
-                </script>
     <script<%- __nonceAttr %>>
         // Defensive fallback: if the server injected #server-post JSON,
         // remove the loading spinner and ensure the article is visible.

@@ -1,3 +1,8 @@
+<% // Minimal server config for client-side admin detection (single include) %>
+<% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\u003c').replace(/-->/g, '--\u003e').replace(/\u2028/g, '\u2028').replace(/\u2029/g, '\u2029'); } catch (e) { return 'null'; } } %>
+<% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
+<% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
+<% const __assetVersion = (typeof assetVersion !== 'undefined') ? String(assetVersion || '') : ''; %>
 <nav class="navbar">
     <div class="navbar-container">
     <input type="checkbox" id="menu-toggle"/>
@@ -8,11 +13,26 @@
     </div>
     <ul class="menu-items" id="navbar-menu-items">
         <li class="menu-home"><a href="/">Home</a></li>
+        <% if (__isAdmin) { %>
+        <li id="admin-create-link"><a href="/createPost">Post erstellen</a></li>
+        <li id="admin-createCard-modal"><a href="/cards/create">Card erstellen</a></li>
+        <% } %>
         <li><a href="/posts">Posts</a></li>
         <li><a href="/blogpost/most-read">Meistgelesen</a></li>
         <li><a href="/blogpost/archive">Archiv</a></li>
-    <li><a href="/about">Kontakt</a></li>
+        <li><a href="/about">Kontakt</a></li>
+        <% if (__isAdmin && typeof csrfToken !== 'undefined' && csrfToken) { %>
+        <li>
+            <form id="admin-logout-form" method="POST" action="/auth/logout" class="d-inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="nav-link-button">Logout</button>
+            </form>
+        </li>
+        <% } %>
     </ul>
     <a href="/"><span class="logo">Sub specie aeternitatis</span></a>
     </div>
 </nav>
+<script id="server-config" type="application/json"<%- __nonceAttr %>>
+    <%- __safeJson({ isAdmin: __isAdmin, assetVersion: __assetVersion }) %>
+</script>

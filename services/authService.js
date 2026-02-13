@@ -38,14 +38,17 @@ JWT_CONFIG.SECRET_KEY = EFFECTIVE_JWT_SECRET;
 export function generateToken(user) {
   // Accept either an Admin instance or a plain object with required fields
   const u = (user instanceof Admin) ? user : (user || {});
-  if (typeof u.id === 'undefined' || !u.username || !u.role) {
+  if (typeof u.id === 'undefined' || !u.username || typeof u.role === 'undefined') {
     throw new Error('Invalid user data for token generation');
   }
+  const role = String(u.role || '').trim().toLowerCase();
+  const isAdmin = role === 'admin';
 
   const payload = {
     id: Number(u.id), // BigInt to Number
     username: u.username,
-    role: u.role,
+    role,
+    isAdmin,
     iss: JWT_CONFIG.ISSUER,
     aud: JWT_CONFIG.AUDIENCE,
   };

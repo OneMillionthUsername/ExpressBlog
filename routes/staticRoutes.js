@@ -1,9 +1,11 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
-import * as authService from '../services/authService.js';
 import postController from '../controllers/postController.js';
+import cardController from '../controllers/cardController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
+import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * Routes serving site pages and server-side rendered views.
@@ -14,70 +16,83 @@ import { TINY_MCE_API_KEY } from '../config/config.js';
  */
 const staticRouter = express.Router();
 
-staticRouter.get('/', (req, res) => {
+staticRouter.get('/', csrfProtection, async (req, res) => {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
   logger.debug('[HOME] GET / - Rendering index.ejs');
+  const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   
   try {
     // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
-    postController.getAllPosts().then(posts => {
-      // Strip HTML tags from content server-side when building excerpts to avoid
-      // rendering raw HTML in templates. Use a simple regex here; content is
-      // trusted from DB but may contain editor HTML.
-      const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
-      const featuredPosts = (posts || []).slice(0, 3).map(p => {
-        const plain = stripTags(p.content || '');
-        const decodedPlain = decodeHtmlEntities(plain);
-        const excerpt = decodedPlain.length > 150 ? decodedPlain.substring(0, 150) + '...' : decodedPlain;
-        const decodedTitle = decodeHtmlEntities(p.title || '');
-        return { title: decodedTitle, slug: p.slug, excerpt };
-      });
-      logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.render('index', { featuredPosts });
-      logger.debug('[HOME] GET / - Successfully rendered index.ejs');
-    }).catch(err => {
-      logger.error('[HOME] GET / - Error fetching featured posts, rendering without dynamic posts:', err);
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.render('index', { featuredPosts: [] });
+    const posts = await postController.getAllPosts();
+    // Strip HTML tags from content server-side when building excerpts to avoid
+    // rendering raw HTML in templates. Use a simple regex here; content is
+    // trusted from DB but may contain editor HTML.
+    const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
+    const featuredPosts = (posts || []).slice(0, 3).map(p => {
+      const plain = stripTags(p.content || '');
+      const decodedPlain = decodeHtmlEntities(plain);
+      const excerpt = decodedPlain.length > 150 ? decodedPlain.substring(0, 150) + '...' : decodedPlain;
+      const decodedTitle = decodeHtmlEntities(p.title || '');
+      return { title: decodedTitle, slug: p.slug, excerpt };
     });
+
+    const popularPosts = (posts || [])
+      .slice()
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
+      .slice(0, 5)
+      .map(p => ({
+        id: p.id,
+        slug: p.slug,
+        title: decodeHtmlEntities(p.title || ''),
+      }));
+
+    const archiveYears = Array.from(new Set((posts || []).map(p => {
+      try { return new Date(p.created_at).getFullYear(); } catch { return null; }
+    }).filter(Boolean))).sort((a, b) => b - a);
+
+    let cards = [];
+    try {
+      const allCards = await cardController.getAllCards();
+      cards = Array.isArray(allCards) ? allCards.filter(c => c.published !== false) : [];
+    } catch (cardErr) {
+      logger.error('[HOME] GET / - Error fetching cards:', cardErr);
+      cards = [];
+    }
+
+    logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
+    applySsrNoCache(res, { varyCookie: true });
+    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin, csrfToken });
+    logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    applySsrNoCache(res, { varyCookie: true });
     res.status(500).send('Error rendering homepage');
   }
 });
 
-staticRouter.get('/about', (req, res) => {
-  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.render('about');
+staticRouter.get('/about', csrfProtection, (req, res) => {
+  const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+  applySsrNoCache(res, { varyCookie: true });
+  res.render('about', { isAdmin, csrfToken });
 });
 
 // Use a shared handler for both '/createPost' and '/createPost/:postId' to avoid
 // using an optional parameter token ("?") which some path parsers reject.
 async function handleCreatePost(req, res) {
   try {
-    // Determine if requester is authenticated admin by extracting token
-    const token = authService.extractTokenFromRequest(req);
-    let isAdmin = false;
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const formError = req.query && req.query.error ? 'Blogpost konnte nicht gespeichert werden.' : null;
     try {
-      const hasAuthHeader = !!(req.headers && typeof req.headers.authorization === 'string' && req.headers.authorization.startsWith('Bearer '));
-      const hasAuthCookie = !!(req.cookies && typeof req.cookies[authService.AUTH_COOKIE_NAME] === 'string');
-      // Do not log token values; only presence
       logger.debug('[CREATEPOST] SSR auth context', {
-        hasAuthHeader,
-        hasAuthCookie,
+        isAdmin,
         cookieNames: Object.keys(req.cookies || {}),
         ip: req.ip,
         userAgent: req.get('User-Agent') || null,
       });
     } catch { /* ignore logging errors */ }
-    if (token) {
-      const decoded = authService.verifyToken(token);
-      if (decoded && decoded.role && decoded.role === 'admin') {
-        isAdmin = true;
-      }
-    }
 
     // Only expose tinyMCE key to authenticated admins when rendering the page
     const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;
@@ -104,39 +119,45 @@ async function handleCreatePost(req, res) {
       }
     }
 
+    const formAction = serverPost && serverPost.id ? `/blogpost/update/${serverPost.id}` : '/blogpost/create';
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost });
+    applySsrNoCache(res, { varyCookie: true });
+    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null, csrfToken, formAction: '/blogpost/create', formError: 'Blogpost konnte nicht geladen werden.' });
   }
 }
 
 // Explicit routes: one without parameter and one with the parameter. Some
 // environments' path parsers can't handle '?' tokens in route strings.
-staticRouter.get('/createPost', handleCreatePost);
-staticRouter.get('/createPost/:postId', handleCreatePost);
+staticRouter.get('/createPost', csrfProtection, handleCreatePost);
+staticRouter.get('/createPost/:postId', csrfProtection, handleCreatePost);
 
 staticRouter.get('/about.html', (req, res) => {
   res.redirect('/about');
 });
 
-staticRouter.get('/posts', async (req, res) => {
+staticRouter.get('/posts', csrfProtection, async (req, res) => {
   try {
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     // Server-side render the list of current posts to preserve the
     // HTML-first experience and avoid client-side JSON-only rendering.
     const posts = await postController.getAllPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.render('listCurrentPosts', { posts });
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { posts, isAdmin, csrfToken });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     // Fallback: render without posts so client-side JS can still attempt to fetch
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.render('listCurrentPosts');
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { isAdmin, csrfToken });
   }
 });
 

@@ -60,21 +60,32 @@
     color: var(--color-text);
     margin-bottom: 8px;
 }
-.create-input, .create-textarea {
+.create-input,
+.create-textarea,
+.comment-form .form-control,
+.card-input,
+#admin-login-modal input[type="text"],
+#admin-login-modal input[type="password"] {
     font-family: var(--font-secondary);
-    font-size: 1.1rem;
+    font-size: 1rem;
     border: 2px solid #e8f4f8;
     border-radius: var(--border-radius);
     padding: 12px 15px;
     transition: var(--transition);
     background-color: #fafafa;
     width: 100%;
+    box-sizing: border-box;
 }
-.create-input:focus, .create-textarea:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+.create-input:focus,
+.create-textarea:focus,
+.comment-form .form-control:focus,
+.card-input:focus,
+#admin-login-modal input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
     background-color: #ffffff;
     outline: none;
+    transform: translateY(-1px);
 }
 
 /* ========================================
@@ -195,14 +206,14 @@ body.dark .modal-container pre.modal-content,
     color: #666;
     margin-bottom: 20px;
 }
-.modal-content {
+.modal-container .modal-content {
     white-space: pre-wrap;
     font-size: 0.95rem;
     margin-bottom: 16px;
     color: inherit;
 }
 /* Modal Footer */
-.modal-footer {
+.modal-container .modal-footer {
     margin-top: 20px;
     text-align: right;
 }

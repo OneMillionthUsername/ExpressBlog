@@ -11,6 +11,7 @@ import { AUTH_COOKIE_NAME } from '../services/authService.js';
 import { celebrate, Joi, Segments } from 'celebrate';
 import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * Authentication routes
@@ -61,6 +62,7 @@ authRouter.post('/login',
   }),
   async (req, res) => {
     try {
+      const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
       logger.debug('[AUTH] /auth/login request received', {
         bodyKeys: Object.keys(req.body || {}),
         hasUsername: Boolean(req.body && req.body.username),
@@ -101,6 +103,11 @@ authRouter.post('/login',
       });
       logger.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      if (wantsHtml) {
+        const fallback = '/createPost';
+        const referer = req.get('Referer');
+        return res.redirect(303, referer || fallback);
+      }
       res.json({
         success: true,
         message: 'Login successful',
@@ -111,6 +118,7 @@ authRouter.post('/login',
         },
       });
     } catch (error) {
+      const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
       logger.error(`[AUTH AUDIT] Login error for username: ${req.body && req.body.username}`, error);
       logger.debug('[AUTH] Login error details', {
         message: error && error.message,
@@ -118,6 +126,10 @@ authRouter.post('/login',
         hasCsrfHeader: Boolean(req.get('x-csrf-token') || req.get('x-xsrf-token') || req.get('csrf-token')),
         hasCsrfCookie: Boolean(req.cookies && req.cookies._csrf),
       });
+      if (wantsHtml) {
+        const referer = req.get('Referer');
+        return res.redirect(303, referer || '/createPost?login=error');
+      }
       res.status(500).json({ success: false, error: 'Internal server error' });
     }
   });
@@ -170,7 +182,6 @@ authRouter.post('/verify',
           user: {
             id: Number(admin.id), // BigInt zu Number konvertieren
             username: admin.username,
-            role: admin.role,
           },
         },
       });
@@ -186,7 +197,8 @@ authRouter.post('/verify',
     }
   });
 // POST /auth/logout - Abmeldung
-authRouter.post('/logout', (req, res) => {
+authRouter.post('/logout', csrfProtection, (req, res) => {
+  const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
   // Cookie entfernen (auch wenn nicht vorhanden, ist das idempotent)
   res.clearCookie(AUTH_COOKIE_NAME, {
     httpOnly: true,
@@ -200,6 +212,9 @@ authRouter.post('/logout', (req, res) => {
 
   // Klare Antwort für das Frontend
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  if (wantsHtml) {
+    return res.redirect(303, '/');
+  }
   res.status(200).json({
     success: true,
     message: 'Logout erfolgreich. Sie wurden abgemeldet.',

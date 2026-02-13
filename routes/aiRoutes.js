@@ -1,48 +1,40 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-/* global fetch */
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * AI helper routes (protected admin-only endpoints).
  *
- * Example: POST /generate - forwards prompt to upstream Gemini API and
- * returns generated text. These endpoints are admin-only and expect JSON.
+ * Uses the official Google Generative AI SDK for cleaner, simpler code.
+ * Example: POST /generate - forwards prompt to Gemini API and returns generated text.
  */
 const router = express.Router();
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // POST /api/ai/generate
-router.post('/generate', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { prompt, systemInstruction } = req.body || {};
+    const { prompt, systemInstruction, model, generationConfig } = req.body || {};
+    
     if (!prompt || typeof prompt !== 'string' || prompt.length > 20000) {
       return res.status(400).json({ success: false, error: 'Invalid prompt' });
     }
 
-    // TODO: add rate limiting here
+    const safeModel = (typeof model === 'string' && model.trim().length > 0)
+      ? model.trim()
+      : 'gemini-2.0-flash-exp';
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    const requestBody = {
-      contents: [{ parts: [{ text: systemInstruction ? `${systemInstruction}\n\n${prompt}` : prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-    };
-
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+    const generativeModel = genAI.getGenerativeModel({ 
+      model: safeModel,
+      ...(systemInstruction && { systemInstruction })
     });
 
-    if (!r.ok) {
-      const errBody = await r.text().catch(() => null);
-      logger.error('Gemini upstream error', { status: r.status, body: errBody });
-      return res.status(502).json({ success: false, error: 'Upstream AI service error' });
-    }
-
-    const data = await r.json();
-    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
+    const result = await generativeModel.generateContent(prompt);
+    const aiText = result.response.text() || '';
+    
     return res.json({ success: true, data: { text: aiText } });
   } catch (err) {
     logger.error('AI generate route error', err);

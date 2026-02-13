@@ -2,25 +2,13 @@
 // EINFACHES & ROBUSTES PAGE INITIALISIERUNGSSYSTEM
 // ===========================================
 
-import { loadAllBlogPosts, loadCards } from './api.js';
-import { 
-  //loadAndDisplayAllPosts, 
-  loadAndDisplayRecentPosts, 
-  loadAndDisplayArchivePosts, 
-  loadAndDisplayMostReadPosts,
-  loadAndDisplayBlogPost,
-  renderAndDisplayCards,
-  renderPopularPostsSidebar,
-  renderSidebarArchive,
-} from './common.js';
 // Do NOT statically import the TinyMCE editor or AI assistant here.
 // They should only be loaded on the Create page to avoid loading large
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
-import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
 import { isAdminFromServer, getAssetVersion } from './config.js';
-import { initializeBlogUtilities, initializeCommonDelegation, showElement, hideElement } from './common.js';
-import { initializeCommentsDelegation, initializeCommentsSystem } from './comments.js';
+import { initializeCommonDelegation, showElement, hideElement, initializeBlogPostForm } from './common.js';
 
 // Admin- und Kommentar-Funktionen bleiben optional (typeof checks)
 // da sie aus separaten Modulen kommen können
@@ -38,12 +26,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       addAdminMenuItemToNavbar();
     }
 
-    // 3. Blog-Utilities initialisieren
-    if (typeof initializeBlogUtilities === 'function') {
-      await initializeBlogUtilities();
-    }
-
-    // Initialize common delegation (data-action handlers)
+    // 3. Initialize common delegation (data-action handlers)
     if (typeof initializeCommonDelegation === 'function') {
       initializeCommonDelegation();
     }
@@ -54,11 +37,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 4. Seiten-spezifische Initialisierung
     await initializeCurrentPage();
-
-    // Initialize comments delegation (used on read_post pages)
-    if (typeof initializeCommentsDelegation === 'function') {
-      initializeCommentsDelegation();
-    }
 
   } catch (error) {
     console.error('Fehler bei der globalen Initialisierung:', error);
@@ -107,7 +85,7 @@ function getCurrentPageType() {
 
   // Exakte Übereinstimmungen mit tatsächlichen Dateinamen
   if (path === '/' || page === '') return 'index';
-  if (page === 'createPost') return 'create';
+  if (page === 'createPost' || /^\/createPost\//.test(path)) return 'create';
   if (page === 'archiv') return 'archiv';
   if (page === 'listCurrentPosts') return 'list_posts';
   if (page === 'mostReadPosts' || path === '/blogpost/most-read' || path.endsWith('/most-read')) return 'most_read';
@@ -144,33 +122,37 @@ async function initializeCreatePage() {
       }
     }
 
+    // Admin-Status prüfen und UI anpassen FIRST
+    // Use the safe server-injected flag if available. Do NOT rely on any injected secrets.
+    const isAdmin = (typeof isAdminFromServer === 'function') ? !!isAdminFromServer() : false;
+    if (!isAdmin) {
+      hideElement('create-content');
+      showElement('admin-required');
+      return;  // Exit early if not admin
+    }
+
+    showElement('create-content');
+    hideElement('admin-required');
+
+    // IMPORTANT: Load AI assistant BEFORE tinymce-editor to ensure action registration
+    // happens before click handlers are attached
+    try {
+      const aiMod = await import('./ai-assistant/ai-assistant.js');
+      if (aiMod && typeof aiMod.initAiAssistant === 'function') {
+        aiMod.initAiAssistant();
+      }
+    } catch (err) {
+      console.error('Fehler beim Laden des AI-Assistant-Moduls:', err);
+    }
+
+    // NOW initialize TinyMCE editor (which attaches click handlers to already-registered actions)
     if (typeof initializeBlogEditor === 'function') {
       await initializeBlogEditor();
     }
 
-    // Admin-Status prüfen und UI anpassen
-    // Use the safe server-injected flag if available. Do NOT rely on any injected secrets.
-  const isAdmin = (typeof isAdminFromServer === 'function') ? !!isAdminFromServer() : false;
-    if (isAdmin) {
-      showElement('create-content');
-      hideElement('admin-required');
-
-      // Lazy-load AI assistant only for admins (separate module)
-      try {
-        import('./ai-assistant/ai-assistant.js')
-          .then(m => {
-            if (m && typeof m.initAiAssistant === 'function') {
-              m.initAiAssistant();
-            }
-          })
-          .catch(err => console.error('Fehler beim Laden des AI-Assistant-Moduls:', err));
-      } catch (err) {
-        console.error('Dynamischer Import für AI-Assistant fehlgeschlagen:', err);
-      }
-
-    } else {
-      hideElement('create-content');
-      showElement('admin-required');
+    // Blogpost-Formular-Submit-Handler aktivieren
+    if (typeof initializeBlogPostForm === 'function') {
+      initializeBlogPostForm();
     }
 
   } catch (error) {
@@ -180,120 +162,36 @@ async function initializeCreatePage() {
 
 // Index Page - vereinfacht
 async function initializeIndexPage() {
-
-  try {
-    // Posts laden
-    const posts = await loadAllBlogPosts();
-    if (posts && posts.length > 0) {
-      // Sidebar-Elemente rendern
-      if (typeof renderSidebarArchive === 'function') {
-        try {
-          console.debug('initializeIndexPage: calling renderSidebarArchive, posts.length=', posts.length);
-          await renderSidebarArchive(posts);
-        } catch (err) {
-          console.error('initializeIndexPage: renderSidebarArchive threw:', err);
-        }
-      }
-
-      if (typeof renderPopularPostsSidebar === 'function') {
-        try {
-          console.debug('initializeIndexPage: calling renderPopularPostsSidebar, posts.length=', posts.length);
-          // Sanity-check: ensure target container exists (function may be no-op if missing)
-          const popularEl = document.getElementById('popular-posts');
-          if (!popularEl) console.info('initializeIndexPage: #popular-posts element not found in DOM');
-          await renderPopularPostsSidebar(posts);
-        } catch (err) {
-          console.error('initializeIndexPage: renderPopularPostsSidebar threw:', err);
-        }
-      }
-    } else {
-      console.info('No posts available - skipping sidebar rendering');
-    }
-
-    // Cards laden only if the page contains a cards container or the renderer is present
-  // Support multiple possible containers used across templates (discoveries-grid is used on index.ejs)
-  const hasCardsContainer = document.getElementById('cards-container') || document.getElementById('cards') || document.querySelector('.cards-list') || document.getElementById('discoveries-grid');
-    if (hasCardsContainer) {
-      const cards = await loadCards();
-      if (cards && cards.length > 0) {
-        if (typeof renderAndDisplayCards === 'function') {
-          await renderAndDisplayCards(cards);
-        }
-      } else {
-        console.info('No cards available - skipping card rendering');
-      }
-    }
-
-  } catch (error) {
-    console.error('Index Page Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Archiv Page - vereinfacht
 async function initializeArchivePage() {
-
-  try {
-    await loadAndDisplayArchivePosts();
-  } catch (error) {
-    console.error('Archiv Page Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Recent Posts - vereinfacht
 async function initializeRecentPostsPage() {
-  try {
-    await loadAndDisplayRecentPosts();
-  } catch (error) {
-    console.error('initializeRecentPostsPage: Error occurred:', error);
-    console.error('Recent Posts Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Most Read Posts - vereinfacht
 async function initializeMostReadPostsPage() {
-  try {
-    await loadAndDisplayMostReadPosts();
-  } catch (error) {
-    console.error('Most Read Posts Initialisierung fehlgeschlagen:', error);
-  }
+  // SSR-only: no client-side fetching required.
 }
 
 // Read Post Page - vereinfacht
 async function initializeReadPostPage() {
   try {
-    // Post laden
-    await loadAndDisplayBlogPost();
-
     // Admin-Controls hinzufügen (vereinfacht)
     setTimeout(async () => {
-      if (typeof addReadPostAdminControls === 'function') {
-        addReadPostAdminControls();
-      }
-      // Additionally run a short retry loop to handle late-arriving admin status or postId
-      if (typeof ensureAdminControls === 'function') {
-        ensureAdminControls({ attempts: 6, intervalMs: 400 });
-      }
-
-      // Kommentare aktivieren: remove the utility 'hidden' class (CSS uses !important)
-      const commentsSection = document.getElementById('comments-section');
-      if (commentsSection) {
-        commentsSection.classList.remove('hidden');
-        if (typeof initializeCommentsSystem === 'function') {
-          // initializeCommentsSystem will attach event handlers and load comments
-          initializeCommentsSystem();
-        }
-      }
+      // SSR-only: admin controls are rendered server-side.
     }, 500); // Kurze Verzögerung für DOM-Updates
 
   } catch (error) {
     console.error('Read Post Page Initialisierung fehlgeschlagen:', error);
   }
 }
-
-// ===========================================
-// LEGACY CODE - WIRD NICHT MEHR VERWENDET
-// Kann später entfernt werden
-// ===========================================
 
 // Export the initializers so other modules/importers can use them directly
 export {
@@ -306,8 +204,3 @@ export {
   initializeCurrentPage as initializePage,
   getCurrentPageType,
 };
-
-// Backwards compatibility note: legacy consumers that relied on
-// `window.pageInitializers` or `window.moduleLoader` should be updated
-// to import the named exports above. This keeps the module ESM-only and
-// avoids creating new globals.

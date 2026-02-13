@@ -5,6 +5,7 @@ import mediaController from '../controllers/mediaController.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { strictLimiter } from '../utils/limiters.js';
 import { validateMediaFile } from '../middleware/validationMiddleware.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * Routes for media uploads.
@@ -17,10 +18,11 @@ const uploadRouter = express.Router();
 
 uploadRouter.post('/image', 
   strictLimiter,
+  csrfProtection,
   imageUpload.single('image'), 
   validateMediaFile,
-  requireAdmin, 
   authenticateToken,
+  requireAdmin, 
   async (req, res) => {
     try {
       if (!req.file) {
