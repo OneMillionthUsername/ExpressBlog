@@ -170,7 +170,6 @@ authRouter.post('/verify',
           user: {
             id: Number(admin.id), // BigInt zu Number konvertieren
             username: admin.username,
-            role: admin.role,
           },
         },
       });

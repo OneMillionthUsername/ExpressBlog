@@ -19,8 +19,8 @@ uploadRouter.post('/image',
   strictLimiter,
   imageUpload.single('image'), 
   validateMediaFile,
-  requireAdmin, 
   authenticateToken,
+  requireAdmin, 
   async (req, res) => {
     try {
       if (!req.file) {

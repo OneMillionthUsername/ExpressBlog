@@ -636,7 +636,7 @@ postRouter.put('/update/:postId',
       if (!result) {
         return res.status(400).json({ error: 'Failed to update blog post' });
       }
-      res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.postId), title: result.title });
+      res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.id ?? postId), title: result.title });
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');

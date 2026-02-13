@@ -41,11 +41,14 @@ export function generateToken(user) {
   if (typeof u.id === 'undefined' || !u.username || typeof u.role === 'undefined') {
     throw new Error('Invalid user data for token generation');
   }
+  const role = String(u.role || '').trim().toLowerCase();
+  const isAdmin = role === 'admin';
 
   const payload = {
     id: Number(u.id), // BigInt to Number
     username: u.username,
-    isAdmin: u.role === 'admin',
+    role,
+    isAdmin,
     iss: JWT_CONFIG.ISSUER,
     aud: JWT_CONFIG.AUDIENCE,
   };

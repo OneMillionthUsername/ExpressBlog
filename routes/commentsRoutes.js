@@ -55,8 +55,8 @@ commentsRouter.delete('/:postId/:commentId',
     }),
   }),
   requireJsonContent,
-  requireAdmin,
   authenticateToken,
+  requireAdmin,
   commentsController.deleteComment,
 );
 
