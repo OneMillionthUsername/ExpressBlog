@@ -68,6 +68,14 @@ export function hideElement(elementId) {
 
 export function showNotification(message, type = 'info', durationMs = 3000) {
   if (typeof document === 'undefined') return;
+  const typeMap = {
+    success: 'alert-success',
+    error: 'alert-danger',
+    danger: 'alert-danger',
+    warning: 'alert-info',
+    info: 'alert-info',
+  };
+  const alertClass = typeMap[type] || 'alert-info';
   const containerId = 'notification-container';
   let container = document.getElementById(containerId);
   if (!container) {
@@ -78,7 +86,7 @@ export function showNotification(message, type = 'info', durationMs = 3000) {
   }
 
   const note = document.createElement('div');
-  note.className = `notification ${type}`.trim();
+  note.className = `notification ${alertClass}`.trim();
   note.textContent = String(message || '');
   container.appendChild(note);
 

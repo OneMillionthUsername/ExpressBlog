@@ -123,6 +123,20 @@ body {
 .navbar a:hover {
     color: var(--color-hover);
 }
+.navbar .nav-link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: var(--color-secondary);
+    font-weight: 500;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: color 0.3s ease-in-out;
+}
+.navbar .nav-link-button:hover {
+    color: var(--color-hover);
+}
 /* Hamburger Menu - versteckt auf Desktop */
 .navbar input[type="checkbox"],
 .navbar .hamburger-lines {
@@ -257,6 +271,19 @@ body {
     overflow-wrap: break-word;
     white-space: normal;
     flex-grow: 1; /* Füllt verfügbaren Platz */
+}
+
+/* Posts filter header */
+.posts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.post-filter-input {
+    max-width: 340px;
 }
 /* Button immer unten rechts positioniert */
 .featured-post-card .btn {

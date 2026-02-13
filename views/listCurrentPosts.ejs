@@ -38,7 +38,10 @@
             <div class="col-md-10">
                 <div class="content-area">
                     <div class="posts-header">
-
+                        <div class="form-group mb-0">
+                            <label class="sr-only" for="post-filter-input">Posts filtern</label>
+                            <input id="post-filter-input" class="form-control post-filter-input" type="search" placeholder="Posts filtern...">
+                        </div>
                     </div>
                     
                                     <div id="blogPostsList">
@@ -100,6 +103,32 @@
         </div>
     </div>
     <script src="/vendor/dompurify.min.js"></script>
+        <% if (typeof nonce !== 'undefined') { %>
+        <script nonce="<%= nonce %>">
+        <% } else { %>
+        <script>
+        <% } %>
+            (function() {
+                const input = document.getElementById('post-filter-input');
+                const cards = Array.from(document.querySelectorAll('.blog-post-card'));
+                if (!input || cards.length === 0) return;
+
+                const normalize = (str) => String(str || '').toLowerCase();
+                const cardText = new Map();
+                cards.forEach(card => {
+                    const text = normalize(card.textContent);
+                    cardText.set(card, text);
+                });
+
+                input.addEventListener('input', () => {
+                    const q = normalize(input.value).trim();
+                    cards.forEach(card => {
+                        const hay = cardText.get(card) || '';
+                        card.style.display = (!q || hay.includes(q)) ? '' : 'none';
+                    });
+                });
+            })();
+        </script>
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
 </body>
