@@ -315,66 +315,8 @@ export function initializeBlogPostForm() {
   const form = document.getElementById('blogPostForm');
   if (!form) return;
   form.addEventListener('submit', async function(event) {
-    event.preventDefault();
-
-    // TinyMCE: Klasse zu allen Bildern hinzufügen
-    if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
-      const editor = tinymce.get('content');
-      const imgs = editor.dom.select('img');
-      imgs.forEach(img => {
-        editor.dom.addClass(img, 'blogpost-content-img');
-      });
-    }
-
-  const postId = getPostIdFromPath();
-  const url = postId ? `/blogpost/update/${postId}` : '/blogpost/create';
-    const method = postId ? 'PUT' : 'POST';
-
-    const title = document.getElementById('title').value;
-    if (!title || title.trim().length === 0) {
-  showNotification('Bitte geben Sie einen Titel ein.', 'error');
-      return;
-    }
-
-    let content = document.getElementById('content').value;
-    if (typeof tinymce !== 'undefined' && tinymce.get('content')) {
-      content = tinymce.get('content').getContent();
-    }
-    if(!content || content.trim().length === 0) {
-  showNotification('Bitte geben Sie einen Inhalt ein.', 'error');
-      return;
-    }
-    const tagsInput = document.getElementById('tags').value;
-    const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-
-    const postData = {
-      title,
-      content,
-      tags,
-      author: 'admin',
-    };
-
-    try {
-      const options = { method, body: JSON.stringify(postData), headers: { 'Content-Type': 'application/json' } };
-      const apiResult = await apiRequest(url, options);
-
-      if (!apiResult || apiResult.success !== true) {
-        const errorMessage = apiResult && (apiResult.error || (apiResult.data && apiResult.data.message)) || 'Unbekannter Fehler';
-        handleFormError(`Fehler beim Erstellen des Blogposts: ${errorMessage}`);
-        if (apiResult && (apiResult.status === 401 || apiResult.status === 403)) {
-          handleFormError('Session abgelaufen. Bitte melden Sie sich erneut an.');
-          if (typeof adminLogout === 'function') await adminLogout();
-        }
-        return;
-      }
-
-      showNotification('Post erfolgreich gespeichert!', 'success');
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
-
-    } catch (error) {
-      handleFormError(`Fehler: ${error && error.message ? error.message : String(error)}`, error);
+    if (typeof tinymce !== 'undefined' && typeof tinymce.triggerSave === 'function') {
+      tinymce.triggerSave();
     }
   });
 }
@@ -467,7 +409,7 @@ export function showCreateCardModal() {
 
     try {
   const options = { method: 'POST', body: JSON.stringify(cardData), headers: { 'Content-Type': 'application/json' } };
-      const response = await apiRequest('/cards', options);
+      const response = await apiRequest('/api/cards', options);
       if (response && response.success) {
         modal.remove();
         showNotification('Card erstellt!', 'success');
@@ -650,7 +592,7 @@ export async function loadAndDisplayBlogPost() {
     // try the slug-based endpoint as a fallback (some links may use slugs).
   // Use the JSON-only API alias to avoid content negotiation issues when proxies
   // or CDNs strip Accept/X-Requested-With headers.
-  let apiResult = await apiRequest(`/blogpost/api/by-id/${postId}`, { method: 'GET' });
+  let apiResult = await apiRequest(`/api/blogpost/by-id/${postId}`, { method: 'GET' });
     if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
       // fallback to slug-based route
       apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
@@ -1025,7 +967,7 @@ export async function loadAndDisplayMostReadPosts() {
   try {
   let apiResult = null;
   try {
-    apiResult = await apiRequest('/blogpost/most-read', { method: 'GET' });
+    apiResult = await apiRequest('/api/blogpost/most-read', { method: 'GET' });
   } catch {
     // swallow and fall back to computing from all posts below
     apiResult = null;
@@ -1036,7 +978,7 @@ export async function loadAndDisplayMostReadPosts() {
       console.error('Fehler beim Laden der meistgelesenen Posts:', apiResult && apiResult.error);
       // Fallback: try to compute most-read from the all-posts endpoint to keep UI working
       try {
-        const allResult = await apiRequest('/blogpost/all', { method: 'GET' });
+        const allResult = await apiRequest('/api/blogpost/all', { method: 'GET' });
         if (allResult && allResult.success === true && Array.isArray(allResult.data)) {
           // sort by views desc and take top N
           posts = allResult.data.slice().sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 10);
@@ -1173,7 +1115,7 @@ export async function checkAndPrefillEditPostForm() {
     if (!postId) return;
 
     // Postdaten laden via zentraler API-Wrapper
-    let apiResult = await apiRequest(`/blogpost/api/by-id/${postId}`, { method: 'GET' });
+    let apiResult = await apiRequest(`/api/blogpost/by-id/${postId}`, { method: 'GET' });
     if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
       apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
     }
@@ -1280,7 +1222,7 @@ export async function renderPopularPostsSidebar(posts) {
     if (!listEl) return;
 
     const response = await (typeof globalThis !== 'undefined' && typeof globalThis.makeApiRequest === 'function' ?
-      globalThis.makeApiRequest('/blogpost/most-read', { method: 'GET' }) : await apiRequest('/blogpost/most-read', { method: 'GET' }));
+      globalThis.makeApiRequest('/api/blogpost/most-read', { method: 'GET' }) : await apiRequest('/api/blogpost/most-read', { method: 'GET' }));
 
     const serverPosts = response && response.success === true ? response.data : null;
     if (Array.isArray(serverPosts) && serverPosts.length > 0) {
@@ -1703,7 +1645,7 @@ export async function deletePostAndRedirect(postId) {
   }
 
   try {
-    const response = await _makeApiRequest(`/blogpost/delete/${postId}`, {
+    const response = await _makeApiRequest(`/api/blogpost/delete/${postId}` , {
       method: 'DELETE',
     });
 

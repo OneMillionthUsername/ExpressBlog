@@ -55,7 +55,13 @@
                     </div>
                 </div>
                 <div id="create-content" class="content-area create-form-section <%= isAdmin ? '' : 'hidden' %>">
-                    <form id="blogPostForm" class="create-form">
+                    <% if (typeof formError !== 'undefined' && formError) { %>
+                        <div class="alert alert-danger"><%= formError %></div>
+                    <% } %>
+                    <form id="blogPostForm" class="create-form" method="POST" action="<%= typeof formAction !== 'undefined' ? formAction : '/blogpost/create' %>">
+                        <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <% } %>
                         <div class="form-group">
                             <label for="title" class="form-label">
                                 <span class="label-icon">📝</span>

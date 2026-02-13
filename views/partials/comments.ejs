@@ -8,6 +8,12 @@
         💬 Kommentare <span class="badge badge-secondary" id="comment-count"><%= typeof commentCount !== 'undefined' ? commentCount : 0 %></span>
     </h3>
 
+    <% if (typeof commentMessage !== 'undefined' && commentMessage) { %>
+        <div class="alert <%= commentStatus === 'ok' ? 'alert-success' : 'alert-danger' %>">
+            <%= commentMessage %>
+        </div>
+    <% } %>
+
     <!-- Kommentar-Formular -->
     <div class="comment-form-container">
         <h4 class="mb-3">Kommentar schreiben</h4>

@@ -15,12 +15,20 @@
         <li class="menu-home"><a href="/">Home</a></li>
         <% if (__isAdmin) { %>
         <li id="admin-create-link"><a href="/createPost">Post erstellen</a></li>
-        <li id="admin-createCard-modal"><a href="#" data-action="show-create-card">Card erstellen</a></li>
+        <li id="admin-createCard-modal"><a href="/cards/create">Card erstellen</a></li>
         <% } %>
         <li><a href="/posts">Posts</a></li>
         <li><a href="/blogpost/most-read">Meistgelesen</a></li>
         <li><a href="/blogpost/archive">Archiv</a></li>
         <li><a href="/about">Kontakt</a></li>
+        <% if (__isAdmin && typeof csrfToken !== 'undefined' && csrfToken) { %>
+        <li>
+            <form id="admin-logout-form" method="POST" action="/auth/logout" class="d-inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-link p-0">Logout</button>
+            </form>
+        </li>
+        <% } %>
     </ul>
     <a href="/"><span class="logo">Sub specie aeternitatis</span></a>
     </div>

@@ -11,16 +11,16 @@ export function clearGetResponseCache() {
 
 // Per-endpoint TTLs (ms) - add entries here for endpoints that should cache longer/shorter
 const ENDPOINT_CACHE_TTLS = new Map([
-  ['/blogpost/all', 30 * 1000], // posts list keep shorter TTL (30s)
-  ['/cards', 5 * 60 * 1000],    // cards change rarely; cache 5 minutes
-  ['/blogpost/most-read', 5 * 60 * 1000], // most-read is semi-static; cache 5 minutes
+  ['/api/blogpost/all', 30 * 1000], // posts list keep shorter TTL (30s)
+  ['/api/cards', 5 * 60 * 1000],    // cards change rarely; cache 5 minutes
+  ['/api/blogpost/most-read', 5 * 60 * 1000], // most-read is semi-static; cache 5 minutes
 ]);
 
 // Shared posts cache (higher-level store used by UI components)
 const postsCache = {
   ts: 0,
   data: null,
-  ttl: ENDPOINT_CACHE_TTLS.get('/blogpost/all') || DEFAULT_GET_CACHE_TTL,
+  ttl: ENDPOINT_CACHE_TTLS.get('/api/blogpost/all') || DEFAULT_GET_CACHE_TTL,
 };
 
 export function getCachedPosts() {
@@ -41,7 +41,7 @@ export async function refreshPosts(force = false) {
     if (cached) return cached;
   }
 
-  const result = await makeApiRequest('/blogpost/all');
+  const result = await makeApiRequest('/api/blogpost/all');
   if (!result || result.success !== true) {
     return [];
   }
@@ -231,7 +231,7 @@ export async function loadAllBlogPosts() {
 export async function loadCards() {
   try {
     
-    const apiResult = await makeApiRequest('/cards', { method: 'GET' });
+    const apiResult = await makeApiRequest('/api/cards', { method: 'GET' });
 
     if (!apiResult || apiResult.success !== true) {
       console.warn('loadCards: API returned failure or unexpected envelope', apiResult);

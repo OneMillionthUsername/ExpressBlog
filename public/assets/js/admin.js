@@ -1,6 +1,5 @@
 // Admin-System für den Blog
 // Alle admin-bezogenen Funktionen sind hier zentralisiert
-import { makeApiRequest } from './api.js';
 import { showFeedback } from './feedback.js';
 // Import helpers from common module instead of relying on window globals
 import {
@@ -9,12 +8,7 @@ import {
   hideElement,
   reloadPageWithDelay,
   getUrlParameter,
-  deletePostAndRedirect,
-  redirectEditPost,
-  showCreateCardModal,
 } from './common.js';
-import { confirmModal } from './ui/confirmModal.js';
-import { isValidIdSchema } from './lib/validationClient.js';
 import { isAdmin, setAdmin } from './state/adminState.js';
 import { isAdminFromServer } from './config.js';
 
@@ -33,91 +27,23 @@ let adminSystemInitPromise = null;
 
 // Admin-Status über HTTP-only Cookie prüfen
 // Normalize response to a stable shape: { ok, valid, user }
-async function verifyAdminStatus() {
-  try {
-    const envelope = await callApi('/auth/verify', {
-      method: 'POST',
-    });
-    const payload = envelope && envelope.data ? envelope.data : null; // server JSON
-    const valid = Boolean(payload && payload.data && payload.data.valid === true);
-    const user = payload && payload.data && payload.data.user ? payload.data.user : null;
-    return { ok: envelope && envelope.success === true, valid, user };
-  } catch (error) {
-    // Nur loggen wenn es ein echter Fehler ist, nicht 401
-    if (error.status !== 401) {
-      console.warn('Admin status check failed:', error);
-    }
-    return { ok: false, valid: false, user: null };
-  }
-}
-
-async function checkAdminStatus() {
-  try {
-    const status = await verifyAdminStatus();
-    const result = status.ok && status.valid;
-    
-    if (result) {
-      setAdmin(true);
-      currentUser = status.user || null;
-    } else {
-      // Admin nicht eingeloggt oder Session abgelaufen
-      setAdmin(false);
-      currentUser = null;
-    }
-    
-    // Cache das Ergebnis
-    adminStatusCache.result = result;
-    adminStatusCache.timestamp = Date.now();
-    
-    return result;
-  } catch (error) {
-    console.warn('Admin status check failed:', error);
-    setAdmin(false);
-    currentUser = null;
-    adminStatusCache.result = false;
-    adminStatusCache.timestamp = Date.now();
-    return false;
-  }
-}
-
 async function checkAdminStatusCached() {
   const serverSaysAdmin = isAdminFromServer();
-
-  // Prüfe ob Cache noch gültig ist
-  if (adminStatusCache.result !== null && (Date.now() - adminStatusCache.timestamp < adminStatusCache.ttl)) {
-    return adminStatusCache.result;
-  }
-
-  // Wenn bereits ein Request läuft, warte darauf
-  if (adminStatusCache.promise) {
-    return adminStatusCache.promise;
-  }
-
-  // Wenn der Server-Flag fehlt/false ist, verifizieren wir einmalig per API,
-  // damit Admin-Status auch auf Seiten ohne korrektes SSR-Flag sichtbar wird.
-  if (!serverSaysAdmin && adminStatusCache.result === false) {
-    // Cache wurde bereits als false gesetzt und ist abgelaufen (oben geprueft);
-    // trotzdem verifizieren wir erneut, um Sessions zu erkennen.
-  }
-
-  // Neuer Request
-  adminStatusCache.promise = checkAdminStatus().finally(() => {
-    adminStatusCache.promise = null;
-  });
-
-  return adminStatusCache.promise;
+  setAdmin(!!serverSaysAdmin);
+  currentUser = serverSaysAdmin ? currentUser : null;
+  adminStatusCache.result = !!serverSaysAdmin;
+  adminStatusCache.timestamp = Date.now();
+  return adminStatusCache.result;
 }
 // Cookie-basiertes Admin Logout 
 async function adminLogout() {
   if (!isAdmin()) {
     return;
   }
-  try {
-    await callApi('/auth/logout', {
-      method: 'POST',
-    });
-  } catch (error) {
-    console.warn('Logout-Request fehlgeschlagen:', error);
+  const logoutForm = document.getElementById('admin-logout-form');
+  if (logoutForm && typeof logoutForm.submit === 'function') {
+    logoutForm.submit();
+    return;
   }
     
   // Lokale Variablen zurücksetzen
@@ -134,48 +60,6 @@ async function adminLogout() {
 
   // Seite neu laden, um server-seitigen Status zu aktualisieren
   reloadPageWithDelay();
-}
-async function deletePost(postId) {
-  if (!isAdmin()) {
-    showFeedback('Sie sind nicht eingeloggt.', 'error');
-    return false;
-  }
-  if (!isValidIdSchema(postId)){
-    showFeedback('Ungültige Beitrags-ID.', 'error');
-    return false;
-  }
-
-  if (!confirm('Sind Sie sicher, dass Sie diesen Beitrag löschen möchten?')) {
-    return false;
-  }
-
-  const result = await makeApiRequest(`/blogpost/delete/${postId}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-    
-  if (result.success) {
-    showFeedback('Beitrag erfolgreich gelöscht.', 'info');
-    return true;
-  } else {
-    const errorMsg = result.error || (result.data && result.data.error) || 'Unbekannter Fehler';
-        
-    // Bei 401/403 - Session abgelaufen
-    if (result.status === 401 || result.status === 403) {
-      showFeedback('Session abgelaufen. Bitte melden Sie sich erneut an.', 'error');
-      await adminLogout();
-      return false;
-    }
-        
-    if (result.status === 0) {
-      showFeedback('Netzwerkfehler. Bitte versuchen Sie es später erneut.', 'error');
-    } else {
-      showFeedback('Fehler beim Löschen des Beitrags: ' + errorMsg, 'error');
-    }
-    return false;
-  }
 }
 // Funktion zum Aktualisieren der Navigation basierend auf Admin-Status
 function updateNavigationVisibility() {
@@ -224,20 +108,9 @@ function createAdminToolbar() {
   toolbar.className = 'admin-toolbar';
   toolbar.innerHTML = `
         <span>Admin-Modus aktiv</span>
-        <button data-action="admin-logout" class="admin-logout-btn">
-            Logout
-        </button>
     `;
   document.body.prepend(toolbar);
   // Attach local listener for admin toolbar actions to avoid inline handlers
-  toolbar.addEventListener('click', (e) => {
-    const actionEl = e.target.closest('[data-action]');
-    if (!actionEl) return;
-    const action = actionEl.dataset.action;
-    if (action === 'admin-logout') {
-      adminLogout();
-    }
-  });
   // Body-Padding anpassen wegen der Toolbar
   document.body.style.paddingTop = ADMIN_CONFIG.TOOLBAR_HEIGHT;
 }
@@ -251,25 +124,27 @@ function showAdminLoginModal() {
   const modal = document.createElement('div');
   modal.id = 'admin-login-modal';
   modal.className = 'modal';
-  modal.innerHTML = `
+    modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Login</h3>
             </div>
             <div class="modal-body">
-                <div>
-                    <label for="admin-username">Benutzername:</label>
-                    <input id="admin-username" type="text" />
-                </div>
-                <div>
-                    <label for="admin-password">Passwort:</label>
-                    <input id="admin-password" type="password" />
-                </div>
-                <div class="modal-actions">
-          <button type="button" id="admin-login-cancel" data-action="close-modal">Abbrechen</button>
-          <button type="button" id="admin-login-submit">Anmelden</button>
-                </div>
-                <div id="admin-login-error"></div>
+          <form method="POST" action="/auth/login">
+            <div>
+              <label for="admin-username">Benutzername:</label>
+              <input id="admin-username" name="username" type="text" required />
+            </div>
+            <div>
+              <label for="admin-password">Passwort:</label>
+              <input id="admin-password" name="password" type="password" required />
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="admin-login-cancel" data-action="close-modal">Abbrechen</button>
+              <button type="submit" id="admin-login-submit">Anmelden</button>
+            </div>
+            <div id="admin-login-error"></div>
+          </form>
             </div>
         </div>
     `;
@@ -288,54 +163,11 @@ function showAdminLoginModal() {
     }
   });
 
-  const submitBtn = document.getElementById('admin-login-submit');
-  if (submitBtn) {
-    // Mark submit button so delegated or local code can handle submit
-    submitBtn.dataset.action = 'admin-login-submit';
-  }
   function _showError(msg) {
     const err = document.getElementById('admin-login-error');
     if (!err) return;
     err.textContent = msg;
     err.style.display = 'block';
-  }
-}
-async function adminLogin(username, password) {
-  if (isAdmin()) {
-    showFeedback('Admin bereits eingeloggt.', 'error');
-    return true;
-  }
-  try {
-    const result = await callApi('/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
-        
-    if (result && result.success === true) {
-      setAdmin(true);
-      currentUser = (result.data && result.data.user) ? result.data.user : currentUser;
-      adminStatusCache.result = true;
-      adminStatusCache.timestamp = Date.now();
-      adminStatusCache.promise = null;
-      showFeedback('Erfolgreich eingeloggt.', 'info');
-      updateNavigationVisibility();
-      // Auf anderen Seiten: Navbar direkt aktualisieren
-      try { addAdminMenuItemToNavbar(); } catch { /* no-op */ }
-      // Seite neu laden, um server-seitigen Status zu aktualisieren
-      reloadPageWithDelay(300);
-      return true;
-    } else {
-      const errorMsg = result.error || (result.data && result.data.error) || 'Unbekannter Fehler';
-      showFeedback('Login fehlgeschlagen: ' + errorMsg, 'error');
-      return false;
-    }
-  } catch (error) {
-    console.error('Login-Fehler:', error);
-    showFeedback('Netzwerkfehler. Bitte versuchen Sie es später erneut.', 'error');
-    return false;
   }
 }
 function resolveCurrentPostId() {
@@ -428,16 +260,7 @@ function addAdminMenuItemToNavbar() {
     if (menu && !document.getElementById('admin-createCard-modal')) {
       const createCardLi = document.createElement('li');
       createCardLi.id = 'admin-createCard-modal';
-
-      // Link statt Button
-      const link = document.createElement('a');
-      link.href = '#';
-      link.textContent = 'Card erstellen';
-      link.style.cursor = 'pointer';
-      // delegate via data-action attribute
-      link.dataset.action = 'show-create-card';
-
-      createCardLi.appendChild(link);
+      createCardLi.innerHTML = '<a href="/cards/create">Card erstellen</a>';
       menu.insertBefore(createCardLi, menu.firstChild.nextSibling);
     }
   }
@@ -479,22 +302,7 @@ function getCurrentUser() {
   return currentUser;
 }
 
-export { initializeAdminSystem, addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG, deletePost, addReadPostAdminControls, getCurrentUser };
-
-// Helper wrapper to call API. Tests may mock module imports; fallback to global.makeApiRequest
-async function callApi(path, options) {
-  try {
-    if (typeof makeApiRequest === 'function') {
-      return await makeApiRequest(path, options);
-    }
-  } catch {
-    // fallthrough to global
-  }
-  if (typeof globalThis.makeApiRequest === 'function') {
-    return await globalThis.makeApiRequest(path, options);
-  }
-  throw new Error('No API function available');
-}
+export { initializeAdminSystem, addAdminMenuItemToNavbar, checkAdminStatusCached, showAdminLoginModal, ADMIN_CONFIG, addReadPostAdminControls, getCurrentUser };
 
 // Initialize admin-specific delegated action handlers. Call this once after admin init.
 let _adminDelegationInitialized = false;
@@ -511,62 +319,6 @@ export function initializeAdminDelegation() {
     if (action === 'show-admin-login') {
       e.preventDefault();
       if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
-      return;
-    }
-    if (action === 'show-create-card') {
-      e.preventDefault();
-      if (typeof showCreateCardModal === 'function') showCreateCardModal();
-      return;
-    }
-    if (action === 'admin-login-submit') {
-      e.preventDefault();
-      // Read credentials from modal inputs
-      const usernameEl = document.getElementById('admin-username');
-      const passwordEl = document.getElementById('admin-password');
-      const username = usernameEl ? usernameEl.value : '';
-      const password = passwordEl ? passwordEl.value : '';
-      // Optimistically remove modal so UI feels responsive in tests and real usage.
-      const modalToClose = document.getElementById('admin-login-modal');
-      if (modalToClose && modalToClose.parentElement) modalToClose.parentElement.removeChild(modalToClose);
-
-      // Call adminLogin in background; if it fails, show feedback and optionally reopen modal
-      (async () => {
-        try {
-          const success = await adminLogin(username, password);
-          if (!success) {
-            showFeedback('Login fehlgeschlagen. Bitte versuchen Sie es erneut.', 'error');
-            // Try to reopen the modal so the user can retry (best-effort)
-            try {
-              showAdminLoginModal();
-            } catch {
-              // ignore
-            }
-          }
-        } catch (err) {
-          console.error('Delegated admin login failed:', err);
-          showFeedback('Login fehlgeschlagen. Bitte versuchen Sie es später erneut.', 'error');
-          try { showAdminLoginModal(); } catch { }
-        }
-      })();
-      return;
-    }
-    if (action === 'delete-post') {
-      const postId = btn.dataset.postId;
-      if (!postId) return;
-      (async () => {
-        try {
-          const confirmed = await confirmModal('Möchten Sie diesen Beitrag wirklich löschen?');
-          if (!confirmed) return;
-          if (typeof deletePostAndRedirect === 'function') deletePostAndRedirect(postId);
-        } catch (err) {
-          console.error('Delete confirmation failed', err);
-        }
-      })();
-      return;
-    }
-    if (action === 'edit-post') {
-      const postId = btn.dataset.postId;
-      if (postId && typeof redirectEditPost === 'function') redirectEditPost(postId);
       return;
     }
   });

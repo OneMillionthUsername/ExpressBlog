@@ -21,12 +21,11 @@ import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
 import simpleCache from '../utils/simpleCache.js';
-import { requireJsonContent } from '../middleware/securityMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
 import { globalLimiter, strictLimiter } from '../utils/limiters.js';
 import validationService from '../services/validationService.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
-import { validateId, validatePostBody, validateSlug } from '../middleware/validationMiddleware.js';
+import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
 import { escapeAllStrings } from '../utils/utils.js';
 
@@ -43,7 +42,12 @@ async function buildReadPostViewData(req, res, post) {
     comments = [];
   }
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-  return { isAdmin, comments, csrfToken, commentCount: comments.length };
+  const status = req && req.query ? String(req.query.comment || '') : '';
+  const commentStatus = status === 'ok' || status === 'error' ? status : null;
+  const commentMessage = commentStatus === 'ok'
+    ? 'Kommentar gespeichert.'
+    : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
+  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage };
 }
 
 // commentsRouter.all();
@@ -141,12 +145,14 @@ async function getAllHandler(req, res) {
       try {
         const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
         const isAdmin = getSsrAdmin(res);
+        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.render('listCurrentPosts', { posts: safePosts, isAdmin });
+        return res.render('listCurrentPosts', { posts: safePosts, isAdmin, csrfToken });
       } catch (_e) {
         const isAdmin = getSsrAdmin(res);
+        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.render('listCurrentPosts', { posts: response, isAdmin });
+        return res.render('listCurrentPosts', { posts: response, isAdmin, csrfToken });
       }
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
@@ -171,12 +177,12 @@ async function getAllHandler(req, res) {
   }
 }
 
-postRouter.get('/all', globalLimiter, getAllHandler);
+postRouter.get('/all', globalLimiter, csrfProtection, getAllHandler);
 
 // Export handler for integration tests
 export { getAllHandler };
 // Spezifische Routen VOR parametrische Routen
-postRouter.get('/most-read', globalLimiter, async (req, res) => {
+postRouter.get('/most-read', globalLimiter, csrfProtection, async (req, res) => {
   const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
   logger.debug(`[${requestId}] GET /most-read: Request received ${req.originalUrl} accept=${req.get('Accept')} xreq=${req.get('X-Requested-With')} host=${req.get('Host')}`);
   try {
@@ -226,12 +232,14 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     try {
       const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('mostReadPosts', { posts: safePosts, isAdmin });
+      return res.render('mostReadPosts', { posts: safePosts, isAdmin, csrfToken });
     } catch (_e) {
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('mostReadPosts', { posts: response, isAdmin });
+      return res.render('mostReadPosts', { posts: response, isAdmin, csrfToken });
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
@@ -254,8 +262,9 @@ postRouter.get('/most-read', globalLimiter, async (req, res) => {
     // posts, return 200 so the browser doesn't treat the page as a missing
     // resource. Server errors still return 500.
     const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
-    return res.status(error instanceof PostControllerException ? 200 : 500).render('mostReadPosts', { posts: null, errorMessage: message, isAdmin });
+    return res.status(error instanceof PostControllerException ? 200 : 500).render('mostReadPosts', { posts: null, errorMessage: message, isAdmin, csrfToken });
   }
 });
 // Admin-only endpoint to clear the most-read cache
@@ -300,48 +309,17 @@ postRouter.get('/by-id/:postId',
       if (error instanceof PostControllerException) {
         // Render hübsche Fehlerseite für HTML-Anfragen
         const isAdmin = getSsrAdmin(res);
+        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.status(404).render('notFound', { isAdmin });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
       }
       // Render generische Fehlerseite für HTML-Anfragen
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
+      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin, csrfToken });
     }
   });
-
-// JSON-only alias routes under /api/blogpost to avoid reliance on Accept/X-Requested-With
-// These endpoints always return JSON regardless of Accept headers or request content type.
-postRouter.get('/api/by-id/:postId', globalLimiter, validateId, async (req, res) => {
-  const postId = req.params.postId;
-  try {
-    const post = await postController.getPostById(postId);
-    if (post && post.id) incrementViews(req, post.id);
-    const safe = convertBigInts(post) || post;
-    try {
-      return res.json(escapeAllStrings(safe, ['content', 'description']));
-    } catch (_e) {
-      return res.json(safe);
-    }
-  } catch (error) {
-    console.error('Error loading the blog post by id (api):', error);
-    if (error instanceof PostControllerException) return res.status(404).json({ error: 'Blogpost not found' });
-    return res.status(500).json({ error: 'Server failed to load the blogpost' });
-  }
-});
-
-postRouter.get('/api/:slug', globalLimiter, validateSlug, async (req, res) => {
-  const slug = req.params.slug;
-  try {
-    const post = await postController.getPostBySlug(slug);
-    if (post && post.id) incrementViews(req, post.id);
-    return res.json(convertBigInts(post) || post);
-  } catch (error) {
-    console.error('Error loading the blog post by slug (api):', error);
-    if (error instanceof PostControllerException) return res.status(404).json({ error: 'Blogpost not found' });
-    return res.status(500).json({ error: 'Server failed to load the blogpost' });
-  }
-});
 
 // Support shorthand numeric URL: /blogpost/59
 // This route must be declared BEFORE the slug route so numeric paths are
@@ -374,18 +352,20 @@ postRouter.get('/:maybeId',
       console.error('Error loading the blog post by numeric id', error);
       if (error instanceof PostControllerException) {
         const isAdmin = getSsrAdmin(res);
+        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.status(404).render('notFound', { isAdmin });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
       }
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
+      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin, csrfToken });
     }
   });
 
 // Explicit archive route must come BEFORE the slug route so '/archive' is not
 // interpreted as a slug. Register it here (after numeric id handler).
-postRouter.get('/archive', globalLimiter, async (req, res) => {
+postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
   try {
     // Support optional year filter via ?year=YYYY. Use distinct cache keys for year-specific results.
     const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
@@ -412,18 +392,21 @@ postRouter.get('/archive', globalLimiter, async (req, res) => {
     try {
       const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: safeResponse, archiveYears, isAdmin });
+      return res.render('archiv', { posts: safeResponse, archiveYears, isAdmin, csrfToken });
     } catch (_e) {
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: response, archiveYears: archiveYears || [], isAdmin });
+      return res.render('archiv', { posts: response, archiveYears: archiveYears || [], isAdmin, csrfToken });
     }
   } catch (error) {
     console.error('Error loading archived blog posts', error);
     const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
-    res.status(500).render('error', { message: 'Serverfehler beim Laden des Archivs', isAdmin });
+    res.status(500).render('error', { message: 'Serverfehler beim Laden des Archivs', isAdmin, csrfToken });
   }
 });
 
@@ -446,31 +429,33 @@ postRouter.get('/:slug',
       if (error instanceof PostControllerException) {
         // Render hübsche Fehlerseite für HTML-Anfragen
         const isAdmin = getSsrAdmin(res);
+        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.status(404).render('notFound', { isAdmin });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
       }
       // Render generische Fehlerseite für HTML-Anfragen
       const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin });
+      return res.status(500).render('error', { message: 'Serverfehler beim Laden des Blogposts', isAdmin, csrfToken });
     }
   });
 postRouter.post('/create', 
   strictLimiter,
   csrfProtection,
-  requireJsonContent,
   authenticateToken,
   requireAdmin,
-  validatePostBody,
   async (req, res) => {
-    const { title, content, tags } = req.body;
+    const { title, content } = req.body || {};
+    const tags = parseTags(req.body && req.body.tags);
     const slug = createSlug(title);
     try {
       const result = await postController.createPost({ title, slug, content, tags, author: req.user.username });
       if (!result) {
-        return res.status(400).json({ error: 'Failed to create blog post' });
+        return res.redirect(303, '/createPost?error=1');
       }
-      res.status(201).json({ message: 'Blog post created successfully', postId: Number(result.postId), title: result.title });
+      const postId = Number(result.postId || result.id);
+      res.redirect(303, `/blogpost/by-id/${postId}`);
       // Invalidate cached lists
       try {
         simpleCache.del('posts:all');
@@ -486,29 +471,27 @@ postRouter.post('/create',
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error creating new blog post', error);
-      res.status(500).json({ error: 'Server failed to create the blogpost' });
+      res.redirect(303, '/createPost?error=1');
     }
   });
-postRouter.put('/update/:postId',
+postRouter.post('/update/:postId',
   strictLimiter,
   csrfProtection,
-  requireJsonContent,
   authenticateToken,
   requireAdmin,
-  validateId,
-  validatePostBody,
   async (req, res) => {
     const postId = req.params.postId;
-    const source = req.validatedPost || req.body || {};
+    const source = req.body || {};
     const title = source.title;
     const content = source.content;
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     try {
       const result = await postController.updatePost({ id: postId, title, content, tags });
       if (!result) {
-        return res.status(400).json({ error: 'Failed to update blog post' });
+        return res.redirect(303, `/createPost/${postId}?error=1`);
       }
-      res.status(200).json({ message: 'Blog post updated successfully', postId: Number(result.id ?? postId), title: result.title });
+      const finalId = Number(result.id ?? postId);
+      res.redirect(303, `/blogpost/by-id/${finalId}`);
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
@@ -523,16 +506,15 @@ postRouter.put('/update/:postId',
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
-      res.status(500).json({ error: 'Server failed to update the blogpost' });
+      res.redirect(303, `/createPost/${postId}?error=1`);
     }
   });
-postRouter.delete(
+postRouter.post(
   '/delete/:postId',
   strictLimiter,
   csrfProtection,
   authenticateToken,
   requireAdmin,
-  validateId,
   async (req, res) => {
     logger.debug('DELETE /delete: Route reached');
     const postId = req.params.postId;
@@ -541,7 +523,7 @@ postRouter.delete(
     logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
     if (validationService.isValidIdSchema(postId) === false) {
       logger.debug('DELETE /delete: Invalid postId ' + postId);
-      return res.status(400).json({ error: 'Invalid post ID' });
+      return res.redirect(303, '/posts?error=invalid');
     }
     logger.debug('DELETE /delete: postId valid, proceeding to delete');
     try {
@@ -549,9 +531,9 @@ postRouter.delete(
       const result = await postController.deletePost(postId);
       logger.debug('DELETE /delete: postController.deletePost returned ' + JSON.stringify(result));
       if (!result) {
-        return res.status(400).json({ error: 'Failed to delete blog post' });
+        return res.redirect(303, '/posts?error=delete');
       }
-      res.status(200).json({ message: 'Blog post deleted successfully', postId: Number(postId) });
+      res.redirect(303, '/posts?deleted=1');
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
@@ -566,7 +548,7 @@ postRouter.delete(
       } catch (e) { void e; }
     } catch (error) {
       logger.error('Error deleting blog post', error);
-      res.status(500).json({ error: 'Server failed to delete the blogpost' });
+      res.redirect(303, '/posts?error=delete');
     }
   });
 

@@ -53,7 +53,7 @@ async function loadComments(postId) {
     return;
   }
   try {
-    const apiResult = await makeApiRequest(`/comments/${postId}`, { method: 'GET' });
+    const apiResult = await makeApiRequest(`/api/comments/${postId}`, { method: 'GET' });
     if (!apiResult || apiResult.success !== true) {
       if (apiResult && apiResult.status === 404) {
         return [];
@@ -129,7 +129,7 @@ async function createComment(postId, username, commentText) {
     return false;
   }
   try {
-    const apiResult = await makeApiRequest(`/comments/${postId}`, {
+    const apiResult = await makeApiRequest(`/api/comments/${postId}`, {
       method: 'POST',
       body: JSON.stringify({
         username: username && username.trim() !== '' ? escapeHtml(username.trim()) : '',
@@ -262,7 +262,7 @@ async function deleteComment(postId, commentId) {
     return false;
   }
   try {
-    const apiResult = await makeApiRequest(`/comments/${postId}/${commentId}`, { method: 'DELETE' });
+    const apiResult = await makeApiRequest(`/api/comments/${postId}/${commentId}`, { method: 'DELETE' });
     // Bei 401/403 - Session abgelaufen
     if (apiResult && (apiResult.status === 401 || apiResult.status === 403)) {
       showFeedback('Session abgelaufen. Bitte melden Sie sich erneut an.', 'error');

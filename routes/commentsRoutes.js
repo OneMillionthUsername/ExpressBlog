@@ -17,6 +17,25 @@ import { celebrate, Joi, Segments } from 'celebrate';
  */
 const commentsRouter = express.Router();
 
+function buildSafeRedirect(req, fallbackPath, status) {
+  const host = req.get('host');
+  const proto = (req.secure || req.get('x-forwarded-proto') === 'https') ? 'https' : 'http';
+  const base = `${proto}://${host}`;
+  const referer = req.get('Referer');
+  try {
+    if (referer) {
+      const url = new URL(referer, base);
+      if (url.host === host) {
+        if (status) url.searchParams.set('comment', status);
+        url.hash = 'comments-section';
+        return url.pathname + url.search + url.hash;
+      }
+    }
+  } catch { /* ignore */ }
+  const safePath = status ? `${fallbackPath}?comment=${encodeURIComponent(status)}` : fallbackPath;
+  return `${safePath}#comments-section`;
+}
+
 commentsRouter.post('/:postId',
   strictLimiter,
   csrfProtection,
@@ -34,11 +53,11 @@ commentsRouter.post('/:postId',
     try {
       const postId = Number(req.params.postId);
       await commentsController.createCommentRecord(postId, req.body);
-      const redirectTarget = req.get('Referer') || `/blogpost/by-id/${postId}`;
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${postId}`, 'ok');
       return res.redirect(303, redirectTarget);
     } catch (error) {
       console.error('Error creating comment (SSR):', error);
-      const redirectTarget = req.get('Referer') || `/blogpost/by-id/${req.params.postId}`;
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${req.params.postId}`, 'error');
       return res.redirect(303, redirectTarget);
     }
   },
@@ -60,11 +79,11 @@ commentsRouter.post('/:postId/:commentId/delete',
       const postId = Number(req.params.postId);
       const commentId = Number(req.params.commentId);
       await commentsController.deleteCommentRecord(postId, commentId);
-      const redirectTarget = req.get('Referer') || `/blogpost/by-id/${postId}`;
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${postId}`, 'ok');
       return res.redirect(303, redirectTarget);
     } catch (error) {
       console.error('Error deleting comment (SSR):', error);
-      const redirectTarget = req.get('Referer') || `/blogpost/by-id/${req.params.postId}`;
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${req.params.postId}`, 'error');
       return res.redirect(303, redirectTarget);
     }
   },

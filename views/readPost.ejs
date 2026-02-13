@@ -94,13 +94,18 @@
             <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Post erstellen</a>
                 <div id="admin-controls" class="mt-15">
                     <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
-                    <button type="button" data-action="delete-post" data-post-id="<%= post.id %>" class="btn admin-delete-btn btn-lg ml-2">
-                        Post löschen
-                    </button>
-                    <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="<%= post.id %>">
+                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline">
+                        <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <% } %>
+                        <button type="submit" class="btn admin-delete-btn btn-lg ml-2" onclick="return confirm('Möchten Sie diesen Beitrag wirklich löschen?');">
+                            Post löschen
+                        </button>
+                    </form>
+                    <a href="/createPost/<%= post.id %>" class="btn btn-outline-warning btn-lg ml-2">
                         <span class="btn-icon">✏️</span>
                         Post bearbeiten
-                    </button>
+                    </a>
                     <% } %>
                 </div>
         </div>

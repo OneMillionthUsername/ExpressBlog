@@ -6,6 +6,8 @@ import commentsApiRouter from './commentsApiRoutes.js';
 import utilityRouter from './utilityRoutes.js';
 import staticRouter from './staticRoutes.js';
 import cardRouter from './cardRoutes.js';
+import cardApiRouter from './cardApiRoutes.js';
+import postApiRouter from './postApiRoutes.js';
 import sitemapRouter from './sitemapRoutes.js';
 
 /**
@@ -23,6 +25,8 @@ export default {
   utilityRouter,
   staticRouter,
   cardRouter,
+  cardApiRouter,
+  postApiRouter,
   sitemapRouter,
   // Note: debug endpoint is mounted directly in app.js as `/debug/headers`.
 };

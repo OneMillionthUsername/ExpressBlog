@@ -5,6 +5,7 @@ import postController from '../controllers/postController.js';
 import cardController from '../controllers/cardController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
+import csrfProtection from '../utils/csrf.js';
 
 /**
  * Routes serving site pages and server-side rendered views.
@@ -15,10 +16,11 @@ import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
  */
 const staticRouter = express.Router();
 
-staticRouter.get('/', async (req, res) => {
+staticRouter.get('/', csrfProtection, async (req, res) => {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
   logger.debug('[HOME] GET / - Rendering index.ejs');
   const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   
   try {
     // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
@@ -60,7 +62,7 @@ staticRouter.get('/', async (req, res) => {
 
     logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
     applySsrNoCache(res, { varyCookie: true });
-    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin });
+    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin, csrfToken });
     logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);
@@ -69,10 +71,11 @@ staticRouter.get('/', async (req, res) => {
   }
 });
 
-staticRouter.get('/about', (req, res) => {
+staticRouter.get('/about', csrfProtection, (req, res) => {
   const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   applySsrNoCache(res, { varyCookie: true });
-  res.render('about', { isAdmin });
+  res.render('about', { isAdmin, csrfToken });
 });
 
 // Use a shared handler for both '/createPost' and '/createPost/:postId' to avoid
@@ -80,6 +83,8 @@ staticRouter.get('/about', (req, res) => {
 async function handleCreatePost(req, res) {
   try {
     const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const formError = req.query && req.query.error ? 'Blogpost konnte nicht gespeichert werden.' : null;
     try {
       logger.debug('[CREATEPOST] SSR auth context', {
         isAdmin,
@@ -114,41 +119,45 @@ async function handleCreatePost(req, res) {
       }
     }
 
+    const formAction = serverPost && serverPost.id ? `/blogpost/update/${serverPost.id}` : '/blogpost/create';
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost });
+    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null });
+    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null, csrfToken, formAction: '/blogpost/create', formError: 'Blogpost konnte nicht geladen werden.' });
   }
 }
 
 // Explicit routes: one without parameter and one with the parameter. Some
 // environments' path parsers can't handle '?' tokens in route strings.
-staticRouter.get('/createPost', handleCreatePost);
-staticRouter.get('/createPost/:postId', handleCreatePost);
+staticRouter.get('/createPost', csrfProtection, handleCreatePost);
+staticRouter.get('/createPost/:postId', csrfProtection, handleCreatePost);
 
 staticRouter.get('/about.html', (req, res) => {
   res.redirect('/about');
 });
 
-staticRouter.get('/posts', async (req, res) => {
+staticRouter.get('/posts', csrfProtection, async (req, res) => {
   try {
     const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     // Server-side render the list of current posts to preserve the
     // HTML-first experience and avoid client-side JSON-only rendering.
     const posts = await postController.getAllPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { posts, isAdmin });
+    return res.render('listCurrentPosts', { posts, isAdmin, csrfToken });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     // Fallback: render without posts so client-side JS can still attempt to fetch
     const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { isAdmin });
+    return res.render('listCurrentPosts', { isAdmin, csrfToken });
   }
 });
 

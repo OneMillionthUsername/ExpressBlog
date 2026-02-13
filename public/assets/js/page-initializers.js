@@ -6,7 +6,7 @@
 // They should only be loaded on the Create page to avoid loading large
 // modules (and accidental server-side imports) on every page.
 let initializeBlogEditor = null;
-import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation, addReadPostAdminControls, ensureAdminControls } from './admin.js';
+import { initializeAdminSystem, addAdminMenuItemToNavbar, initializeAdminDelegation } from './admin.js';
 import { isAdminFromServer, getAssetVersion } from './config.js';
 import { initializeCommonDelegation, showElement, hideElement, initializeBlogPostForm } from './common.js';
 
@@ -185,13 +185,7 @@ async function initializeReadPostPage() {
   try {
     // Admin-Controls hinzufügen (vereinfacht)
     setTimeout(async () => {
-      if (typeof addReadPostAdminControls === 'function') {
-        addReadPostAdminControls();
-      }
-      // Additionally run a short retry loop to handle late-arriving admin status or postId
-      if (typeof ensureAdminControls === 'function') {
-        ensureAdminControls({ attempts: 6, intervalMs: 400 });
-      }
+      // SSR-only: admin controls are rendered server-side.
     }, 500); // Kurze Verzögerung für DOM-Updates
 
   } catch (error) {
