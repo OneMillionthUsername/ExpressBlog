@@ -233,45 +233,73 @@ async function callGeminiAPIWithFetchFallback(prompt, systemInstruction = '') {
 async function improveText() {
   const editor = tinymce.get('content');
   if (!editor) return;
-    
-  const selectedText = editor.selection.getContent({format: 'text'});
-  const allText = editor.getContent({format: 'text'});
-  const textToImprove = selectedText || allText;
-    
-  if (!textToImprove || textToImprove.trim().length === 0) {
+
+  const selectedHtml = editor.selection.getContent({ format: 'html' });
+  const htmlToImprove = (selectedHtml && selectedHtml.trim().length > 0)
+    ? selectedHtml
+    : editor.getContent({ format: 'html' });
+
+  if (!htmlToImprove || htmlToImprove.trim().length === 0) {
     showAlertModal('Bitte markiere einen Text oder schreibe etwas, das verbessert werden soll.');
     return;
   }
-    
+
   const improveBtn = document.getElementById('ai-improve-btn');
   if (improveBtn) {
     improveBtn.disabled = true;
     improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI arbeitet...';
   }
-    
-  try {
-    const systemInstruction = `Du bist ein erfahrener deutscher Autor und Philosoph. Verbessere den folgenden Text stilistisch und inhaltlich:
 
-Regeln:
-- Behalte die Formatierung bei
-- Behalte die ursprüngliche Bedeutung bei
-- Verwende elegante, philosophische Sprache
-- Verbessere Struktur und Lesbarkeit
-- Korrigiere Grammatik und Rechtschreibung
-- Antworte NUR mit dem verbesserten Text, keine Erklärungen`;
-        
-    const improvedText = await callGeminiAPI(textToImprove, systemInstruction);
-        
-    // Text in Editor einfügen
-    if (selectedText) {
-      editor.selection.setContent(improvedText);
-    } else {
-      editor.setContent(improvedText);
+  try {
+    const container = document.createElement('div');
+    container.innerHTML = htmlToImprove;
+
+    const textNodes = collectTextNodes(container)
+      .filter(node => node && typeof node.nodeValue === 'string' && node.nodeValue.length > 0);
+
+    if (textNodes.length === 0) {
+      showAlertModal('Kein verbesserbarer Text gefunden.');
+      return;
     }
-        
+
+    const originalSegments = textNodes.map(node => protectInvisibleChars(node.nodeValue));
+
+    const systemInstruction = `Du bist ein deutschsprachiger Lektor.
+
+Aufgabe:
+- Verbessere NUR Grammatik, Rechtschreibung und Interpunktion.
+
+Zwingende Regeln:
+- Aendere NICHT die Anzahl und Reihenfolge der Segmente.
+- Behalte ALLE Whitespaces, Zeilenumbrueche und Satzzeichen-Positionen bei.
+- Entferne KEINE unsichtbaren Zeichen (NBSP, ZWSP, ZWJ, ZWNJ, BOM, SHY) und fuege keine neuen hinzu.
+- Keine stilistischen Umschreibungen, keine Strukturverbesserungen, keine inhaltlichen Aenderungen.
+- Gib NUR ein JSON-Array mit exakt gleicher Laenge zurueck.
+- Keine Erklaerungen, kein Markdown, nur JSON.`;
+
+    const prompt = JSON.stringify(originalSegments);
+    const improvedJson = await callGeminiAPI(prompt, systemInstruction);
+    const improvedSegments = parseJsonArray(improvedJson);
+
+    if (!Array.isArray(improvedSegments) || improvedSegments.length !== originalSegments.length) {
+      console.warn('AI response did not match expected segment count. Using original text.');
+      return;
+    }
+
+    for (let i = 0; i < textNodes.length; i += 1) {
+      const restored = restoreInvisibleChars(String(improvedSegments[i] ?? originalSegments[i]));
+      textNodes[i].nodeValue = restored;
+    }
+
+    if (selectedHtml && selectedHtml.trim().length > 0) {
+      editor.selection.setContent(container.innerHTML);
+    } else {
+      editor.setContent(container.innerHTML);
+    }
+
     safeUpdatePreview();
     showNotification('Text wurde von AI verbessert!', 'success');
-        
+
   } catch (error) {
     console.error('Fehler beim Textverbessern:', error);
   } finally {
@@ -279,6 +307,51 @@ Regeln:
       improveBtn.disabled = false;
       improveBtn.innerHTML = '<i class="fas fa-magic"></i> Text verbessern';
     }
+  }
+}
+
+function protectInvisibleChars(input) {
+  if (!input) return input;
+  return input
+    .replace(/\u00A0/g, '[[NBSP]]')
+    .replace(/\u00AD/g, '[[SHY]]')
+    .replace(/\u200B/g, '[[ZWSP]]')
+    .replace(/\u200C/g, '[[ZWNJ]]')
+    .replace(/\u200D/g, '[[ZWJ]]')
+    .replace(/\uFEFF/g, '[[BOM]]')
+    .replace(/&nbsp;/g, '[[NBSP]]')
+    .replace(/&shy;/g, '[[SHY]]');
+}
+
+function restoreInvisibleChars(input) {
+  if (!input) return input;
+  return input
+    .replace(/\[\[NBSP\]\]/g, '\u00A0')
+    .replace(/\[\[SHY\]\]/g, '\u00AD')
+    .replace(/\[\[ZWSP\]\]/g, '\u200B')
+    .replace(/\[\[ZWNJ\]\]/g, '\u200C')
+    .replace(/\[\[ZWJ\]\]/g, '\u200D')
+    .replace(/\[\[BOM\]\]/g, '\uFEFF');
+}
+
+function collectTextNodes(root) {
+  const nodes = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  let node = walker.nextNode();
+  while (node) {
+    nodes.push(node);
+    node = walker.nextNode();
+  }
+  return nodes;
+}
+
+function parseJsonArray(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn('AI response is not valid JSON:', err);
+    return null;
   }
 }
 
