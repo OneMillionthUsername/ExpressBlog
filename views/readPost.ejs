@@ -109,17 +109,12 @@
     <% // Precompute JSON on the server side and escape unsafe sequences to avoid breaking out of the script tag %>
     <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
-    <% const __isAdmin = (typeof isAdmin !== 'undefined') ? !!isAdmin : false; %>
     <!-- Expose the server-rendered post via non-executable JSON (no globals) -->
     <% if (typeof post !== 'undefined' && post) { %>
     <script id="server-post" type="application/json"<%- __nonceAttr %>>
         <%- __safeJson(post) %>
     </script>
     <% } %>
-                <!-- Expose a minimal server config via non-executable JSON (no globals) -->
-                <script id="server-config" type="application/json"<%- __nonceAttr %>>
-                    { "isAdmin": <%= __isAdmin ? 'true' : 'false' %> }
-                </script>
     <script<%- __nonceAttr %>>
         // Defensive fallback: if the server injected #server-post JSON,
         // remove the loading spinner and ensure the article is visible.

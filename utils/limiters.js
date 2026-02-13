@@ -18,19 +18,19 @@ const strictLimiter = rateLimit({
   ...baseLimiterConfig,
   // Increase strict limiter to allow more requests during admin/API usage
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 400,
 });
 
 const globalLimiter = rateLimit({
   ...baseLimiterConfig,
   // Raise global limits to reduce accidental throttling during normal browsing
   windowMs: 15 * 60 * 1000,
-  max: 120,
+  max: 1200,
 });
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 3,
+  max: 5,
   message: { error: 'Too many login attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,

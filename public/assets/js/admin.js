@@ -81,35 +81,33 @@ async function checkAdminStatus() {
 }
 
 async function checkAdminStatusCached() {
-  // Wenn SSR sagt nicht-Admin, skip den API-Call
-  if (!isAdminFromServer()) {
-    // Nur cachen wenn noch kein Cache oder Cache ist alt
-    if (!adminStatusCache.result && (Date.now() - adminStatusCache.timestamp > adminStatusCache.ttl)) {
-      setAdmin(false);
-      adminStatusCache.result = false;
-      adminStatusCache.timestamp = Date.now();
-    }
-    return false;
-  }
-  
+  const serverSaysAdmin = isAdminFromServer();
+
   // Prüfe ob Cache noch gültig ist
   if (adminStatusCache.result !== null && (Date.now() - adminStatusCache.timestamp < adminStatusCache.ttl)) {
     return adminStatusCache.result;
   }
-  
+
   // Wenn bereits ein Request läuft, warte darauf
   if (adminStatusCache.promise) {
     return adminStatusCache.promise;
   }
-  
+
+  // Wenn der Server-Flag fehlt/false ist, verifizieren wir einmalig per API,
+  // damit Admin-Status auch auf Seiten ohne korrektes SSR-Flag sichtbar wird.
+  if (!serverSaysAdmin && adminStatusCache.result === false) {
+    // Cache wurde bereits als false gesetzt und ist abgelaufen (oben geprueft);
+    // trotzdem verifizieren wir erneut, um Sessions zu erkennen.
+  }
+
   // Neuer Request
   adminStatusCache.promise = checkAdminStatus().finally(() => {
     adminStatusCache.promise = null;
   });
-  
+
   return adminStatusCache.promise;
 }
-// Cookie-basiertes Admin Logout
+// Cookie-basiertes Admin Logout 
 async function adminLogout() {
   if (!isAdmin()) {
     return;

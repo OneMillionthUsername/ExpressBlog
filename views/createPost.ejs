@@ -198,11 +198,8 @@
     <script src="/assets/js/page-initializers.js" type="module"></script>
     <!-- Do NOT inject API keys into the browser. Expose only non-sensitive flags. -->
     <% // Precompute JSON on the server side and escape unsafe sequences %>
-    <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); } catch (e) { return 'null'; } } %>
+    <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\u003c').replace(/-->/g, '--\u003e').replace(/\u2028/g, '\u2028').replace(/\u2029/g, '\u2029'); } catch (e) { return 'null'; } } %>
     <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
-    <% const __serverCfg = { isAdmin: !!isAdmin, assetVersion: String(assetVersion || '') }; %>
-    <!-- Minimal server config via non-executable JSON (no globals). Also expose data-* fallbacks. -->
-    <script id="server-config" type="application/json" data-is-admin="<%= isAdmin ? 'true' : 'false' %>" data-asset-version="<%= String(assetVersion || '') %>"<%- __nonceAttr %>><%- __safeJson(__serverCfg) %></script>
     <% if (typeof post !== 'undefined' && post) { %>
     <!-- Server-provided post (for editor prefill) via non-executable JSON -->
     <script id="server-post" type="application/json"<%- __nonceAttr %>>

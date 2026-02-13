@@ -28,6 +28,7 @@ import csrfProtection from './utils/csrf.js';
 import nonceMiddleware from './middleware/nonceMiddleware.js';
 import compression from 'compression';
 import { authenticateToken, requireAdmin } from './middleware/authMiddleware.js';
+import * as authService from './services/authService.js';
 import { errors as celebrateErrors } from 'celebrate';
 
 // App-Status Management
@@ -210,6 +211,19 @@ app.use(compression());
 
 // 2. Cookie Parser (required BEFORE CSRF!)
 app.use(cookieParser());
+// Inject admin flag for all SSR templates based on auth cookie/header
+app.use((req, res, next) => {
+  let isAdmin = false;
+  try {
+    const token = authService.extractTokenFromRequest(req);
+    if (token) {
+      const decoded = authService.verifyToken(token);
+      if (decoded && decoded.isAdmin) isAdmin = true;
+    }
+  } catch { /* ignore token errors */ }
+  res.locals.isAdmin = isAdmin;
+  next();
+});
 // 3. Request-Parsing (with security limits) - must run before CSRF middleware so req.body is available
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
 app.use(express.urlencoded({
