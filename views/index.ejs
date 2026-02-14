@@ -63,13 +63,15 @@
                     </ul>
 
                     <!-- Kategorien -->
-                    <!-- <h2 class="sidebar-title">Kategorien</h2>
-                    <ul class="nav-list">
-                        <li><a class="sidebar-link-style" href="#">Philosophie</a></li>
-                        <li><a class="sidebar-link-style" href="#">KI & Technik</a></li>
-                        <li><a class="sidebar-link-style" href="#">Mathematik</a></li>
-                        <li><a class="sidebar-link-style" href="#">Wissenschaft</a></li>
-                    </ul> -->
+                    <h2 class="sidebar-title mt-4">Kategorien</h2>
+                    <ul class="nav-list" id="categories-list">
+                        <% if (typeof categories !== 'undefined' && Array.isArray(categories) && categories.length > 0) { %>
+                            <% categories.forEach(function(c) { %>
+                                <li><a class="sidebar-link-style" href="/blogpost/category/<%= c.slug %>"><%= c.name %></a></li>
+                            <% }); %>
+                        <% } else { %>
+                            <li class="text-muted small">Keine Kategorien</li>
+                        <% } %>
 
                     <!-- Archiv nach Jahren -->
                     <h2 class="sidebar-title mt-4">Archiv</h2>
