@@ -517,12 +517,12 @@ export const DatabaseService = {
   },
   async getAllPosts() {
     let conn;
-    logger.debug('DatabaseService.getAllPosts: Starting database query');
+    // logger.debug('DatabaseService.getAllPosts: Starting database query');
     try {
-      logger.debug('DatabaseService.getAllPosts: Getting database connection');
+      // logger.debug('DatabaseService.getAllPosts: Getting database connection');
       conn = await getDatabasePool().getConnection();
       
-      logger.debug('DatabaseService.getAllPosts: Executing SELECT * FROM posts ORDER BY created_at DESC');
+      // logger.debug('DatabaseService.getAllPosts: Executing SELECT * FROM posts ORDER BY created_at DESC');
       //const { query, params } = queryBuilder('get', 'posts', { orderBy: 'created_at DESC' });
       //const result = await conn.query(query, params);
       // Ensure newest posts come first
@@ -532,14 +532,13 @@ export const DatabaseService = {
       
       // Keine Posts gefunden ist kein Fehler, sondern ein leeres Ergebnis
       if(!result || result.length === 0) {
-        logger.info('No posts found in database - returning empty array');
         logger.debug('DatabaseService.getAllPosts: Returning empty array');
         return []; // Leeres Array zurückgeben statt Exception
       }
       
       logger.debug(`DatabaseService.getAllPosts: Processing ${result.length} posts`);
       const processedPosts = result.map((post, index) => {
-        logger.debug(`DatabaseService.getAllPosts: Processing post ${index + 1}/${result.length}, ID: ${post.id}`);
+        // logger.debug(`DatabaseService.getAllPosts: Processing post ${index + 1}/${result.length}, ID: ${post.id}`);
         convertBigInts(post);
         post.tags = parseTags(post.tags);
         
@@ -552,7 +551,7 @@ export const DatabaseService = {
         // Published: Integer (0/1) zu Boolean konvertieren
         post.published = normalizePublished(post.published);
         
-        logger.debug(`DatabaseService.getAllPosts: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
+        // logger.debug(`DatabaseService.getAllPosts: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
         
         return post;
       });
