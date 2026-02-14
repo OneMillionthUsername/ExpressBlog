@@ -484,9 +484,10 @@ postRouter.post('/update/:postId',
     const source = req.body || {};
     const title = source.title;
     const content = source.content;
+    const updated_at = new Date();
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags });
+      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at });
       if (!result) {
         return res.redirect(303, `/createPost/${postId}?error=1`);
       }

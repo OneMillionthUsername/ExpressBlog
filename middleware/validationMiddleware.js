@@ -15,7 +15,7 @@ function validatePostBody(req, res, next) {
   const { error, value } = postSchema.validate({
     ...req.body,
     slug: req.body.title ? createSlug(req.body.title) : undefined,
-    author: req.user?.username || 'admin',
+    author: req.user?.username || 'author',
     created_at: new Date(),
     updated_at: new Date(),
   }, { abortEarly: false, stripUnknown: true });

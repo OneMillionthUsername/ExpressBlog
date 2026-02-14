@@ -693,7 +693,7 @@ export const DatabaseService = {
       if (!post || typeof post !== 'object' || Array.isArray(post)) {
         throw new databaseError('Post is null or not an object');
       }
-      const updatableFields = ['title', 'content', 'tags', 'published', 'author'];
+      const updatableFields = ['title', 'content', 'tags', 'published', 'author', 'updated_at'];
       const hasUpdatableField = updatableFields.some(field => field in post);
       if (!hasUpdatableField) {
         throw new databaseError('No fields provided for update');

@@ -121,6 +121,7 @@ const updatePost = async (postData) => {
   postData.slug = existing.slug;
   if (typeof postData.author === 'undefined') postData.author = existing.author;
   if (typeof postData.published === 'undefined') postData.published = existing.published;
+  if (typeof postData.created_at === 'undefined') postData.updated_at = new Date();
 
   const { error, value } = Post.validate(postData);
   if (error) {
