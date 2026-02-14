@@ -769,7 +769,7 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       // Build explicit parameterized INSERT to avoid driver-specific 'SET ?' expansion issues
-      const allowedFields = ['title','slug','content','tags','author','views','published','created_at','updated_at'];
+      const allowedFields = ['title','slug','content','tags','author','views','published','created_at','updated_at', 'category_id'];
       const keys = Object.keys(postData).filter(k => allowedFields.includes(k));
       if (keys.length === 0) {
         throw new Error('No valid fields provided for insert');

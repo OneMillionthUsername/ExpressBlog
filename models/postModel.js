@@ -12,6 +12,8 @@ export class Post {
     published = true,
     created_at = new Date(),
     updated_at = new Date(),
+    category_id = null,
+    category = null,
   } = {}) {
     this.id = id;
     this.slug = slug;
@@ -23,6 +25,8 @@ export class Post {
     this.published = !!published;
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
+    this.category_id = category_id;
+    this.category = category;
   }
 
   static validate(payload = {}) {
@@ -48,4 +52,10 @@ export const postSchema = Joi.object({
     mime_type: Joi.string().max(100).optional(),
     alt_text: Joi.string().max(255).optional(),
   })).optional(),
+  category_id: Joi.number().integer().required(),
+  category: Joi.object({
+    id: Joi.number().integer().optional(),
+    name: Joi.string().max(100).required(),
+    description: Joi.string().max(500).optional(),
+  }).optional(),
 });

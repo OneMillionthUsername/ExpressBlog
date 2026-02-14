@@ -450,7 +450,7 @@ postRouter.post('/create',
     const tags = parseTags(req.body && req.body.tags);
     const slug = createSlug(title);
     try {
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username });
+      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username, category_id: req.body.category_id });
       if (!result) {
         return res.redirect(303, '/createPost?error=1');
       }
@@ -486,8 +486,9 @@ postRouter.post('/update/:postId',
     const content = source.content;
     const updated_at = new Date();
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
+    const category_id = source.category_id;
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at });
+      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id });
       if (!result) {
         return res.redirect(303, `/createPost/${postId}?error=1`);
       }
@@ -510,8 +511,7 @@ postRouter.post('/update/:postId',
       res.redirect(303, `/createPost/${postId}?error=1`);
     }
   });
-postRouter.post(
-  '/delete/:postId',
+postRouter.post('/delete/:postId',
   strictLimiter,
   csrfProtection,
   authenticateToken,

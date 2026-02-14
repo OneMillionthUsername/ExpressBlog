@@ -62,6 +62,11 @@
                         <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% } %>
+                        <!-- For editing existing posts, include hidden ID field -->
+                        <% if (typeof post !== 'undefined' && post && post.id) { %>
+                            <input type="hidden" name="id" value="<%= post.id %>">
+                        <% } %>
+                        <!-- Titel -->
                         <div class="form-group">
                             <label for="title" class="form-label">
                                 <span class="label-icon">📝</span>
@@ -71,6 +76,7 @@
                                    placeholder="Gib deinem Blogpost einen aussagekräftigen Titel..." required>
                             <small class="form-text text-muted">Ein guter Titel macht neugierig und fasst das Thema zusammen</small>
                         </div>
+                        <!-- Body -->
                         <div class="form-group">
                             <label for="content" class="form-label">
                                 <span class="label-icon">✍️</span>
@@ -88,6 +94,14 @@
                                     <button type="button" id="insert-template-science" class="btn btn-sm btn-outline-secondary" data-template="science">
                                         <i class="fas fa-flask"></i> Wissenschaft
                                     </button>
+                                </div>
+                                <div class="toolbar-group">
+                                    <span class="toolbar-label">Kategorie:</span>
+                                    <select name="category_id" required>
+                                    <% categories.forEach(cat => { %>
+                                        <option value="<%= cat.id %>"><%= cat.name %></option>
+                                    <% }) %>
+                                    </select>
                                 </div>
                                 <div class="toolbar-group">
                                     <span class="toolbar-label">AI-Assistent:</span>
