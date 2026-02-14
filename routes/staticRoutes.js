@@ -87,12 +87,12 @@ async function handleCreatePost(req, res) {
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     const formError = req.query && req.query.error ? 'Blogpost konnte nicht gespeichert werden.' : null;
     try {
-      logger.debug('[CREATEPOST] SSR auth context', {
-        isAdmin,
-        cookieNames: Object.keys(req.cookies || {}),
-        ip: req.ip,
-        userAgent: req.get('User-Agent') || null,
-      });
+      // logger.debug('[CREATEPOST] SSR auth context', {
+      //   isAdmin,
+      //   cookieNames: Object.keys(req.cookies || {}),
+      //   ip: req.ip,
+      //   userAgent: req.get('User-Agent') || null,
+      // });
     } catch { /* ignore logging errors */ }
 
     // Only expose tinyMCE key to authenticated admins when rendering the page

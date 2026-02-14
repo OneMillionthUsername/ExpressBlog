@@ -13,11 +13,11 @@ export function loggerMiddleware(req, res, next) {
   const startTime = Date.now();
   const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   // Request loggen
-  logger.debug(`Incoming request: ${req.method} ${req.url}`, {
-    ip,
-    userAgent: req.get('User-Agent'),
-    referer: req.get('Referer'),
-  });
+  // logger.debug(`Incoming request: ${req.method} ${req.url}`, {
+  //   ip,
+  //   userAgent: req.get('User-Agent'),
+  //   referer: req.get('Referer'),
+  // });
   // Response Zeit messen
   res.on('finish', () => {
     const responseTime = Date.now() - startTime;

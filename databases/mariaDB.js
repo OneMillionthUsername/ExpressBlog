@@ -693,7 +693,7 @@ export const DatabaseService = {
       if (!post || typeof post !== 'object' || Array.isArray(post)) {
         throw new databaseError('Post is null or not an object');
       }
-      const updatableFields = ['title', 'content', 'tags', 'published', 'author', 'updated_at'];
+      const updatableFields = ['title', 'content', 'tags', 'published', 'author', 'updated_at', 'category_id'];
       const hasUpdatableField = updatableFields.some(field => field in post);
       if (!hasUpdatableField) {
         throw new databaseError('No fields provided for update');
@@ -730,7 +730,6 @@ export const DatabaseService = {
       });
       values.push(post.id);
       const updateSql = `UPDATE posts SET ${setClause} WHERE id = ?`;
-
       const result = await conn.query(updateSql, values);
       if(!result || result.affectedRows === 0) {
         throw new Error('Failed to update post');
