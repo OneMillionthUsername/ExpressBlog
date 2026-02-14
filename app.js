@@ -377,12 +377,13 @@ function registerDatabaseRoutes() {
   
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
-    res.status(404).send('Sorry, can\'t find that!');
+    res.status(404).render('error', {message: 'Seite nicht gefunden'});
+    //send('Sorry, can\'t find that!');
   });
     
   // Error handler MUST be registered AFTER 404 handler
   app.use((err, req, res, _next) => {
-    res.status(500).json({ message: err.message });
+    res.status(500).render('error', {message: err.message});
   });
     
   logger.info('Database-dependent routes registered');

@@ -996,6 +996,10 @@ body {
     color: var(--color-text-light);
 }
 
+.alert-heading {
+    padding: 20px;
+}
+
 /* Hide the blogpost loading spinner when server-rendered content is present.
    The template already sets inline style="display:none;" when `post` is provided,
    but some clients/styles might still show the markup — hide it with a specific rule.
