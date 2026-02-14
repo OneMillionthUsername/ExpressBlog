@@ -796,6 +796,46 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getAllCategories() {
+    let conn;
+    try {      
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM categories ORDER BY id ASC');
+      return result.map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+    }));
+    } catch (error) {
+      logger.error(`Error in getAllCategories: ${error.message}`);
+      throw new databaseError(`Error in getAllCategories: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getCategoriesByPostId(postId) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        `SELECT c.id, c.name, c.description
+        FROM categories c
+        JOIN posts p ON p.category_id = c.id
+        WHERE p.id = ?`,
+        [postId]
+      );
+      return result.map(row => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+      }));
+    } catch (error) {
+      logger.error(`Error in getCategoriesByPostId: ${error.message}`);
+      throw new databaseError(`Error in getCategoriesByPostId: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   // Cards
   /**
    * Erstellt eine neue Card in der DB.

@@ -16,6 +16,7 @@
 
 import express from 'express';
 import crypto from 'crypto';
+import categoryController from '../controllers/categoryController.js';
 import postController from '../controllers/postController.js';
 import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
@@ -288,6 +289,7 @@ postRouter.get('/by-id/:postId',
     const postId = req.params.postId;
     try {
       const post = await postController.getPostById(postId);
+      const categories = await categoryController.getAllCategories();
       // Only increment views if we got a valid post object
       if (post && post.id) {
         incrementViews(req, post.id);
@@ -295,12 +297,12 @@ postRouter.get('/by-id/:postId',
       const safe = convertBigInts(post) || post;
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        const viewData = await buildReadPostViewData(req, res, sanitized);
+        const viewData = await buildReadPostViewData(req, res, sanitized, categories);
         // Prevent caching of personalized HTML (admin vs non-admin)
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: sanitized, ...viewData });
       } catch (_e) {
-        const viewData = await buildReadPostViewData(req, res, safe);
+        const viewData = await buildReadPostViewData(req, res, safe, categories);
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: safe, ...viewData });
       }
@@ -336,15 +338,16 @@ postRouter.get('/:maybeId',
     const postId = maybe;
     try {
       const post = await postController.getPostById(postId);
+      const categories = await categoryController.getAllCategories();
       if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
       try {
         const sanitized = escapeAllStrings(safe, ['content', 'description']);
-        const viewData = await buildReadPostViewData(req, res, sanitized);
+        const viewData = await buildReadPostViewData(req, res, sanitized, categories);
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: sanitized, ...viewData });
       } catch (_e) {
-        const viewData = await buildReadPostViewData(req, res, safe);
+        const viewData = await buildReadPostViewData(req, res, safe, categories);
         applySsrNoCache(res, { varyCookie: true });
         return res.render('readPost', { post: safe, ...viewData });
       }
@@ -419,9 +422,10 @@ postRouter.get('/:slug',
     const slug = req.params.slug;
     try {
       const post = await postController.getPostBySlug(slug);
+      const categories = await categoryController.getAllCategories();
       if (post && post.id) incrementViews(req, post.id);
       const safe = convertBigInts(post) || post;
-      const viewData = await buildReadPostViewData(req, res, safe);
+      const viewData = await buildReadPostViewData(req, res, safe, categories);
       applySsrNoCache(res, { varyCookie: true });
       return res.render('readPost', { post: safe, ...viewData });
     } catch (error) {
@@ -486,7 +490,7 @@ postRouter.post('/update/:postId',
     const content = source.content;
     const updated_at = new Date();
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
-    const category_id = source.category_id;
+    const category_id = source.category_id ? Number(source.category_id) : 7;
     try {
       const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id });
       if (!result) {

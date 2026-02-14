@@ -61,3 +61,12 @@ export class databaseError extends Error {
     }
   }
 }
+
+export class CategoryControllerException extends Error {
+  constructor(message, details = null) {
+    super(message);
+    this.name = 'CategoryControllerException';
+    if (details) this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}

@@ -1,6 +1,7 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
+import categoryController from '../controllers/categoryController.js';
 import postController from '../controllers/postController.js';
 import cardController from '../controllers/cardController.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
@@ -105,6 +106,8 @@ async function handleCreatePost(req, res) {
     // server-side and inject it into the view so the editor can be prefilled
     // without an extra client request. Support numeric id or slug.
     const postParam = req.params && req.params.postId;
+    const categories = await categoryController.getAllCategories();
+    logger.debug('[CREATEPOST] Fetched categories for createPost view', { categoryCount: Array.isArray(categories) ? categories.length : 0 });
     let serverPost = null;
     if (postParam) {
       try {
@@ -123,13 +126,13 @@ async function handleCreatePost(req, res) {
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
     // TODO: Is it necessary to expose tinyMCE key to the client at all, or can we proxy requests through the server to inject the key server-side? For now we only expose it to authenticated admins, but ideally it would be used server-side only.
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError });
+    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError, categories: categories || [] });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null, csrfToken, formAction: '/blogpost/create', formError: 'Blogpost konnte nicht geladen werden.' });
+    res.render('createPost', { tinyMceKey: null, isAdmin: false, post: null, csrfToken, formAction: '/blogpost/create', formError: 'Blogpost konnte nicht geladen werden.', categories: [] });
   }
 }
 

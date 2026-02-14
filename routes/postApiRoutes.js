@@ -184,7 +184,7 @@ postApiRouter.post('/create',
     const tags = Array.isArray(req.body.tags) ? req.body.tags : parseTags(req.body.tags);
     const slug = createSlug(title);
     try {
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username });
+      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username, category_id: req.body.category_id });
       if (!result) {
         return res.status(400).json({ error: 'Failed to create blog post' });
       }
@@ -220,8 +220,9 @@ postApiRouter.put('/update/:postId',
     const title = source.title;
     const content = source.content;
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
+    const category_id = source.category_id;
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags });
+      const result = await postController.updatePost({ id: postId, title, content, tags, category_id });
       if (!result) {
         return res.status(400).json({ error: 'Failed to update blog post' });
       }
