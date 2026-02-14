@@ -30,6 +30,7 @@ staticRouter.get('/', csrfProtection, async (req, res) => {
     // rendering raw HTML in templates. Use a simple regex here; content is
     // trusted from DB but may contain editor HTML.
     const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
+    const categories = await categoryController.getAllCategories();
     const featuredPosts = (posts || []).slice(0, 3).map(p => {
       const plain = stripTags(p.content || '');
       const decodedPlain = decodeHtmlEntities(plain);
@@ -63,7 +64,7 @@ staticRouter.get('/', csrfProtection, async (req, res) => {
 
     logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
     applySsrNoCache(res, { varyCookie: true });
-    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin, csrfToken });
+    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin, csrfToken, categories });
     logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);

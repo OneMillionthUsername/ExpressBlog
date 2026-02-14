@@ -64,19 +64,25 @@
 
                     <!-- Kategorien -->
                     <h2 class="sidebar-title mt-4">Kategorien</h2>
-                    <ul class="nav-list" id="categories-list">
-                        <% if (typeof categories !== 'undefined' && Array.isArray(categories) && categories.length > 0) { %>
-                            <% categories.forEach(function(c) { %>
-                                <li><a class="sidebar-link-style" href="/blogpost/category/<%= c.slug %>"><%= c.name %></a></li>
+                    <div class="dropright mt-4">
+                        <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Kategorien
+                        </button>
+                        <div class="dropdown-menu">                       
+                            <% categories.forEach(function(category) { %>
+                            <li>
+                                <a class="dropdown-item" href="/category/<%= category.slug %>">
+                                <%= category.name %>
+                                </a>
+                            </li>
                             <% }); %>
-                        <% } else { %>
-                            <li class="text-muted small">Keine Kategorien</li>
-                        <% } %>
+                        </div> 
+                    </div>
 
                     <!-- Archiv nach Jahren -->
                     <h2 class="sidebar-title mt-4">Archiv</h2>
                     <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="archiveDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button type="button" class="btn btn-secondary dropdown-toggle w-100" id="archiveDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Jahr wählen
                         </button>
                         <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="archiveDropdown" id="year-archive-dropdown">
