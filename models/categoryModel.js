@@ -19,5 +19,5 @@ export class Category {
 export const categorySchema = Joi.object({
     id: Joi.number().integer().required(),
     name: Joi.string().max(100).required(),
-    description: Joi.string().max(500).optional(),
+    description: Joi.string().max(500).optional().allow(''),
   });

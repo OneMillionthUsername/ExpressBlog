@@ -126,7 +126,7 @@ async function handleCreatePost(req, res) {
     // IMPORTANT: Do NOT expose the GEMINI API key to the browser.
     // TODO: Is it necessary to expose tinyMCE key to the client at all, or can we proxy requests through the server to inject the key server-side? For now we only expose it to authenticated admins, but ideally it would be used server-side only.
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError, categories: categories || [] });
+    res.render('createPost', { tinyMceKey, isAdmin, post: serverPost, csrfToken, formAction, formError, categories });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     // Render without key (non-admin)
