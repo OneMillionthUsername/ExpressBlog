@@ -7,7 +7,7 @@ export class Post {
     title = '',
     content = '',
     tags = [],
-    author = 'admin',
+    author = 'author',
     views = 0,
     published = true,
     created_at = new Date(),
