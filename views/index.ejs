@@ -49,13 +49,14 @@
                             <% popularPosts.forEach(function(p) { %>
                                 <li>
                                     <% if (p.slug) { %>
-                                        <a class="sidebar-link-style" href="/blogpost/<%= p.slug %>"><%= p.title %></a>
+                                        <a href="/blogpost/<%= p.slug %>"><%= p.title %></a>
                                     <% } else if (p.id !== undefined && p.id !== null) { %>
-                                        <a class="sidebar-link-style" href="/blogpost/by-id/<%= p.id %>"><%= p.title %></a>
+                                        <a href="/blogpost/by-id/<%= p.id %>"><%= p.title %></a>
                                     <% } else { %>
-                                        <span class="sidebar-link-style"><%= p.title %></span>
+                                        <span><%= p.title %></span>
                                     <% } %>
                                 </li>
+                                
                             <% }); %>
                         <% } else { %>
                             <li class="text-muted small">Keine Daten</li>

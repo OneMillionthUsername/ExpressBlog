@@ -321,8 +321,15 @@ body {
     padding-bottom: 15px;
 }
 .sidebar li {
-    list-style: none;
-    margin-bottom: 0px;
+    /* color: var(--color-text) !important; */
+    text-decoration: none !important;
+    font-family: var(--font-secondary);
+    font-weight: 300;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+    font-style: normal;
+    margin: 14px 0;
+    border-bottom: #8a6a3f 1px solid;
 }
 .sidebar li a {
     text-decoration: none;
@@ -332,6 +339,12 @@ body {
 }
 .sidebar li a:hover {
     color: var(--color-hover);
+}
+.centered-underline {
+  border-bottom: 2px solid var(--color-accent);
+  width: 60px;
+  margin: 0 auto;
+  margin-top: 8px; 
 }
 .nav-list {
     list-style: none;
@@ -1166,13 +1179,7 @@ body {
     font-style: italic !important;
 }
 .sidebar-link-style {
-    color: var(--color-text-light) !important;
-    text-decoration: none !important;
-    font-family: var(--font-secondary);
-    font-weight: 300;
-    font-size: 1.1rem;
-    transition: color 0.3s ease;
-    font-style: normal;
+
 }
 /* Quote styles */
 blockquote {
@@ -1181,7 +1188,7 @@ blockquote {
     padding-left: 20px;
     margin: 20px 0;
     font-style: italic;
-    color: #555;
+    color: var(--color-text-light);
 }
 blockquote:before {
     content: open-quote;
