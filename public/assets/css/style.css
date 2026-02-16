@@ -1,3 +1,19 @@
+/*
+====================================================
+ Übersicht der Hauptbereiche in dieser CSS-Datei:
+----------------------------------------------------
+ 1. Utility-Klassen (Display, Text, Opacity)
+ 2. Farb- und Font-Variablen, Grundlayout
+ 3. Navbar & Header Styles
+ 4. Featured Posts, Sidebar, Dropdowns
+ 5. Content Area, Blogpost Cards, Discovery Cards
+ 6. Kommentarbereich & Formulare
+ 7. Footer, Most Read, Badges
+ 8. Responsive Styles & Animationen
+ 9. Link-, Tag-, Quote-, Archive-Styles
+====================================================
+*/
+
 /* ========================================
    UTILITY CLASSES FOR DYNAMIC STYLING
    ======================================== */
@@ -306,7 +322,7 @@ body {
 }
 .sidebar li {
     list-style: none;
-    margin-bottom: 12px;
+    margin-bottom: 0px;
 }
 .sidebar li a {
     text-decoration: none;
@@ -372,6 +388,17 @@ body {
     color: var(--color-text);
     display: block;
     transition: background-color 0.2s, color 0.2s;
+}
+
+.list-group-item {
+    display: flex;
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0;
+    font-size: larger;
+    justify-content: center;
+    transition: var(--transition);
 }
 /* ========================================
    BLOG POSTS & CONTENT

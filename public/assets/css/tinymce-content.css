@@ -1,3 +1,15 @@
+/*
+====================================================
+ Übersicht der Hauptbereiche in dieser CSS-Datei:
+----------------------------------------------------
+ 1. Farb- und Font-Variablen (Light & Dark)
+ 2. Grundlegende Body- und Textstile für TinyMCE/Preview
+ 3. Headings, Paragraphs, Drop Cap
+ 4. Bild-, Blockquote-, Listen-, Link-, Code-, Tabellenstile
+ 5. Utilities (Textausrichtung, hr, strong/em)
+ 6. Dark Mode Overrides für Editor/Preview
+====================================================
+*/
 :root {
     --color-primary: #2c3e50;
     --color-secondary: #a27f4d;

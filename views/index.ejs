@@ -64,69 +64,71 @@
 
                     <!-- Kategorien -->
                     <h2 class="sidebar-title mt-4">Kategorien</h2>
-                    <div class="dropright mt-4">
-                        <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Kategorien
-                        </button>
-                        <div class="dropdown-menu">                       
+                    <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-toggle="collapse" data-target="#categoriesCollapse" aria-controls="categoriesCollapse" aria-expanded="false">
+                        Kategorien
+                    </button>
+                    <div class="collapse mt-2" id="categoriesCollapse">
+                        <ul class="list-group">
                             <% categories.forEach(function(category) { %>
-                            <li>
-                                <a class="dropdown-item" href="/category/<%= category.slug %>">
-                                <%= category.name %>
-                                </a>
-                            </li>
+                                <li class="list-group-item">
+                                    <a href="/category/<%= category.slug %>"><%= category.name %></a>
+                                </li>
                             <% }); %>
-                        </div> 
+                        </ul>                  
                     </div>
 
                     <!-- Archiv nach Jahren -->
                     <h2 class="sidebar-title mt-4">Archiv</h2>
-                    <div class="dropdown">
-                        <button type="button" class="btn btn-secondary dropdown-toggle w-100" id="archiveDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Jahr wählen
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="archiveDropdown" id="year-archive-dropdown">
+                    <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-toggle="collapse" data-target="#archiveCollapse" aria-controls="archiveCollapse" aria-expanded="false">
+                        Jahr wählen
+                    </button>
+                    <div class="collapse mt-2" id="archiveCollapse">
+                        <ul class="list-group"> 
                             <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
                                 <% archiveYears.forEach(function(y) { %>
-                                    <a class="dropdown-item" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                                    <li class="list-group-item">
+                                        <a href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                                    </li>
                                 <% }); %>
                             <% } else { %>
-                                <span class="dropdown-item text-muted">Keine Jahre</span>
+                                    <li class="list-group-item">
+                                        <span class="dropdown-item text-muted">Keine Jahre</span>
+                                    </li>
                             <% } %>
-                        </div>
+                        </ul>
                     </div>
                 </div>
             </div>
+            <!-- In deiner content-area -->
             <div class="col-md-9">
-                <!-- In deiner content-area -->
                 <div class="content-area">
                     <h3 class="featured-title">Ausgewählte Beiträge</h3>
                     <div class="featured-posts-grid">
-                            <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
-                                <% featuredPosts.forEach(function(fp) { %>
-                                    <div class="featured-post-card">
-                                        <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
-                                        <p class="featured-post-excerpt"><%= fp.excerpt %></p>
-                                        <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
-                                    </div>
-                                <% }); %>
-                            <% } else { %>
+                        <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
+                            <% featuredPosts.forEach(function(fp) { %>
                                 <div class="featured-post-card">
-                                    <h4 class="featured-post-title"><a href="/blogpost/beyond-the-first-magic-trick" class="featured-post-link">AI Agents</a></h4>
-                                    <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
-                                    <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
+                                    <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
+                                    <p class="featured-post-excerpt"><%= fp.excerpt %></p>
+                                    <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
                                 </div>
-                                <div class="featured-post-card">
-                                    <h4 class="featured-post-title"><a href="/blogpost/vom-archiv-zur-ablenkung" class="featured-post-link">Vom Archiv zur Ablenkung</a></h4>
-                                    <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
-                                    <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
-                                </div>
-                                <div class="featured-post-card">
-                                    <h4 class="featured-post-title"><a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="featured-post-link">Universität Wien</a></h4>
-                                    <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
-                                    <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
-                                </div>
-                            <% } %>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="featured-post-card">
+                                <h4 class="featured-post-title"><a href="/blogpost/beyond-the-first-magic-trick" class="featured-post-link">AI Agents</a></h4>
+                                <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
+                                <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
+                            </div>
+                            <div class="featured-post-card">
+                                <h4 class="featured-post-title"><a href="/blogpost/vom-archiv-zur-ablenkung" class="featured-post-link">Vom Archiv zur Ablenkung</a></h4>
+                                <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
+                                <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
+                            </div>
+                            <div class="featured-post-card">
+                                <h4 class="featured-post-title"><a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="featured-post-link">Universität Wien</a></h4>
+                                <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
+                                <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
+                            </div>
+                        <% } %>
                     </div>
                 </div>
             </div>

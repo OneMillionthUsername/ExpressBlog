@@ -1,3 +1,15 @@
+/*
+====================================================
+ Übersicht der Hauptbereiche in dieser CSS-Datei:
+----------------------------------------------------
+ 1. DARK MODE STYLES (Globale Variablen & Overrides)
+ 2. Dark Mode für Hauptbereiche (Navbar, Header, Content, Sidebar, Cards, Footer, etc.)
+ 3. Dark Mode für Formulare, Modals, Kommentare, Notifications
+ 4. Dark Mode für Discovery, Most Read, Badges, uvm.
+ 5. Responsive & Admin-spezifische Dark Mode Styles
+====================================================
+*/
+
 /* ========================================
    DARK MODE STYLES
    ======================================== */

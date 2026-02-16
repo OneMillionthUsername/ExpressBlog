@@ -16,6 +16,15 @@
     justify-content: center;
     z-index: 99999;
     animation: fadeIn 0.3s ease-out;
+/*
+====================================================
+ Übersicht der Hauptbereiche in dieser CSS-Datei:
+----------------------------------------------------
+ 1. MODAL STYLES (Admin Login, Card Create)
+ 2. ADMIN TOOLBAR AND BUTTON STYLES
+ 3. Responsive Styles für Modals
+====================================================
+*/
 }
 /* Modal Content Container */
 .modal.modal-block .modal-content,
