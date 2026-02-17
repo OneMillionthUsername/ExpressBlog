@@ -26,7 +26,7 @@ const __dirname = dirname(__filename);
 
 // Global server references for graceful shutdown
 let httpServer = null;
-let httpsServer = null;
+// let httpsServer = null;
 
 // SSL Configuration
 function loadSSLCertificates() {
@@ -78,9 +78,9 @@ async function startServer() {
     await startHTTPServer();
         
     // Start HTTPS server if certificates are available
-    if (httpsOptions) {
-      await startHTTPSServer(httpsOptions);
-    }
+    // if (httpsOptions) {
+    //   await startHTTPSServer(httpsOptions);
+    // }
         
     // Setup graceful shutdown handlers
     setupGracefulShutdown();
@@ -213,19 +213,19 @@ function gracefulShutdown(signal) {
     );
   }
     
-  if (httpsServer) {
-    shutdownPromises.push(
-      new Promise((resolve) => {
-        httpsServer.close((err) => {
-          if (err) {
-            logger.error('Error closing HTTPS server:', err);
-          } else {
-            logger.info('HTTPS server closed');
-          }
-          resolve();
-        });
-      }),
-    );
+  // if (httpsServer) {
+  //   shutdownPromises.push(
+  //     new Promise((resolve) => {
+  //       httpsServer.close((err) => {
+  //         if (err) {
+  //           logger.error('Error closing HTTPS server:', err);
+  //         } else {
+  //           logger.info('HTTPS server closed');
+  //         }
+  //         resolve();
+  //       });
+  //     }),
+  //   );
   }
     
   Promise.all(shutdownPromises).then(() => {
