@@ -127,17 +127,19 @@ function startHTTPServer() {
     httpServer.requestTimeout = 20000;      // 20 seconds for request timeout
         
     httpServer.listen(config.PORT, config.HOST, () => {
-      const protocol = config.IS_PRODUCTION ? 'https' : 'http';
+      //const protocol = config.IS_PRODUCTION ? 'https' : 'http';
+      const protocol = 'http';
       const domain = config.DOMAIN || 'localhost';
-      const displayPort = (protocol === 'http' && config.PORT === 80) || 
-                              (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
-
+      // const displayPort = (protocol === 'http' && config.PORT === 80) || 
+      //                         (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
+      const displayPort = 3000; // Always show port for clarity, even if standard
+      
       logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
       logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
       logger.info(`Health Check: ${protocol}://${domain}${displayPort}/health`);
             
       if (config.IS_PRODUCTION) {
-        logger.info('Production mode: SSL enabled');
+        logger.info('Production mode: SSL handled by Nginx, HTTP server on port 3000 started');
       } else {
         logger.info('Development mode: HTTP server started');
       }
