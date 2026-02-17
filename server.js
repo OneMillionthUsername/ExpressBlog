@@ -160,23 +160,23 @@ function startHTTPServer() {
   });
 }
 // Start HTTPS server (development only)
-function startHTTPSServer(httpsOptions) {
-  return new Promise((resolve, reject) => {
-    httpsServer = https.createServer(httpsOptions, app);
+// function startHTTPSServer(httpsOptions) {
+//   return new Promise((resolve, reject) => {
+//     httpsServer = https.createServer(httpsOptions, app);
         
-    httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
-      logger.info(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
-      logger.info('SSL/TLS enabled - secure connection available');
-      logger.info('Certificate: Self-signed for development (browser warning normal)');
-      resolve();
-    });
+//     httpsServer.listen(config.HTTPS_PORT, config.HOST, () => {
+//       logger.info(`HTTPS Server running on https://${config.HOST}:${config.HTTPS_PORT}`);
+//       logger.info('SSL/TLS enabled - secure connection available');
+//       logger.info('Certificate: Self-signed for development (browser warning normal)');
+//       resolve();
+//     });
         
-    httpsServer.on('error', (error) => {
-      logger.error('HTTPS Server error:', error);
-      reject(error);
-    });
-  });
-}
+//     httpsServer.on('error', (error) => {
+//       logger.error('HTTPS Server error:', error);
+//       reject(error);
+//     });
+//   });
+// }
 // Log server configuration
 function logServerConfiguration() {
   logger.info('=== Server Configuration ===');
