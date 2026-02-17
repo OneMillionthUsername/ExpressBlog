@@ -6,8 +6,6 @@
 - Environment Setup: Makes it easy to configure different databases for different environments (development, production).
 */
 
-
-
 import * as mariadb from 'mariadb';
 import { convertBigInts, parseTags, createSlug } from '../utils/utils.js';
 //import queryBuilder from '../utils/queryBuilder.js';
@@ -21,8 +19,6 @@ import { normalizePublished } from '../utils/normalizers.js';
  * @type {import('mariadb').Pool|undefined}
  */
 let pool;
-
-
 
 /**
  * Flag indicating whether the module is running in mock mode (no real DB).
@@ -515,6 +511,56 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getPostsByCategoryId(categoryId) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const posts = await conn.query('SELECT * FROM posts WHERE category_id = ? ORDER BY created_at DESC', [categoryId]);
+      if (!posts || posts.length === 0) {
+        logger.warn(`No posts found for category ID ${categoryId}`);
+        return [];
+      }
+      return posts.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) {
+          post.author = 'unknown';
+        }
+        return post;
+      });
+    } catch (error) {
+      logger.error(`Error in getPostsByCategoryId: ${error.message}`);
+      throw new databaseError(`Error in getPostsByCategoryId: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsByCategory(category) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const posts = await conn.query('SELECT * FROM posts WHERE category = ? ORDER BY created_at DESC', [category]);
+      if (!posts || posts.length === 0) {
+        logger.warn(`No posts found for category "${category}"`);
+        return [];
+      }
+      return posts.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) {
+          post.author = 'unknown';
+        }
+        return post;
+      });
+    } catch (error) {
+      logger.error(`Error in getPostsByCategory: ${error.message}`);
+      throw new databaseError(`Error in getPostsByCategory: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getAllPosts() {
     let conn;
     // logger.debug('DatabaseService.getAllPosts: Starting database query');
@@ -561,7 +607,7 @@ export const DatabaseService = {
     } catch (error) {
       logger.debug(`DatabaseService.getAllPosts: Database error occurred: ${error.message}`, { stack: error.stack });
       logger.error(`Error in getAllPosts: ${error.message}`);
-      throw new databaseError(`Error in getAllPosts: ${error.message}`);
+      throw new databaseError(`Error in getAllPosts: ${error.message}`, error);
     } finally {
       if (conn) {
         logger.debug('DatabaseService.getAllPosts: Releasing database connection');

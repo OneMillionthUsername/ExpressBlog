@@ -32,7 +32,6 @@ function bumpPostsChecksum() {
 function getPostsChecksum() {
   return postsChecksum;
 }
-
 /**
  * Holt einen veröffentlichten Post anhand des Slugs.
  * @param {string} slug - URL-Slug des Posts.
@@ -204,6 +203,62 @@ const getAllPosts = async () => {
   }
 };
 /**
+ * 
+ * @param {string} category - Kategorie, nach der gefiltert werden soll (z.B. "Philosophie", "Wissenschaft"). 
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts der Kategorie.
+ */
+const getAllPostsByCategory = async (category) => {
+  try {
+    const posts = await DatabaseService.getAllPostsByCategory(category);
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+    const validPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        logger.debug('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      if (!value.published) {
+        continue;
+      }
+      validPosts.push(new Post(value));
+    }
+    return validPosts;
+  } catch (error) {
+    throw new PostControllerException(`Error fetching posts by category: ${error.message}`, error);
+  }
+};
+/**
+ * 
+ * @param {Number} category_id - Kategorie-ID, nach der gefiltert werden soll. 
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts der Kategorie.
+ */
+const getPostsByCategoryId = async (category_id) => {
+  try {
+    const posts = await DatabaseService.getPostsByCategoryId(category_id);
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+    const validPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        logger.debug('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      if (!value.published) {
+        continue;
+      }
+      validPosts.push(new Post(value));
+    }
+    return validPosts;
+  } catch (error) {
+    throw new PostControllerException(`Error fetching posts by category ID: ${error.message}`, error);
+  }
+};
+/**
  * Liest die meistgelesenen Posts aus der DB, validiert und filtert veröffentlichte Posts.
  * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts.
  * @throws {PostControllerException} Bei Fehlern.
@@ -218,7 +273,7 @@ const getMostReadPosts = async () => {
     for (const post of posts) {
       const { error, value } = Post.validate(post);
       if (error) {
-        console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        logger.debug('Validation failed for post:', error.details.map(d => d.message).join('; '));
         continue;
       }
       if (!value.published) {
@@ -251,7 +306,7 @@ const getArchivedPosts = async (year) => {
     for (const post of posts) {
       const { error, value } = Post.validate(post);
       if (error) {
-        console.error('Validation failed for post:', error.details.map(d => d.message).join('; '));
+        logger.debug('Validation failed for post:', error.details.map(d => d.message).join('; '));
         continue;
       }
       if (!value.published) {
@@ -315,4 +370,6 @@ export default {
   getMostReadPosts,
   deletePost,
   getPostsChecksum,
+  getAllPostsByCategory,
+  getPostsByCategoryId
 };
