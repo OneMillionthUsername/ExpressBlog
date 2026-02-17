@@ -226,7 +226,7 @@ function gracefulShutdown(signal) {
   //       });
   //     }),
   //   );
-  }
+  //}
     
   Promise.all(shutdownPromises).then(() => {
     logger.info('All servers closed successfully');
