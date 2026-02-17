@@ -133,7 +133,7 @@ function startHTTPServer() {
       // const displayPort = (protocol === 'http' && config.PORT === 80) || 
       //                         (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
       const displayPort = 3000; // Always show port for clarity, even if standard
-      
+
       logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
       logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
       logger.info(`Health Check: ${protocol}://${domain}${displayPort}/health`);
@@ -183,7 +183,7 @@ function logServerConfiguration() {
   logger.info(`Environment: ${config.IS_PRODUCTION ? 'Production' : 'Development'}`);
   //logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
   logger.info(`HTTP Port: ${config.PORT}`);
-  logger.info(`HTTPS Port: ${config.HTTPS_PORT}`);
+  //logger.info(`HTTPS Port: ${config.HTTPS_PORT}`);
   logger.info(`Host: ${config.HOST}`);
   logger.info(`Domain: ${config.DOMAIN || 'not set'}`);
 }// Graceful shutdown setup
