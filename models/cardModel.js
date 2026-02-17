@@ -29,13 +29,13 @@ export const cardSchema = Joi.object({
   subtitle: Joi.string().max(500).allow('', null).optional(),
   link: Joi.string().uri().required(),
   img_link: Joi.string()
-  .custom((value, helpers) => {
-    // Erlaubt URI oder Linux-Pfad
-    const isUri = /^https?:\/\/.+/.test(value);
-    const isLinuxPath = /^\/[^\0]*$/.test(value);
-    if (isUri || isLinuxPath) return value;
-    return helpers.error('any.invalid');
-  })
-  .required(),
+    .custom((value, helpers) => {
+      // Erlaubt URI (http/https) oder absoluten Linux-Pfad
+      const isUri = /^https?:\/\/.+/.test(value);
+      const isLinuxPath = /^\/[\w\-\.\/]+$/.test(value);
+      if (isUri || isLinuxPath) return value;
+      return helpers.error('any.invalid');
+    })
+    .required(),
   published: Joi.boolean().optional(),
 });
