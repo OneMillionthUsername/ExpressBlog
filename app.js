@@ -135,7 +135,7 @@ app.use((req, res, next) => {
 // Helmet core + secure CSP (no 'unsafe-inline')
 // Configure trust proxy based on environment: in production behind proxies (e.g., Plesk),
 // trust the first proxy to correctly determine protocol and IP; in development, keep loopback only.
-if (config.IS_PRODUCTION || config.IS_PLESK) {
+if (config.IS_PRODUCTION) {
   app.set('trust proxy', 1);
 } else {
   app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
@@ -473,34 +473,34 @@ export { appStatus };
 // ===========================================
 
 // HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen und statische Dateien ausgeschlossen
-app.use((req, res, next) => {
-  // API-Routen und statische Assets von HTTPS-Redirect ausschließen
-  if (req.url.startsWith('/auth/') || 
-    req.url.startsWith('/extension/') || 
-    req.url.startsWith('/blogpost') || 
-    req.url.startsWith('/comments/') || 
-    req.url.startsWith('/upload/') ||
-    req.url.startsWith('/assets/') || 
-    req.url.startsWith('/public/') ||
-    req.url.includes('.js') ||
-    req.url.includes('.css') ||
-    req.url.includes('.ico')) {
-    return next(); // Kein Redirect für API-Calls und statische Dateien
-  }
-  // Plesk verwendet x-forwarded-proto Header
-  if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
-    // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
-    if (req.method === 'GET') {
-      return res.redirect(301, `https://${req.header('host')}${req.url}`);
-    } else {
-      return res.status(400).json({
-        error: 'HTTPS required',
-        message: 'API endpoints require HTTPS connection',
-      });
-    }
-  } 
-  next();
-});
+// app.use((req, res, next) => {
+//   // API-Routen und statische Assets von HTTPS-Redirect ausschließen
+//   if (req.url.startsWith('/auth/') || 
+//     req.url.startsWith('/extension/') || 
+//     req.url.startsWith('/blogpost') || 
+//     req.url.startsWith('/comments/') || 
+//     req.url.startsWith('/upload/') ||
+//     req.url.startsWith('/assets/') || 
+//     req.url.startsWith('/public/') ||
+//     req.url.includes('.js') ||
+//     req.url.includes('.css') ||
+//     req.url.includes('.ico')) {
+//     return next(); // Kein Redirect für API-Calls und statische Dateien
+//   }
+//   // Plesk verwendet x-forwarded-proto Header
+//   if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
+//     // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
+//     if (req.method === 'GET') {
+//       return res.redirect(301, `https://${req.header('host')}${req.url}`);
+//     } else {
+//       return res.status(400).json({
+//         error: 'HTTPS required',
+//         message: 'API endpoints require HTTPS connection',
+//       });
+//     }
+//   } 
+//   next();
+// });
 
 // Error-Handling Middleware (MUSS am Ende stehen!)
 app.use(middleware.errorHandlerMiddleware);

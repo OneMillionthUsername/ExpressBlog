@@ -30,19 +30,19 @@ let httpsServer = null;
 
 // SSL Configuration
 function loadSSLCertificates() {
-  if (config.IS_PLESK || config.IS_PRODUCTION) {
+  if (!config.IS_PRODUCTION) {
     return null; // SSL handled by Plesk/webserver
   }
     
   try {
-    const sslPath = join(__dirname, 'ssl');
+    const sslPath = '/etc/letsencrypt/live/speculumx.at';
     const httpsOptions = {
-      key: readFileSync(join(sslPath, 'private-key.pem')),
-      cert: readFileSync(join(sslPath, 'certificate.pem')),
+      key: readFileSync(join(sslPath, 'privkey.pem')),
+      cert: readFileSync(join(sslPath, 'cert.pem')),
     };
     logger.info('SSL certificates loaded successfully (Development)');
     return httpsOptions;
-  } catch {
+  } catch (error) {
     logger.warn('SSL certificates not found - HTTP only available');
     logger.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
     return null;
@@ -78,7 +78,7 @@ async function startServer() {
     await startHTTPServer();
         
     // Start HTTPS server if certificates are available
-    if (!config.IS_PLESK && httpsOptions) {
+    if (httpsOptions) {
       await startHTTPSServer(httpsOptions);
     }
         
@@ -136,8 +136,8 @@ function startHTTPServer() {
       logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
       logger.info(`Health Check: ${protocol}://${domain}${displayPort}/health`);
             
-      if (config.IS_PRODUCTION || config.IS_PLESK) {
-        logger.info('Production mode: SSL handled by Plesk/webserver');
+      if (config.IS_PRODUCTION) {
+        logger.info('Production mode: SSL enabled');
       } else {
         logger.info('Development mode: HTTP server started');
       }
@@ -179,7 +179,7 @@ function startHTTPSServer(httpsOptions) {
 function logServerConfiguration() {
   logger.info('=== Server Configuration ===');
   logger.info(`Environment: ${config.IS_PRODUCTION ? 'Production' : 'Development'}`);
-  logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
+  //logger.info(`Plesk integration: ${config.IS_PLESK ? 'Enabled' : 'Disabled'}`);
   logger.info(`HTTP Port: ${config.PORT}`);
   logger.info(`HTTPS Port: ${config.HTTPS_PORT}`);
   logger.info(`Host: ${config.HOST}`);
