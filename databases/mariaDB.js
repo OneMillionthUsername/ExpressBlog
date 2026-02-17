@@ -540,7 +540,7 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const posts = await conn.query('SELECT * FROM posts LEFT JOIN categories ON posts.category_id = categories.id WHERE categories.slug = ? ORDER BY posts.created_at DESC', [category]);
+      const posts = await conn.query('SELECT * FROM posts WHERE category_id = (SELECT id FROM categories WHERE slug = ?) ORDER BY created_at DESC', [category]);
       if (!posts || posts.length === 0) {
         logger.warn(`No posts found for category "${category}"`);
         return [];
