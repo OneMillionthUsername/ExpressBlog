@@ -180,6 +180,33 @@ async function getAllHandler(req, res) {
 
 postRouter.get('/all', globalLimiter, csrfProtection, getAllHandler);
 
+postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (req, res) => {
+  const categorySlug = req.params.categorySlug;
+  try {
+    const posts = await postController.getPostsByCategory(categorySlug);
+    const response = convertBigInts(posts) || posts;
+    try {
+      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('listCurrentPosts', { posts: safeResponse, isAdmin, csrfToken, category: categorySlug });
+    }
+    catch (_e) {
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('listCurrentPosts', { posts: response, isAdmin, csrfToken, category: categorySlug });
+    }
+  } catch (error) {
+    console.error('Error loading blog posts by category', error);
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    res.status(500).render('error', { message: 'Serverfehler beim Laden der Blogposts nach Kategorie', isAdmin, csrfToken });
+  }
+});
+
 // Export handler for integration tests
 export { getAllHandler };
 // Spezifische Routen VOR parametrische Routen

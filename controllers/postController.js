@@ -207,9 +207,9 @@ const getAllPosts = async () => {
  * @param {string} category - Kategorie, nach der gefiltert werden soll (z.B. "Philosophie", "Wissenschaft"). 
  * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts der Kategorie.
  */
-const getAllPostsByCategory = async (category) => {
+const getPostsByCategory = async (category) => {
   try {
-    const posts = await DatabaseService.getAllPostsByCategory(category);
+    const posts = await DatabaseService.getPostsByCategory(category);
     if (!posts || posts.length === 0) {
       return [];
     }
@@ -370,6 +370,6 @@ export default {
   getMostReadPosts,
   deletePost,
   getPostsChecksum,
-  getAllPostsByCategory,
+  getPostsByCategory,
   getPostsByCategoryId
 };

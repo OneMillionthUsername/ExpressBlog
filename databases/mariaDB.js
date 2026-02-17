@@ -540,7 +540,7 @@ export const DatabaseService = {
     let conn;
     try {
       conn = await getDatabasePool().getConnection();
-      const posts = await conn.query('SELECT * FROM posts WHERE category = ? ORDER BY created_at DESC', [category]);
+      const posts = await conn.query('SELECT * FROM posts LEFT JOIN categories ON posts.category_id = categories.id WHERE categories.slug = ? ORDER BY posts.created_at DESC', [category]);
       if (!posts || posts.length === 0) {
         logger.warn(`No posts found for category "${category}"`);
         return [];
@@ -849,7 +849,8 @@ export const DatabaseService = {
         id: row.id,
         name: row.name,
         description: row.description,
-    }));
+        slug: row.slug,
+      }));
     } catch (error) {
       logger.error(`Error in getAllCategories: ${error.message}`);
       throw new databaseError(`Error in getAllCategories: ${error.message}`, error);
