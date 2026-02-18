@@ -285,6 +285,10 @@ app.get(/\.(js|css)$/, (req, res, next) => {
 app.use('/', legalRoutes);
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
+    // Kein CSP für SEO-relevante Dateien, damit sie von Suchmaschinen gecrawlt werden können
+    if (path.endsWith('robots.txt') || path.endsWith('sitemap.xml')) {
+      res.removeHeader('Content-Security-Policy');
+    }
     // Cross-Origin-Resource-Policy für alle statischen Dateien
     // Relax CORP for static assets served by this Express app so clients on other origins
     // (or reverse proxies) can fetch favicon.ico, images, JS, etc., without being blocked.
