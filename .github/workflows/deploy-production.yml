@@ -1,0 +1,81 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: test_password
+          MARIADB_DATABASE: speculumxDB
+          MARIADB_USER: test_user
+          MARIADB_PASSWORD: test_password
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint:ci
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h "127.0.0.1" -u "root" -p"test_password" &> /dev/null; then
+              echo "MariaDB is up!"
+              exit 0
+            fi
+            echo "Waiting for MariaDB..."
+            sleep 1
+          done
+          exit 1
+
+      - name: Run tests
+        run: npm run test:ci
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: speculumxDB
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /var/www/blog
+            bash scripts/deploy-production.sh
+

@@ -1,0 +1,69 @@
+name: Tests & Linting
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: test_password
+          MARIADB_DATABASE: speculumxDB
+          MARIADB_USER: test_user
+          MARIADB_PASSWORD: test_password
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint:ci
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h "127.0.0.1" -u "root" -p"test_password" &> /dev/null; then
+              echo "MariaDB is up!"
+              exit 0
+            fi
+            echo "Waiting for MariaDB..."
+            sleep 1
+          done
+          exit 1
+
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: speculumxDB
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false

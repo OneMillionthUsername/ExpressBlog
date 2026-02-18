@@ -14,7 +14,7 @@ services:
     depends_on:
       - db
     env_file:
-      - .env
+      - .env.development
     volumes:
       - .:/app
       - /app/node_modules
@@ -25,13 +25,8 @@ services:
     image: mariadb:latest
     container_name: expressblog_db
     restart: always
-    environment:
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MARIADB_DATABASE=${DB_NAME}
-      - MARIADB_USER=${DB_USER}
-      - MARIADB_PASSWORD=${DB_PASSWORD}
     env_file:
-      - .env
+      - .env.development
     ports:
       - "3306:3306"
     volumes:
