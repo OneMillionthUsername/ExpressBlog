@@ -29,6 +29,7 @@ import compression from 'compression';
 import { authenticateToken, requireAdmin } from './middleware/authMiddleware.js';
 import * as authService from './services/authService.js';
 import { errors as celebrateErrors } from 'celebrate';
+import legalRoutes from './routes/legalRoutes.js';
 
 // App-Status Management
 class AppStatus extends EventEmitter {
@@ -273,7 +274,6 @@ app.get(/\.(js|css)$/, (req, res, next) => {
 });
 
 // 8. Statische Dateien (brauchen keine DB)
-const legalRoutes = require('./routes/legalRoutes');
 app.use('/', legalRoutes);
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {

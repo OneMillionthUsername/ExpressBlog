@@ -58,7 +58,7 @@ export function unescapeHtml(str) {
  * @param {string[]} path
  */
 export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstance = null) {
-  if(!obj) throw new Error('Invalid input: Object is null or undefined'); // null, undefined, false, 0
+  if(obj === null || obj === undefined) return obj; // null, undefined, false, 0
   // strings
   if (typeof obj === 'string') {
     const currentKey = path[path.length - 1];
