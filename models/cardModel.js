@@ -33,5 +33,4 @@ export const cardSchema = Joi.object({
     Joi.string().pattern(/^\/[^\0]+$/)
   ).required(),
   published: Joi.boolean().optional(),
-  _csrf: Joi.string().optional(),
 });
