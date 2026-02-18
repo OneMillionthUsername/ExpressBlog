@@ -1269,6 +1269,18 @@ blockquote:after {
     cursor: pointer;
     transition: var(--transition);
 }
+.discovery-card .card-img-top-wrapper {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+}
+
+.discovery-card .card-img-top-wrapper {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+}
+
 .discovery-card .card-img-top {
     width: 100%;
     height: 260px;
