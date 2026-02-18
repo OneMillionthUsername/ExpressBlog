@@ -1178,9 +1178,6 @@ body {
     transition: color 0.3s ease;
     font-style: italic !important;
 }
-.sidebar-link-style {
-
-}
 /* Quote styles */
 blockquote {
     quotes: "\201E" "\201C" "\201A" "\2018";
