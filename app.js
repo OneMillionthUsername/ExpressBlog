@@ -144,10 +144,10 @@ if (config.IS_PRODUCTION) {
 // Helmet für SEO-Files überspringen
 app.use((req, res, next) => {
   if (req.path === '/robots.txt' || req.path === '/sitemap.xml') {
-    return next('router');
+    res.removeHeader('Content-Security-Policy');
   }
   next();
-});
+})
 
 app.use(helmet({
   contentSecurityPolicy: {
