@@ -26,16 +26,12 @@ export class Card{
 export const cardSchema = Joi.object({
   id: Joi.number().integer().optional(),
   title: Joi.string().min(1).max(255).required(),
-  subtitle: Joi.string().max(500).allow('', null).optional(),
+  subtitle: Joi.string().max(500).allow(null).optional(),
   link: Joi.string().uri().required(),
-  img_link: Joi.string()
-    .custom((value, helpers) => {
-      // Erlaubt URI (http/https) oder absoluten Linux-Pfad
-      const isUri = /^https?:\/\/.+/.test(value);
-      const isLinuxPath = /^\/[\w\-\.\/]+$/.test(value);
-      if (isUri || isLinuxPath) return value;
-      return helpers.error('any.invalid');
-    })
-    .required(),
+  img_link: Joi.alternatives().try(
+    Joi.string().uri({ scheme: ['http', 'https'] }),
+    Joi.string().pattern(/^\/[^\0]+$/)
+  ).required(),
   published: Joi.boolean().optional(),
+  _csrf: Joi.string().optional(),
 });
