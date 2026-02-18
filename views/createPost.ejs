@@ -1,47 +1,25 @@
-<% /* createPost.ejs - Blogpost erstellen/bearbeiten, basiert auf index.ejs Layout */ %>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
-            (function(){
-                try {
-                    var saved = localStorage.getItem('blog-theme');
-                    var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (dark) document.documentElement.setAttribute('data-theme','dark');
-                } catch(e) { /* no-op */ }
-            })();
-        </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
-    <link rel="stylesheet" href="/assets/css/admin.css">
-    <link rel="stylesheet" href="/assets/css/theme.css">
-    <link rel="stylesheet" href="/assets/css/tinymce-content.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
-    <title>Blogpost erstellen - Sub specie aeternitatis</title>
-</head>
-<body>
-    <%- include('partials/navbar.ejs') %>
-
-    <div class="container-fluid header-section">
-        <div class="d-flex justify-content-center align-items-center mb-2">
-            <h1 id="main-title" class="mt-5 main-title mb-0">Neuen Blogpost erstellen</h1>
-        </div>
-        <h2 class="mt-3 sub-title">Teile deine Gedanken über Philosophie, Wissenschaft und AI</h2>
-        <hr class="header-divider">
+<% /* createPost.ejs - Blogpost erstellen/bearbeiten */ %>
+<% 
+    pageTitle = 'Blogpost erstellen - Sub specie aeternitatis';
+    useFontAwesome = true;
+    useTinyMce = true;
+    if (typeof post !== 'undefined' && post) {
+        extraHead = `<script id="server-post" type="application/json"${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>${(function(obj){ try { const s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e'); } catch(e){ return 'null'; } })(post)}<\/script>`;
+    }
+%>
+<div class="container-fluid header-section">
+    <div class="d-flex justify-content-center align-items-center mb-2">
+        <h1 id="main-title" class="mt-5 main-title mb-0">Neuen Blogpost erstellen</h1>
     </div>
+    <h2 class="mt-3 sub-title">Teile deine Gedanken über Philosophie, Wissenschaft und AI</h2>
+    <hr class="header-divider">
+</div>
 
-    <div class="container-fluid">
-        <div class="row justify-content-center text-center">
-            <div class="col-12">
-                <div class="create-page-container">
-                <!-- Admin-Schutz: Inhalt wird nur für Admins angezeigt -->
+<div class="container-fluid">
+    <div class="row justify-content-center text-center">
+        <div class="col-12">
+            <div class="create-page-container">
+                <!-- Admin-Schutz -->
                 <div id="admin-required" class="content-area create-form-section <%= isAdmin ? 'hidden' : '' %>">
                     <div class="alert alert-warning text-center">
                         <h4>🔒 Zugriff verweigert</h4>
@@ -62,11 +40,9 @@
                         <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% } %>
-                        <!-- For editing existing posts, include hidden ID field -->
                         <% if (typeof post !== 'undefined' && post && post.id) { %>
                             <input type="hidden" name="id" value="<%= post.id %>">
                         <% } %>
-                        <!-- Titel -->
                         <div class="form-group">
                             <label for="title" class="form-label">
                                 <span class="label-icon">📝</span>
@@ -76,7 +52,6 @@
                                    placeholder="Gib deinem Blogpost einen aussagekräftigen Titel..." required>
                             <small class="form-text text-muted">Ein guter Titel macht neugierig und fasst das Thema zusammen</small>
                         </div>
-                        <!-- Body -->
                         <div class="form-group">
                             <label for="content" class="form-label">
                                 <span class="label-icon">✍️</span>
@@ -151,7 +126,7 @@
                             </label>
                             <input type="text" class="form-control create-input" id="tags" name="tags" 
                                    placeholder="z.B. Philosophie, Wissenschaft, Künstliche Intelligenz">
-                            <small class="form-text text-muted">Trenne mehrere Tags mit Kommas. Sie helfen beim Kategorisieren und Finden deiner Posts</small>
+                            <small class="form-text text-muted">Trenne mehrere Tags mit Kommas.</small>
                             <div class="suggested-tags">
                                 <span class="suggested-label">Beliebte Tags:</span>
                                 <span class="tag-suggestion" data-action="add-tag" data-tag="Philosophie">Philosophie</span>
@@ -191,40 +166,7 @@
                         <a href="/posts" class="btn btn-outline-secondary ml-2">Alle Blogposts</a>
                     </div>
                 </div>
-                </div>
             </div>
         </div>
     </div>
-
-    <footer class="site-footer mt-5">
-        <div class="container text-center py-4">
-            <span class="footer-title">Sub specie aeternitatis</span>
-            <p class="footer-text mb-2">© 2025 BitQuake Digital &nbsp;|&nbsp; Philosophie, Wissenschaft & KI</p>
-            <div class="footer-links">
-                <a href="/about">Kontakt</a> &nbsp;|&nbsp;
-                <a href="/posts">Blogposts</a> &nbsp;|&nbsp;
-                <a href="/blogpost/archive">Archiv</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Removed jQuery/Popper/Bootstrap JS to comply with CSP and avoid runtime errors; using module JS only. -->
-        <!-- If server provided tinyMceKey (only for authenticated admins), load TinyMCE from CDN using that key -->
-        <% if (typeof tinyMceKey !== 'undefined' && tinyMceKey) { %>
-            <script src="https://cdn.tiny.cloud/1/<%= tinyMceKey %>/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-        <% } %>
-
-    <script src="/vendor/dompurify.min.js"></script>
-    <script src="/assets/js/page-initializers.js" type="module"></script>
-    <!-- Do NOT inject API keys into the browser. Expose only non-sensitive flags. -->
-    <% // Precompute JSON on the server side and escape unsafe sequences %>
-    <% function __safeJson(obj) { try { const s = JSON.stringify(obj); return s.replace(/</g, '\u003c').replace(/-->/g, '--\u003e').replace(/\u2028/g, '\u2028').replace(/\u2029/g, '\u2029'); } catch (e) { return 'null'; } } %>
-    <% const __nonceAttr = (typeof nonce !== 'undefined') ? ' nonce="' + String(nonce) + '"' : '' %>
-    <% if (typeof post !== 'undefined' && post) { %>
-    <!-- Server-provided post (for editor prefill) via non-executable JSON -->
-    <script id="server-post" type="application/json"<%- __nonceAttr %>>
-        <%- __safeJson(post) %>
-    </script>
-    <% } %>
-</body>
-</html>
+</div>
