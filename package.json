@@ -1,6 +1,6 @@
 {
   "name": "expressblog",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "- create an empty repository on your GitHub\r - Don't change the default settings -> no readme, no .gitignore, no license (This can be done later)",
   "main": "app.js",
   "directories": {
