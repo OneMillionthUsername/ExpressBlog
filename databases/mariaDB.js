@@ -583,7 +583,7 @@ export const DatabaseService = {
       }
       
       logger.debug(`DatabaseService.getAllPosts: Processing ${result.length} posts`);
-      const processedPosts = result.map((post, index) => {
+      const processedPosts = result.map((post, _index) => {
         // logger.debug(`DatabaseService.getAllPosts: Processing post ${index + 1}/${result.length}, ID: ${post.id}`);
         convertBigInts(post);
         post.tags = parseTags(post.tags);
@@ -867,7 +867,7 @@ export const DatabaseService = {
         FROM categories c
         JOIN posts p ON p.category_id = c.id
         WHERE p.id = ?`,
-        [postId]
+        [postId],
       );
       return result.map(row => ({
         id: row.id,

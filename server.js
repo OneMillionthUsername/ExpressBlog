@@ -9,7 +9,6 @@
 
 //server.js
 import http from 'http';
-import https from 'https';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import * as config from './config/config.js';
@@ -42,7 +41,7 @@ function loadSSLCertificates() {
     };
     logger.info('SSL certificates loaded successfully (Development)');
     return httpsOptions;
-  } catch (error) {
+  } catch (_error) {
     logger.warn('SSL certificates not found - HTTP only available');
     logger.warn('Run "node ssl/generate-certs.js" to enable HTTPS');
     return null;
@@ -72,7 +71,7 @@ async function startServer() {
     logServerConfiguration();
 
     // Load SSL certificates if needed
-    const httpsOptions = loadSSLCertificates();
+    const _httpsOptions = loadSSLCertificates();
         
     // Start HTTP server
     await startHTTPServer();

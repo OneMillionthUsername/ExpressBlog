@@ -6,16 +6,16 @@ const getAllCategories = async () => {
   try {
     const categories = await DatabaseService.getAllCategories();
     if (!categories || categories.length === 0) {
-        return [];
+      return [];
     }
     const validCategories = [];
     for (const category of categories) {
       const { error, value } = Category.validate(category);
-        if (error) {
-            console.error('Validation failed for category:', error.details.map(d => d.message).join('; '));
-            continue;
-        }
-        validCategories.push(new Category(value));
+      if (error) {
+        console.error('Validation failed for category:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      validCategories.push(new Category(value));
     }
     return validCategories;
   } catch (error) {
@@ -26,15 +26,15 @@ const getAllCategories = async () => {
 const getCategoryById = async (id) => {
   try {
     if (!Number.isInteger(id) || id <= 0) {
-        throw new CategoryControllerException('Invalid category ID');
+      throw new CategoryControllerException('Invalid category ID');
     }
     const category = await DatabaseService.getCategoryById(id);
     if (!category) {
-        throw new CategoryControllerException('Category not found');
+      throw new CategoryControllerException('Category not found');
     }
     const { error, value } = Category.validate(category);
     if (error) {
-        throw new CategoryControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
+      throw new CategoryControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
     }
     return new Category(value);
   } catch (error) {

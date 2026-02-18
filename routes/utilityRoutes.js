@@ -80,13 +80,13 @@ utilityRouter.get('/google-api-key', authenticateToken, (req, res) => {
       return res.json({ 
         success: false, 
         data: { apiKey: '' },
-        error: 'Gemini API key not configured' 
+        error: 'Gemini API key not configured', 
       });
     }
 
     res.json({ 
       success: true, 
-      data: { apiKey } 
+      data: { apiKey }, 
     });
   } catch (error) {
     logger.error('Error fetching Gemini API key', { error: error.message });

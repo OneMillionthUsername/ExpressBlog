@@ -371,5 +371,5 @@ export default {
   deletePost,
   getPostsChecksum,
   getPostsByCategory,
-  getPostsByCategoryId
+  getPostsByCategoryId,
 };

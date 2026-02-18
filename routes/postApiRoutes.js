@@ -22,15 +22,15 @@ postApiRouter.get('/all', globalLimiter, async (req, res) => {
   try {
     const cacheKey = 'posts:all';
     let posts = simpleCache.get(cacheKey);
-    let controllerDuration = null;
+    let _controllerDuration = null;
     if (!posts) {
       const controllerStartTime = Date.now();
       posts = await postController.getAllPosts();
       const controllerEndTime = Date.now();
-      controllerDuration = controllerEndTime - controllerStartTime;
+      _controllerDuration = controllerEndTime - controllerStartTime;
       simpleCache.set(cacheKey, posts, 60 * 1000);
     } else {
-      controllerDuration = 'cache';
+      _controllerDuration = 'cache';
     }
 
     const response = convertBigInts(posts) || [];

@@ -17,7 +17,7 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 // POST /api/ai/generate
 router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { prompt, systemInstruction, model, generationConfig } = req.body || {};
+    const { prompt, systemInstruction, model } = req.body || {};
     
     if (!prompt || typeof prompt !== 'string' || prompt.length > 20000) {
       return res.status(400).json({ success: false, error: 'Invalid prompt' });
@@ -29,7 +29,7 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
 
     const generativeModel = genAI.getGenerativeModel({ 
       model: safeModel,
-      ...(systemInstruction && { systemInstruction })
+      ...(systemInstruction && { systemInstruction }),
     });
 
     const result = await generativeModel.generateContent(prompt);

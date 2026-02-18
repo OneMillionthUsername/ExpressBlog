@@ -30,7 +30,7 @@ export const cardSchema = Joi.object({
   link: Joi.string().uri().required(),
   img_link: Joi.alternatives().try(
     Joi.string().uri({ scheme: ['http', 'https'] }),
-    Joi.string().pattern(/^\/[^\0]+$/)
+    Joi.string().pattern(/^\/[^\0]+$/),
   ).required(),
   published: Joi.boolean().optional(),
 });
