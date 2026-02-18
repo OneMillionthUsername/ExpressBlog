@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <script <% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>" <% } %>>
+        (function(){
+            try {
+                var saved = localStorage.getItem('blog-theme');
+                var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (dark) document.documentElement.setAttribute('data-theme','dark');
+            } catch(e) { /* no-op */ }
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/theme.css">
+    <title><%= title %></title>
+    <meta name="robots" content="index, follow">
+</head>
+<body>
+    <%- include('partials/navbar.ejs') %>
+
+    <main>
+        <div class="container my-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <h1 class="mb-2">Datenschutzerklärung</h1>
+                    <p class="text-muted mb-4">
+                        Der Schutz Ihrer persönlichen Daten ist mir ein besonderes Anliegen.
+                        Diese Datenschutzerklärung gilt für die Website speculumx.at und informiert Sie gemäß
+                        der EU-Datenschutz-Grundverordnung (DSGVO) sowie dem österreichischen Datenschutzgesetz (DSG)
+                        über die Verarbeitung personenbezogener Daten.
+                    </p>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Verantwortlicher</h2>
+                        <p>
+                            Dean Marinov<br>
+                            <!-- ADRESSE EINTRAGEN --><br>
+                            E-Mail: <a href="mailto:dean.marinov@gmx.at">dean.marinov@gmx.at</a>
+                        </p>
+                    </section>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Hosting und Server-Logs</h2>
+                        <p>
+                            Beim Besuch dieser Website werden automatisch folgende Daten temporär in Server-Logfiles gespeichert:
+                            IP-Adresse (anonymisiert), Datum und Uhrzeit des Zugriffs, aufgerufene URL, Browser und Betriebssystem
+                            sowie Referrer-URL. Diese Daten dienen ausschließlich der technischen Sicherstellung des Betriebs
+                            und werden nach spätestens 7 Tagen gelöscht.
+                            Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse).
+                        </p>
+                    </section>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Cookies</h2>
+                        <p>
+                            Diese Website verwendet ausschließlich technisch notwendige Cookies, die für den Betrieb erforderlich sind
+                            (z. B. Session-Cookies für die Authentifizierung). Diese Cookies erfordern keine gesonderte Einwilligung
+                            gemäß Art. 6 Abs. 1 lit. f DSGVO.
+                        </p>
+                        <p>
+                            Sie können Cookies in Ihren Browsereinstellungen jederzeit deaktivieren oder löschen.
+                            Bitte beachten Sie, dass dies die Funktionalität der Website einschränken kann.
+                        </p>
+                    </section>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Kontaktaufnahme</h2>
+                        <p>
+                            Wenn Sie mich per E-Mail kontaktieren, werden die übermittelten Daten ausschließlich zur Bearbeitung
+                            Ihrer Anfrage verwendet und nicht an Dritte weitergegeben. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+                            Die Daten werden gelöscht, sobald die Anfrage abschließend bearbeitet ist.
+                        </p>
+                    </section>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Ihre Rechte</h2>
+                        <p>Sie haben gemäß DSGVO das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17),
+                        Einschränkung der Verarbeitung (Art. 18) sowie Widerspruch (Art. 21).
+                        Außerdem steht Ihnen das Recht auf Beschwerde bei der österreichischen Datenschutzbehörde zu
+                        (<a href="https://www.dsb.gv.at" target="_blank" rel="noopener noreferrer">dsb.gv.at</a>).</p>
+                        <p>Zur Ausübung Ihrer Rechte: <a href="mailto:dean.marinov@gmx.at">dean.marinov@gmx.at</a></p>
+                    </section>
+
+                    <section class="mb-4">
+                        <h2 class="h4">Änderungen dieser Datenschutzerklärung</h2>
+                        <p>
+                            Diese Datenschutzerklärung kann bei Bedarf angepasst werden.
+                            Es gilt jeweils die aktuell auf dieser Seite veröffentlichte Fassung.
+                        </p>
+                        <p><em>Stand: Februar 2026</em></p>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer mt-5">
+        <div class="container text-center py-4">
+            <span class="footer-title">Sub specie aeternitatis</span>
+            <p class="footer-text mb-2">© 2025 BitQuake Digital &nbsp;|&nbsp; Philosophie, Wissenschaft & KI</p>
+            <div class="footer-links">
+                <a href="/about">Kontakt</a> &nbsp;|&nbsp;
+                <a href="/posts">Blogposts</a> &nbsp;|&nbsp;
+                <a href="/blogpost/archive">Archiv</a> &nbsp;|&nbsp;
+                <a href="/impressum">Impressum</a> &nbsp;|&nbsp;
+                <a href="/datenschutz">Datenschutz</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+            integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="/vendor/dompurify.min.js"></script>
+    <script src="/assets/js/page-initializers.js" type="module"></script>
+</body>
+</html>
