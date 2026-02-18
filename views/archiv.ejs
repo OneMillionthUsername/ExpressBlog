@@ -1,125 +1,82 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
-            (function(){
-                try {
-                    var saved = localStorage.getItem('blog-theme');
-                    var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (dark) document.documentElement.setAttribute('data-theme','dark');
-                } catch(e) { /* no-op */ }
-            })();
-        </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
-    <link rel="stylesheet" href="/assets/css/admin.css">
-    <link rel="stylesheet" href="/assets/css/theme.css">
-    <title>Archiv - Sub specie aeternitatis</title>
-    <meta name="description" content="Archiv älterer Beiträge: Hier sind meine alten und vergangenen Essays und Analysen zu Philosophie, Wissenschaft und so weiter.">
-</head>
-<body>
-    <%- include('partials/navbar.ejs') %>
-    <div class="container-fluid header-section">
-        <h1 class="main-title">Archiv</h1>
-        <p class="description">Ältere Beiträge - Gedanken aus der Vergangenheit</p>
-        <hr class="header-divider">
-    </div>
-    
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="content-area">
-                    <div id="archivePosts">
-                        <% 
-                          const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
-                          const createExcerpt = (htmlContent, maxLen = 150) => {
-                            const txt = stripHtml(htmlContent).trim();
-                            if (!txt) return '';
-                            return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
-                          };
-                        %>
+<% 
+    pageTitle = 'Archiv - Sub specie aeternitatis';
+    metaDescription = 'Archiv älterer Beiträge: Hier sind meine alten und vergangenen Essays und Analysen zu Philosophie, Wissenschaft und so weiter.';
+%>
+<div class="container-fluid header-section">
+    <h1 class="main-title">Archiv</h1>
+    <p class="description">Ältere Beiträge - Gedanken aus der Vergangenheit</p>
+    <hr class="header-divider">
+</div>
 
-                                                <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
-                                                        <%
-                                                            // Server may have filtered posts by year; group by year for display if multiple years present
-                                                            const grouped = {};
-                                                            posts.forEach(function(post) {
-                                                                const y = new Date(post.created_at).getFullYear();
-                                                                if (!grouped[y]) grouped[y] = [];
-                                                                grouped[y].push(post);
-                                                            });
-                                                            const yearKeys = Object.keys(grouped).sort((a,b) => b - a);
-                                                        %>
-                                                        <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
-                                                            <div class="archive-years mb-3">
-                                                                <label for="archive-year-select">Archiv nach Jahr:</label>
-                                                                <div class="btn-group ml-2" role="group" aria-label="Archive years">
-                                                                    <% archiveYears.forEach(function(y) { %>
-                                                                        <a class="btn btn-sm btn-outline-secondary <%= (yearKeys.length === 1 && Number(yearKeys[0]) === Number(y)) ? 'active' : '' %>" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
-                                                                    <% }); %>
-                                                                </div>
-                                                            </div>
-                                                        <% } %>
-                                                        <% yearKeys.forEach(function(year) { %>
-                                                            <h2 class="archive-year-heading">Beiträge aus dem Jahr <%= year %></h2>
-                                                            <% grouped[year].forEach(function(post) { %>
-                                                                <div class="archive-post-item">
-                                                                        <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
-                                                                        <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
-                                                                        <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
-                                                                </div>
-                                                            <% }); %>
-                                                        <% }); %>
-                                                <% } else { %>
-                            <div class="no-posts-card text-center py-5">
-                                <div class="mb-3">
-                                    <svg width="72" height="72" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                        <rect width="24" height="24" rx="4" fill="currentColor" opacity="0.06"/>
-                                        <path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area">
+                <div id="archivePosts">
+                    <% 
+                      const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
+                      const createExcerpt = (htmlContent, maxLen = 150) => {
+                        const txt = stripHtml(htmlContent).trim();
+                        if (!txt) return '';
+                        return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+                      };
+                    %>
+                    <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                        <%
+                            const grouped = {};
+                            posts.forEach(function(post) {
+                                const y = new Date(post.created_at).getFullYear();
+                                if (!grouped[y]) grouped[y] = [];
+                                grouped[y].push(post);
+                            });
+                            const yearKeys = Object.keys(grouped).sort((a,b) => b - a);
+                        %>
+                        <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
+                            <div class="archive-years mb-3">
+                                <label for="archive-year-select">Archiv nach Jahr:</label>
+                                <div class="btn-group ml-2" role="group" aria-label="Archive years">
+                                    <% archiveYears.forEach(function(y) { %>
+                                        <a class="btn btn-sm btn-outline-secondary <%= (yearKeys.length === 1 && Number(yearKeys[0]) === Number(y)) ? 'active' : '' %>" href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                                    <% }); %>
                                 </div>
-                                <h3 class="mb-2">Keine Archiv-Posts gefunden</h3>
-                                <p class="text-muted lead mb-4">Im Archiv wurden keine älteren Blogposts gefunden. Vielleicht möchtest du dir die aktuellen Beiträge ansehen oder zur Startseite zurückkehren.</p>
                             </div>
                         <% } %>
-                    </div>
+                        <% yearKeys.forEach(function(year) { %>
+                            <h2 class="archive-year-heading">Beiträge aus dem Jahr <%= year %></h2>
+                            <% grouped[year].forEach(function(post) { %>
+                                <div class="archive-post-item">
+                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
+                                    <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
+                                    <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                </div>
+                            <% }); %>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="no-posts-card text-center py-5">
+                            <h3 class="mb-2">Keine Archiv-Posts gefunden</h3>
+                            <p class="text-muted lead mb-4">Im Archiv wurden keine älteren Blogposts gefunden.</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
-        
-        <div class="navigation text-center mt-4">
-            <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
-            <a href="/posts" class="btn btn-outline-secondary ml-2">Aktuelle Posts</a>
-        </div>
     </div>
+    <div class="navigation text-center mt-4">
+        <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
+        <a href="/posts" class="btn btn-outline-secondary ml-2">Aktuelle Posts</a>
+    </div>
+</div>
 
-    <script src="/vendor/dompurify.min.js"></script>
-    <% if (typeof nonce !== 'undefined') { %>
-    <script nonce="<%= nonce %>">
-    <% } else { %>
-    <script>
-    <% } %>
-        // Defensive: if server injected posts, remove loading spinner that might be present
-        (function() {
-            try {
-                const archiveEl = document.getElementById('archivePosts');
-                if (archiveEl && archiveEl.querySelectorAll('.archive-post-item').length > 0) {
-                    const spinner = archiveEl.querySelector('.loading-spinner');
-                    if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
-                }
-            } catch (err) {
-                // non-critical
+<% extraScripts = `
+<script>
+    (function() {
+        try {
+            const archiveEl = document.getElementById('archivePosts');
+            if (archiveEl && archiveEl.querySelectorAll('.archive-post-item').length > 0) {
+                const spinner = archiveEl.querySelector('.loading-spinner');
+                if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
             }
-        })();
-    </script>
-    <script src="/vendor/dompurify.min.js"></script>
-    <script src="/assets/js/page-initializers.js" type="module"></script>
-</body>
-</html>
+        } catch (err) { /* non-critical */ }
+    })();
+</script>
+`; %>

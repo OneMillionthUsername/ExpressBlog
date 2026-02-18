@@ -268,6 +268,9 @@ app.use(loggerMiddleware);
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
 
+import ejsLayouts from 'express-ejs-layouts';
+app.use(ejsLayouts);
+app.set('layout', 'layout');
 // 7.5. Explizite MIME-Type-Behandlung für kritische statische Dateien
 app.get(/\.(js|css)$/, (req, res, next) => {
   if (req.url.endsWith('.js')) {

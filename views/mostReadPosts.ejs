@@ -1,84 +1,53 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
-            (function(){
-                try {
-                    var saved = localStorage.getItem('blog-theme');
-                    var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (dark) document.documentElement.setAttribute('data-theme','dark');
-                } catch(e) { /* no-op */ }
-            })();
-        </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
-    <link rel="stylesheet" href="/assets/css/admin.css">
-    <link rel="stylesheet" href="/assets/css/theme.css">
-    <title>Meistgelesene Posts - Sub specie aeternitatis</title>
-    <meta name="description" content="Die meistgelesenen Beiträge dieses Blogs, sortiert nach Aufrufen.">
-</head>
-<body>
-    <%- include('partials/navbar.ejs') %>
-    <div class="container-fluid header-section">
-        <h1 class="main-title">Meistgelesene Posts</h1>
-        <p class="description">Die beliebtesten Beiträge nach Aufrufen sortiert</p>
-        <hr class="header-divider">
-    </div>
-    
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="content-area">
-                    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
-                        <p class="text-muted small"><%= errorMessage %></p>
-                    <% } %>
-                    <div id="mostReadPosts">
-                        <% 
-                          const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
-                          const createExcerpt = (htmlContent, maxLen = 150) => {
-                            const txt = stripHtml(htmlContent).trim();
-                            if (!txt) return '';
-                            return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
-                          };
-                        %>
+<% 
+    pageTitle = 'Meistgelesene Posts - Sub specie aeternitatis';
+    metaDescription = 'Die meistgelesenen Beiträge dieses Blogs, sortiert nach Aufrufen.';
+    useFontAwesome = true;
+%>
+<div class="container-fluid header-section">
+    <h1 class="main-title">Meistgelesene Posts</h1>
+    <p class="description">Die beliebtesten Beiträge nach Aufrufen sortiert</p>
+    <hr class="header-divider">
+</div>
 
-                        <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
-                            <% posts.forEach(function(post, idx) { %>
-                                <div class="most-read-item">
-                                    <span class="rank">#<%= idx + 1 %></span>
-                                    <div class="most-read-content">
-                                        <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
-                                        <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
-                                        <p class="post-excerpt"><%= createExcerpt(post.content, 150) %></p>
-                                    </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area">
+                <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+                    <p class="text-muted small"><%= errorMessage %></p>
+                <% } %>
+                <div id="mostReadPosts">
+                    <% 
+                      const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
+                      const createExcerpt = (htmlContent, maxLen = 150) => {
+                        const txt = stripHtml(htmlContent).trim();
+                        if (!txt) return '';
+                        return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+                      };
+                    %>
+                    <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                        <% posts.forEach(function(post, idx) { %>
+                            <div class="most-read-item">
+                                <span class="rank">#<%= idx + 1 %></span>
+                                <div class="most-read-content">
+                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
+                                    <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
+                                    <p class="post-excerpt"><%= createExcerpt(post.content, 150) %></p>
                                 </div>
-                            <% }); %>
-                        <% } else { %>
-                            <div class="loading-spinner">
-                                <div class="spinner"></div>
-                                <p>Lade Statistiken...</p>
                             </div>
-                        <% } %>
-                    </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Lade Statistiken...</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
-        
-        <div class="navigation text-center mt-4">
-            <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
-            <a href="/posts" class="btn btn-outline-secondary ml-2">Alle Posts</a>
-        </div>
     </div>
-    <script src="/vendor/dompurify.min.js"></script>
-    <script src="/assets/js/page-initializers.js" type="module"></script>
-
-</body>
-</html>
+    <div class="navigation text-center mt-4">
+        <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
+        <a href="/posts" class="btn btn-outline-secondary ml-2">Alle Posts</a>
+    </div>
+</div>

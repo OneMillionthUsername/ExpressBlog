@@ -1,128 +1,87 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="light dark">
-        <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
-            (function(){
-                try {
-                    var saved = localStorage.getItem('blog-theme');
-                    var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (dark) document.documentElement.setAttribute('data-theme','dark');
-                } catch(e) { /* no-op */ }
-            })();
-        </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
-    <link rel="stylesheet" href="/assets/css/admin.css">
-    <link rel="stylesheet" href="/assets/css/theme.css">
-    <title>Alle Blogposts - Sub specie aeternitatis</title>
-    <meta name="description" content="Aktuelle Blogposts der letzten 3 Monate: Essays und Analysen.">
-</head>
-<body>
-    <%- include('partials/navbar.ejs') %>
-    <div class="container-fluid header-section">
-        <h1 class="main-title">Blogposts</h1>
-        <p class="description">Aktuelle Beiträge der letzten 3 Monate</p>
-        <hr class="header-divider">
-    </div>
-    
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="content-area">
-                    <div class="posts-header">
-                        <div class="form-group mb-0">
-                            <label class="sr-only" for="post-filter-input">Posts filtern</label>
-                            <input id="post-filter-input" class="form-control post-filter-input" type="search" placeholder="Posts filtern...">
-                        </div>
-                    </div>
-                    
-                                    <div id="blogPostsList">
-                                                    <% 
-                                                            // Helper: strip HTML tags from content (simple fallback). We keep
-                                                            // this lightweight and avoid requiring additional server utilities.
-                                                            const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
-                                                            const createExcerpt = (htmlContent, maxLen = 150) => {
-                                                                const txt = stripHtml(htmlContent).trim();
-                                                                if (!txt) return '';
-                                                                return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
-                                                            };
-                                                    %>
+<% 
+    pageTitle = 'Alle Blogposts - Sub specie aeternitatis';
+    metaDescription = 'Aktuelle Blogposts der letzten 3 Monate: Essays und Analysen.';
+    useFontAwesome = true;
+%>
+<div class="container-fluid header-section">
+    <h1 class="main-title">Blogposts</h1>
+    <p class="description">Aktuelle Beiträge der letzten 3 Monate</p>
+    <hr class="header-divider">
+</div>
 
-                                                    <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
-                                                            <% posts.forEach(function(post) { %>
-                                                                    <article class="blog-post-card">
-                                                                        <div class="post-meta">
-                                                                            <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
-                                                                            <span class="post-author">von <%= post.author || 'Unbekannt' %></span>
-                                                                        </div>
-                                                                        <h2 class="post-title">
-                                                                            <% if (post.slug) { %>
-                                                                                <a href="/blogpost/<%= post.slug %>" class="post-link"><%= post.title || 'Untitled' %></a>
-                                                                            <% } else if (post.id !== undefined && post.id !== null) { %>
-                                                                                <a href="/blogpost/by-id/<%= post.id %>" class="post-link"><%= post.title || 'Untitled' %></a>
-                                                                            <% } else { %>
-                                                                                <span class="post-link"><%= post.title || 'Untitled' %></span>
-                                                                            <% } %>
-                                                                        </h2>
-                                                                        <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
-                                                                        <div class="post-footer">
-                                                                            <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
-                                                                        </div>
-                                                                    </article>
-                                                            <% }); %>
-                                                    <% } else { %>
-                                                            <div class="loading-spinner">
-                                                                    <div class="spinner"></div>
-                                                                    <p>Lade Blogposts...</p>
-                                                            </div>
-                                                    <% } %>
-                                            </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area">
+                <div class="posts-header">
+                    <div class="form-group mb-0">
+                        <label class="sr-only" for="post-filter-input">Posts filtern</label>
+                        <input id="post-filter-input" class="form-control post-filter-input" type="search" placeholder="Posts filtern...">
+                    </div>
+                </div>
+                <div id="blogPostsList">
+                    <% 
+                        const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
+                        const createExcerpt = (htmlContent, maxLen = 150) => {
+                            const txt = stripHtml(htmlContent).trim();
+                            if (!txt) return '';
+                            return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+                        };
+                    %>
+                    <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
+                        <% posts.forEach(function(post) { %>
+                            <article class="blog-post-card">
+                                <div class="post-meta">
+                                    <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
+                                    <span class="post-author">von <%= post.author || 'Unbekannt' %></span>
+                                </div>
+                                <h2 class="post-title">
+                                    <% if (post.slug) { %>
+                                        <a href="/blogpost/<%= post.slug %>" class="post-link"><%= post.title || 'Untitled' %></a>
+                                    <% } else if (post.id !== undefined && post.id !== null) { %>
+                                        <a href="/blogpost/by-id/<%= post.id %>" class="post-link"><%= post.title || 'Untitled' %></a>
+                                    <% } else { %>
+                                        <span class="post-link"><%= post.title || 'Untitled' %></span>
+                                    <% } %>
+                                </h2>
+                                <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                <div class="post-footer">
+                                    <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
+                                </div>
+                            </article>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Lade Blogposts...</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
-        
-        <div class="navigation text-center mt-4">
-            <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
-            <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Blogpost erstellen</a>
-            <a href="/blogpost/archive" class="btn btn-outline-secondary ml-2">Archiv</a>
-        </div>
     </div>
-    <script src="/vendor/dompurify.min.js"></script>
-        <% if (typeof nonce !== 'undefined') { %>
-        <script nonce="<%= nonce %>">
-        <% } else { %>
-        <script>
-        <% } %>
-            (function() {
-                const input = document.getElementById('post-filter-input');
-                const cards = Array.from(document.querySelectorAll('.blog-post-card'));
-                if (!input || cards.length === 0) return;
+    <div class="navigation text-center mt-4">
+        <a href="/" class="btn btn-outline-primary">Zur Startseite</a>
+        <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Blogpost erstellen</a>
+        <a href="/blogpost/archive" class="btn btn-outline-secondary ml-2">Archiv</a>
+    </div>
+</div>
 
-                const normalize = (str) => String(str || '').toLowerCase();
-                const cardText = new Map();
-                cards.forEach(card => {
-                    const text = normalize(card.textContent);
-                    cardText.set(card, text);
-                });
-
-                input.addEventListener('input', () => {
-                    const q = normalize(input.value).trim();
-                    cards.forEach(card => {
-                        const hay = cardText.get(card) || '';
-                        card.style.display = (!q || hay.includes(q)) ? '' : 'none';
-                    });
-                });
-            })();
-        </script>
-    <script src="/assets/js/page-initializers.js" type="module"></script>
-
-</body>
-</html>
+<% extraScripts = `
+<script>
+    (function() {
+        const input = document.getElementById('post-filter-input');
+        const cards = Array.from(document.querySelectorAll('.blog-post-card'));
+        if (!input || cards.length === 0) return;
+        const normalize = (str) => String(str || '').toLowerCase();
+        const cardText = new Map();
+        cards.forEach(card => { cardText.set(card, normalize(card.textContent)); });
+        input.addEventListener('input', () => {
+            const q = normalize(input.value).trim();
+            cards.forEach(card => {
+                card.style.display = (!q || (cardText.get(card) || '').includes(q)) ? '' : 'none';
+            });
+        });
+    })();
+</script>
+`; %>
