@@ -103,7 +103,7 @@ p {
 }
 
 /* Drop Cap - Großer erster Buchstabe */
-p:first-of-type:first-letter {
+.post-content p:first-of-type:first-letter, .preview-box p:first-of-type:first-letter {
     font-family: var(--font-primary);
     font-size: 4.5rem;
     font-weight: 700;
@@ -305,7 +305,7 @@ em, i {
 }
 
 /* Dark Mode Drop Cap */
-[data-theme="dark"] p:first-of-type:first-letter {
+[data-theme="dark"] .post-content p:first-of-type:first-letter, [data-theme="dark"] .preview-box p:first-of-type:first-letter {
     background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
