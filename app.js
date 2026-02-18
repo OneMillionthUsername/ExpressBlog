@@ -273,6 +273,8 @@ app.get(/\.(js|css)$/, (req, res, next) => {
 });
 
 // 8. Statische Dateien (brauchen keine DB)
+const legalRoutes = require('./routes/legalRoutes');
+app.use('/', legalRoutes);
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
     // Cross-Origin-Resource-Policy für alle statischen Dateien
