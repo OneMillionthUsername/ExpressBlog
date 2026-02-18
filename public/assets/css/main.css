@@ -1178,6 +1178,7 @@ body {
     transition: color 0.3s ease;
     font-style: italic !important;
 }
+
 /* Quote styles */
 blockquote {
     quotes: "\201E" "\201C" "\201A" "\2018";
@@ -1233,7 +1234,7 @@ blockquote:after {
     flex-direction: column;
     align-items: stretch;
     height: 100%;
-    min-height: 500px; /* Erhöhte Mindesthöhe auf 500px */
+    min-height: unset;
     max-width: 100%;
     margin: 0 auto;
     transition: var(--transition);
@@ -1259,17 +1260,39 @@ blockquote:after {
     border-radius: 0 0 8px 8px;
     z-index: 2;
 }
-.discovery-img {
+.discovery-card .card-img-top,
+.discovery-card .discovery-img {
     width: 100%;
+<<<<<<< HEAD
     height: 320px;
     object-fit: cover;
     cursor: pointer;
     transition: var(--transition);
 }
+.discovery-card .card-img-top-wrapper {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+}
+
+.discovery-card .card-img-top-wrapper {
+    width: 100%;
+    height: 260px;
+    overflow: hidden;
+}
+
 .discovery-card .card-img-top {
     width: 100%;
     height: 260px;
+=======
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+>>>>>>> 47bf234a773155af5828912799ef199e5995c6e6
     object-fit: cover;
+    object-position: center;
+    display: block;
+    flex-shrink: 0;
 }
 .discovery-img:hover {
     opacity: 0.9;
