@@ -141,6 +141,14 @@ if (config.IS_PRODUCTION) {
 } else {
   app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
 }
+// Helmet für SEO-Files überspringen
+app.use((req, res, next) => {
+  if (req.path === '/robots.txt' || req.path === '/sitemap.xml') {
+    return next('router');
+  }
+  next();
+});
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
