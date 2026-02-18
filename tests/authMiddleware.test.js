@@ -69,7 +69,7 @@ describe('authMiddleware', () => {
       const res = createMockRes();
       const next = jest.fn();
 
-      const user = { id: 1, username: 'admin', role: 'admin' };
+      const user = { id: 1, username: 'admin', role: 'admin', isAdmin: true };
       mockExtract.mockReturnValue('valid');
       mockVerify.mockReturnValue(user);
 
@@ -113,7 +113,7 @@ describe('authMiddleware', () => {
     });
 
     it('calls next() when user is admin', () => {
-      const req = { user: { id: 1, username: 'admin', role: 'admin' } };
+      const req = { user: { id: 1, username: 'admin', role: 'admin', isAdmin: true } };
       const res = createMockRes();
       const next = jest.fn();
 

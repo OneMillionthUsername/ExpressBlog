@@ -136,7 +136,7 @@ describe('Security middleware and auth guards', () => {
     });
 
     it('authenticateToken attaches user from Authorization header', () => {
-      const token = jwt.sign({ id: 1, username: 'alice', role: 'admin', iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+      const token = jwt.sign({ id: 1, username: 'alice', role: 'admin', isAdmin: true, iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
       const req = makeReq({ headers: { Authorization: `Bearer ${token}` } });
       const res = makeRes();
       const next = jest.fn();
@@ -198,7 +198,7 @@ describe('Security middleware and auth guards', () => {
 
     it('requireAdmin calls next for admin user', () => {
       const req = makeReq();
-      req.user = { id: 4, username: 'diane', role: 'admin' };
+      req.user = { id: 4, username: 'diane', role: 'admin', isAdmin: true };
       const res = makeRes();
       const next = jest.fn();
 

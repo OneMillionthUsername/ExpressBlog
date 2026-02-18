@@ -79,14 +79,14 @@ describe('Admin authorization integration (micro app)', () => {
   });
 
   it('GET /debug/headers -> 200 for admin', async () => {
-    const token = sign({ id: 1, username: 'admin', role: 'admin' });
+    const token = sign({ id: 1, username: 'admin', role: 'admin', isAdmin: true });
     const res = await agent.get('/debug/headers').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ ok: true, user: 'admin', role: 'admin' });
   });
 
   it('POST /admin/cards -> 403 without CSRF even if JSON', async () => {
-    const token = sign({ id: 1, username: 'admin', role: 'admin' });
+    const token = sign({ id: 1, username: 'admin', role: 'admin', isAdmin: true });
     const res = await agent
       .post('/admin/cards')
       .set('Authorization', `Bearer ${token}`)
@@ -129,7 +129,7 @@ describe('Admin authorization integration (micro app)', () => {
   it('POST /admin/cards -> 201 for admin with CSRF and JSON', async () => {
     const t1 = await agent.get('/api/csrf-token');
     const csrfToken = t1.body.csrfToken;
-    const adminToken = sign({ id: 1, username: 'admin', role: 'admin' });
+    const adminToken = sign({ id: 1, username: 'admin', role: 'admin', isAdmin: true });
     const res = await agent
       .post('/admin/cards')
       .set('x-csrf-token', csrfToken)
