@@ -41,7 +41,7 @@ cardRouter.post('/create',
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri().required(),
       img_link: Joi.string().uri().required(),
-    }, { allowUnknown: true }),
+    }).options({ allowUnknown: true }), // allowUnknown, da wir evtl. zusätzliche Felder wie _csrf haben
   }),
   authenticateToken,
   requireAdmin,
