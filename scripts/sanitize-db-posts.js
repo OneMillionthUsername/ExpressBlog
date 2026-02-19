@@ -26,7 +26,7 @@ async function sanitizeAll(options = {}) {
     }
     for (const p of posts) {
       const safe = purifier.sanitize(p.content || '', {
-        ALLOWED_TAGS: ['p','br','b','i','strong','em','u','a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3'],
+        ALLOWED_TAGS: ['p','br','b','i','strong','em','u','a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3','h4','h5','h6','footer','cite'],
         ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
       });
       if (safe !== p.content) {

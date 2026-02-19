@@ -522,6 +522,43 @@ body {
     color: var(--color-text);
     margin-bottom: 30px;
 }
+
+/* Horizontal rule in post content */
+.post-content hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--color-accent), transparent);
+    margin: 2rem 0;
+}
+
+/* Blockquote with author support */
+.post-content blockquote {
+    quotes: "\201E" "\201C" "\201A" "\2018";
+    border-left: 4px solid var(--color-accent);
+    padding-left: 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: var(--color-text-light);
+    background: var(--color-bg-alt);
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+}
+
+.post-content blockquote p {
+    margin-bottom: 0.5em;
+}
+
+.post-content blockquote footer {
+    margin-top: 0.8em;
+    font-style: normal;
+    font-size: 0.9em;
+    color: var(--color-text);
+}
+
+.post-content blockquote cite {
+    font-weight: 600;
+    color: var(--color-secondary);
+}
 /* Image Styles */
 .preview-post-content img,
 .blogpost-content img,

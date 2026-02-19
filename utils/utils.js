@@ -70,7 +70,8 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
           return domPurifyInstance.sanitize(obj, {
             ALLOWED_TAGS: [
               'p','br','b','i','strong','em','u',
-              'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3',
+              'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3','h4','h5','h6',
+              'footer','cite',
             ],
             ALLOWED_ATTR: ['href','title','target','rel','src','alt'],
             ALLOW_DATA_ATTR: false,

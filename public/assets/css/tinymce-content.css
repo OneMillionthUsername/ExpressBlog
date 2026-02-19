@@ -144,6 +144,22 @@ blockquote {
     border-radius: var(--border-radius);
 }
 
+blockquote p {
+    margin-bottom: 0.5em;
+}
+
+blockquote footer {
+    margin-top: 0.8em;
+    font-style: normal;
+    font-size: 0.9em;
+    color: var(--color-text);
+}
+
+blockquote cite {
+    font-weight: 600;
+    color: var(--color-secondary);
+}
+
 blockquote:before {
     content: open-quote;
 }

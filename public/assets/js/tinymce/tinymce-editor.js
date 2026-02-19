@@ -240,6 +240,10 @@ async function initializeTinyMCE() {
       referrer_policy: 'origin',
       cache_suffix: cacheSuffix,
       
+      // Icon configuration for proper icon display
+      icons: 'default',
+      icons_url: 'auto',
+      
       // Sprache auf Deutsch setzen für Rechtschreibprüfung
       language: 'de',
       content_langs: [
@@ -257,11 +261,11 @@ async function initializeTinyMCE() {
       toolbar: [
         'undo redo | bold italic underline strikethrough | fontsize forecolor backcolor',
         'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
-        'link image media table | codesample blockquote hr pagebreak | emoticons charmap',
+        'link image media table | codesample customblockquote hr pagebreak | emoticons charmap',
         'searchreplace visualblocks code fullscreen preview | save help',
       ],
       toolbar_mode: 'floating',
-      quickbars_selection_toolbar: 'bold italic underline | quicklink blockquote',
+      quickbars_selection_toolbar: 'bold italic underline | quicklink customblockquote',
       quickbars_insert_toolbar: 'image media table hr',
       contextmenu: 'link image table configurepermanentpen',
             
@@ -330,9 +334,69 @@ async function initializeTinyMCE() {
             
       // Listen-Funktionen
       lists_indent_on_tab: true,
+      
+      // Template-Konfiguration für benutzerdefinierte Blockzitate
+      templates: [
+        {
+          title: 'Zitat mit Autor',
+          description: 'Blockquote mit Autor/Quelle',
+          content: '<blockquote><p>{Hier das Zitat einfügen}</p><footer><cite>{— Autor oder Quelle}</cite></footer></blockquote>'
+        }
+      ],
             
       // Event-Handler (erweitert mit Dark Mode-Unterstützung)
       setup: function(editor) {
+        // Benutzerdefinierter Blockquote-Button mit Dialog
+        editor.ui.registry.addButton('customblockquote', {
+          icon: 'quote',
+          tooltip: 'Blockquote mit Autor einfügen',
+          onAction: function() {
+            editor.windowManager.open({
+              title: 'Blockquote einfügen',
+              body: {
+                type: 'panel',
+                items: [
+                  {
+                    type: 'textarea',
+                    name: 'quote',
+                    label: 'Zitat',
+                    placeholder: 'Geben Sie hier das Zitat ein...'
+                  },
+                  {
+                    type: 'input',
+                    name: 'author',
+                    label: 'Autor/Quelle',
+                    placeholder: 'Name des Autors oder Quelle'
+                  }
+                ]
+              },
+              buttons: [
+                {
+                  type: 'cancel',
+                  text: 'Abbrechen'
+                },
+                {
+                  type: 'submit',
+                  text: 'Einfügen',
+                  primary: true
+                }
+              ],
+              onSubmit: function(api) {
+                const data = api.getData();
+                let blockquoteHtml = '<blockquote>';
+                if (data.quote) {
+                  blockquoteHtml += '<p>' + data.quote + '</p>';
+                }
+                if (data.author) {
+                  blockquoteHtml += '<footer><cite>— ' + data.author + '</cite></footer>';
+                }
+                blockquoteHtml += '</blockquote>';
+                editor.insertContent(blockquoteHtml);
+                api.close();
+              }
+            });
+          }
+        });
         // Funktion zum Entfernen von width/height für responsive Bilder
         const makeImagesResponsive = () => {
           const images = editor.getDoc().querySelectorAll('img');
