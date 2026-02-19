@@ -203,6 +203,52 @@ const getAllPosts = async () => {
   }
 };
 /**
+ * Liest aktuelle Posts (nicht archiviert, jünger als 3 Monate) aus der DB.
+ * @returns {Promise<Post[]>} Array gültiger, veröffentlichter, aktueller Posts.
+ * @throws {PostControllerException} Bei kritischen DB-Fehlern.
+ */
+const getCurrentPosts = async () => {
+  try {
+    const posts = await DatabaseService.getAllPosts();
+    
+    if (!posts || posts.length === 0) {
+      logger.warn('No posts found in database - returning empty array');
+      return [];
+    }
+    
+    // Berechne das Datum vor 3 Monaten
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    const currentPosts = [];
+    for (const post of posts) {
+      const { error, value } = Post.validate(post);
+      if (error) {
+        logger.debug(`getCurrentPosts: Validation failed for post ID ${post.id}: ${error.details.map(d => d.message).join('; ')}`);
+        continue;
+      }
+      
+      // Filtere nur veröffentlichte Posts, die jünger als 3 Monate sind
+      const postDate = new Date(value.created_at);
+      if (value.published && postDate >= threeMonthsAgo) {
+        currentPosts.push(new Post(value));
+      }
+    }
+    
+    logger.debug(`getCurrentPosts: Successfully returning ${currentPosts.length} current posts (< 3 months)`);
+    return currentPosts;
+  } catch (error) {
+    logger.debug(`getCurrentPosts: Caught error: ${error.message}`, { stack: error.stack });
+    
+    if (error.message && error.message.includes('No posts found')) {
+      return [];
+    }
+    
+    logger.error(`Critical database error in getCurrentPosts: ${error.message}`);
+    throw new PostControllerException(`Error fetching current posts: ${error.message}`, error);
+  }
+};
+/**
  * 
  * @param {string} category - Kategorie, nach der gefiltert werden soll (z.B. "Philosophie", "Wissenschaft"). 
  * @returns {Promise<Post[]>} Array gültiger, veröffentlichter Posts der Kategorie.
@@ -367,6 +413,7 @@ export default {
   getArchivedYears,
   updatePost,
   getAllPosts,
+  getCurrentPosts,
   getMostReadPosts,
   deletePost,
   getPostsChecksum,

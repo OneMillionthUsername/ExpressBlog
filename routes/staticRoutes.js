@@ -152,7 +152,8 @@ staticRouter.get('/posts', csrfProtection, async (req, res) => {
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     // Server-side render the list of current posts to preserve the
     // HTML-first experience and avoid client-side JSON-only rendering.
-    const posts = await postController.getAllPosts();
+    // getCurrentPosts returns only posts younger than 3 months
+    const posts = await postController.getCurrentPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
     applySsrNoCache(res, { varyCookie: true });
     return res.render('listCurrentPosts', { posts, isAdmin, csrfToken });
