@@ -2886,6 +2886,32 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 /* Force left alignment for the create page areas to counteract row text-center */
 #admin-required.content-area,
 #create-content.content-area { text-align: left; }
+
+/* Hide preview initially - toggle with button */
+.form-preview {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: #fafafa;
+    border-radius: var(--border-radius);
+    border: 1px solid #e9ecef;
+}
+
+.preview-title {
+    font-family: var(--font-primary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-icon {
+    font-size: 1.5rem;
+}
+
 /* Toolbar container styling and responsive wrapping */
 #create-content .editor-toolbar {
     display: flex;

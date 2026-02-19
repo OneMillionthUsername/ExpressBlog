@@ -64,15 +64,26 @@ export function updatePreview() {
  * Toggle preview visibility
  */
 export function togglePreview() {
-  const previewBox = document.getElementById('preview-box');
+  const previewBox = document.querySelector('.form-preview');
+  const toggleBtn = document.getElementById('toggle-preview-btn');
+  
   if (!previewBox) return;
 
   // Always update preview to ensure it shows current content
   updatePreview();
 
-  if (previewBox.style.display === 'none' || !previewBox.style.display) {
+  // Toggle visibility
+  const isCurrentlyHidden = previewBox.style.display === 'none';
+  
+  if (isCurrentlyHidden) {
     previewBox.style.display = 'block';
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<span class="btn-icon">🙈</span> Vorschau ausblenden';
+    }
   } else {
     previewBox.style.display = 'none';
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<span class="btn-icon">👀</span> Vorschau einblenden';
+    }
   }
 }
