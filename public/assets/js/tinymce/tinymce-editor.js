@@ -239,6 +239,13 @@ async function initializeTinyMCE() {
       menubar: 'edit view insert format tools help',
       referrer_policy: 'origin',
       cache_suffix: cacheSuffix,
+      
+      // Sprache auf Deutsch setzen für Rechtschreibprüfung
+      language: 'de',
+      content_langs: [
+        { title: 'Deutsch', code: 'de' },
+        { title: 'English', code: 'en' }
+      ],
             
       plugins: [
         'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
