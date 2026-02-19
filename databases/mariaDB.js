@@ -1083,19 +1083,24 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       
-      // Build the insert data, ensuring proper formatting
-      const insertData = {
-        postId: mediaData.postId || null,
-        original_name: mediaData.original_name,
-        file_size: mediaData.file_size || null,
-        mime_type: mediaData.mime_type || null,
-        uploaded_by: mediaData.uploaded_by || null,
-        upload_path: mediaData.upload_path,
-        alt_text: mediaData.alt_text || null,
-        used_in_posts: mediaData.used_in_posts ? JSON.stringify(mediaData.used_in_posts) : null,
-      };
+      // Build the SQL query explicitly
+      const sql = `
+        INSERT INTO media (postId, original_name, file_size, mime_type, uploaded_by, upload_path, alt_text, used_in_posts)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
       
-      const result = await conn.query('INSERT INTO media SET ?', [insertData]);
+      const params = [
+        mediaData.postId || null,
+        mediaData.original_name,
+        mediaData.file_size || null,
+        mediaData.mime_type || null,
+        mediaData.uploaded_by || null,
+        mediaData.upload_path,
+        mediaData.alt_text || null,
+        mediaData.used_in_posts ? JSON.stringify(mediaData.used_in_posts) : null,
+      ];
+      
+      const result = await conn.query(sql, params);
       return {
         success: true,
         mediaId: Number(result.insertId),
