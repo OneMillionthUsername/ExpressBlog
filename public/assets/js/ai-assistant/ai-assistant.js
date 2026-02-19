@@ -147,7 +147,18 @@ async function callGeminiAPI(prompt, systemInstruction = '') {
 
     if (!result || result.success !== true) {
       const err = result?.error || 'AI proxy error';
-      showNotification(`AI-Fehler: ${err}`, 'error');
+      
+      // Benutzerfreundliche Fehlermeldungen
+      let userMessage = `AI-Fehler: ${err}`;
+      if (err.includes('quota') || err.includes('429')) {
+        userMessage = 'API-Limit erreicht. Bitte später erneut versuchen.';
+      } else if (err.includes('authentication') || err.includes('API key')) {
+        userMessage = 'API-Authentifizierung fehlgeschlagen. Bitte Administrator kontaktieren.';
+      } else if (err.includes('Model not found')) {
+        userMessage = 'AI-Modell nicht verfügbar. Bitte Administrator kontaktieren.';
+      }
+      
+      showNotification(userMessage, 'error');
       throw new Error(err);
     }
 

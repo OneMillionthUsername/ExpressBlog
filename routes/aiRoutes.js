@@ -25,7 +25,7 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
 
     const safeModel = (typeof model === 'string' && model.trim().length > 0)
       ? model.trim()
-      : 'gemini-2.0-flash-exp';
+      : 'gemini-2.5-flash'; // Stable, free model (2.0 is deprecated)
 
     const generativeModel = genAI.getGenerativeModel({ 
       model: safeModel,
@@ -37,8 +37,29 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
     
     return res.json({ success: true, data: { text: aiText } });
   } catch (err) {
-    logger.error('AI generate route error', err);
-    return res.status(500).json({ success: false, error: 'Internal server error' });
+    logger.error('AI generate route error', { 
+      error: err.message, 
+      status: err.status || err.statusCode,
+      model: req.body?.model || 'gemini-2.5-flash',
+      stack: err.stack,
+    });
+    
+    // Provide helpful error messages
+    let statusCode = 500;
+    let errorMessage = 'Internal server error';
+    
+    if (err.message?.includes('API key')) {
+      statusCode = 502;
+      errorMessage = 'API authentication failed - check API key configuration';
+    } else if (err.message?.includes('quota') || err.message?.includes('429')) {
+      statusCode = 429;
+      errorMessage = 'API quota exceeded - please try again later';
+    } else if (err.message?.includes('model') || err.message?.includes('404')) {
+      statusCode = 400;
+      errorMessage = 'Model not found or unavailable';
+    }
+    
+    return res.status(statusCode).json({ success: false, error: errorMessage });
   }
 });
 
