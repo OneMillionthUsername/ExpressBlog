@@ -850,6 +850,16 @@ async function uploadImageMultipart(blobInfo, progress) {
 
   const formData = new FormData();
   formData.append('image', blob, filename);
+  
+  // Wenn wir einen existierenden Post bearbeiten, postId mitschicken
+  try {
+    const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
+    if (postId && !isNaN(postId) && postId > 0) {
+      formData.append('postId', postId);
+    }
+  } catch (e) {
+    // Ignorieren, wenn postId nicht verfügbar (z.B. neuer Post)
+  }
 
   const apiResult = await makeApiRequest('/upload/image', {
     method: 'POST',

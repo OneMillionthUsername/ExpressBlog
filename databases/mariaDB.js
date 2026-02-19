@@ -263,7 +263,6 @@ export async function initializeDatabaseSchema() {
             uploaded_by VARCHAR(100) DEFAULT NULL,
             upload_path VARCHAR(500) DEFAULT NULL,
             alt_text VARCHAR(255) DEFAULT NULL,
-            used_in_posts JSON DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             
             INDEX idx_media_uploaded_by (uploaded_by),
@@ -1084,7 +1083,7 @@ export const DatabaseService = {
       conn = await getDatabasePool().getConnection();
       
       const result = await conn.query(
-        'INSERT INTO media (postId, original_name, file_size, mime_type, uploaded_by, upload_path, alt_text, used_in_posts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO media (postId, original_name, file_size, mime_type, uploaded_by, upload_path, alt_text) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [
           mediaData.postId || null,
           mediaData.original_name,
@@ -1093,7 +1092,6 @@ export const DatabaseService = {
           mediaData.uploaded_by || null,
           mediaData.upload_path,
           mediaData.alt_text || null,
-          mediaData.used_in_posts ? JSON.stringify(mediaData.used_in_posts) : null,
         ]
       );
       

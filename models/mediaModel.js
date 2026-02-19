@@ -10,7 +10,7 @@ export class Media {
     uploaded_by = null,
     upload_path = null,
     alt_text = null,
-    used_in_posts = [],
+    // used_in_posts = [], // Not yet in DB schema
     created_at = new Date(),
   } = {}){
     this.id = id;
@@ -21,7 +21,7 @@ export class Media {
     this.uploaded_by = uploaded_by;
     this.upload_path = upload_path;
     this.alt_text = alt_text;
-    this.used_in_posts = Array.isArray(used_in_posts) ? used_in_posts : [];
+    // this.used_in_posts = Array.isArray(used_in_posts) ? used_in_posts : [];
     this.created_at = created_at ? new Date(created_at) : new Date();
   }
 
@@ -39,7 +39,7 @@ export const mediaSchema = Joi.object({
   uploaded_by: Joi.string().max(100).optional().allow(null),
   upload_path: Joi.string().max(500).required(),
   alt_text: Joi.string().max(255).optional().allow(null),
-  used_in_posts: Joi.array().items(Joi.number().integer()).optional().allow(null),
+  // used_in_posts: Joi.array().items(Joi.number().integer()).optional().allow(null), // Not yet in DB
   // DB defaults CURRENT_TIMESTAMP; allow omitting on insert
   created_at: Joi.date().optional().allow(null),
 });
