@@ -1083,24 +1083,24 @@ export const DatabaseService = {
       }
       conn = await getDatabasePool().getConnection();
       
-      // Build the SQL query explicitly
-      const sql = `
-        INSERT INTO media (postId, original_name, file_size, mime_type, uploaded_by, upload_path, alt_text, used_in_posts)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+      const result = await conn.query(
+        'INSERT INTO media (postId, original_name, file_size, mime_type, uploaded_by, upload_path, alt_text, used_in_posts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          mediaData.postId || null,
+          mediaData.original_name,
+          mediaData.file_size || null,
+          mediaData.mime_type || null,
+          mediaData.uploaded_by || null,
+          mediaData.upload_path,
+          mediaData.alt_text || null,
+          mediaData.used_in_posts ? JSON.stringify(mediaData.used_in_posts) : null,
+        ]
+      );
       
-      const params = [
-        mediaData.postId || null,
-        mediaData.original_name,
-        mediaData.file_size || null,
-        mediaData.mime_type || null,
-        mediaData.uploaded_by || null,
-        mediaData.upload_path,
-        mediaData.alt_text || null,
-        mediaData.used_in_posts ? JSON.stringify(mediaData.used_in_posts) : null,
-      ];
+      if (result.affectedRows === 0) {
+        throw new Error('No rows affected');
+      }
       
-      const result = await conn.query(sql, params);
       return {
         success: true,
         mediaId: Number(result.insertId),
