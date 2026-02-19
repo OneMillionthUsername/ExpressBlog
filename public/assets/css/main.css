@@ -562,6 +562,7 @@ body {
 /* Image Styles */
 .preview-post-content img,
 .blogpost-content img,
+.post-content img,
 .blogpost-content-img {
     max-width: 100% !important;
     height: auto !important;
