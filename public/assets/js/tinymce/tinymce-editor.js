@@ -240,9 +240,13 @@ async function initializeTinyMCE() {
       referrer_policy: 'origin',
       cache_suffix: cacheSuffix,
       
-      // Icon configuration for proper icon display
-      icons: 'default',
-      icons_url: 'auto',
+      // Skin and icons configuration for jsDelivr CDN
+      skin_url: 'https://cdn.jsdelivr.net/npm/tinymce@6/skins/ui/oxide',
+      content_css: [
+        'https://cdn.jsdelivr.net/npm/tinymce@6/skins/content/default/content.min.css',
+        'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
+        '/assets/css/tinymce-content.css',
+      ],
       
       // Sprache auf Deutsch setzen für Rechtschreibprüfung
       language: 'de',
@@ -261,11 +265,11 @@ async function initializeTinyMCE() {
       toolbar: [
         'undo redo | bold italic underline strikethrough | fontsize forecolor backcolor',
         'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
-        'link image media table | codesample customblockquote hr pagebreak | emoticons charmap',
+        'link image media table | codesample blockquote customblockquote hr pagebreak | emoticons charmap',
         'searchreplace visualblocks code fullscreen preview | save help',
       ],
       toolbar_mode: 'floating',
-      quickbars_selection_toolbar: 'bold italic underline | quicklink customblockquote',
+      quickbars_selection_toolbar: 'bold italic underline | quicklink blockquote',
       quickbars_insert_toolbar: 'image media table hr',
       contextmenu: 'link image table configurepermanentpen',
             
@@ -348,8 +352,8 @@ async function initializeTinyMCE() {
       setup: function(editor) {
         // Benutzerdefinierter Blockquote-Button mit Dialog
         editor.ui.registry.addButton('customblockquote', {
-          icon: 'quote',
-          tooltip: 'Blockquote mit Autor einfügen',
+          text: '📝',  // Emoji als Icon für bessere Unterscheidung
+          tooltip: 'Blockquote mit Autor einfügen (Dialog)',
           onAction: function() {
             editor.windowManager.open({
               title: 'Blockquote einfügen',
