@@ -322,17 +322,34 @@ async function initializeTinyMCE() {
             
       // Event-Handler (erweitert mit Dark Mode-Unterstützung)
       setup: function(editor) {
-        // Entferne width/height Attribute von Bildern für responsive Design
-        editor.on('NodeChange', function() {
+        // Funktion zum Entfernen von width/height für responsive Bilder
+        const makeImagesResponsive = () => {
           const images = editor.getDoc().querySelectorAll('img');
           images.forEach(img => {
             img.removeAttribute('width');
             img.removeAttribute('height');
+            img.style.width = '';
+            img.style.height = '';
             // Optional: Füge responsive Klasse hinzu
             if (!img.classList.contains('img-responsive')) {
               img.classList.add('img-responsive');
             }
           });
+        };
+        
+        // Entferne width/height Attribute bei verschiedenen Events
+        editor.on('NodeChange', makeImagesResponsive);
+        editor.on('SetContent', makeImagesResponsive);
+        editor.on('BeforeSetContent', function(e) {
+          // Entferne width/height aus dem HTML bevor es eingefügt wird
+          if (e.content && e.content.includes('<img')) {
+            e.content = e.content.replace(/(<img[^>]*)\s+width=["'][^"']*["']/gi, '$1');
+            e.content = e.content.replace(/(<img[^>]*)\s+height=["'][^"']*["']/gi, '$1');
+            e.content = e.content.replace(/(<img[^>]*)\s+style=["'][^"']*["']/gi, '$1');
+          }
+        });
+        editor.on('paste', function() {
+          setTimeout(makeImagesResponsive, 100);
         });
         
         editor.on('init', function() {
