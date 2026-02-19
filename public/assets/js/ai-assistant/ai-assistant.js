@@ -282,10 +282,13 @@ async function improveText() {
 Aufgabe:
 - Verbessere NUR Grammatik, Rechtschreibung und Interpunktion.
 
-WICHTIG - Antwortformat:
-- Deine Antwort MUSS direkt mit [ beginnen und mit ] enden.
-- KEINE Markdown-Code-Bloecke (\\\`\\\`\\\`json), KEINE Erklaerungen, KEIN zusaetzlicher Text.
-- Nur das pure JSON-Array.
+KRITISCH - Antwortformat:
+- Gib NUR ein reines JSON-Array mit doppelten Anführungszeichen zurück.
+- Verwende KEINE Backticks oder Template-Literale.
+- KEINE Code-Blöcke, KEINE Markdown-Formatierung.
+- KEINE Erklärungen vor oder nach dem Array.
+- Die Antwort MUSS mit [ beginnen und mit ] enden.
+- Beispiel einer korrekten Antwort: ["Text 1", "Text 2"]
 
 Zwingende Regeln:
 - Aendere NICHT die Anzahl und Reihenfolge der Segmente.
@@ -296,19 +299,30 @@ Zwingende Regeln:
 
 Beispiel:
 Eingabe: ["Das ist ein Tekst.", "Noch ein Satz"]
-Antwort: ["Das ist ein Text.", "Noch ein Satz"]`;
+Korrekte Antwort: ["Das ist ein Text.", "Noch ein Satz"]
+FALSCHE Antworten:
+- Mit Backticks: [\`"Text"\`, \`"Satz"\`]
+- Mit Code-Block: \`\`\`json\n["Text"]\n\`\`\``;
 
     const prompt = JSON.stringify(originalSegments);
     console.log('Sending to AI - segment count:', originalSegments.length);
     const improvedJson = await callGeminiAPI(prompt, systemInstruction);
     console.log('AI response length:', improvedJson?.length, 'chars');
+    console.log('AI response preview:', improvedJson?.substring(0, 150));
+    
     const improvedSegments = parseJsonArray(improvedJson);
 
-    if (!Array.isArray(improvedSegments) || improvedSegments.length !== originalSegments.length) {
+    if (!Array.isArray(improvedSegments)) {
+      console.error('parseJsonArray returned null or non-array');
+      showNotification('AI-Antwort hat falsches Format. Bitte erneut versuchen.', 'error');
+      return;
+    }
+
+    if (improvedSegments.length !== originalSegments.length) {
       console.warn('AI response did not match expected segment count.');
       console.warn('Expected:', originalSegments.length, 'segments');
-      console.warn('Received:', Array.isArray(improvedSegments) ? improvedSegments.length : 'not an array');
-      showNotification('AI-Antwort konnte nicht verarbeitet werden. Text bleibt unverändert.', 'warning');
+      console.warn('Received:', improvedSegments.length, 'segments');
+      showNotification(`AI-Antwort hat falsche Anzahl Segmente (${improvedSegments.length} statt ${originalSegments.length}). Text bleibt unverändert.`, 'warning');
       return;
     }
 
@@ -375,32 +389,67 @@ function collectTextNodes(root) {
 }
 
 function parseJsonArray(raw) {
-  if (!raw || typeof raw !== 'string') return null;
-  
-  // Strip markdown code blocks if present
-  let cleaned = raw.trim();
-  
-  // Remove backtick-fenced code blocks (e.g., ```json ... ``` or ``` ... ```)
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  if (!raw || typeof raw !== 'string') {
+    console.error('parseJsonArray: Invalid input - not a string');
+    return null;
   }
   
-  // Decode HTML entities (the AI sometimes returns &quot; etc.)
+  let cleaned = raw.trim();
+  
+  // Remove markdown code blocks (e.g., ```json ... ``` or ``` ... ```)
+  if (cleaned.includes('```')) {
+    const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      cleaned = codeBlockMatch[1].trim();
+    } else {
+      cleaned = cleaned.replace(/```(?:json)?/g, '').trim();
+    }
+  }
+  
+  // Convert template literal syntax to JSON: [`"text"`, ...] => ["text", ...]
+  // Replace backtick quotes with regular quotes for array elements
+  if (cleaned.includes('[`')) {
+    console.log('Detected template literal syntax, converting to JSON...');
+    // Replace [`"..."` with ["..."
+    cleaned = cleaned.replace(/\[\s*`"/g, '["');
+    // Replace ,`"..."` with ,"..."
+    cleaned = cleaned.replace(/,\s*`"/g, ',"');
+    // Replace "`] with "]
+    cleaned = cleaned.replace(/"`\s*\]/g, '"]');
+    // Replace "`,` with ",
+    cleaned = cleaned.replace(/"`\s*,\s*`"/g, '","');
+    console.log('Converted preview:', cleaned.substring(0, 150));
+  }
+  
+  // Decode HTML entities (&quot; etc.)
   const textarea = document.createElement('textarea');
   textarea.innerHTML = cleaned;
   cleaned = textarea.value;
   
-  // Try to find JSON array in the text
+  // Clean up escaped quotes from AI (\&quot; => ")
+  cleaned = cleaned.replace(/\\&quot;/g, '"');
+  
+  // Find JSON array in the text
   const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
   if (arrayMatch) {
     cleaned = arrayMatch[0];
+  } else {
+    console.error('parseJsonArray: No JSON array found');
+    console.error('Cleaned response:', cleaned.substring(0, 200));
+    return null;
   }
   
   try {
-    return JSON.parse(cleaned.trim());
+    const parsed = JSON.parse(cleaned.trim());
+    if (!Array.isArray(parsed)) {
+      console.error('parseJsonArray: Parsed result is not an array');
+      return null;
+    }
+    return parsed;
   } catch (err) {
-    console.warn('AI response is not valid JSON:', err);
-    console.warn('Raw response:', raw);
+    console.error('parseJsonArray: JSON parse error:', err.message);
+    console.error('Attempted to parse:', cleaned.substring(0, 300));
+    console.error('Full raw response:', raw.substring(0, 500));
     return null;
   }
 }
