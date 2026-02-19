@@ -44,7 +44,7 @@ function createMockPool() {
                 title: 'Sample Blog Post 1',
                 content: '<p>This is a sample blog post content.</p>',
                 tags: '["sample","blog"]',
-                author: 'admin',
+                author: 'author',
                 views: 10,
                 published: 1,
                 // Older post
@@ -57,7 +57,7 @@ function createMockPool() {
                 title: 'Sample Blog Post 2',
                 content: '<p>This is another sample blog post.</p>',
                 tags: '["sample","test"]',
-                author: 'admin',
+                author: 'author',
                 views: 5,
                 published: 1,
                 // Newer post
@@ -217,7 +217,7 @@ export async function initializeDatabaseSchema() {
             content LONGTEXT NOT NULL,
             slug VARCHAR(50) NOT NULL UNIQUE,
             tags JSON DEFAULT NULL,
-            author VARCHAR(100) DEFAULT 'admin',
+            author VARCHAR(100) DEFAULT 'author',
             views BIGINT DEFAULT 0,
             published BOOLEAN DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -434,7 +434,7 @@ export const DatabaseService = {
 
       // Normalize some fields to match other getters
       if (post.author === null || post.author === undefined) {
-        post.author = 'admin';
+        post.author = 'author';
       }
       // Published: Integer (0/1) zu Boolean konvertieren
       post.published = normalizePublished(post.published);
@@ -702,7 +702,7 @@ export const DatabaseService = {
         // Normalize common fields expected by Post model
         post.published = normalizePublished(post.published);
         if (post.author === null || post.author === undefined) {
-          post.author = 'admin';
+          post.author = 'author';
         }
         return post;
       });

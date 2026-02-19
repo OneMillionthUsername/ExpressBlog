@@ -247,7 +247,7 @@ async function improveText() {
   const improveBtn = document.getElementById('ai-improve-btn');
   if (improveBtn) {
     improveBtn.disabled = true;
-    improveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AI arbeitet...';
+    improveBtn.innerHTML = '⏳ AI arbeitet...';
   }
 
   try {
@@ -320,7 +320,7 @@ Antwort: ["Das ist ein Text.", "Noch ein Satz"]`;
   } finally {
     if (improveBtn) {
       improveBtn.disabled = false;
-      improveBtn.innerHTML = '<i class="fas fa-magic"></i> Text verbessern';
+      improveBtn.innerHTML = '✨ Text verbessern';
     }
   }
 }
@@ -414,7 +414,7 @@ async function generateTags() {
   const tagsBtn = document.getElementById('ai-tags-btn');
   if (tagsBtn) {
     tagsBtn.disabled = true;
-    tagsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generiere...';
+    tagsBtn.innerHTML = '⏳ Generiere...';
   }
   try {
     const systemInstruction = `Du bist ein Experte für Content-Kategorisierung. Analysiere den folgenden Blogpost und generiere passende Tags.
@@ -441,7 +441,7 @@ Regeln:
   } finally {
     if (tagsBtn) {
       tagsBtn.disabled = false;
-      tagsBtn.innerHTML = '<i class="fas fa-tags"></i> Tags generieren';
+      tagsBtn.innerHTML = '🏷️ Tags generieren';
     }
   }
 }
@@ -466,7 +466,7 @@ async function generateSummary() {
   const summaryBtn = document.getElementById('ai-summary-btn');
   if (summaryBtn) {
     summaryBtn.disabled = true;
-    summaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Erstelle...';
+    summaryBtn.innerHTML = '⏳ Erstelle...';
   }
     
   try {
@@ -492,10 +492,10 @@ Regeln:
         <div class="ai-summary-modal-content">${summary}</div>
         <div class="ai-summary-modal-footer">
           <button data-action="apply-summary" data-html="${encodeURIComponent(summary)}" class="ai-summary-modal-button-apply">
-            <i class="fas fa-plus-circle"></i> Einfügen
+            ➕ Einfügen
           </button>
           <button data-action="copy-summary" data-text="${encodeURIComponent(summary)}" class="ai-summary-modal-button-primary ml-2">
-            <i class="fas fa-copy ai-summary-modal-button-icon"></i> Kopieren
+            📋 Kopieren
           </button>
           <button data-action="close" class="ai-summary-modal-button-secondary ml-2">Schließen</button>
         </div>
@@ -510,7 +510,7 @@ Regeln:
   } finally {
     if (summaryBtn) {
       summaryBtn.disabled = false;
-      summaryBtn.innerHTML = '<i class="fas fa-file-text"></i> Zusammenfassen';
+      summaryBtn.innerHTML = '📄 Zusammenfassen';
     }
   }
 }
@@ -535,7 +535,7 @@ async function generateTitleSuggestions() {
   const titleBtn = document.getElementById('ai-title-btn');
   if (titleBtn) {
     titleBtn.disabled = true;
-    titleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generiere...';
+    titleBtn.innerHTML = '⏳ Generiere...';
   }
     
   try {
@@ -568,7 +568,7 @@ Regeln:
   } finally {
     if (titleBtn) {
       titleBtn.disabled = false;
-      titleBtn.innerHTML = '<i class="fas fa-lightbulb"></i> Titel vorschlagen';
+      titleBtn.innerHTML = '💡 Titel vorschlagen';
     }
   }
 }

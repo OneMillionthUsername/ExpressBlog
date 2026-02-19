@@ -35,11 +35,6 @@
     <%# Bootstrap lokal - kein externes CDN %>
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
 
-    <%# Font Awesome nur wenn die Seite es braucht %>
-    <% if (typeof useFontAwesome !== 'undefined' && useFontAwesome) { %>
-    <link rel="stylesheet" href="/assets/css/fontawesome.min.css">
-    <% } %>
-
     <%# TinyMCE CSS nur wenn nötig %>
     <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">

@@ -28,7 +28,7 @@ export function confirmModal(message = 'Sind Sie sicher?') {
             </div>
           </div>
         `;
-        // Append modal to body; styling is provided by CSS in public/assets/css/components.css
+        // Append modal to body; styling is provided by CSS in main.css
         document.body.appendChild(modal);
       }
 

@@ -1,7 +1,6 @@
 <% /* createPost.ejs - Blogpost erstellen/bearbeiten */ %>
 <% 
     pageTitle = 'Blogpost erstellen - Sub specie aeternitatis';
-    useFontAwesome = true;
     useTinyMce = true;
     if (typeof post !== 'undefined' && post) {
         extraHead = `<script id="server-post" type="application/json"${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>${(function(obj){ try { const s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e'); } catch(e){ return 'null'; } })(post)}<\/script>`;
@@ -61,13 +60,13 @@
                                 <div class="toolbar-group">
                                     <span class="toolbar-label">📄 Vorlagen:</span>
                                     <button type="button" id="insert-template-blog-post" class="btn btn-sm btn-outline-secondary" data-template="blog-post">
-                                        <i class="fas fa-file-alt"></i> Blog
+                                        📝 Blog
                                     </button>
                                     <button type="button" id="insert-template-philosophy" class="btn btn-sm btn-outline-secondary" data-template="philosophy">
-                                        <i class="fas fa-graduation-cap"></i> Philosophie
+                                        🎓 Philosophie
                                     </button>
                                     <button type="button" id="insert-template-science" class="btn btn-sm btn-outline-secondary" data-template="science">
-                                        <i class="fas fa-flask"></i> Wissenschaft
+                                        🔬 Wissenschaft
                                     </button>
                                 </div>
                                 <div class="toolbar-group">
@@ -81,33 +80,33 @@
                                 <div class="toolbar-group">
                                     <span class="toolbar-label">AI-Assistent:</span>
                                     <button type="button" id="ai-improve-btn" class="btn btn-sm btn-outline-primary ai-btn" data-action="improveText" title="Markierten Text oder ganzen Inhalt verbessern">
-                                        <i class="fas fa-magic"></i> Text verbessern
+                                        ✨ Text verbessern
                                     </button>
                                     <button type="button" id="ai-title-btn" class="btn btn-sm btn-outline-primary ai-btn" data-action="generateTitleSuggestions" title="AI-generierte Titel-Vorschläge">
-                                        <i class="fas fa-lightbulb"></i> Titel vorschlagen
+                                        💡 Titel vorschlagen
                                     </button>
                                     <button type="button" id="ai-tags-btn" class="btn btn-sm btn-outline-primary ai-btn" data-action="generateTags" title="Automatische Tag-Generierung">
-                                        <i class="fas fa-tags"></i> Tags generieren
+                                        🏷️ Tags generieren
                                     </button>
                                     <button type="button" id="ai-summary-btn" class="btn btn-sm btn-outline-primary ai-btn" data-action="generateSummary" title="Zusammenfassung erstellen">
-                                        <i class="fas fa-file-text"></i> Zusammenfassen
+                                        📄 Zusammenfassen
                                     </button>
                                 </div>
                                 <div class="toolbar-group">
                                     <span class="toolbar-label">💾 Entwürfe:</span>
                                     <button type="button" id="save-draft-btn" class="btn btn-sm btn-outline-info" data-action="saveDraft">
-                                        <i class="fas fa-save"></i> Speichern
+                                        💾 Entwurf Speichern
                                     </button>
                                     <button type="button" id="clear-draft-btn" class="btn btn-sm btn-outline-warning" data-action="clearDraft">
-                                        <i class="fas fa-trash"></i> Löschen
+                                        🗑️ Löschen
                                     </button>
                                 </div>
                                 <div class="toolbar-group">
                                     <button type="button" id="show-api-key-setup" class="btn btn-sm btn-outline-success" data-action="showApiKeySetup" title="Google Gemini API-Schlüssel konfigurieren">
-                                        <i class="fas fa-cog"></i> AI Setup
+                                        ⚙️ AI Setup
                                     </button>
                                     <button type="button" id="show-tinymce-api-key-setup" class="btn btn-sm btn-outline-info" data-action="showTinyMceApiKeySetup" title="TinyMCE Editor API-Schlüssel konfigurieren">
-                                        <i class="fas fa-edit"></i> Editor Setup
+                                        ✏️ Editor Setup
                                     </button>
                                 </div>
                             </div>
