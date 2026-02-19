@@ -19,11 +19,18 @@
     <%# Google Fonts: preconnect + non-blocking load via print/onload trick %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap"
-          onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" media="print">
     <noscript>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap">
     </noscript>
+    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
+        (function() {
+            const link = document.querySelector('link[rel="preload"][as="style"]');
+            if (link) {
+                link.onload = function() { this.onload = null; this.rel = 'stylesheet'; this.media = 'all'; };
+            }
+        })();
+    </script>
 
     <%# Bootstrap lokal - kein externes CDN %>
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">

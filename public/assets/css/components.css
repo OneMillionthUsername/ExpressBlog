@@ -805,7 +805,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 
 .menu-toggle img {
     width: 28px;
-    height: 28px;
+    height: auto;
     vertical-align: middle;
     pointer-events: none;
 }
@@ -954,7 +954,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     
     .menu-toggle img {
         width: 22px;
-        height: 22px;
+        height: auto;
     }
     
     .menu-option {

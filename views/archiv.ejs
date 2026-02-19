@@ -68,7 +68,7 @@
 </div>
 
 <% extraScripts = `
-<script>
+<script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
     (function() {
         try {
             const archiveEl = document.getElementById('archivePosts');

@@ -72,7 +72,7 @@
                 <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <% } %>
-                <button type="submit" class="btn admin-delete-btn btn-lg ml-2" onclick="return confirm('Möchten Sie diesen Beitrag wirklich löschen?');">
+                <button type="submit" class="btn admin-delete-btn btn-lg ml-2" data-confirm="Möchten Sie diesen Beitrag wirklich löschen?">
                     Post löschen
                 </button>
             </form>

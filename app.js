@@ -199,6 +199,7 @@ app.use(helmet({
       baseUri: ['\'self\''],
       formAction: ['\'self\'', 'https://formspree.io'],
       frameAncestors: ['\'none\''],
+      scriptSrcAttr: ['\'unsafe-hashes\'', '\'unsafe-inline\''],
     },
   },
   hsts: config.IS_PRODUCTION ? {

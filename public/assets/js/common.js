@@ -118,6 +118,7 @@ export function initializeCommonDelegation() {
   if (_commonDelegationInitialized) return;
   _commonDelegationInitialized = true;
 
+  // Handle data-action attributes
   document.addEventListener('click', (e) => {
     const actionEl = e.target.closest('[data-action]');
     const action = actionEl ? actionEl.getAttribute('data-action') : '';
@@ -125,6 +126,23 @@ export function initializeCommonDelegation() {
     if (action === 'close-modal') {
       const modal = e.target.closest('.modal, .modal-overlay');
       if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
+    } else if (action === 'back') {
+      window.history.back();
+    } else if (action === 'reload') {
+      window.location.reload();
+    }
+  });
+
+  // Handle data-confirm attributes (form submit confirmation)
+  document.addEventListener('submit', (e) => {
+    const form = e.target;
+    const submitBtn = form.querySelector('[data-confirm]');
+    if (submitBtn) {
+      const message = submitBtn.getAttribute('data-confirm');
+      if (!confirm(message)) {
+        e.preventDefault();
+        return false;
+      }
     }
   });
 }
