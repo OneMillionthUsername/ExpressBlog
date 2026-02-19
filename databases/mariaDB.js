@@ -1092,7 +1092,7 @@ export const DatabaseService = {
           mediaData.uploaded_by || null,
           mediaData.upload_path,
           mediaData.alt_text || null,
-        ]
+        ],
       );
       
       if (result.affectedRows === 0) {
