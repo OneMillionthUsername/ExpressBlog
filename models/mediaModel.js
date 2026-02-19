@@ -34,12 +34,12 @@ export const mediaSchema = Joi.object({
   id: Joi.number().integer().optional(),
   postId: Joi.number().integer().min(1).optional().allow(null),
   original_name: Joi.string().min(2).max(255).required(),
-  file_size: Joi.number().integer().min(0).optional(),
-  mime_type: Joi.string().max(100).optional(),
-  uploaded_by: Joi.string().max(100).optional(),
+  file_size: Joi.number().integer().min(0).optional().allow(null),
+  mime_type: Joi.string().max(100).optional().allow(null),
+  uploaded_by: Joi.string().max(100).optional().allow(null),
   upload_path: Joi.string().max(500).required(),
-  alt_text: Joi.string().max(255).optional(),
-  used_in_posts: Joi.array().items(Joi.number().integer()).optional(),
+  alt_text: Joi.string().max(255).optional().allow(null),
+  used_in_posts: Joi.array().items(Joi.number().integer()).optional().allow(null),
   // DB defaults CURRENT_TIMESTAMP; allow omitting on insert
-  created_at: Joi.date().optional(),
+  created_at: Joi.date().optional().allow(null),
 });
