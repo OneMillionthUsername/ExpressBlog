@@ -22,7 +22,7 @@ export class Media {
     this.upload_path = upload_path;
     this.alt_text = alt_text;
     this.used_in_posts = Array.isArray(used_in_posts) ? used_in_posts : [];
-    this.created_at = new Date(created_at);
+    this.created_at = created_at ? new Date(created_at) : new Date();
   }
 
   static validate(payload = {}) {
@@ -37,8 +37,9 @@ export const mediaSchema = Joi.object({
   file_size: Joi.number().integer().min(0).optional(),
   mime_type: Joi.string().max(100).optional(),
   uploaded_by: Joi.string().max(100).optional(),
-  upload_path: Joi.string().max(255).required(),
+  upload_path: Joi.string().max(500).required(),
   alt_text: Joi.string().max(255).optional(),
   used_in_posts: Joi.array().items(Joi.number().integer()).optional(),
-  created_at: Joi.date().required(),
+  // DB defaults CURRENT_TIMESTAMP; allow omitting on insert
+  created_at: Joi.date().optional(),
 });

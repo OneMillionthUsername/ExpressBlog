@@ -5,8 +5,9 @@ import 'dotenv/config.js';
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 //export const IS_PLESK = Boolean(process.env.PLESK_ENV && process.env.PLESK_ENV === 'true');
 export const IS_PRODUCTION = NODE_ENV === 'production';
-export const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '100kb';
-export const URLENCODED_BODY_LIMIT = process.env.URLENCODED_BODY_LIMIT || '100kb';
+// Common defaults: allow rich HTML editor payloads without being overly permissive
+export const JSON_BODY_LIMIT = process.env.JSON_BODY_LIMIT || '2mb';
+export const URLENCODED_BODY_LIMIT = process.env.URLENCODED_BODY_LIMIT || '2mb';
 export const PORT = process.env.PORT || (3000);
 export const HTTPS_PORT = process.env.HTTPS_PORT || (IS_PRODUCTION ? 443 : 3443);
 export const HOST = process.env.HOST || '0.0.0.0';

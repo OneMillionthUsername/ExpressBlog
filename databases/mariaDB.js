@@ -256,7 +256,7 @@ export async function initializeDatabaseSchema() {
     await conn.query(`
         CREATE TABLE IF NOT EXISTS media (
             id BIGINT AUTO_INCREMENT PRIMARY KEY,
-            postId BIGINT NOT NULL,
+            postId BIGINT NULL,
             original_name VARCHAR(255) NOT NULL,
             file_size BIGINT DEFAULT NULL,
             mime_type VARCHAR(100) DEFAULT NULL,
@@ -272,7 +272,7 @@ export async function initializeDatabaseSchema() {
             INDEX idx_media_original_name(original_name),
 
             FOREIGN KEY (postId) REFERENCES posts(id)
-                ON DELETE CASCADE ON UPDATE CASCADE
+                ON DELETE SET NULL ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 

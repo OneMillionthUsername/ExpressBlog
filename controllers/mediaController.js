@@ -17,7 +17,11 @@ const addMedia = async (mediaData) => {
     throw new Error('Validation failed: ' + error.details.map(d => d.message).join('; '));
   }
   try {
-    const mediaId = await DatabaseService.addMedia(value);
+    const insertResult = await DatabaseService.addMedia(value);
+    const mediaId = insertResult && typeof insertResult.mediaId !== 'undefined' ? insertResult.mediaId : null;
+    if (!mediaId) {
+      throw new Error('Media insert did not return a mediaId');
+    }
         
     // Zurück das vollständige Media-Objekt holen
     const media = await DatabaseService.getMediaById(mediaId);
@@ -55,9 +59,13 @@ const deleteMedia = async (media_id) => {
         
     // Datei vom Dateisystem löschen
     try {
-      await fs.unlink(media.path);
+      // upload_path is a public URL like "/assets/media/...."
+      // Map to filesystem path under ./public
+      const rel = String(media.upload_path || '').replace(/^\/+/, '');
+      const abs = _path.join(process.cwd(), 'public', rel);
+      await fs.unlink(abs);
     } catch (fileError) {
-      console.warn('Could not delete file:', media.path, fileError.message);
+      console.warn('Could not delete file for media:', media_id, fileError.message);
       // Nicht fatal - Datenbank ist bereits bereinigt
     }
         

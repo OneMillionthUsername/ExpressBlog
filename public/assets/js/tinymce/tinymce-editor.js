@@ -288,18 +288,9 @@ async function initializeTinyMCE() {
         '/assets/css/tinymce-content.css',
       ],            
       // Upload-Konfiguration (mit Fallback-Option)
-      images_upload_handler: function(blobInfo, success, failure, progress) {
-        // Fallback-Option: Verwende einfachen Upload bei kleineren Bildern
-        const blob = blobInfo.blob();
-        const sizeInMB = blob.size / 1024 / 1024;
-                
-        if (sizeInMB < 2) {
-          // Kleine Bilder: verwende direkten Upload ohne Komprimierung
-          return simpleImageUploadHandler(blobInfo, success, failure, progress);
-        } else {
-          // Große Bilder: verwende komprimierten Upload
-          return compressAndUploadImage(blobInfo, success, failure, progress);
-        }
+      // TinyMCE 6+ expects: (blobInfo, progress) => Promise<string>
+      images_upload_handler: async (blobInfo, progress) => {
+        return await uploadImageMultipart(blobInfo, progress);
       },
             
       // Erweiterte Einstellungen
@@ -847,141 +838,70 @@ function initializeDragAndDrop() {
 //     alert('Bildergalerie wird in einer zukünftigen Version implementiert.');
 // }
 
-// Bild-Komprimierung und Upload-Funktion
-async function compressAndUploadImage(blobInfo, success, failure, progress) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const blob = blobInfo.blob();
-      const filename = blobInfo.filename() || 'upload.jpg';
-      const originalSize = blob.size / 1024 / 1024; // MB
-            
-      // Bildvalidierung vor Upload
+// Multipart upload handler (server optimizes to WebP and returns `location`)
+async function uploadImageMultipart(blobInfo, progress) {
+  const blob = blobInfo.blob();
+  const filename = blobInfo.filename() || 'upload.jpg';
+
+  // Quick client-side validation for better UX
+  validateImageBeforeUpload(blob);
+
+  if (typeof progress === 'function') progress(10);
+
+  const formData = new FormData();
+  formData.append('image', blob, filename);
+
+  const apiResult = await makeApiRequest('/upload/image', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!apiResult || apiResult.success !== true) {
+    const errMsg = (apiResult && apiResult.error) || 'Upload fehlgeschlagen';
+    throw new Error(errMsg);
+  }
+
+  if (typeof progress === 'function') progress(100);
+
+  const result = apiResult.data;
+  const imageUrl = debugUploadResponse(result, 'Upload');
+  if (!imageUrl) {
+    throw new Error('Server gab keine gültige URL zurück');
+  }
+
+  return imageUrl;
+}
+
+// Backwards-compatible wrapper for older call sites (success/failure callbacks).
+// TinyMCE 6 itself uses the Promise signature; keep this for internal reuse/tests.
+function multipartImageUploadHandler(blobInfo, success, failure, progress) {
+  return new Promise((resolve, reject) => {
+    (async () => {
       try {
-        validateImageBeforeUpload(blob);
-      } catch (validationError) {
-        failure(validationError.message, { remove: true });
-        showNotification(`${validationError.message}`, 'error');
-        reject(validationError);
-        return;
-      }
-            
-      if (progress) {
-        progress(10);
-      }
-            
-      // Intelligente Komprimierung basierend auf Dateigröße
-      let quality = 0.9;
-      let maxWidth = 1920;
-      let maxHeight = 1080;
-            
-      if (originalSize > 10) {
-        quality = 0.6;
-        maxWidth = 1280;
-        maxHeight = 720;
-      } else if (originalSize > 5) {
-        quality = 0.7;
-        maxWidth = 1600;
-        maxHeight = 900;
-      } else if (originalSize > 2) {
-        quality = 0.8;
-      }
-                        
-      // Bild komprimieren
-      const compressedBase64 = await compressImage(blob, quality, maxWidth, maxHeight);
-            
-      if (progress) {
-        progress(30);
-      }
-            
-      // Komprimierungsrate berechnen
-        const compressedSize = compressedBase64.length * 0.75 / 1024 / 1024; // Ungefähre Größe nach Base64-Dekodierung
-        const _compressionRate = ((originalSize - compressedSize) / originalSize * 100);
-                        
-      // Fallback: Wenn das Bild immer noch zu groß ist, aggressiver komprimieren
-      let finalBase64 = compressedBase64;
-      if (compressedSize > 40) { // Mehr als 40MB nach Komprimierung
-        finalBase64 = await compressImage(blob, 0.4, 1024, 768);
-                
-        if (progress) {
-          progress(30);
+        const imageUrl = await uploadImageMultipart(blobInfo, progress);
+        if (typeof success === 'function') {
+          safeSuccess(success, imageUrl, 'Upload');
         }
+        resolve(imageUrl);
+      } catch (error) {
+        console.error('Upload fehlgeschlagen:', error);
+        if (typeof failure === 'function') {
+          failure(error.message, { remove: true });
+        }
+        try { showNotification(`Upload-Fehler: ${error.message}`, 'error'); } catch { /* ignore */ }
+        reject(error);
       }
-            
-      // Zu Server senden mit Retry-Logik - übergebe das ursprüngliche Blob für weitere Komprimierung
-      const uploadResult = await uploadWithRetry(finalBase64, filename, blob, success, failure, progress);
-      resolve(uploadResult); // Upload erfolgreich - gebe die URL weiter
-            
-    } catch (error) {
-      console.error('Fehler beim Hochladen des Bildes:', error);
-      try {
-        await handleUploadError(error, blobInfo, success, failure);
-      } catch (handlerError) {
-        console.error('Fehler in Upload-Error-Handler:', handlerError);
-      }
-      reject(error);
-    }
+    })();
   });
 }
-// Vereinfachter TinyMCE Upload-Handler (verwendet /upload/image ohne Komprimierung)
-  function simpleImageUploadHandler(blobInfo, success, failure, _progress) {
-  return new Promise((resolve, reject) => {
-    try {
-      const blob = blobInfo.blob();
-      const filename = blobInfo.filename() || 'upload.jpg';
-            
-      // Konvertiere Blob zu Base64
-      const reader = new FileReader();
-      reader.onload = function() {
-        const base64Data = reader.result;
-                
-        (async () => {
-          try {
-            const apiResult = await makeApiRequest('/upload/image', {
-              method: 'POST',
-              body: JSON.stringify({ image: base64Data, name: filename }),
-            });
-            if (!apiResult || apiResult.success !== true) {
-              const errMsg = (apiResult && apiResult.error) || 'Upload fehlgeschlagen';
-              const error = new Error(errMsg);
-              failure(error.message, { remove: true });
-              showNotification(`Upload-Fehler: ${errMsg}`, 'error');
-              reject(error);
-              return;
-            }
-            const result = apiResult.data;
-            const imageUrl = debugUploadResponse(result, 'Upload');
-            if (!imageUrl) {
-              const error = new Error('Server gab keine gültige URL zurück');
-              failure(error.message, { remove: true });
-              reject(error);
-              return;
-            }
-            safeSuccess(success, imageUrl, 'Upload');
-            showNotification(`Bild "${result.filename}" hochgeladen! 📸`, 'success');
-            resolve(imageUrl);
-          } catch (error) {
-            console.error('Upload fehlgeschlagen:', error);
-            failure(error.message, { remove: true });
-            showNotification(`Upload-Fehler: ${error.message}`, 'error');
-            reject(error);
-          }
-        })();
-      };
-            
-      reader.onerror = function() {
-        const error = new Error('Fehler beim Lesen der Bilddatei');
-        failure(error.message, { remove: true });
-        reject(error);
-      };
-            
-      reader.readAsDataURL(blob);
-            
-    } catch (error) {
-      console.error('Fehler beim Upload:', error);
-      failure(error.message, { remove: true });
-      reject(error);
-    }
-  });
+
+// Backwards-compatible exports / callers
+async function compressAndUploadImage(blobInfo, success, failure, progress) {
+  return multipartImageUploadHandler(blobInfo, success, failure, progress);
+}
+
+function simpleImageUploadHandler(blobInfo, success, failure, progress) {
+  return multipartImageUploadHandler(blobInfo, success, failure, progress);
 }
 // Sicherer Success-Wrapper für TinyMCE Upload-Handler
 function safeSuccess(success, imageUrl, _context = 'Upload') {
@@ -1115,9 +1035,14 @@ async function uploadWithRetry(base64Data, filename, originalBlob, success, fail
   const maxAttempts = 3;
     
     try {
+      // Legacy base64 upload removed: server expects multipart/form-data now.
+      // Keep function for compatibility with older callers.
+      const blob = originalBlob || base64Data;
+      const formData = new FormData();
+      formData.append('image', blob, filename);
       const apiResult = await makeApiRequest('/upload/image', {
         method: 'POST',
-        body: JSON.stringify({ image: base64Data, name: filename }),
+        body: formData,
       });
         
     if (progress) {
@@ -1164,15 +1089,18 @@ async function uploadWithRetry(base64Data, filename, originalBlob, success, fail
       try {
         // Mit dem ursprünglichen Blob neu komprimieren
         const newCompressed = await compressImage(
-          originalBlob, 
-          settings.quality, 
-          settings.width, 
+          originalBlob,
+          settings.quality,
+          settings.width,
           settings.height,
         );
                 
         // Neue Größe berechnen und loggen
   const _newSize = newCompressed.length * 0.75 / 1024 / 1024;                
-        return await uploadWithRetry(newCompressed, filename, originalBlob, success, failure, progress, attempt + 1);
+        // Re-compress locally and retry as a blob upload. Convert dataURL -> Blob
+        const resp = await fetch(newCompressed);
+        const newBlob = await resp.blob();
+        return await uploadWithRetry(newBlob, filename, originalBlob, success, failure, progress, attempt + 1);
                 
       } catch (compressionError) {
         console.error('Fehler bei der Rekomprimierung:', compressionError);
@@ -1322,7 +1250,7 @@ async function initializeBlogEditor() {
 function debugUploadResponse(result, context = 'Upload') {
     
   // Validiere Response-Struktur
-  const imageUrl = result?.location || result?.url;
+  const imageUrl = result?.location || result?.url || result?.media?.upload_path;
   if (!imageUrl) {
     console.error(`${context}: Keine URL in Response gefunden`);
     return null;

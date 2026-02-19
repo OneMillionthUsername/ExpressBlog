@@ -4,8 +4,13 @@ import { imageUpload } from '../middleware/uploadMiddleware.js';
 import mediaController from '../controllers/mediaController.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import { strictLimiter } from '../utils/limiters.js';
-import { validateMediaFile } from '../middleware/validationMiddleware.js';
+import { validateMediaUpload } from '../middleware/validationMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
+import sharp from 'sharp';
+import path from 'path';
+import fs from 'fs/promises';
+import crypto from 'crypto';
+import { sanitizeFilename } from '../utils/utils.js';
 
 /**
  * Routes for media uploads.
@@ -20,7 +25,7 @@ uploadRouter.post('/image',
   strictLimiter,
   csrfProtection,
   imageUpload.single('image'), 
-  validateMediaFile,
+  validateMediaUpload,
   authenticateToken,
   requireAdmin, 
   async (req, res) => {
@@ -31,40 +36,74 @@ uploadRouter.post('/image',
           error: 'No file uploaded', 
         });
       }
-      // Media-Objekt für Datenbank erstellen
+      const originalName = req.file.originalname;
+      const safeOriginal = sanitizeFilename(originalName || 'upload');
+      const now = new Date();
+      const yyyy = String(now.getFullYear());
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+
+      // Persist under public/assets/media so it is served by express.static
+      const publicRoot = path.join(process.cwd(), 'public');
+      const mediaDir = path.join(publicRoot, 'assets', 'media', yyyy, mm);
+      await fs.mkdir(mediaDir, { recursive: true });
+
+      const baseName = safeOriginal.replace(path.extname(safeOriginal), '') || 'image';
+      const unique = crypto.randomBytes(8).toString('hex');
+      const outFile = `${Date.now()}-${unique}-${baseName}.webp`;
+      const outPath = path.join(mediaDir, outFile);
+
+      // Server-side optimization for LCP: rotate via EXIF, resize, encode to WebP
+      const maxWidth = 1600;
+      const webpQuality = 80;
+
+      const transformer = sharp(req.file.buffer, { failOn: 'none' })
+        .rotate()
+        .resize({ width: maxWidth, withoutEnlargement: true })
+        .webp({ quality: webpQuality });
+
+      const metadata = await transformer.metadata();
+      await transformer.toFile(outPath);
+
+      const publicUrl = `/assets/media/${yyyy}/${mm}/${encodeURIComponent(outFile)}`;
+
+      // Media-Objekt für Datenbank erstellen (postId optional)
+      const parsedPostId = req.body && req.body.postId ? Number(req.body.postId) : null;
+      const postId = Number.isFinite(parsedPostId) && parsedPostId > 0 ? parsedPostId : null;
+
+      const rawAlt = req.body && typeof req.body.alt_text !== 'undefined' ? String(req.body.alt_text) : '';
+      const altText = rawAlt.trim() !== '' ? rawAlt.trim() : undefined;
+
       const mediaData = {
-        postId: req.body.postId || null, // Optional: falls Bild zu Post gehört
-        original_name: req.file.originalname,
+        postId,
+        original_name: originalName,
         file_size: req.file.size,
-        mime_type: req.file.mimetype,
-        uploaded_by: req.user.username, // Aus Auth-Middleware
-        path: req.file.path,
-        alt_text: req.body.alt_text || null,
+        mime_type: 'image/webp',
+        uploaded_by: req.user.username,
+        upload_path: publicUrl,
+        alt_text: altText,
+        used_in_posts: [],
+        created_at: new Date(),
+        // NOTE: width/height not stored in DB schema currently; keep in response only.
       };
-      // Media in Datenbank speichern
+
       const result = await mediaController.addMedia(mediaData);
-      res.json({
+
+      return res.json({
         success: true,
         message: 'Image uploaded successfully',
+        location: publicUrl, // TinyMCE expects `location`
+        url: publicUrl,
         media: {
           id: result.id,
-          filename: req.file.filename,
-          originalName: req.file.originalname,
-          path: req.file.path,
-          size: req.file.size,
-          mimeType: req.file.mimetype,
+          originalName,
+          upload_path: publicUrl,
+          mimeType: 'image/webp',
+          width: metadata && metadata.width ? Number(metadata.width) : null,
+          height: metadata && metadata.height ? Number(metadata.height) : null,
         },
       });
     } catch (error) {
       console.error('Upload error:', error);
-      // Datei löschen bei Fehler
-      if (req.file && req.file.path) {
-        try {
-          await fs.unlink(req.file.path);
-        } catch (unlinkError) {
-          console.error('Error deleting file:', unlinkError);
-        }
-      }
       res.status(500).json({ 
         success: false, 
         error: error.message || 'Upload failed', 

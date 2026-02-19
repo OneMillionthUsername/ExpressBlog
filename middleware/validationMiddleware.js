@@ -67,23 +67,39 @@ function validateSlug(req, res, next) {
   }
   next();
 }
-async function validateMediaFile(file, allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']) {
-  // 1. Dateiname prüfen
+async function validateMediaFile(file, allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']) {
+  if (!file) {
+    return { valid: false, error: 'No file uploaded.' };
+  }
+  // 1) Dateiname prüfen
   if (!file.originalname || sanitizeFilename(file.originalname) !== file.originalname) {
     return { valid: false, error: 'Ungültiger Dateiname.' };
   }
-  // 2. MIME-Type prüfen (laut Buffer, nicht nur laut Upload)
+  // 2) MIME-Type prüfen (laut Buffer, nicht nur laut Upload)
   const type = await fileTypeFromBuffer(file.buffer);
   if (!type || !allowedMimeTypes.includes(type.mime)) {
     return { valid: false, error: 'Nicht erlaubter Dateityp.' };
   }
-  // 3. Größe prüfen (z.B. max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    return { valid: false, error: 'Datei zu groß.' };
-  }
-  // 4. Optional: Virenscan (ClamAV)
-  // ... clamav.js Integration ...
-  return { valid: true };
+  return { valid: true, detected: type };
+}
+
+/**
+ * Express middleware to validate uploaded media file bytes.
+ * Requires multer memoryStorage (so `req.file.buffer` exists).
+ */
+function validateMediaUpload(req, res, next) {
+  (async () => {
+    try {
+      const result = await validateMediaFile(req.file);
+      if (!result.valid) {
+        return res.status(400).json({ success: false, error: result.error || 'Invalid file.' });
+      }
+      req.detectedFileType = result.detected || null;
+      return next();
+    } catch (err) {
+      return res.status(400).json({ success: false, error: err.message || 'Invalid file.' });
+    }
+  })();
 }
 export {
   validateId,
@@ -91,4 +107,5 @@ export {
   validateFields,
   validateSlug,
   validateMediaFile,
+  validateMediaUpload,
 };
