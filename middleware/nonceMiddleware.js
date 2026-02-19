@@ -25,10 +25,15 @@ const nonceMiddleware = (req, res, next) => {
     // Bekannte Hashes für inline Scripts und Styles die erlaubt werden sollen
     const knownScriptHashes = [
       '\'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM=\'',
+      '\'sha256-eZphLMMapYYcivHr9CRAgBde2GklPXmM2gR6PdAajQ0=\'',
     ];
     
     const knownStyleHashes = [
       '\'sha256-+OsIn6RhyCZCUkkvtHxFtP0kU3CGdGeLjDd9Fzqdl3o=\'',
+      '\'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=\'', // empty style
+      '\'sha256-Mia3q7J61OxNlAZtRNAwCYtIrMyDLicwwyzKx08ck64=\'',
+      '\'sha256-oydFwnrbKG8DPlBdKhCupyIlRdDQx1Cmood6fNWEkL8=\'',
+      '\'sha256-BSTKIYoPCaklkJ9YS/ZVYuKW8e+DG8jZJCXznBzHjgg=\'',
     ];
     
     // Ersetze die bestehende CSP mit Nonce-Unterstützung für scripts UND erlaubte Hashes
