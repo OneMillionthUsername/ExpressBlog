@@ -297,6 +297,12 @@ async function initializeTinyMCE() {
       paste_data_images: true,
       automatic_uploads: true,
       images_file_types: 'jpg,jpeg,png,gif,webp',
+      
+      // Bild-Einstellungen für responsive Bilder
+      image_dimensions: false, // Verhindert, dass width/height Attribute gesetzt werden
+      image_class_list: [
+        { title: 'Responsive', value: 'img-responsive' }
+      ],
             
       // Branding entfernen
       branding: false,
@@ -316,6 +322,19 @@ async function initializeTinyMCE() {
             
       // Event-Handler (erweitert mit Dark Mode-Unterstützung)
       setup: function(editor) {
+        // Entferne width/height Attribute von Bildern für responsive Design
+        editor.on('NodeChange', function() {
+          const images = editor.getDoc().querySelectorAll('img');
+          images.forEach(img => {
+            img.removeAttribute('width');
+            img.removeAttribute('height');
+            // Optional: Füge responsive Klasse hinzu
+            if (!img.classList.contains('img-responsive')) {
+              img.classList.add('img-responsive');
+            }
+          });
+        });
+        
         editor.on('init', function() {
           // Apply dark mode if active
           applyTinyMCETheme(editor);
@@ -1258,11 +1277,12 @@ async function initializeBlogEditor() {
 
 // Debug-Funktion für Upload-Response (für Troubleshooting)
 function debugUploadResponse(result, context = 'Upload') {
+  console.log(`${context}: Server response:`, result);
     
   // Validiere Response-Struktur
   const imageUrl = result?.location || result?.url || result?.media?.upload_path;
   if (!imageUrl) {
-    console.error(`${context}: Keine URL in Response gefunden`);
+    console.error(`${context}: Keine URL in Response gefunden`, result);
     return null;
   }
     
@@ -1270,6 +1290,8 @@ function debugUploadResponse(result, context = 'Upload') {
     console.error(`${context}: URL ist kein String:`, imageUrl);
     return null;
   }
+  
+  console.log(`${context}: Returning URL:`, imageUrl);
   return imageUrl;
 }
 // Test-Funktion für Upload-Handler (für Debugging)
