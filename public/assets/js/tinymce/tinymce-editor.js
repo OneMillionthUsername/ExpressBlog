@@ -298,6 +298,10 @@ async function initializeTinyMCE() {
       automatic_uploads: true,
       images_file_types: 'jpg,jpeg,png,gif,webp',
       
+      // Rechtschreibprüfung aktivieren
+      browser_spellcheck: true,
+      gecko_spellcheck: true,
+      
       // Bild-Einstellungen für responsive Bilder
       image_dimensions: false, // Verhindert, dass width/height Attribute gesetzt werden
       image_class_list: [

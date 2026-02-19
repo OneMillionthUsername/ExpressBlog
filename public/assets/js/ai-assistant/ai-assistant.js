@@ -262,6 +262,8 @@ async function improveText() {
       return;
     }
 
+    // NOTE: Only text nodes are extracted - HTML structure, formatting (bold, italic, links),
+    // and images remain completely untouched in the container and will be preserved.
     const originalSegments = textNodes.map(node => protectInvisibleChars(node.nodeValue));
 
     const systemInstruction = `Du bist ein deutschsprachiger Lektor.
@@ -269,20 +271,33 @@ async function improveText() {
 Aufgabe:
 - Verbessere NUR Grammatik, Rechtschreibung und Interpunktion.
 
+WICHTIG - Antwortformat:
+- Deine Antwort MUSS direkt mit [ beginnen und mit ] enden.
+- KEINE Markdown-Code-Bloecke (\\\`\\\`\\\`json), KEINE Erklaerungen, KEIN zusaetzlicher Text.
+- Nur das pure JSON-Array.
+
 Zwingende Regeln:
 - Aendere NICHT die Anzahl und Reihenfolge der Segmente.
 - Behalte ALLE Whitespaces, Zeilenumbrueche und Satzzeichen-Positionen bei.
 - Entferne KEINE unsichtbaren Zeichen (NBSP, ZWSP, ZWJ, ZWNJ, BOM, SHY) und fuege keine neuen hinzu.
 - Keine stilistischen Umschreibungen, keine Strukturverbesserungen, keine inhaltlichen Aenderungen.
-- Gib NUR ein JSON-Array mit exakt gleicher Laenge zurueck.
-- Keine Erklaerungen, kein Markdown, nur JSON.`;
+- Das zurueckgegebene Array muss exakt gleiche Laenge haben wie das Eingabe-Array.
+
+Beispiel:
+Eingabe: ["Das ist ein Tekst.", "Noch ein Satz"]
+Antwort: ["Das ist ein Text.", "Noch ein Satz"]`;
 
     const prompt = JSON.stringify(originalSegments);
+    console.log('Sending to AI - segment count:', originalSegments.length);
     const improvedJson = await callGeminiAPI(prompt, systemInstruction);
+    console.log('AI response length:', improvedJson?.length, 'chars');
     const improvedSegments = parseJsonArray(improvedJson);
 
     if (!Array.isArray(improvedSegments) || improvedSegments.length !== originalSegments.length) {
-      console.warn('AI response did not match expected segment count. Using original text.');
+      console.warn('AI response did not match expected segment count.');
+      console.warn('Expected:', originalSegments.length, 'segments');
+      console.warn('Received:', Array.isArray(improvedSegments) ? improvedSegments.length : 'not an array');
+      showNotification('AI-Antwort konnte nicht verarbeitet werden. Text bleibt unverändert.', 'warning');
       return;
     }
 
@@ -334,6 +349,9 @@ function restoreInvisibleChars(input) {
     .replace(/\[\[BOM\]\]/g, '\uFEFF');
 }
 
+// Collects only text nodes from the DOM tree.
+// This preserves all HTML structure, formatting (bold, italic, links), and images,
+// because only the actual text content is extracted - all tags remain untouched.
 function collectTextNodes(root) {
   const nodes = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -347,10 +365,31 @@ function collectTextNodes(root) {
 
 function parseJsonArray(raw) {
   if (!raw || typeof raw !== 'string') return null;
+  
+  // Strip markdown code blocks if present
+  let cleaned = raw.trim();
+  
+  // Remove backtick-fenced code blocks (e.g., ```json ... ``` or ``` ... ```)
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  }
+  
+  // Decode HTML entities (the AI sometimes returns &quot; etc.)
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = cleaned;
+  cleaned = textarea.value;
+  
+  // Try to find JSON array in the text
+  const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    cleaned = arrayMatch[0];
+  }
+  
   try {
-    return JSON.parse(raw);
+    return JSON.parse(cleaned.trim());
   } catch (err) {
     console.warn('AI response is not valid JSON:', err);
+    console.warn('Raw response:', raw);
     return null;
   }
 }
