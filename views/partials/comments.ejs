@@ -52,7 +52,7 @@
             </div>
             
             <button type="submit" class="btn btn-secondary-theme">
-                <i class="fas fa-paper-plane"></i> Kommentar senden
+                ✉️ Kommentar senden
             </button>
         </form>
     </div>
@@ -66,7 +66,7 @@
                     <div class="comment-item" data-comment-id="<%= comment.id %>">
                         <div class="comment-header">
                             <span class="comment-username">
-                                <i class="fas fa-user-circle"></i> <%= comment.username || 'Anonym' %>
+                                👤 <%= comment.username || 'Anonym' %>
                             </span>
                             <span class="comment-time"><%= new Date(comment.created_at || comment.createdAt || Date.now()).toLocaleDateString('de-DE') %></span>
                             <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
@@ -75,7 +75,7 @@
                                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                     <% } %>
                                     <button type="submit" class="btn btn-sm btn-outline-danger comment-delete-btn" title="Kommentar löschen">
-                                        <i class="fas fa-trash"></i>
+                                        🗑️
                                     </button>
                                 </form>
                             <% } %>

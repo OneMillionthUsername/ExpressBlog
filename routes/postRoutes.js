@@ -44,10 +44,12 @@ async function buildReadPostViewData(req, res, post) {
   }
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   const status = req && req.query ? String(req.query.comment || '') : '';
-  const commentStatus = status === 'ok' || status === 'error' ? status : null;
+  const commentStatus = status === 'ok' || status === 'error' || status === 'deleted' ? status : null;
   const commentMessage = commentStatus === 'ok'
     ? 'Kommentar gespeichert.'
-    : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
+    : commentStatus === 'deleted'
+      ? 'Kommentar gelöscht.'
+      : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
   return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage };
 }
 

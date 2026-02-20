@@ -79,7 +79,7 @@ commentsRouter.post('/:postId/:commentId/delete',
       const postId = Number(req.params.postId);
       const commentId = Number(req.params.commentId);
       await commentsController.deleteCommentRecord(postId, commentId);
-      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${postId}`, 'ok');
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/by-id/${postId}`, 'deleted');
       return res.redirect(303, redirectTarget);
     } catch (error) {
       console.error('Error deleting comment (SSR):', error);
