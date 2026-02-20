@@ -39,7 +39,7 @@
                                 <div class="archive-post-item">
                                     <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
                                     <p class="post-meta"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
-                                    <div class="post-excerpt"><%= post.excerpt || 'Kein Inhalt verfügbar' %></div>
+                                    <% if (post.excerpt) { %><div class="post-excerpt"><%= post.excerpt %></div><% } %>
                                 </div>
                             <% }); %>
                         <% }); %>

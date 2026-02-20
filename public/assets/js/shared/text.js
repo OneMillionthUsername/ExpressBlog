@@ -26,7 +26,10 @@ export function decodeHtmlEntities(input = '') {
 // Strip HTML tags and decode entities to produce a plain-text excerpt.
 // Used server-side via withExcerpts() before rendering templates.
 export function createExcerpt(htmlContent = '', maxLen = 150) {
-  const plain = decodeHtmlEntities(String(htmlContent).replace(/<[^>]*>/g, ''));
+  // Decode entities first so double-escaped content (e.g. &lt;p&gt;text&lt;/p&gt;)
+  // gets its angle brackets restored before the tag-stripper runs.
+  const decoded = decodeHtmlEntities(String(htmlContent));
+  const plain = decoded.replace(/<[^>]*>/g, '');
   const txt = plain.replace(/\s+/g, ' ').trim();
   if (!txt) return '';
   return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;

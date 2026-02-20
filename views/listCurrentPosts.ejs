@@ -35,7 +35,7 @@
                                         <span class="post-link"><%= post.title || 'Untitled' %></span>
                                     <% } %>
                                 </h2>
-                                <div class="post-excerpt"><%= post.excerpt || 'Kein Inhalt verfügbar' %></div>
+                                <% if (post.excerpt) { %><div class="post-excerpt"><%= post.excerpt %></div><% } %>
                                 <div class="post-footer">
                                     <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
                                 </div>
