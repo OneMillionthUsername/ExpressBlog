@@ -1,8 +1,15 @@
-import 'dotenv/config.js';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '..', `.env.${process.env.NODE_ENV || 'development'}`) });
 
 // config/config.js
 
-export const APP_VERSION = '4.0.0';
+export const APP_VERSION = '4.1.0';
 
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 //export const IS_PLESK = Boolean(process.env.PLESK_ENV && process.env.PLESK_ENV === 'true');
