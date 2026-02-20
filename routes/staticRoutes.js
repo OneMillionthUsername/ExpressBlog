@@ -1,6 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities, withExcerpts } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts, createExcerpt } from '../public/assets/js/shared/text.js';
 import categoryController from '../controllers/categoryController.js';
 import postController from '../controllers/postController.js';
 import cardController from '../controllers/cardController.js';
