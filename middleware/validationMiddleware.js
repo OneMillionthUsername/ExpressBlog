@@ -2,7 +2,6 @@ import validationService from '../services/validationService.js';
 import { postSchema } from '../models/postModel.js';
 import { createSlug } from '../utils/utils.js';
 import { fileTypeFromBuffer } from 'file-type';
-import { sanitizeFilename } from '../utils/utils.js';
 
 function validateId(req, res, next) {
   const postId = req.params.postId;
@@ -71,8 +70,8 @@ async function validateMediaFile(file, allowedMimeTypes = ['image/jpeg', 'image/
   if (!file) {
     return { valid: false, error: 'No file uploaded.' };
   }
-  // 1) Dateiname prüfen
-  if (!file.originalname || sanitizeFilename(file.originalname) !== file.originalname) {
+  // 1) Dateiname prüfen – nur auf Vorhandensein prüfen; Bereinigung erfolgt im Upload-Handler
+  if (!file.originalname || !file.originalname.trim()) {
     return { valid: false, error: 'Ungültiger Dateiname.' };
   }
   // 2) MIME-Type prüfen (laut Buffer, nicht nur laut Upload)
