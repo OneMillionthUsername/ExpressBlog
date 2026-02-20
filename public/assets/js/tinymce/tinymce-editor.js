@@ -244,7 +244,14 @@ function registerCoreActions() {
   registerAction('showTinyMceApiKeySetup', showTinyMceApiKeySetup);
   registerAction('add-tag', (e, el) => {
     const tag = el?.getAttribute('data-tag');
-    if (tag) addTag(tag);
+    if (tag) {
+      addTag(tag);
+      // Visual feedback: briefly mark chip as added
+      if (el) {
+        el.classList.add('added');
+        setTimeout(() => el.classList.remove('added'), 1500);
+      }
+    }
   });
   
   // Register template button handlers

@@ -2388,7 +2388,7 @@ blockquote:after {
     text-decoration: none;
     display: inline-block;
     margin: 5px;
-    border: none;
+    border: 1px solid transparent;
     cursor: pointer;
 }
 .btn-outline-primary {
@@ -2410,6 +2410,49 @@ blockquote:after {
     background-color: var(--color-secondary);
     color: #fff;
     box-shadow: 0 5px 15px rgba(162, 127, 77, 0.2);
+}
+.btn-outline-info {
+    color: #17a2b8;
+    border: 1px solid #17a2b8;
+    background: transparent;
+}
+.btn-outline-info:hover {
+    background-color: #17a2b8;
+    color: #fff;
+}
+.btn-outline-success {
+    color: #28a745;
+    border: 1px solid #28a745;
+    background: transparent;
+}
+.btn-outline-success:hover {
+    background-color: #28a745;
+    color: #fff;
+}
+.btn-outline-warning {
+    color: #856404;
+    border: 1px solid #ffc107;
+    background: transparent;
+}
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    color: #212529;
+}
+.btn-outline-danger {
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    background: transparent;
+}
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+/* Compact button size for toolbars and secondary actions */
+.btn-sm {
+    font-size: 0.82rem !important;
+    padding: 5px 10px !important;
+    border-radius: 16px !important;
+    margin: 2px !important;
 }
 .btn-secondary-theme,
 .comment-form .btn-primary {
@@ -2731,7 +2774,7 @@ body[data-theme="dark"] .modal-container,
 .ai-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border: none;
+    border: 1px solid #5a6fd8;
     transition: var(--transition);
 }
 .ai-btn:hover:not(:disabled) {
@@ -2969,6 +3012,27 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 /* Remove extra spacing from groups when inside the toolbar */
 #create-content .editor-toolbar .toolbar-group {
     margin: 0;
+    padding: 4px 8px;
+}
+/* Category select in toolbar — match btn-sm height and style */
+#create-content .editor-toolbar select[name="category_id"] {
+    font-family: var(--font-secondary);
+    font-size: 0.82rem;
+    padding: 5px 10px;
+    height: auto;
+    line-height: 1.4;
+    border: 1px solid var(--color-secondary);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--color-secondary);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: auto;
+}
+#create-content .editor-toolbar select[name="category_id"]:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(255,152,0,0.18);
 }
 /* Space above the editor area */
 #create-content .editor-container { margin-top: 8px; }
@@ -2989,32 +3053,68 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 }
 /* Suggested tags as chips */
 #create-content .suggested-tags {
-    margin-top: 8px;
+    margin-top: 10px;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 7px;
     align-items: center;
 }
 #create-content .suggested-tags .suggested-label {
-    color: #6c757d;
+    font-family: var(--font-primary);
+    font-size: 0.82rem;
     font-weight: 600;
-    margin-right: 4px;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 2px;
+    white-space: nowrap;
 }
 #create-content .tag-suggestion {
-    display: inline-block;
-    padding: 6px 10px;
-    border: 1px solid #e9ecef;
-    border-radius: 16px;
-    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border: 1px solid var(--color-accent);
+    border-radius: 20px;
+    background: transparent;
     cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--color-text);
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    font-family: var(--font-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-accent);
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease,
+                box-shadow 0.2s ease;
+    user-select: none;
+}
+#create-content .tag-suggestion::before {
+    content: '+';
+    font-size: 0.95em;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.75;
 }
 #create-content .tag-suggestion:hover {
-    background: #f8f9fa;
-    border-color: #dfe3e7;
-    transform: translateY(-1px);
+    background: var(--color-accent);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(255, 152, 0, 0.25);
+}
+#create-content .tag-suggestion:hover::before {
+    opacity: 1;
+}
+#create-content .tag-suggestion:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+/* Visual feedback when a tag was just added */
+#create-content .tag-suggestion.added {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: #fff;
+    pointer-events: none;
+}
+#create-content .tag-suggestion.added::before {
+    content: '✓';
 }
 /* Neutralize heavy global transitions for form controls and editor internals on this page */
 #create-content input,
@@ -3953,6 +4053,37 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 
 [data-theme="dark"] .archive-posts-list {
     background: var(--color-bg-alt);
+}
+[data-theme="dark"] #create-content .editor-toolbar {
+    background: var(--color-bg-alt);
+    border-color: rgba(162, 127, 77, 0.2);
+}
+[data-theme="dark"] #create-content .editor-toolbar .toolbar-group {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] #create-content .editor-toolbar select[name="category_id"] {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+    background: transparent;
+}
+[data-theme="dark"] #create-content .suggested-tags .suggested-label {
+    color: var(--color-text-light);
+}
+[data-theme="dark"] #create-content .tag-suggestion {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: transparent;
+}
+[data-theme="dark"] #create-content .tag-suggestion:hover {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    box-shadow: 0 3px 10px rgba(255, 152, 0, 0.2);
+}
+[data-theme="dark"] #create-content .tag-suggestion.added {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: #fff;
 }
 [data-theme="dark"] .archive-year-heading,
 [data-theme="dark"] .archive-years,
