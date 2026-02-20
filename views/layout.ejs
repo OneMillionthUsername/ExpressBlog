@@ -16,10 +16,17 @@
         })();
     </script>
 
-    <%# Google Fonts: preconnect + non-blocking load %>
+    <%# Google Fonts: preconnect + non-blocking load via print/onload trick %>
+    <%# Render-blocking external stylesheets cause a white-flash before first paint, %>
+    <%# which then animates via "* { transition: all 0.3s ease }" → visible flicker. %>
+    <%# Non-blocking load (media="print" → onload → media="all") avoids render-blocking %>
+    <%# so local CSS determines first paint instantly, and dark mode applies correctly. %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" media="all">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet';this.media='all'" media="print">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap">
+    </noscript>
 
     <%# Bootstrap lokal - kein externes CDN %>
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">

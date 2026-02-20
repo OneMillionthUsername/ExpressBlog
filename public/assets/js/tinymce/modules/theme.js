@@ -7,20 +7,13 @@
  */
 export function applyTinyMCETheme(editor) {
   if (!editor || !editor.getBody) return;
-  
   try {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const editorBody = editor.getBody();
-    
-    if (!editorBody) return;
-    
-    if (isDarkMode) {
-      editorBody.style.backgroundColor = '#1e1e1e';
-      editorBody.style.color = '#e0e0e0';
-    } else {
-      editorBody.style.backgroundColor = '#ffffff';
-      editorBody.style.color = '#2c3e50';
-    }
+    const body = editor.getBody();
+    if (!body) return;
+    // Toggle CSS class on the editor body — styles defined in tinymce-content.css.
+    // This avoids injecting inline <style> tags which require CSP nonces.
+    body.classList.toggle('dark-mode', isDarkMode);
   } catch (error) {
     console.error('Error applying TinyMCE theme:', error);
   }

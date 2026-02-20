@@ -22,6 +22,11 @@ export function getTinyMCEConfig() {
     referrer_policy: 'origin',
     cache_suffix: cacheSuffix,
     
+    // Disable premium features and tracking
+    promotion: false,
+    branding: false,
+    license_key: 'gpl',
+    
     // Skin and icons configuration for jsDelivr CDN
     skin_url: 'https://cdn.jsdelivr.net/npm/tinymce@6/skins/ui/oxide',
     content_css: [
@@ -41,8 +46,8 @@ export function getTinyMCEConfig() {
     plugins: [
       'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
       'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-      'insertdatetime', 'media', 'table', 'help', 'wordcount', 'autosave',
-      'save', 'directionality', 'emoticons', 'template',
+      'insertdatetime', 'media', 'table', 'help', 'wordcount',
+      'save', 'directionality', 'emoticons',
       'codesample', 'nonbreaking', 'pagebreak', 'quickbars',
     ],
     
@@ -57,12 +62,6 @@ export function getTinyMCEConfig() {
     quickbars_selection_toolbar: 'bold italic underline | quicklink blockquote',
     quickbars_insert_toolbar: 'image media table hr',
     contextmenu: 'link image table configurepermanentpen',
-    
-    // Autosave
-    autosave_interval: '60s',
-    autosave_prefix: 'blogpost_draft_',
-    autosave_restore_when_empty: true,
-    autosave_retention: '1440m',
     
     // Formatting
     font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 32pt 36pt 48pt 60pt 72pt',
@@ -98,7 +97,6 @@ export function getTinyMCEConfig() {
     
     // Spellcheck
     browser_spellcheck: true,
-    gecko_spellcheck: true,
     
     // Branding
     branding: false,
@@ -116,14 +114,8 @@ export function getTinyMCEConfig() {
     // Lists
     lists_indent_on_tab: true,
     
-    // Templates
-    templates: [
-      {
-        title: 'Zitat mit Autor',
-        description: 'Blockquote mit Autor/Quelle',
-        content: '<blockquote><p>{Hier das Zitat einfügen}</p><footer><cite>{— Autor oder Quelle}</cite></footer></blockquote>'
-      }
-    ],
+    // Note: Templates configuration removed as 'template' plugin is deprecated in TinyMCE 6
+    // For templates, consider using Advanced Template plugin or custom buttons
     
     // Setup function
     setup: function(editor) {
@@ -155,6 +147,16 @@ export function getTinyMCEConfig() {
       });
       editor.on('paste', function() {
         setTimeout(makeImagesResponsive, 100);
+      });
+      
+      // Update preview on content change
+      editor.on('Change', function() {
+        // Dispatch custom event for preview update
+        document.dispatchEvent(new CustomEvent('tinymce:contentChanged'));
+      });
+      editor.on('KeyUp', function() {
+        // Dispatch custom event for preview update
+        document.dispatchEvent(new CustomEvent('tinymce:contentChanged'));
       });
       
       // Apply dark mode theme

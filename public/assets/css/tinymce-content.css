@@ -43,13 +43,18 @@
     font-family: var(--font-secondary);
     font-size: 1.2rem;
     line-height: 1.8;
-    color: var(--color-text);
+    color: #1a1a1a !important;
     background-color: #ffffff;
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+}
+
+/* Force dark text color on all text elements in editor */
+.mce-content-body *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(blockquote):not(code):not(a) {
+    color: #1a1a1a !important;
 }
 
 /* Headings matching blog styles - scoped to editor/preview/read containers */
@@ -135,7 +140,6 @@
 
 /* Blockquote styles matching blog */
 .mce-content-body blockquote, .read-post-content blockquote, #preview-content blockquote, .preview-box blockquote {
-    quotes: "\\201E" "\\201C" "\\201A" "\\2018";
     border-left: 4px solid var(--color-accent);
     padding-left: 20px;
     margin: 20px 0;
@@ -145,30 +149,43 @@
     background: var(--color-bg-alt);
     padding: 15px 20px;
     border-radius: var(--border-radius);
+    position: relative;
+}
+
+.mce-content-body blockquote::before, .read-post-content blockquote::before, #preview-content blockquote::before, .preview-box blockquote::before {
+    content: '\201E';
+    font-size: 3em;
+    position: absolute;
+    left: 10px;
+    top: -10px;
+    color: var(--color-accent);
+    opacity: 0.3;
+}
+
+.mce-content-body blockquote::after, .read-post-content blockquote::after, #preview-content blockquote::after, .preview-box blockquote::after {
+    content: '\201C';
+    font-size: 3em;
+    position: absolute;
+    right: 10px;
+    bottom: -20px;
+    color: var(--color-accent);
+    opacity: 0.3;
 }
 
 .mce-content-body blockquote p, .read-post-content blockquote p, #preview-content blockquote p, .preview-box blockquote p {
     margin-bottom: 0.5em;
+    color: #555;
 }
 
 .mce-content-body blockquote footer, .read-post-content blockquote footer, #preview-content blockquote footer, .preview-box blockquote footer {
     margin-top: 0.8em;
     font-style: normal;
     font-size: 0.9em;
-    color: var(--color-text);
 }
 
 .mce-content-body blockquote cite, .read-post-content blockquote cite, #preview-content blockquote cite, .preview-box blockquote cite {
     font-weight: 600;
     color: var(--color-secondary);
-}
-
-.mce-content-body blockquote:before, .read-post-content blockquote:before, #preview-content blockquote:before, .preview-box blockquote:before {
-    content: open-quote;
-}
-
-.mce-content-body blockquote:after, .read-post-content blockquote:after, #preview-content blockquote:after, .preview-box blockquote:after {
-    content: close-quote;
 }
 
 /* Lists */
@@ -276,8 +293,13 @@
 [data-theme="dark"] .read-post-content,
 [data-theme="dark"] #preview-content,
 [data-theme="dark"] .preview-box {
-    background-color: var(--color-bg);
-    color: var(--color-text);
+    background-color: #1e1e1e;
+    color: #e0e0e0 !important;
+}
+
+/* Force light text color on all elements in dark mode */
+[data-theme="dark"] .mce-content-body *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(a) {
+    color: #e0e0e0 !important;
 }
 
 [data-theme="dark"] .mce-content-body h1, [data-theme="dark"] .read-post-content h1, [data-theme="dark"] #preview-content h1, [data-theme="dark"] .preview-box h1,
@@ -321,6 +343,70 @@
 
 [data-theme="dark"] .mce-content-body td, [data-theme="dark"] .read-post-content td, [data-theme="dark"] #preview-content td, [data-theme="dark"] .preview-box td {
     border-bottom-color: #444;
+}
+
+/* === Dark mode class for TinyMCE editor body (toggled by theme.js via classList) ===
+   These rules live here because tinymce-content.css is loaded as content_css inside
+   the TinyMCE iframe, where [data-theme="dark"] on <html> is not available. */
+.mce-content-body.dark-mode {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+}
+.mce-content-body.dark-mode p,
+.mce-content-body.dark-mode li,
+.mce-content-body.dark-mode td,
+.mce-content-body.dark-mode th,
+.mce-content-body.dark-mode span,
+.mce-content-body.dark-mode div,
+.mce-content-body.dark-mode em,
+.mce-content-body.dark-mode strong,
+.mce-content-body.dark-mode u,
+.mce-content-body.dark-mode s,
+.mce-content-body.dark-mode small,
+.mce-content-body.dark-mode caption {
+    color: #e0e0e0 !important;
+}
+.mce-content-body.dark-mode h1,
+.mce-content-body.dark-mode h2,
+.mce-content-body.dark-mode h3,
+.mce-content-body.dark-mode h4,
+.mce-content-body.dark-mode h5,
+.mce-content-body.dark-mode h6 {
+    color: #ffffff !important;
+}
+.mce-content-body.dark-mode blockquote p { color: #c0c0c0 !important; }
+.mce-content-body.dark-mode a { color: #ffa726 !important; }
+.mce-content-body.dark-mode code,
+.mce-content-body.dark-mode pre {
+    background: #2d2d2d !important;
+    color: #f8f8f2 !important;
+}
+
+/* === Preview section: tag pills and divider ===
+   Used in preview.js updatePreview() — class names replace inline style attributes. */
+.preview-tags {
+    margin: 15px 0;
+    font-size: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.preview-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+.preview-divider {
+    margin: 20px 0;
+    border: none;
+    border-top: 2px solid var(--color-secondary);
+    opacity: 0.3;
 }
 
 /* Dark Mode Drop Cap */

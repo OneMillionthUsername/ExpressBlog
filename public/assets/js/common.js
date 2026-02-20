@@ -119,17 +119,40 @@ export function initializeCommonDelegation() {
   _commonDelegationInitialized = true;
 
   // Handle data-action attributes
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', async (e) => {
     const actionEl = e.target.closest('[data-action]');
-    const action = actionEl ? actionEl.getAttribute('data-action') : '';
+    if (!actionEl) return;
+    
+    const action = actionEl.getAttribute('data-action');
+    if (!action) return;
 
+    // Built-in actions
     if (action === 'close-modal') {
       const modal = e.target.closest('.modal, .modal-overlay');
       if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
-    } else if (action === 'back') {
+      return;
+    }
+    
+    if (action === 'back') {
       window.history.back();
-    } else if (action === 'reload') {
+      return;
+    }
+    
+    if (action === 'reload') {
       window.location.reload();
+      return;
+    }
+
+    // Try to get action from registry
+    try {
+      const { getAction } = await import('./actions/actionRegistry.js');
+      const actionFn = getAction(action);
+      if (typeof actionFn === 'function') {
+        e.preventDefault();
+        await actionFn(e, actionEl);
+      }
+    } catch (err) {
+      console.warn(`Action '${action}' not found or failed:`, err);
     }
   });
 
@@ -211,59 +234,98 @@ export function getPostIdFromPath() {
   return match ? match[1] : null;
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
-export async function checkAndPrefillEditPostForm() {
+// Accepts an optional already-initialized editor instance to skip the tinymce.get() retry
+export async function checkAndPrefillEditPostForm(editorInstance) {
+  console.log('[checkAndPrefillEditPostForm] Starting...');
+  
   // Prefer server-injected post object (SSR) from JSON script to avoid an extra API call.
   let post = null;
   try {
     const el = document.getElementById('server-post');
-    if (el && el.textContent) post = JSON.parse(el.textContent);
-  } catch { /* ignore */ }
+    if (el && el.textContent) {
+      post = JSON.parse(el.textContent);
+      console.log('[checkAndPrefillEditPostForm] Loaded from server-post:', post?.id);
+    }
+  } catch (err) {
+    console.warn('[checkAndPrefillEditPostForm] Failed to parse server-post:', err);
+  }
+  
   if (!post) {
     const postId = getPostIdFromPath();
-    if (!postId) return;
+    console.log('[checkAndPrefillEditPostForm] Post ID from path:', postId);
+    
+    if (!postId) {
+      console.log('[checkAndPrefillEditPostForm] No post ID found, exiting');
+      return;
+    }
 
-    // Postdaten laden via zentraler API-Wrapper
+    console.log('[checkAndPrefillEditPostForm] Fetching post from API:', postId);
     let apiResult = await apiRequest(`/api/blogpost/by-id/${postId}`, { method: 'GET' });
     if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
+      console.log('[checkAndPrefillEditPostForm] Trying fallback endpoint');
       apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
     }
-    if (!apiResult || apiResult.success !== true) return;
+    if (!apiResult || apiResult.success !== true) {
+      console.error('[checkAndPrefillEditPostForm] Failed to load post:', apiResult);
+      return;
+    }
     post = apiResult.data;
+    console.log('[checkAndPrefillEditPostForm] Loaded post from API:', post?.id, post?.title);
   }
 
   if (!post || !post.id) {
     showNotification('Blogpost nicht gefunden', 'error');
     return;
   }
-  // Prüfen ob TinyMCE geladen ist
-  if (typeof tinymce === 'undefined' || !tinymce.get('content')) {
-    console.warn('TinyMCE Editor not initialized yet, waiting for it to be ready...');
-  }
 
   const mainTitle = document.getElementById('main-title');
   const description = document.getElementById('description');
-  if (mainTitle) {
-    mainTitle.textContent = 'Blogpost bearbeiten';
-  }
-  if (description) {
-    hideElement('description');
+  if (mainTitle) mainTitle.textContent = 'Blogpost bearbeiten';
+  if (description) hideElement('description');
+
+  function doPrefill(editor) {
+    const titleEl = document.getElementById('title');
+    const tagsEl = document.getElementById('tags');
+    if (!titleEl || !tagsEl) {
+      console.error('[prefill] title or tags element not found in DOM');
+      return;
+    }
+    console.log('[prefill] Setting title:', post.title);
+    titleEl.value = post.title || '';
+    
+    console.log('[prefill] Setting content, length:', post.content?.length || 0);
+    editor.setContent(post.content || '');
+    
+    const tagsValue = Array.isArray(post.tags)
+      ? post.tags.join(', ')
+      : (typeof post.tags === 'string' ? post.tags : '');
+    console.log('[prefill] Setting tags:', tagsValue);
+    tagsEl.value = tagsValue;
+    
+    try {
+      document.dispatchEvent(new CustomEvent('tinymce:contentChanged'));
+    } catch (e) { /* ignore */ }
+    
+    console.log('[prefill] Done!');
   }
 
-  // Prefill mit Retry, falls TinyMCE noch nicht bereit ist
-  function prefillWhenReady(retries = 10) {
-    const editor = tinymce.get('content');
+  // If caller already has the editor instance, use it directly
+  if (editorInstance && typeof editorInstance.setContent === 'function') {
+    console.log('[checkAndPrefillEditPostForm] Using passed editor instance');
+    doPrefill(editorInstance);
+    return;
+  }
+
+  // Otherwise retry until tinymce.get('content') is available
+  function prefillWhenReady(retries = 15) {
+    const editor = (typeof tinymce !== 'undefined') ? tinymce.get('content') : null;
+    console.log('[prefillWhenReady] Attempt', 16 - retries, '- Editor ready:', !!editor);
     if (editor) {
-      document.getElementById('title').value = post.title;
-      editor.setContent(post.content);
-      const tagsValue = Array.isArray(post.tags)
-        ? post.tags.join(',')
-        : (typeof post.tags === 'string' ? post.tags : '');
-      document.getElementById('tags').value = tagsValue;
+      doPrefill(editor);
     } else if (retries > 0) {
-      setTimeout(() => prefillWhenReady(retries - 1), 200); // 200ms warten, dann nochmal versuchen
+      setTimeout(() => prefillWhenReady(retries - 1), 300);
     } else {
-      console.warn('TinyMCE Editor nicht bereit, Prefill abgebrochen.');
-      return;
+      console.error('[prefillWhenReady] Editor not ready after all retries, aborting.');
     }
   }
   prefillWhenReady();

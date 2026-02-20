@@ -7,6 +7,7 @@ import { getTinyMCEConfig } from './modules/config.js';
 import { saveDraft, saveDraftSilent, clearDraft, loadDraft } from './modules/draft.js';
 import { updatePreview, togglePreview } from './modules/preview.js';
 import { updateTinyMCETheme } from './modules/theme.js';
+import { insertTemplate } from './modules/templates.js';
 
 // Import utilities
 import { showNotification, checkAndPrefillEditPostForm, getPostIdFromPath } from '../common.js';
@@ -74,48 +75,31 @@ async function initializeTinyMCE() {
       throw new Error('Editor could not be initialized');
     }
 
-    // Wait for editor to be ready
-    editor.on('init', function() {
-      showNotification('Editor bereit!', 'success');
+    // tinymce.init() resolves only after the editor is fully ready (init event already fired).
+    // Run post-init logic directly here rather than re-registering an init listener.
+    showNotification('Editor bereit!', 'success');
 
-      // Check if editing existing post
-      const isEditMode = (() => {
-        try {
-          if (document.getElementById('server-post')) return true;
-          const path = window.location && window.location.pathname ? window.location.pathname : '';
-          if (/\/createPost\//.test(path)) return true;
-          const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
-          if (postId) return true;
-          const search = window.location && window.location.search ? window.location.search : '';
-          const params = new URLSearchParams(search);
-          return !!params.get('post');
-        } catch {
-          return false;
-        }
-      })();
-
-      // Restore draft if creating new post
-      if (!isEditMode) {
-        const draft = loadDraft();
-        if (draft && confirm('Es wurde ein gespeicherter Entwurf gefunden. Möchten Sie ihn wiederherstellen?')) {
-          try {
-            if (draft.title) document.getElementById('title').value = draft.title;
-            if (draft.tags) document.getElementById('tags').value = draft.tags;
-            if (draft.content) editor.setContent(draft.content);
-            showNotification('Entwurf wiederhergestellt 📄', 'success');
-            updatePreview();
-          } catch (error) {
-            console.error('Error restoring draft:', error);
-            showNotification('Fehler beim Wiederherstellen des Entwurfs', 'error');
-          }
-        }
+    // Check if editing an existing post
+    const isEditMode = (() => {
+      try {
+        if (document.getElementById('server-post')) return true;
+        const path = window.location && window.location.pathname ? window.location.pathname : '';
+        if (/\/createPost\//.test(path)) return true;
+        const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
+        if (postId) return true;
+        const search = window.location && window.location.search ? window.location.search : '';
+        const params = new URLSearchParams(search);
+        return !!params.get('post');
+      } catch {
+        return false;
       }
+    })();
 
-      // Prefill form if editing
-      if (typeof checkAndPrefillEditPostForm === 'function') {
-        checkAndPrefillEditPostForm();
-      }
-    });
+    if (isEditMode) {
+      // Prefill editor content from server-post JSON or API
+      await checkAndPrefillEditPostForm(editor);
+    }
+    // New post: editor starts empty. Use the "Entwurf laden" button to restore a draft manually.
 
   } catch (error) {
     console.error('Error initializing TinyMCE:', error);
@@ -150,6 +134,33 @@ function addTag(tagName) {
     tagsInput.value = currentTags.join(', ');
     updatePreview();
     saveDraftSilent();
+  }
+}
+
+/**
+ * Restore the last saved draft into the editor (called manually via button)
+ */
+function restoreDraftToEditor() {
+  const draft = loadDraft();
+  if (!draft) {
+    showNotification('Kein gespeicherter Entwurf gefunden', 'info');
+    return;
+  }
+  try {
+    if (draft.title) document.getElementById('title').value = draft.title;
+    if (draft.tags) document.getElementById('tags').value = draft.tags;
+    const editor = tinymce.get('content');
+    if (editor && draft.content) {
+      editor.setContent(draft.content);
+    } else if (draft.content) {
+      const el = document.getElementById('content');
+      if (el) el.value = draft.content;
+    }
+    updatePreview();
+    showNotification('Entwurf geladen 📄', 'success');
+  } catch (error) {
+    console.error('Error restoring draft:', error);
+    showNotification('Fehler beim Laden des Entwurfs', 'error');
   }
 }
 
@@ -225,11 +236,27 @@ async function initializeBlogEditor() {
  */
 function registerCoreActions() {
   registerAction('saveDraft', saveDraft);
+  registerAction('loadDraft', restoreDraftToEditor);
   registerAction('clearDraft', clearDraft);
   registerAction('updatePreview', updatePreview);
   registerAction('togglePreview', togglePreview);
   registerAction('resetForm', resetForm);
   registerAction('showTinyMceApiKeySetup', showTinyMceApiKeySetup);
+  registerAction('add-tag', (e, el) => {
+    const tag = el?.getAttribute('data-tag');
+    if (tag) addTag(tag);
+  });
+  
+  // Register template button handlers
+  const templateButtons = document.querySelectorAll('[data-template]');
+  templateButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const templateName = this.getAttribute('data-template');
+      if (templateName) {
+        insertTemplate(templateName);
+      }
+    });
+  });
 }
 
 // Export main functions
@@ -243,4 +270,5 @@ export {
   addTag,
   resetForm,
   updateTinyMCETheme,
+  insertTemplate,
 };

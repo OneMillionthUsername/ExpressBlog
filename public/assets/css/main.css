@@ -60,7 +60,9 @@
     --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
     --shadow-medium: 0 4px 15px rgba(0,0,0,0.15);
     --shadow-heavy: 0 8px 25px rgba(0,0,0,0.2);
-    --transition: all 0.3s ease;
+    /* Only animate layout/visual properties - never color/background-color,
+       to prevent theme-switch animations on page load (FOUC/flicker) */
+    --transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
     
     /* Breakpoints */
     --breakpoint-mobile: 768px;
@@ -69,9 +71,6 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: var(--font-secondary);
-    color: var(--color-text);
-    transition: var(--transition);
 }
 html {
     font-size: 16px;
@@ -437,7 +436,7 @@ body {
     border-left: 3px solid var(--color-secondary);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .post-card:hover,
 .blog-post-card:hover,
@@ -874,7 +873,7 @@ body {
     border-radius: 12px;
     padding: 1.5rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-left: 3px solid var(--color-secondary);
 }
 .most-read-item:hover {
@@ -898,7 +897,7 @@ body {
     justify-content: center;
     font-family: var(--font-primary);
     flex-shrink: 0;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 .most-read-item:hover .rank {
     background: var(--color-accent);
@@ -1708,7 +1707,7 @@ blockquote:after {
         width: 100%;
         border-radius: 2px;
         background: var(--color-secondary); /* Gleiche Farbe wie andere Links */
-        transition: all 0.3s ease;
+        transition: transform 0.3s ease;
     }
 
     .navbar-container .hamburger-lines .line1 {
@@ -1760,7 +1759,7 @@ blockquote:after {
         display: block;
         padding: 0.6rem 0.8rem;
         border-radius: 4px;
-        transition: all 0.3s ease;
+        transition: color 0.3s ease, background 0.3s ease, padding-left 0.3s ease;
     }
 
     .navbar .menu-items li a:hover {
@@ -2842,7 +2841,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     font-family: var(--font-secondary);
     font-size: 1.1rem;
     line-height: 1.7;
-    color: var(--color-text);
+    color: #2c3e50;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
     transition: var(--transition);
     position: relative;
@@ -2870,7 +2869,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 .preview-box h5,
 .preview-box h6 {
     font-family: var(--font-primary);
-    color: var(--color-text);
+    color: #2c3e50;
     font-weight: 600;
     margin: 25px 0 15px 0;
     line-height: 1.3;
@@ -2887,7 +2886,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 #admin-required.content-area,
 #create-content.content-area { text-align: left; }
 
-/* Hide preview initially - toggle with button */
+/* Hide preview initially - shown by adding .preview-visible class via JS */
 .form-preview {
     display: none;
     margin-top: 1.5rem;
@@ -2895,6 +2894,35 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     background: #fafafa;
     border-radius: var(--border-radius);
     border: 1px solid #e9ecef;
+}
+
+.form-preview.preview-visible {
+    display: block;
+}
+
+/* Dark mode support for form preview */
+[data-theme="dark"] .form-preview {
+    background: #1e1e1e;
+    border-color: #333;
+}
+
+[data-theme="dark"] .preview-box {
+    background: #121212;
+    color: #e0e0e0;
+    border-color: #333;
+}
+
+[data-theme="dark"] .preview-box h1,
+[data-theme="dark"] .preview-box h2,
+[data-theme="dark"] .preview-box h3,
+[data-theme="dark"] .preview-box h4,
+[data-theme="dark"] .preview-box h5,
+[data-theme="dark"] .preview-box h6 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .preview-title {
+    color: #e0e0e0;
 }
 
 .preview-title {
@@ -3222,7 +3250,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     background: #ecf0f1;
     border-radius: 1px;
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .menu-bar::before {
     content: '';
@@ -3233,7 +3261,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     border-radius: 50%;
     top: 50%;
     transform: translateY(-50%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 4px rgba(52, 152, 219, 0.4);
 }
 .menu-bar.bar-1::before {
@@ -3752,7 +3780,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     font-family: var(--font-primary, 'Playfair Display'), serif;
     font-size: 0.8rem;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     backdrop-filter: blur(5px);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -3775,7 +3803,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     z-index: 9999;
     font-size: 1.3rem;
     box-shadow: 0 4px 15px rgba(162, 127, 77, 0.4);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     width: 60px;
     height: 60px;
     display: flex;

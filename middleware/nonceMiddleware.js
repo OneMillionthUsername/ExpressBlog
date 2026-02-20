@@ -26,6 +26,7 @@ const nonceMiddleware = (req, res, next) => {
     const knownScriptHashes = [
       '\'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM=\'',
       '\'sha256-eZphLMMapYYcivHr9CRAgBde2GklPXmM2gR6PdAajQ0=\'',
+      '\'sha256-C0d30RW4IMywlXnx8PG0b2EsyhP36uq8ljzfmRP2RC0=\'', // TinyMCE inline script
     ];
     
     const knownStyleHashes = [

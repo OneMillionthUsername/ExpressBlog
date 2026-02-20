@@ -8,7 +8,7 @@
 %>
 <div class="container-fluid header-section">
     <div class="d-flex justify-content-center align-items-center mb-2">
-        <h1 id="main-title" class="mt-5 main-title mb-0">Neuen Blogpost erstellen</h1>
+        <h1 id="main-title" class="mt-5 main-title mb-0"><%= (typeof post !== 'undefined' && post) ? 'Blogpost bearbeiten' : 'Neuen Blogpost erstellen' %></h1>
     </div>
     <h2 class="mt-3 sub-title">Teile deine Gedanken über Philosophie, Wissenschaft und AI</h2>
     <hr class="header-divider">
@@ -48,7 +48,7 @@
                                 Titel
                             </label>
                             <input type="text" class="form-control create-input" id="title" name="title" 
-                                   placeholder="Gib deinem Blogpost einen aussagekräftigen Titel..." required>
+                                   value="<%= (typeof post !== 'undefined' && post && post.title) ? post.title : '' %>" placeholder="Gib deinem Blogpost einen aussagekräftigen Titel..." required>
                             <small class="form-text text-muted">Ein guter Titel macht neugierig und fasst das Thema zusammen</small>
                         </div>
                         <div class="form-group">
@@ -97,6 +97,9 @@
                                     <button type="button" id="save-draft-btn" class="btn btn-sm btn-outline-info" data-action="saveDraft">
                                         💾 Entwurf Speichern
                                     </button>
+                                    <button type="button" id="load-draft-btn" class="btn btn-sm btn-outline-secondary" data-action="loadDraft">
+                                        📂 Entwurf Laden
+                                    </button>
                                     <button type="button" id="clear-draft-btn" class="btn btn-sm btn-outline-warning" data-action="clearDraft">
                                         🗑️ Löschen
                                     </button>
@@ -124,7 +127,7 @@
                                 Tags
                             </label>
                             <input type="text" class="form-control create-input" id="tags" name="tags" 
-                                   placeholder="z.B. Philosophie, Wissenschaft, Künstliche Intelligenz">
+                                   value="<%= (typeof post !== 'undefined' && post && post.tags) ? (Array.isArray(post.tags) ? post.tags.join(', ') : post.tags) : '' %>" placeholder="z.B. Philosophie, Wissenschaft, Künstliche Intelligenz">
                             <small class="form-text text-muted">Trenne mehrere Tags mit Kommas.</small>
                             <div class="suggested-tags">
                                 <span class="suggested-label">Beliebte Tags:</span>
