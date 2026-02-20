@@ -1850,6 +1850,28 @@ blockquote:after {
         padding-left: 1rem;
     }
 
+    /* Logout-Button im Hamburger-Menü wie normale Links stylen */
+    .navbar .nav-link-button {
+        color: var(--color-secondary);
+        font-size: 1.2rem;
+        font-weight: 500;
+        font-family: var(--font-secondary);
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.6rem 0.8rem;
+        border-radius: 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: color 0.3s ease, background 0.3s ease, padding-left 0.3s ease;
+    }
+    .navbar .nav-link-button:hover {
+        color: var(--color-accent);
+        background: rgba(255, 255, 255, 0.15);
+        padding-left: 1rem;
+    }
+
     /* Home-Link im Hamburger-Menü anzeigen */
     .navbar .menu-items .menu-home {
         display: list-item;
@@ -1874,6 +1896,34 @@ blockquote:after {
     .navbar-container input[type="checkbox"]:checked ~ .logo {
         display: none;
     }
+}
+
+/* ========================================
+   POST NAVIGATION AND ADMIN CONTROLS
+   ======================================== */
+.navigation {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 0;
+}
+.navigation .btn,
+.navigation a.btn {
+    margin: 4px !important;
+}
+#admin-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+#admin-controls form,
+#admin-controls a.btn {
+    margin: 4px !important;
 }
 
 /* Tablets and Mobile Devices */
@@ -1907,6 +1957,11 @@ blockquote:after {
         padding: 0.5rem 0.6rem;
     }
 
+    .navbar .nav-link-button {
+        font-size: 1.1rem;
+        padding: 0.5rem 0.6rem;
+    }
+
     /* Mobile-specific adjustments for menu items */
     .navbar .menu-items li {
         font-size: 1.2rem;
@@ -1920,26 +1975,26 @@ blockquote:after {
     }
 
     .title {
-        font-size: 2.5rem;
+        font-size: 1.8rem;
         line-height: 1.2;
         margin: 0.5rem 0;
     }
 
     .description {
-        font-size: 1.2rem;
+        font-size: 1rem;
         margin-top: 0.8rem;
     }
 
     .main-title {
-        font-size: 2.2rem;
+        font-size: 1.7rem;
         margin: 1rem 0;
-        letter-spacing: 2px;
-        width: 80vw;
-        padding: 0 20px;
+        letter-spacing: 1px;
+        width: 90vw;
+        padding: 0 15px;
     }
 
     .sub-title {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
 
     .header-section {
@@ -1965,18 +2020,51 @@ blockquote:after {
 
     /* BUTTONS AND NAVIGATION */
     .btn {
-        padding: 10px 20px;
-        font-size: 1rem;
-        margin: 5px;
+        padding: 8px 16px;
+        font-size: 0.95rem;
+        margin: 4px;
     }
 
     .btn.btn-lg {
-        padding: 12px 24px;
-        font-size: 1.1rem;
+        padding: 10px 18px;
+        font-size: 1rem;
     }
 
     .btn-icon {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+    }
+
+    /* POST NAVIGATION - prevent overflow on mobile */
+    .navigation {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 15px;
+        gap: 10px;
+    }
+    .navigation .btn,
+    .navigation a.btn {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto !important;
+        text-align: center;
+    }
+    #admin-controls {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        padding: 0;
+    }
+    #admin-controls form,
+    #admin-controls a.btn {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto !important;
+    }
+    #admin-controls form .admin-delete-btn,
+    #admin-controls a.btn {
+        width: 100%;
+        display: block;
+        text-align: center;
     }
 
     .nav-link {
@@ -2270,33 +2358,45 @@ blockquote:after {
 
 /* Small Mobile Devices */
 @media (max-width: 480px) {
+    html {
+        font-size: 15px;
+    }
+
     /* HEADER AND TITLES */
     .title {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
     .main-title {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
         width: 95vw;
+        letter-spacing: 0.5px;
     }
 
     .description {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
     .featured-post-title {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
     .post-link-style {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
     }
     .post-title {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
+    }
+    .sub-title {
+        font-size: 1.1rem;
     }
 
     /* BUTTONS AND LAYOUT */
     .btn {
-        padding: 8px 16px;
+        padding: 7px 14px;
         font-size: 0.9rem;
+    }
+    .btn.btn-lg {
+        padding: 9px 16px;
+        font-size: 0.95rem;
     }
 
     .container {
@@ -2481,12 +2581,16 @@ blockquote:after {
 }
 .btn-outline-warning {
     color: #856404;
-    border: 1px solid #ffc107;
+    border: 2px solid #ffc107;
     background: transparent;
+    transition: var(--transition);
+    font-weight: 600;
 }
 .btn-outline-warning:hover {
     background-color: #ffc107;
     color: #212529;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
 }
 .btn-outline-danger {
     color: #dc3545;
@@ -3978,12 +4082,26 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 .admin-delete-btn {
     background: #e74c3c;
     color: white;
-    border: none;
+    border: 2px solid #e74c3c;
     padding: 10px 20px;
     border-radius: 25px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     margin-top: 10px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.admin-delete-btn:hover {
+    background: #c0392b;
+    border-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+}
+.admin-delete-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 /* Responsive: ensure modals fit small screens and keep compact spacing */
@@ -4583,4 +4701,24 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 [data-theme="dark"] .discovery-card-new {
     border-color: var(--color-secondary);
     box-shadow: 0 4px 15px rgba(162, 127, 77, 0.2);
+}
+
+/* Dark Mode: Post Navigation Buttons */
+[data-theme="dark"] .btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+}
+[data-theme="dark"] .btn-outline-warning:hover {
+    background-color: #ffc107;
+    color: #121212;
+    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.35);
+}
+[data-theme="dark"] .admin-delete-btn {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+[data-theme="dark"] .admin-delete-btn:hover {
+    background: #a93226;
+    border-color: #a93226;
+    box-shadow: 0 6px 16px rgba(192, 57, 43, 0.5);
 }
