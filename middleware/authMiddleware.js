@@ -24,7 +24,7 @@ import logger from '../utils/logger.js';
 export function authenticateToken(req, res, next) {
   const token = authService.extractTokenFromRequest(req);
 
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress;
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket?.remoteAddress;
 
   if (!token) {
     logger.auth('[AUTH] 401 No token provided', null, ip);
@@ -67,7 +67,7 @@ export function authenticateToken(req, res, next) {
  */
 export function requireAdmin(req, res, next) {
   if (!req.user || req.user.isAdmin !== true) {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress;
+    const ip = req.headers?.['x-forwarded-for']?.split(',')[0].trim() || req.headers?.['x-real-ip'] || req.ip || req.socket?.remoteAddress;
     logger.auth(
       `[AUTH] 403 Admin access denied for user "${req.user?.username ?? 'unauthenticated'}" on ${req.method} ${req.originalUrl}`,
       req.user?.username ?? null,

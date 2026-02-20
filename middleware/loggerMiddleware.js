@@ -20,7 +20,7 @@ export function loggerMiddleware(req, res, next) {
     firstForwardedIp ||
     req.headers['x-real-ip'] ||
     req.ip ||
-    req.socket.remoteAddress;
+    req.socket?.remoteAddress;
   // Request loggen
   // logger.debug(`Incoming request: ${req.method} ${req.url}`, {
   //   ip,
