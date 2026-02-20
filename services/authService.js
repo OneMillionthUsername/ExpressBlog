@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import { Admin } from '../models/adminModel.js';
 import { JWT_SECRET, NODE_ENV } from '../config/config.js';
 import bcrypt from 'bcrypt';
+import logger from '../utils/logger.js';
 
 
 export const AUTH_COOKIE_NAME = 'authToken';
@@ -60,7 +61,7 @@ export function generateToken(user) {
     });
     return token;
   } catch (error) {
-    console.error('Token generation failed:', error);
+    logger.error('Token generation failed:', error);
     throw new Error('Token generation failed');
   }
 }
@@ -74,8 +75,12 @@ export function verifyToken(token) {
     });
     return decoded;
   } catch (error) {
-    console.error('JWT verification failed');
-    console.error('Error details:', error.message);
+    // TokenExpiredError is expected (user session timeout) – log as warn, not error
+    if (error.name === 'TokenExpiredError') {
+      logger.auth('[AUTH] JWT expired', null, null);
+    } else {
+      logger.auth(`[AUTH] JWT verification failed: ${error.message}`, null, null);
+    }
     return null;
   }
 }
@@ -107,7 +112,7 @@ export async function hashPassword(password) {
     const saltRounds = 12; // Höhere Sicherheit
     return await bcrypt.hash(password, saltRounds);
   } catch (error) {
-    console.error('Fehler beim Passwort-Hashing:', error);
+    logger.error('Fehler beim Passwort-Hashing:', error);
     throw error;
   }
 }

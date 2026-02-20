@@ -39,7 +39,7 @@ function loadSSLCertificates() {
       key: readFileSync(join(sslPath, 'privkey.pem')),
       cert: readFileSync(join(sslPath, 'cert.pem')),
     };
-    logger.info('SSL certificates loaded successfully (Development)');
+    logger.info('SSL certificates loaded successfully');
     return httpsOptions;
   } catch (_error) {
     logger.warn('SSL certificates not found - HTTP only available');
@@ -126,20 +126,21 @@ function startHTTPServer() {
     httpServer.requestTimeout = 20000;      // 20 seconds for request timeout
         
     httpServer.listen(config.PORT, config.HOST, () => {
-      //const protocol = config.IS_PRODUCTION ? 'https' : 'http';
-      const protocol = 'http';
-      const domain = config.DOMAIN || 'localhost';
-      // const displayPort = (protocol === 'http' && config.PORT === 80) || 
-      //                         (protocol === 'https' && config.PORT === 443) ? '' : `:${config.PORT}`;
-      const displayPort = 3000; // Always show port for clarity, even if standard
-
       logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
-      logger.info(`Server erreichbar unter: ${protocol}://${domain}${displayPort}`);
-      logger.info(`Health Check: ${protocol}://${domain}${displayPort}/health`);
-            
+
       if (config.IS_PRODUCTION) {
+        // In production Nginx terminates SSL and proxies to this port.
+        // Show the public-facing HTTPS URL, not the internal Node port.
+        const publicUrl = `https://${config.DOMAIN || 'speculumx.at'}`;
+        logger.info(`Server erreichbar unter: ${publicUrl}`);
+        logger.info(`Health Check: ${publicUrl}/health`);
         logger.info('Production mode: SSL handled by Nginx, HTTP server on port 3000 started');
       } else {
+        // In development Nginx (Docker) listens on port 80 and proxies to this port.
+        const devUrl = 'http://localhost';
+        logger.info(`Server erreichbar unter: ${devUrl}`);
+        logger.info(`Health Check: ${devUrl}/health`);
+        logger.info(`Internal Node port: http://localhost:${config.PORT} (direkt, ohne Nginx)`);
         logger.info('Development mode: HTTP server started');
       }
             
@@ -241,5 +242,24 @@ function gracefulShutdown(signal) {
     process.exit(1);
   }, 10000);
 }
+// ===========================================
+// GLOBAL ERROR SAFETY NET
+// ===========================================
+process.on('uncaughtException', (err) => {
+  logger.error('FATAL: uncaughtException – process will exit', {
+    message: err.message,
+    stack: err.stack,
+  });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('FATAL: unhandledRejection – process will exit', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+  process.exit(1);
+});
+
 // Start the server
 startServer();

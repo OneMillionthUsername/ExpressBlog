@@ -1,6 +1,7 @@
 // middleware/uploadMiddleware.js
 import multer from 'multer';
 import path from 'path';
+import logger from '../utils/logger.js';
 
 /**
  * Best practice for image optimization pipelines:
@@ -22,6 +23,11 @@ const imageFilter = (_req, file, cb) => {
   if (allowedMimes.includes(file.mimetype) && allowedExtensions.includes(fileExt)) {
     cb(null, true);
   } else {
+    logger.warn('[SECURITY] Upload rejected – invalid file type', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      extension: fileExt,
+    });
     cb(new Error('Only image files are allowed (jpg, jpeg, png, webp)'), false);
   }
 };

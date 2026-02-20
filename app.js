@@ -134,13 +134,11 @@ app.use((req, res, next) => {
 // MIDDLEWARE
 // ===========================================
 // Helmet core + secure CSP (no 'unsafe-inline')
-// Configure trust proxy based on environment: in production behind proxies (e.g., Plesk),
-// trust the first proxy to correctly determine protocol and IP; in development, keep loopback only.
-if (config.IS_PRODUCTION) {
-  app.set('trust proxy', 1);
-} else {
-  app.set('trust proxy', 'loopback'); // Trust only loopback (localhost)
-}
+// Trust the first proxy hop in all environments.
+// In production: Nginx on the VPS forwards X-Forwarded-For / X-Real-IP.
+// In development: Nginx runs as a Docker service (non-loopback IP), so 'loopback' would
+// prevent Express from reading X-Forwarded-For. Using 1 trusts exactly one proxy hop.
+app.set('trust proxy', 1);
 // Helmet für SEO-Files überspringen
 app.use((req, res, next) => {
   if (req.path === '/robots.txt' || req.path === '/sitemap.xml') {
