@@ -90,10 +90,17 @@ export function showNotification(message, type = 'info', durationMs = 3000) {
   note.textContent = String(message || '');
   container.appendChild(note);
 
+  // Fade in
   setTimeout(() => note.classList.add('show'), 10);
+
+  // Fade out, then remove
+  const total = Math.max(800, Number(durationMs) || 0);
+  setTimeout(() => {
+    if (note && note.parentElement) note.classList.remove('show');
+  }, total - 300);
   setTimeout(() => {
     if (note && note.parentElement) note.parentElement.removeChild(note);
-  }, Math.max(500, Number(durationMs) || 0));
+  }, total);
 }
 
 export function formatContent(content = '') {

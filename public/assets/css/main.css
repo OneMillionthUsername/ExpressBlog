@@ -1090,13 +1090,39 @@ body {
         transform: translateX(100%);
     }
 }
-.notification {
+/* Notification container — fixed overlay, stacks individual notifications */
+.notification-container {
     position: fixed;
-    top: 60px;
+    top: 80px;
     right: 20px;
-    z-index: 9999;
-    min-width: 300px;
-    animation: slideIn 0.3s ease-out;
+    z-index: 10000;
+    max-width: 420px;
+    width: calc(100vw - 40px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.notification {
+    position: relative;
+    pointer-events: auto;
+    padding: 14px 20px;
+    border-radius: 8px;
+    min-width: 260px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+    font-family: var(--font-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .notification.alert-success {
@@ -1115,6 +1141,12 @@ body {
     background-color: #d1ecf1;
     color: #0c5460;
     border: 1px solid #bee5eb;
+}
+
+.notification.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
 }
 
 @keyframes slideIn {
@@ -1410,8 +1442,8 @@ blockquote:after {
     border-radius: 12px;
     box-shadow: var(--shadow-light);
     margin-bottom: 30px;
-    border-left: 5px solid var(--color-accent);
     border: 2px solid #e8f4f8;
+    border-left: 5px solid var(--color-accent); /* must come after border shorthand */
 }
 /* TinyMCE Container - Spezielle Styles für Create Page */
 .create-form-section .tox .tox-editor-container {
@@ -1593,8 +1625,8 @@ blockquote:after {
     border-radius: 12px;
     box-shadow: var(--shadow-light);
     overflow: hidden;
-    border-left: 5px solid var(--color-accent);
     border: 2px solid #e8f4f8;
+    border-left: 5px solid var(--color-accent); /* must come after border shorthand */
 }
 .archive-year-header {
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
@@ -2179,8 +2211,8 @@ blockquote:after {
         height: 46px;
     }
     
-    .menu-option[data-tooltip]::after {
-        display: none;
+    .menu-option[data-tooltip]::before {
+        display: none; /* tooltip pseudo-element is ::before, not ::after */
     }
 
     /* Previous overwhelming new post enhancements removed for cleaner interface */
@@ -2472,9 +2504,9 @@ blockquote:after {
     animation: fadeIn 0.25s ease-out;
 }
 /* (Removed special overlay subclasses – not needed) */
-.modal-overlay.hidden {
-    animation: fadeOut 0.3s ease-out;
-}
+/* .modal-overlay.hidden: display:none from .hidden class is applied immediately,
+   so CSS animations cannot play on this state. Use a JS-driven closing class
+   (e.g. .is-closing) with a transitionend callback if a fade-out is required. */
 /* Modal Container */
 .modal-container {
     --modal-bg: #ffffff;
@@ -2495,9 +2527,7 @@ blockquote:after {
     font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 }
 
-/* Dark theme variant for outer app; apply .dark-theme or body.dark */
-body.dark .modal-container,
-.dark-theme .modal-container,
+/* Dark theme variant */
 body[data-theme="dark"] .modal-container,
 [data-theme="dark"] .modal-container {
     --modal-bg: #11161d;
@@ -2538,8 +2568,7 @@ body[data-theme="dark"] .modal-container,
     scrollbar-width: thin;
     scrollbar-color: rgba(0,0,0,0.3) transparent;
 }
-body.dark .modal-container pre.modal-content,
-.dark-theme .modal-container pre.modal-content {
+[data-theme="dark"] .modal-container pre.modal-content {
     background: rgba(255,255,255,0.05);
 }
 /* Modal Header */
@@ -2583,10 +2612,10 @@ body.dark .modal-container pre.modal-content,
 .modal-button.secondary {
     --btn-bg: #596273;
 }
-body.dark .modal-button.secondary, .dark-theme .modal-button.secondary {
+[data-theme="dark"] .modal-button.secondary {
     --btn-bg: #3d4653;
 }
-body.dark .modal-button, .dark-theme .modal-button {
+[data-theme="dark"] .modal-button {
     --btn-bg: #2f76e2;
 }
 
@@ -2594,7 +2623,7 @@ body.dark .modal-button, .dark-theme .modal-button {
 .modal-container pre.modal-content::-webkit-scrollbar { height: 8px; }
 .modal-container pre.modal-content::-webkit-scrollbar-track { background: transparent; }
 .modal-container pre.modal-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 4px; }
-body.dark .modal-container pre.modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); }
+[data-theme="dark"] .modal-container pre.modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); }
 
 /* TinyMCE Editor: Belasse Standard-Light-Theme auch in Dark Mode (kein Override nötig). */
 /* Falls andere globale Dark-Regeln greifen würden, kann man hier gezielt zurücksetzen: */
@@ -2783,7 +2812,6 @@ body.dark .modal-container pre.modal-content::-webkit-scrollbar-thumb { backgrou
 .confirm-modal .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
 
 /* Dark theme variant — uses same variables as other modals */
-body.dark .confirm-modal .modal-content,
 body[data-theme="dark"] .confirm-modal .modal-content,
 [data-theme="dark"] .confirm-modal .modal-content {
     background: var(--modal-bg, #11161d);
@@ -2925,20 +2953,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     color: #e0e0e0;
 }
 
-.preview-title {
-    font-family: var(--font-primary);
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.preview-icon {
-    font-size: 1.5rem;
-}
+/* (duplicate .preview-title/.preview-icon removed — canonical definition is above) */
 
 /* Toolbar container styling and responsive wrapping */
 #create-content .editor-toolbar {
@@ -4045,6 +4060,11 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     background: rgba(26,42,96,0.85) !important;
     color: #7bb6ff !important;
     border-color: #3565b3 !important;
+}
+[data-theme="dark"] .notification.alert-warning {
+    background: rgba(60,45,10,0.88) !important;
+    color: #ffd54f !important;
+    border-color: #a07800 !important;
 }
 
 /* Comment feedback container + alerts (reusing same palette) */

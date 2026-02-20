@@ -183,10 +183,18 @@ async function initializeMostReadPostsPage() {
 // Read Post Page - vereinfacht
 async function initializeReadPostPage() {
   try {
-    // Admin-Controls hinzufügen (vereinfacht)
-    setTimeout(async () => {
-      // SSR-only: admin controls are rendered server-side.
-    }, 500); // Kurze Verzögerung für DOM-Updates
+    // Auto-dismiss server-rendered comment status alerts (from ?comment=ok/error redirect)
+    const commentAlert = document.querySelector('#comments-section .alert');
+    if (commentAlert) {
+      setTimeout(() => {
+        commentAlert.style.transition = 'opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease';
+        commentAlert.style.opacity = '0';
+        commentAlert.style.transform = 'translateX(30px)';
+        setTimeout(() => {
+          if (commentAlert.parentElement) commentAlert.remove();
+        }, 400);
+      }, 4000);
+    }
 
   } catch (error) {
     console.error('Read Post Page Initialisierung fehlgeschlagen:', error);
