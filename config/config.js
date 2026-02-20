@@ -2,6 +2,8 @@ import 'dotenv/config.js';
 
 // config/config.js
 
+export const APP_VERSION = '4.0.0';
+
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 //export const IS_PLESK = Boolean(process.env.PLESK_ENV && process.env.PLESK_ENV === 'true');
 export const IS_PRODUCTION = NODE_ENV === 'production';

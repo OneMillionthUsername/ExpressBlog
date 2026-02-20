@@ -2,6 +2,7 @@
 
 > Modern full-stack blog platform built with Node.js, Express 5, and MariaDB
 
+[![Version](https://img.shields.io/badge/version-4.0.0-orange)](config/config.js)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
 
@@ -63,7 +64,7 @@ A professional blogging platform featuring AI-powered content assistance, compre
 - **Templating:** EJS (Server-Side Rendering)
 - **JavaScript:** ES Modules (Vanilla JS, no framework)
 - **Editor:** TinyMCE 6.x
-- **Styling:** Bootstrap 5 + Custom CSS (Light/Dark themes)
+- **Styling:** Bootstrap 4 + Custom CSS (Light/Dark themes)
 - **Sanitization:** DOMPurify (client-side XSS prevention)
 
 ### AI & Third-Party Services
@@ -487,6 +488,29 @@ sequenceDiagram
     Controller->>View: Render
     View->>Client: HTML Response
 ```
+
+---
+
+## Changelog
+
+### v4.0.0 (2026-02-20)
+
+#### UI / UX
+- **Notifications** – Unified styling with smooth fade-in/out transitions; comment alerts auto-dismiss after 4 seconds
+- **Buttons** – Fixed broken `btn-outline-*` borders (root cause: `border: none` override); added all missing outline variants
+- **Toolbar** – Compact `btn-sm` toolbar in post editor; category `<select>` styled to match button row
+- **Tag suggestions** – Styled as amber outline chips with `+` prefix and `✓` feedback on selection
+- **Error pages** – `error.ejs` and `notFound.ejs` fully reworked: proper alert cards, emoji icons (Font Awesome replaced), working buttons
+- **Empty categories** – Category pages with no posts now show "Keine Posts vorhanden" immediately instead of a stuck spinner
+
+#### Comments
+- Delete button icon fixed (Font Awesome not loaded → replaced with 🗑️ emoji)
+- Submit button icon replaced (✉️ emoji)
+- Username icon replaced (👤 emoji)
+- Delete success message corrected: now shows **"Kommentar gelöscht."** instead of "Kommentar gespeichert."
+
+### v3.0.0
+- Initial full-featured release with AI integration, Docker setup, CI/CD pipeline
 
 ---
 
