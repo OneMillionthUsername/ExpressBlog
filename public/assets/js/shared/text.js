@@ -23,6 +23,20 @@ export function decodeHtmlEntities(input = '') {
   return s.replace(/(&amp;|&lt;|&gt;|&quot;|&#39;|&apos;|&nbsp;|&ndash;|&mdash;|&hellip;|&lsquo;|&rsquo;|&ldquo;|&rdquo;|&laquo;|&raquo;|&auml;|&ouml;|&uuml;|&Auml;|&Ouml;|&Uuml;|&szlig;)/g, m => map[m] || m);
 }
 
+// Strip HTML tags and decode entities to produce a plain-text excerpt.
+// Used server-side via withExcerpts() before rendering templates.
+export function createExcerpt(htmlContent = '', maxLen = 150) {
+  const plain = decodeHtmlEntities(String(htmlContent).replace(/<[^>]*>/g, ''));
+  const txt = plain.replace(/\s+/g, ' ').trim();
+  if (!txt) return '';
+  return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+}
+
+// Pre-compute plain-text excerpts on a posts array before passing to templates.
+export const withExcerpts = (posts) => Array.isArray(posts)
+  ? posts.map(p => ({ ...p, excerpt: createExcerpt(p.content) }))
+  : posts;
+
 // Minimal HTML escaper for text content
 export function escapeHtml(str = '') {
   const s = String(str);

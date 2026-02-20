@@ -29,6 +29,7 @@ import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js
 import { validateId, validateSlug } from '../middleware/validationMiddleware.js';
 import logger from '../utils/logger.js';
 import { escapeAllStrings } from '../utils/utils.js';
+import { withExcerpts } from '../public/assets/js/shared/text.js';
 
 const postRouter = express.Router();
 
@@ -146,7 +147,7 @@ async function getAllHandler(req, res) {
       logger.debug(`[${requestId}] GET /all: Sending successful response with ETag`);
       // Render HTML for human-driven browser navigation (SSR-only)
       try {
-        const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+        const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
         const isAdmin = getSsrAdmin(res);
         const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
@@ -155,14 +156,14 @@ async function getAllHandler(req, res) {
         const isAdmin = getSsrAdmin(res);
         const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
         applySsrNoCache(res, { varyCookie: true });
-        return res.render('listCurrentPosts', { posts: response, isAdmin, csrfToken });
+        return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken });
       }
     } catch (err) {
       logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
       // Fallback: render without ETag
       const isAdmin = getSsrAdmin(res);
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: response, isAdmin });
+      return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin });
     }
     
   } catch (error) {
@@ -192,13 +193,13 @@ postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: safeResponse, isAdmin, csrfToken, category: categorySlug });
+      return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, category: categorySlug });
     }
     catch (_e) {
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: response, isAdmin, csrfToken, category: categorySlug });
+      return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, category: categorySlug });
     }
   } catch (error) {
     console.error('Error loading blog posts by category', error);
@@ -260,7 +261,7 @@ postRouter.get('/most-read', globalLimiter, csrfProtection, async (req, res) => 
 
     // Render HTML view for browsers (SSR-only)
     try {
-      const safePosts = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+      const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
@@ -269,7 +270,7 @@ postRouter.get('/most-read', globalLimiter, csrfProtection, async (req, res) => 
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('mostReadPosts', { posts: response, isAdmin, csrfToken });
+      return res.render('mostReadPosts', { posts: withExcerpts(response), isAdmin, csrfToken });
     }
   } catch (error) {
     console.error('Error loading most read blog posts', error);
@@ -426,12 +427,12 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: safeResponse, archiveYears, isAdmin, csrfToken });
+      return res.render('archiv', { posts: withExcerpts(safeResponse), archiveYears, isAdmin, csrfToken });
     } catch (_e) {
       const isAdmin = getSsrAdmin(res);
       const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
       applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: response, archiveYears: archiveYears || [], isAdmin, csrfToken });
+      return res.render('archiv', { posts: withExcerpts(response), archiveYears: archiveYears || [], isAdmin, csrfToken });
     }
   } catch (error) {
     console.error('Error loading archived blog posts', error);

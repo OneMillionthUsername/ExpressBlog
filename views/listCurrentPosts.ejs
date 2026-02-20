@@ -19,14 +19,6 @@
                     </div>
                 </div>
                 <div id="blogPostsList">
-                    <% 
-                        const stripHtml = (s) => String(s || '').replace(/<[^>]*>/g, '');
-                        const createExcerpt = (htmlContent, maxLen = 150) => {
-                            const txt = stripHtml(htmlContent).trim();
-                            if (!txt) return '';
-                            return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
-                        };
-                    %>
                     <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
                         <% posts.forEach(function(post) { %>
                             <article class="blog-post-card">
@@ -43,7 +35,7 @@
                                         <span class="post-link"><%= post.title || 'Untitled' %></span>
                                     <% } %>
                                 </h2>
-                                <div class="post-excerpt"><%= createExcerpt(post.content, 150) || 'Kein Inhalt verfügbar' %></div>
+                                <div class="post-excerpt"><%= post.excerpt || 'Kein Inhalt verfügbar' %></div>
                                 <div class="post-footer">
                                     <span class="post-views"><%= post.views || 0 %> Aufrufe</span>
                                 </div>

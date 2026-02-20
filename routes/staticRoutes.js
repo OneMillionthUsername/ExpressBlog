@@ -1,6 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts } from '../public/assets/js/shared/text.js';
 import categoryController from '../controllers/categoryController.js';
 import postController from '../controllers/postController.js';
 import cardController from '../controllers/cardController.js';
@@ -26,18 +26,12 @@ staticRouter.get('/', csrfProtection, async (req, res) => {
   try {
     // Fetch featured posts (first 3) to avoid hardcoding slugs in the template
     const posts = await postController.getAllPosts();
-    // Strip HTML tags from content server-side when building excerpts to avoid
-    // rendering raw HTML in templates. Use a simple regex here; content is
-    // trusted from DB but may contain editor HTML.
-    const stripTags = (s = '') => String(s).replace(/<[^>]*>/g, '');
     const categories = await categoryController.getAllCategories();
-    const featuredPosts = (posts || []).slice(0, 3).map(p => {
-      const plain = stripTags(p.content || '');
-      const decodedPlain = decodeHtmlEntities(plain);
-      const excerpt = decodedPlain.length > 150 ? decodedPlain.substring(0, 150) + '...' : decodedPlain;
-      const decodedTitle = decodeHtmlEntities(p.title || '');
-      return { title: decodedTitle, slug: p.slug, excerpt };
-    });
+    const featuredPosts = (posts || []).slice(0, 3).map(p => ({
+      title: decodeHtmlEntities(p.title || ''),
+      slug: p.slug,
+      excerpt: createExcerpt(p.content, 150),
+    }));
 
     const popularPosts = (posts || [])
       .slice()
@@ -156,7 +150,7 @@ staticRouter.get('/posts', csrfProtection, async (req, res) => {
     const posts = await postController.getCurrentPosts();
     // Pass posts (controller returns JS objects); views will handle formatting
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { posts, isAdmin, csrfToken });
+    return res.render('listCurrentPosts', { posts: withExcerpts(posts), isAdmin, csrfToken });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     // Fallback: render without posts so client-side JS can still attempt to fetch
