@@ -1038,8 +1038,58 @@ body {
 }
 
 .alert-heading {
-    padding: 20px;
+    font-family: var(--font-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: inherit;
 }
+
+/* Error / Not-found page */
+.error-page-container {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.error-alert {
+    border-radius: 14px;
+    padding: 36px 32px;
+    text-align: center;
+    box-shadow: var(--shadow-medium);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.error-icon {
+    font-size: 3.5rem;
+    margin-bottom: 14px;
+    line-height: 1;
+}
+
+.error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* filled primary button — theme amber */
+.btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+    border: 1px solid var(--color-accent);
+}
+.btn-primary:hover {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: #fff;
+    box-shadow: 0 5px 15px rgba(162, 127, 77, 0.25);
+}
+
+/* Bootstrap 5 gap utilities polyfill for flex containers */
+.gap-1 { gap: 0.25rem !important; }
+.gap-2 { gap: 0.5rem !important; }
+.gap-3 { gap: 1rem !important; }
 
 /* Hide the blogpost loading spinner when server-rendered content is present.
    The template already sets inline style="display:none;" when `post` is provided,
@@ -4244,6 +4294,21 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 
 [data-theme="dark"] .tag:hover {
     background-color: var(--color-secondary);
+}
+
+/* Dark mode: error / not-found pages */
+[data-theme="dark"] .error-alert.alert-danger {
+    background: linear-gradient(135deg, rgba(78,28,28,0.7) 0%, rgba(60,20,20,0.85) 100%) !important;
+    border-color: #b84242 !important;
+    color: #ffcdd2 !important;
+}
+[data-theme="dark"] .error-alert.alert-warning {
+    background: linear-gradient(135deg, rgba(60,45,10,0.7) 0%, rgba(50,38,5,0.85) 100%) !important;
+    border-color: #a07800 !important;
+    color: #fff3cd !important;
+}
+[data-theme="dark"] .error-alert hr {
+    border-color: rgba(255,255,255,0.15);
 }
 
 /* Dark Mode Admin Modal Styles */
