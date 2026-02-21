@@ -113,6 +113,7 @@ logger.debug('Test debug message - if you see this, debug logging works!');
 logger.debug(`__dirname: ${__dirname}`);
 logger.debug(`publicDirectoryPath: ${publicDirectoryPath}`);
 
+// 1. Express App erstellen
 const app = express();
 
 // Expose a stable asset version to templates for cache-busting client imports
@@ -221,7 +222,12 @@ app.use(compression());
 
 // 2. Cookie Parser
 app.use(cookieParser());
-// Inject admin flag for all SSR templates based on auth cookie/header
+// 3. Inject admin flag for all SSR templates based on auth cookie/header
+// This allows us to conditionally render admin-only UI elements in EJS templates
+// without requiring client-side JS to check auth status. 
+// The actual API routes will still enforce auth separately.
+// Note: This middleware runs before any route handlers, so res.locals.isAdmin is available in all templates.
+// It handels ALL requests, but only sets a simple boolean flag based on the presence and validity of the auth token.
 app.use((req, res, next) => {
   let isAdmin = false;
   try {
@@ -234,17 +240,19 @@ app.use((req, res, next) => {
   res.locals.isAdmin = isAdmin;
   next();
 });
-// 3. Request-Parsing (with security limits)
+// 4. Request-Parsing (with security limits)
 app.use(express.json({ limit: config.JSON_BODY_LIMIT }));  // Configurable limit for DoS protection
+// Middleware zum Parsen von URL-encoded Formulardaten (z.B. von HTML-Formularen die über POST gesendet werden). Die Optionen begrenzen die Größe und Anzahl der Felder, um Missbrauch zu verhindern.
+// Optionen begrenzen Größe und Anzahl der Felder zum Schutz vor Missbrauch/DoS
 app.use(express.urlencoded({
-  extended: true,
-  inflate: true,
-  limit: config.URLENCODED_BODY_LIMIT,  // Configurable limit for DoS protection
-  parameterLimit: 1000,  // Reduced from 5000
-  type: 'application/x-www-form-urlencoded',
+  extended: true, // Erlaubt verschachtelte Objekte/Arrays (empfohlen: true)
+  inflate: false, // Erlaubt das Entpacken komprimierter Requests (z.B. gzip) Normale Browser senden keine komprimierten Formulardaten, daher auf false setzen, um Missbrauch zu verhindern
+  limit: config.URLENCODED_BODY_LIMIT, // Maximale Größe des Bodys (z.B. '100kb')
+  parameterLimit: 1000, // Maximale Anzahl an Feldern (Schutz vor Abuse)
+  type: 'application/x-www-form-urlencoded', // Akzeptierter Content-Type
 }));
 
-// 4. Input-Sanitization (NACH json parsing!)
+// 5. Input-Sanitization (NACH json parsing!)
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
 
 // 6. Rate Limiting (statische Dateien ausgenommen)
@@ -273,7 +281,7 @@ app.set('views', join(__dirname, 'views'));
 import ejsLayouts from 'express-ejs-layouts';
 app.use(ejsLayouts);
 app.set('layout', 'layout');
-// 7.5. Explizite MIME-Type-Behandlung für kritische statische Dateien
+// 8. Explizite MIME-Type-Behandlung für kritische statische Dateien
 app.get(/\.(js|css)$/, (req, res, next) => {
   if (req.url.endsWith('.js')) {
     res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
@@ -286,7 +294,7 @@ app.get(/\.(js|css)$/, (req, res, next) => {
   next();
 });
 
-// 8. Statische Dateien (brauchen keine DB)
+// 9. Statische Dateien (brauchen keine DB)
 app.use('/', legalRoutes);
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
@@ -321,17 +329,18 @@ app.use(express.static(publicDirectoryPath, {
   },
 }));
 
-// 9. Health Check (funktioniert IMMER, auch ohne DB)
+// 10. Health Check (funktioniert IMMER, auch ohne DB)
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: appStatus.isDatabaseReady() ? 'ready' : 'initializing',
     app: appStatus.isReady() ? 'ready' : 'initializing',
+    
   });
 });
 
-// Datenbank initialisieren
+// 11. Datenbank initialisieren
 async function initializeApp() {
   try {
     logger.info('Initializing database...');
@@ -382,7 +391,7 @@ async function initializeApp() {
   }
 }
 
-// DB-abhängige Routes (werden erst nach DB-Init registriert)
+// 12. DB-abhängige Routes (werden erst nach DB-Init registriert)
 function registerDatabaseRoutes() {
   logger.info('Registering database-dependent routes...');
   
@@ -408,7 +417,7 @@ function registerDatabaseRoutes() {
   logger.info('Database-dependent routes registered');
 }
 
-// App initialisieren (asynchron)
+// 13. App initialisieren (asynchron)
 initializeApp().then(() => {
   logger.info('App initialization completed successfully');
 }).catch((error) => {
@@ -461,7 +470,6 @@ app.get('/debug/headers', authenticateToken, requireAdmin, (req, res) => {
     return res.status(500).json({ error: 'diagnostic endpoint error', message: String(err) });
   }
 });
-
 
 // Nur sichere, öffentliche APIs exportieren
 export function isAppReady() {

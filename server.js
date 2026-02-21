@@ -124,6 +124,8 @@ function startHTTPServer() {
     httpServer.headersTimeout = 31000;      // 31 seconds for headers timeout
     httpServer.keepAliveTimeout = 5000;     // 5 seconds keep-alive
     httpServer.requestTimeout = 20000;      // 20 seconds for request timeout
+    httpServer.maxHeadersCount = 1000;     // Limit max headers to prevent abuse
+    httpServer.maxConnections = 1000;      // Limit max concurrent connections
         
     httpServer.listen(config.PORT, config.HOST, () => {
       logger.info(`HTTP Server running on ${config.HOST}:${config.PORT}`);
@@ -134,13 +136,12 @@ function startHTTPServer() {
         const publicUrl = `https://${config.DOMAIN || 'speculumx.at'}`;
         logger.info(`Server erreichbar unter: ${publicUrl}`);
         logger.info(`Health Check: ${publicUrl}/health`);
-        logger.info('Production mode: SSL handled by Nginx, HTTP server on port 3000 started');
+        logger.info('Production mode: SSL handled by Nginx');
       } else {
         // In development Nginx (Docker) listens on port 80 and proxies to this port.
         const devUrl = 'http://localhost';
         logger.info(`Server erreichbar unter: ${devUrl}`);
         logger.info(`Health Check: ${devUrl}/health`);
-        logger.info(`Internal Node port: http://localhost:${config.PORT} (direkt, ohne Nginx)`);
         logger.info('Development mode: HTTP server started');
       }
             
@@ -188,7 +189,11 @@ function logServerConfiguration() {
   logger.info(`Domain: ${config.DOMAIN || 'not set'}`);
 }// Graceful shutdown setup
 function setupGracefulShutdown() {
-  ['SIGTERM', 'SIGINT', 'SIGUSR2'].forEach(signal => {
+  [
+    'SIGTERM', // Beenden-Signal vom Betriebssystem (z.B. durch systemctl stop oder kill)
+    'SIGINT',  // Interrupt-Signal (z.B. Strg+C im Terminal)
+    'SIGUSR2', // Benutzerdefiniertes Signal, oft von Tools wie nodemon zum Neustarten verwendet
+  ].forEach(signal => {
     process.on(signal, () => gracefulShutdown(signal));
   });
 }

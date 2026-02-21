@@ -20,7 +20,7 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
     const { prompt, systemInstruction, model } = req.body || {};
     
     if (!prompt || typeof prompt !== 'string' || prompt.length > 20000) {
-      return res.status(400).json({ success: false, error: 'Invalid prompt' });
+      return res.status(400).json({ success: false, error: 'Invalid prompt. Must be a string with max 20000 characters.' });
     }
 
     const safeModel = (typeof model === 'string' && model.trim().length > 0)
@@ -29,6 +29,11 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
 
     const generativeModel = genAI.getGenerativeModel({ 
       model: safeModel,
+      // Wenn systemInstruction gesetzt ist (truthy), wird das Objekt { systemInstruction } 
+      // in das Objekt für getGenerativeModel eingebaut. Ist systemInstruction nicht gesetzt, 
+      // passiert nichts.
+      // Kurz: Das ist eine elegante Möglichkeit, ein optionales Feld
+      // nur dann zu übergeben, wenn es vorhanden ist. 
       ...(systemInstruction && { systemInstruction }),
     });
 

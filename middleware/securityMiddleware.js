@@ -73,7 +73,7 @@ export function createEscapeInputMiddleware(whitelist = []) {
       }
     } catch (err) {
       // don't crash the server because of bad input
-      console.error('Error in escapeInputMiddleware:', err);
+      logger.error('Error in escapeInputMiddleware: %s', err.message);
       return next();
     }
     next();

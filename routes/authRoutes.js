@@ -75,6 +75,11 @@ authRouter.post('/login',
       const TIMEOUT_SENTINEL = Symbol('AUTH_TIMEOUT');
       let timer;
       const authPromise = adminController.authenticateAdmin(req.body.username, req.body.password);
+      // Mit Promise.race werden zwei Promises "ins Rennen geschickt":
+      // die Authentifizierung und ein Timeout. 
+      // Wenn die Authentifizierung zu lange dauert, 
+      // gewinnt das Timeout und wir können entsprechend reagieren,
+      // ohne dass eine unhandled rejection entsteht.
       const raced = await Promise.race([
         authPromise,
         new Promise((resolve) => { timer = setTimeout(() => resolve(TIMEOUT_SENTINEL), AUTH_TIMEOUT_MS); }),
