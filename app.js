@@ -169,7 +169,7 @@ app.use(helmet({
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
         'https://cdn.tiny.cloud',
-        '\'unsafe-inline\'',
+        //'\'unsafe-inline\'',
         // Note: 'unsafe-inline' avoided when possible
       ],
       fontSrc: [
@@ -200,7 +200,7 @@ app.use(helmet({
       baseUri: ['\'self\''],
       formAction: ['\'self\'', 'https://formspree.io'],
       frameAncestors: ['\'none\''],
-      scriptSrcAttr: ['\'unsafe-hashes\''], // Allow event handlers like onclick="..." but only if they have a valid hash (requires proper hashing of inline scripts)
+      scriptSrcAttr: ['\'unsafe-hashes\'' /*'\'unsafe-inline\''*/], // Allow inline event handlers but require a hash or nonce
     },
   },
   hsts: config.IS_PRODUCTION ? {
