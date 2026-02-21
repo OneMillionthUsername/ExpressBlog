@@ -23,7 +23,7 @@ function readServerConfig() {
     // Fallback: read from data-* attributes if provided
     const ds = el.dataset || {};
     const isAdmin = String(ds.isAdmin || '').toLowerCase() === 'true';
-    const assetVersion = String(ds.assetVersion || '');
+    const assetVersion = String(ds.assetVersion || ''); // version string for cache busting, er im Blog-System verwendet wird, um statische Dateien (wie CSS, JS, Bilder) zu versionieren. Wenn sich eine Datei ändert, kann die Version erhöht werden, damit Browser die aktualisierte Datei laden, anstatt eine zwischengespeicherte Version zu verwenden.
     return { isAdmin, assetVersion };
   } catch {
     return {};
@@ -39,6 +39,12 @@ export function getServerConfig() {
 export function isAdminFromServer() {
   const cfg = getServerConfig();
   return !!(cfg && cfg.isAdmin);
+  /*
+  Einfache Verneinung (!) macht aus einem truthy Wert false und aus einem falsy Wert true.
+  Doppelte Verneinung (!!) macht aus jedem Wert exakt true oder false.
+  cfg && cfg.isAdmin gibt entweder den Wert von cfg.isAdmin (wenn cfg existiert) oder undefined/false.
+  !!(...) sorgt dafür, dass das Ergebnis immer ein Boolean ist.
+  */
 }
 
 export function getAssetVersion() {

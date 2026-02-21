@@ -17,7 +17,7 @@ import logger from './utils/logger.js';
 import { readFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+//const __dirname = dirname(__filename);
 
 // ===========================================
 // SERVER CONFIGURATION & STARTUP

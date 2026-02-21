@@ -1,10 +1,12 @@
-// The app.js file contains the core logic of your Express application. It’s responsible for defining routes, middleware, and how requests should be handled.
+// The app.js file contains the core logic of your Express application. 
+// It’s responsible for defining routes, middleware, and how requests should be handled.
 
 /**
 - Setting up Express: The app.js file creates and configures the Express application
 - Handling Middleware: Middleware like express.json() is used for parsing incoming requests.
 - Defining Routes: You define the routes that handle HTTP requests in this file.
-- Exporting the App: The Express app is exported so it can be used in another file (like server.js) to run the application.
+- Exporting the App: The Express app is exported so it can be used in another file (like server.js)
+- to run the application.
 */
 
 // app.js
@@ -34,6 +36,7 @@ import legalRoutes from './routes/legalRoutes.js';
 // App-Status Management
 class AppStatus extends EventEmitter {
   constructor() {
+    // init AppStatus as an EventEmitter to allow waiting for 'ready' event
     super();
     this.dbReady = false;
     this.appReady = false;
@@ -125,6 +128,7 @@ if (!__assetVersion) {
   // Fallback: server start timestamp (changes on each deploy)
   __assetVersion = String(Math.floor(Date.now() / 1000));
 }
+// set the values for the views to use
 app.use((req, res, next) => {
   res.locals.assetVersion = __assetVersion;
   next();
@@ -185,19 +189,18 @@ app.use(helmet({
       ],
       connectSrc: [
         '\'self\'',
-        'https://generativelanguage.googleapis.com/v1beta/',
-        'https://cdn.tiny.cloud/1/',
-        'https://formspree.io',
+        'https://generativelanguage.googleapis.com/v1beta/', // for Google Gemini API calls
+        'https://cdn.tiny.cloud/1/', // for TinyMCE cloud services (e.g. spell check, image upload)
+        'https://formspree.io', // for email submission from contact form
       ],
       // Allow TinyMCE editor iframe (same-origin) and safe blob/data contexts
-      // Old value was ['none'], which prevented TinyMCE from rendering its editor iframe
       frameSrc: ['\'self\'', 'blob:', 'data:'],
       childSrc: ['\'self\'', 'blob:', 'data:'],
       objectSrc: ['\'none\''],
       baseUri: ['\'self\''],
       formAction: ['\'self\'', 'https://formspree.io'],
       frameAncestors: ['\'none\''],
-      scriptSrcAttr: ['\'unsafe-hashes\'', '\'unsafe-inline\''],
+      scriptSrcAttr: ['\'unsafe-hashes\''], // Allow event handlers like onclick="..." but only if they have a valid hash (requires proper hashing of inline scripts)
     },
   },
   hsts: config.IS_PRODUCTION ? {
