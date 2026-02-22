@@ -6,13 +6,6 @@
         extraHead = `<script id="server-post" type="application/json"${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>${(function(obj){ try { const s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e'); } catch(e){ return 'null'; } })(post)}<\/script>`;
     }
 %>
-<div class="container-fluid header-section">
-    <div class="d-flex justify-content-center align-items-center mb-2">
-        <h1 id="main-title" class="mt-5 main-title mb-0"><%= (typeof post !== 'undefined' && post) ? 'Blogpost bearbeiten' : 'Neuen Blogpost erstellen' %></h1>
-    </div>
-    <h2 class="mt-3 sub-title">Teile deine Gedanken über Philosophie, Wissenschaft und AI</h2>
-    <hr class="header-divider">
-</div>
 
 <div class="container-fluid">
     <div class="row justify-content-center text-center">
