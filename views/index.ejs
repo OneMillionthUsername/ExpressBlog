@@ -115,15 +115,24 @@
                     <div class="card discovery-card h-100">
                         <% if (card.img_link) { %>
                             <%
-                                const extIndex = card.img_link.lastIndexOf('.');
-                                const base = card.img_link.substring(0, extIndex);
-                                const img344 = base + '-344.webp';
-                                const img688 = base + '-688.webp';
+                                let imgSrc, imgSrcset;
+                                if (card.img_link.startsWith('http')) {
+                                    // Extern → keine Varianten
+                                    imgSrc = card.img_link;
+                                    imgSrcset = null;
+                                } else {
+                                    const extIndex = card.img_link.lastIndexOf('.');
+                                    const base = card.img_link.substring(0, extIndex);
+                                    imgSrc = base + '-344.webp';
+                                    imgSrcset = base + '-688.webp';
+                                }
                             %>
                             <img class="card-img-top"
-                                src="<%= img344 %>"
-                                srcset="<%= img344 %> 344w, <%= img688 %> 688w"
-                                sizes="(max-width: 768px) 100vw, 344px"
+                                src="<%= imgSrc %>"
+                                <% if (imgSrcset) { %>
+                                    srcset="<%= imgSrc %> 344w, <%= imgSrcset %> 688w"
+                                    sizes="(max-width: 768px) 100vw, 344px"
+                                <% } %>
                                 width="344"
                                 height="310"
                                 alt="<%= card.title %>">
