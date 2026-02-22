@@ -9,9 +9,11 @@ import { celebrate, Joi, Segments } from 'celebrate';
 /**
  * JSON-only API routes for comments.
  *
- * - `GET /:postId` returns comments for a post.
- * - `POST /:postId` creates a new comment (CSRF-protected, JSON).
- * - `DELETE /:postId/:commentId` deletes a comment (admin only, JSON).
+ * Absolute Route: /api/comments
+ *
+ * - GET /api/comments/:postId        → Kommentare zu einem Post
+ * - POST /api/comments/:postId       → Kommentar erstellen
+ * - DELETE /api/comments/:postId/:commentId → Kommentar löschen (admin)
  */
 const commentsApiRouter = express.Router();
 
