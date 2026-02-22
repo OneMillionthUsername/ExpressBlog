@@ -266,6 +266,7 @@ app.use((req, res, next) => {
       req.url.includes('.png') ||
       req.url.includes('.jpg') ||
       req.url.includes('.jpeg') ||
+      req.url.includes('.webp') ||
       req.url.includes('.svg')) {
     return next();
   }
@@ -323,7 +324,7 @@ app.use(express.static(publicDirectoryPath, {
     } else if (path.includes('/assets/js/tinymce/')) {
       // Cache editor assets longer; cache-busting is handled via versioned query param (?v=...)
       res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days
-    } else if (path.includes('.ico') || path.includes('.png') || path.includes('.jpg') || path.includes('.jpeg')) {
+    } else if (path.includes('.ico') || path.includes('.png') || path.includes('.webp') || path.includes('.jpg') || path.includes('.jpeg')) {
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 Tag für Bilder
     }
   },

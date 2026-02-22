@@ -114,7 +114,19 @@
                 <div class="col-md-4 mb-4">
                     <div class="card discovery-card h-100">
                         <% if (card.img_link) { %>
-                            <img class="card-img-top" src="<%= card.img_link %>" alt="<%= card.title %>">
+                            <%
+                                const extIndex = card.img_link.lastIndexOf('.');
+                                const base = card.img_link.substring(0, extIndex);
+                                const img344 = base + '-344.webp';
+                                const img688 = base + '-688.webp';
+                            %>
+                            <img class="card-img-top"
+                                src="<%= img344 %>"
+                                srcset="<%= img344 %> 344w, <%= img688 %> 688w"
+                                sizes="(max-width: 768px) 100vw, 344px"
+                                width="344"
+                                height="310"
+                                alt="<%= card.title %>">
                         <% } %>
                         <div class="card-body">
                             <h5 class="card-title"><%= card.title %></h5>

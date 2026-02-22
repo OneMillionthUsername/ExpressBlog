@@ -446,7 +446,7 @@ function createFloatingMenu() {
 
   // Create image icon:
   const clippyImg = document.createElement('img');
-  clippyImg.src = '/assets/media/clippy.png';
+  clippyImg.src = '/assets/media/clippy-28.webp';
   clippyImg.alt = 'Clippy';
   menuToggle.appendChild(clippyImg);
     
