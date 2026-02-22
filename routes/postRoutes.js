@@ -35,6 +35,7 @@ const postRouter = express.Router();
 
 async function buildReadPostViewData(req, res, post) {
   const isAdmin = getSsrAdmin(res);
+  // lade comments
   let comments = [];
   try {
     if (post && post.id) {
@@ -484,7 +485,7 @@ postRouter.post('/create',
     const tags = parseTags(req.body && req.body.tags);
     const slug = createSlug(title);
     try {
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username, category_id: req.body.category_id });
+        const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id });
       if (!result) {
         return res.redirect(303, '/createPost?error=1');
       }

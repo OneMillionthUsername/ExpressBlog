@@ -497,7 +497,7 @@ export const DatabaseService = {
 
       // Normalize some fields to match other getters
       if (post.author === null || post.author === undefined) {
-        post.author = 'unknown';
+        post.author = 'author';
       }
       post.published = normalizePublished(post.published);
       logger.debug(`DatabaseService.getPostById: Post ${post.id} - author: "${post.author}", published: ${post.published} (${typeof post.published})`);
@@ -524,7 +524,7 @@ export const DatabaseService = {
         post.tags = parseTags(post.tags);
         post.published = normalizePublished(post.published);
         if (post.author === null || post.author === undefined) {
-          post.author = 'unknown';
+          post.author = 'author';
         }
         return post;
       });
@@ -549,7 +549,7 @@ export const DatabaseService = {
         post.tags = parseTags(post.tags);
         post.published = normalizePublished(post.published);
         if (post.author === null || post.author === undefined) {
-          post.author = 'unknown';
+          post.author = 'author';
         }
         return post;
       });
@@ -590,7 +590,7 @@ export const DatabaseService = {
         // Datentyp-Konvertierung für Validation
         // Autor: NULL oder undefined zu String konvertieren
         if (post.author === null || post.author === undefined) {
-          post.author = 'unknown'; // Default-Autor
+          post.author = 'author'; // Default-Author
         }
         
         // Published: Integer (0/1) zu Boolean konvertieren
@@ -776,7 +776,7 @@ export const DatabaseService = {
       const updateSql = `UPDATE posts SET ${setClause} WHERE id = ?`;
       const result = await conn.query(updateSql, values);
       if(!result || result.affectedRows === 0) {
-        throw new Error('Failed to update post');
+        throw new Error(`Failed to update post with id ${post.id}`);
       }
       return { success: true };
     } catch (error) {
@@ -794,7 +794,7 @@ export const DatabaseService = {
       const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
       logger.debug(`DatabaseService.deletePost: Query result - affectedRows: ${result.affectedRows}`);
       if(!result || result.affectedRows === 0) {
-        throw new Error('Failed to delete post');
+        throw new Error(`Failed to delete post with id ${id}`);
       }
       return { success: true };
     } catch (error) {
@@ -829,7 +829,7 @@ export const DatabaseService = {
       const insertSql = `INSERT INTO posts (${cols}) VALUES (${placeholders})`;
       const result = await conn.query(insertSql, values);
       if(!result || result.affectedRows === 0) {
-        throw new Error('Failed to create post');
+        throw new Error(`Failed to create post: ${insertSql} with values ${JSON.stringify(values)}`);
       }
       return { id: Number(result.insertId), ...postData };
     } catch (error) {

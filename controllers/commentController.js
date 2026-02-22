@@ -9,6 +9,7 @@ async function createCommentRecord(postId, body) {
   const commentData = {
     ...(body || {}),
     postId: postId,
+    username: body.username || 'Anonym',
     created_at: new Date(),
     approved: true,
     published: true,

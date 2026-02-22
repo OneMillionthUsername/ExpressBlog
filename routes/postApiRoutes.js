@@ -184,7 +184,7 @@ postApiRouter.post('/create',
     const tags = Array.isArray(req.body.tags) ? req.body.tags : parseTags(req.body.tags);
     const slug = createSlug(title);
     try {
-      const result = await postController.createPost({ title, slug, content, tags, author: req.user.username, category_id: req.body.category_id });
+      const result = await postController.createPost({ title, slug, content, tags, author: req.user.full_name, category_id: req.body.category_id });
       if (!result) {
         return res.status(400).json({ error: 'Failed to create blog post' });
       }
@@ -206,6 +206,7 @@ postApiRouter.post('/create',
     }
   });
 
+//TODO: Author Name wird nicht upgedated.
 postApiRouter.put('/update/:postId',
   strictLimiter,
   csrfProtection,

@@ -19,7 +19,7 @@
                             <article class="blog-post-card">
                                 <div class="post-meta">
                                     <span class="post-date"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
-                                    <span class="post-author">von <%= post.author || 'Unbekannt' %></span>
+                                    <span class="post-author">von <%= post.author || 'Gast' %></span>
                                 </div>
                                 <h2 class="post-title">
                                     <% if (post.slug) { %>

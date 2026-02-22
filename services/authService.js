@@ -50,6 +50,7 @@ export function generateToken(user) {
     username: u.username,
     role,
     isAdmin,
+    full_name: u.full_name || 'author', // Wichtig für die Darstellung des Autors in Blogposts
     iss: JWT_CONFIG.ISSUER,
     aud: JWT_CONFIG.AUDIENCE,
   };

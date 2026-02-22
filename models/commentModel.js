@@ -31,7 +31,7 @@ export default class Comment {
 export const commentSchema = Joi.object({
   id: Joi.number().integer().optional(),
   postId: Joi.number().integer().min(1).required(),
-  username: Joi.string().min(3).max(100).required(),
+  username: Joi.string().max(40).optional(),
   text: Joi.string().min(1).max(1000).required(),
   ip_address: Joi.string().ip().optional(),
   approved: Joi.boolean().optional(),

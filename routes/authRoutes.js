@@ -96,9 +96,9 @@ authRouter.post('/login',
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
       }
       // Token generation
-      const { id, username, role } = admin;
-      const token = authService.generateToken({ id, username, role });
-      logger.debug('[AUTH] Token generated successfully for user', { id, username, role });
+      const { id, username, role, full_name } = admin;
+      const token = authService.generateToken({ id, username, role, full_name });
+      logger.debug('[AUTH] Token generated successfully for user', { id, username, role, full_name });
       res.cookie(AUTH_COOKIE_NAME, token, {
         httpOnly: true,           // Nicht per JavaScript lesbar
         secure: IS_PRODUCTION,    // Nur über HTTPS
@@ -120,6 +120,7 @@ authRouter.post('/login',
           id: admin.id,
           username: admin.username,
           role: admin.role,
+          full_name: admin.full_name,
         },
       });
     } catch (error) {
