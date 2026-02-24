@@ -23,7 +23,18 @@
     <%# so local CSS determines first paint instantly, and dark mode applies correctly. %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" onload="this.onload=null;this.rel='stylesheet';this.media='all'" media="print">
+    <link rel="preload" as="style" id="google-fonts-link" 
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" 
+        media="print">
+
+    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
+    (function() {
+        var link = document.getElementById('google-fonts-link');
+        if (link) {
+        link.onload = function() { this.rel = 'stylesheet'; this.media = 'all'; };
+        }
+    })();
+    </script>
     <noscript>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap">
     </noscript>
