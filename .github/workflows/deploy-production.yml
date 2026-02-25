@@ -86,4 +86,10 @@ jobs:
               # Alten PM2-Prozess aufräumen
               pm2 stop speculumx-blog || true
               # Überprüfen, ob der Container läuft
-              docker ps | grep -q "expressblog_app" && echo "✅ Docker Deployment successful" || exit 1
+              # Health-Check:
+              if [ "$(docker ps -q -f name=expressblog_app)" ]; then
+                echo "✅ Deployment erfolgreich: Container läuft."
+              else
+                echo "❌ Fehler: Container konnte nicht gestartet werden."
+                exit 1
+              fi

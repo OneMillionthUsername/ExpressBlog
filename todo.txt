@@ -1,1 +1,1 @@
-/dist build implementieren
+/dist build für deployment implementieren 
