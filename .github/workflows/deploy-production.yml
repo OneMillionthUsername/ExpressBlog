@@ -81,8 +81,11 @@ jobs:
               git fetch origin
               git checkout main
               git pull origin main
-              # Die "Gummizelle" bauen und starten:
-              DOCKER_TARGET=release NODE_ENV=production docker compose up -d --build
+              # bauen und starten:
+              export NODE_ENV=production
+              export DOCKER_TARGET=release
+              docker compose up -d --build
+
               # Alten PM2-Prozess aufräumen
               pm2 stop speculumx-blog || true
               # Überprüfen, ob der Container läuft
