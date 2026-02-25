@@ -42,7 +42,7 @@ services:
           memory: 512M
 
   db:
-    image: mariadb:11
+    image: mariadb:latest
     container_name: expressblog_db
     restart: always
     env_file:

@@ -77,11 +77,10 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd /var/www/blog
-            git fetch origin
-            git checkout main
-            git pull origin main
-            npm ci
-            pm2 restart speculumx-blog
-            sleep 2
-            pm2 info speculumx-blog | grep -q "online" && echo "✅ Deployment successful" || exit 1
-
+              git fetch origin
+              git checkout main
+              git pull origin main
+              # Die "Gummizelle" bauen und starten:
+              DOCKER_TARGET=release NODE_ENV=production docker compose up -d --build
+              # Überprüfen, ob der Container läuft
+              docker ps | grep -q "expressblog_app" && echo "✅ Docker Deployment successful" || exit 1
