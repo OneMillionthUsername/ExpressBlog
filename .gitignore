@@ -31,3 +31,5 @@ Thumbs.db
 logs/
 *.log
 
+# Nginx Konfiguration (nur auf dem Server)
+nginx/
