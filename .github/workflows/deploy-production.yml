@@ -75,6 +75,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /var/www/blog
               git fetch origin
