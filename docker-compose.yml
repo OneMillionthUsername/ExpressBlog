@@ -47,6 +47,11 @@ services:
     restart: always
     env_file:
       - ".env.${NODE_ENV:-development}"
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD} 
+      - MARIADB_DATABASE=${DB_NAME}
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
     expose:
       - "3306"
     volumes:
