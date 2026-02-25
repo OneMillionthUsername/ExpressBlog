@@ -8,6 +8,7 @@ node_modules/
 media/
 ssl/
 BildHochladen.js
+docker-compose.override.yml
 
 # Test Coverage
 coverage/
@@ -30,3 +31,5 @@ Thumbs.db
 logs/
 *.log
 
+# Nginx Konfiguration (nur auf dem Server)
+nginx/

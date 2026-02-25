@@ -74,14 +74,46 @@ jobs:
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /var/www/blog
-            git fetch origin
-            git checkout main
-            git pull origin main
-            npm ci
-            pm2 restart speculumx-blog
-            sleep 2
-            pm2 info speculumx-blog | grep -q "online" && echo "✅ Deployment successful" || exit 1
-
+            
+            # 1. SSH-Key explizit für Git-Operationen definieren
+            # Wir nutzen den von dir genannten Key-Namen
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/deployment_key_git -o StrictHostKeyChecking=no"
+            
+            # 2. Code-Update vom Repository
+            echo "Updating code from GitHub..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # 3. Umgebungsvariablen für Docker setzen
+            export NODE_ENV=production
+            export DOCKER_TARGET=release
+            
+            # 4. Fallback für UMASK-Problematik (.env.development Pflicht-Check)
+            if [ ! -f .env.development ]; then
+              echo "Creating .env.development symlink for Docker Compose compatibility"
+              ln -sf .env.production .env.development
+            fi
+            
+            # 5. Container-Stack neu bauen und starten
+            echo "Starting Docker build and compose..."
+            docker compose up -d --build
+            
+            # 6. Alten PM2-Prozess stoppen (falls noch aktiv)
+            pm2 stop speculumx-blog || true
+            
+            # 7. Health-Check mit kleiner Verzögerung
+            echo "Waiting for container to stabilize..."
+            sleep 5
+            
+            if [ "$(docker ps -q -f name=expressblog_app)" ]; then
+              echo "✅ Deployment erfolgreich: Container expressblog_app läuft."
+            else
+              echo "❌ Fehler: Container konnte nicht gestartet werden."
+              echo "--- Letzte Log-Einträge ---"
+              docker logs expressblog_app --tail 20
+              exit 1
+            fi
