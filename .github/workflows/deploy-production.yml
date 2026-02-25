@@ -77,22 +77,39 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            cd /var/www/blog
-              git fetch origin
-              git checkout main
-              git pull origin main
-              # bauen und starten:
+            cd /var/www/blog   
+              # 1. SSH-Key für Git erzwingen (Löst Permission denied)
+              # Wir sagen Git explizit, welchen Key es für den Pull nutzen soll
+              export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+              
+              # 2. Code aktualisieren
+              git fetch origin main
+              git reset --hard origin/main
+              
+              # 3. Variablen für Docker setzen
               export NODE_ENV=production
               export DOCKER_TARGET=release
+              
+              # 4. Workaround für das UMASK-Problem:
+              # Falls Docker trotz NODE_ENV=production nach der .development sucht, 
+              # legen wir einen Link an, damit der Build nicht abbricht.
+              if [ ! -f .env.development ]; then
+                ln -sf .env.production .env.development
+              fi
+              
+              # 5. Bauen und starten
               docker compose up -d --build
-
-              # Alten PM2-Prozess aufräumen
+              
+              # 6. Aufräumen & Healthcheck
               pm2 stop speculumx-blog || true
-              # Überprüfen, ob der Container läuft
-              # Health-Check:
+              
+              # Kurze Pause für den Container-Startup
+              sleep 5
+              
               if [ "$(docker ps -q -f name=expressblog_app)" ]; then
                 echo "✅ Deployment erfolgreich: Container läuft."
               else
                 echo "❌ Fehler: Container konnte nicht gestartet werden."
+                docker logs expressblog_app --tail 20
                 exit 1
               fi

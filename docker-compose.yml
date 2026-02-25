@@ -16,7 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: ${DOCKER_TARGET:-dev}
+      target: ${DOCKER_TARGET:-release}
     container_name: expressblog_app
     restart: always
     expose:
