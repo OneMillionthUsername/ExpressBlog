@@ -82,5 +82,7 @@ jobs:
               git pull origin main
               # Die "Gummizelle" bauen und starten:
               DOCKER_TARGET=release NODE_ENV=production docker compose up -d --build
+              # Alten PM2-Prozess aufräumen
+              pm2 stop speculumx-blog || true
               # Überprüfen, ob der Container läuft
               docker ps | grep -q "expressblog_app" && echo "✅ Docker Deployment successful" || exit 1
