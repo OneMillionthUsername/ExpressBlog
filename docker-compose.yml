@@ -1,21 +1,25 @@
+# Gemischte Entwicklungs- und Produktionsumgebung: Nginx läuft in einem separaten Container für die Entwicklung, aber direkt auf dem Host für die Produktion.
+# In der Produktion läuft Nginx direkt auf dem Host, um besseres Monitoring, Logging
 services:
-  nginx:
-    image: nginx:latest
-    container_name: expressblog_nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      # Damit Nginx die Assets des Blogs direkt ausliefern kann
-      - .:/app:ro 
-      # Damit das Portfolio erreichbar ist
-      - /var/www/portfolio:/var/www/portfolio:ro
-    depends_on:
-      - app
-    networks:
-      - expressblog_net
+  # Produktion: Nginx wird nicht mehr in Docker ausgeführt,
+  # sondern direkt auf dem Host, wegen besseremn Monitoring, Logging und fail2ban.
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: expressblog_nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #     # Damit Nginx die Assets des Blogs direkt ausliefern kann
+  #     - .:/app:ro 
+  #     # Damit das Portfolio erreichbar ist
+  #     - /var/www/portfolio:/var/www/portfolio:ro
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - expressblog_net
 
   app:
     image: nullhasvalue/expressblog:latest
@@ -25,8 +29,10 @@ services:
       target: ${DOCKER_TARGET:-release}
     container_name: expressblog_app
     restart: always
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000" # Erreichbar für Host-Nginx (Prod) & Docker-Nginx (Dev)
+    # expose:
+    #   - "3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=3000
