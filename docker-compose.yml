@@ -49,7 +49,7 @@ services:
       # 2. Den Upload-Ordner explizit beschreibbar machen
       - ./public/assets/media:/app/public/assets/media:rw
       - ./logs:/app/logs:rw
-      - /app/node_modules:ro
+      - /app/node_modules
       # 4. Temporärer Speicher für den Upload-Vorgang (Buffer)
       - type: tmpfs
         target: /tmp
