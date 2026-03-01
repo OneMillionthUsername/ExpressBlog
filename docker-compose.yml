@@ -1,40 +1,59 @@
+# Gemischte Entwicklungs- und Produktionsumgebung: Nginx läuft in einem separaten Container für die Entwicklung, aber direkt auf dem Host für die Produktion.
+# In der Produktion läuft Nginx direkt auf dem Host, um besseres Monitoring, Logging
 services:
-  nginx:
-    image: nginx:latest
-    container_name: expressblog_nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      # Damit Nginx die Assets des Blogs direkt ausliefern kann
-      - .:/app:ro 
-      # Damit das Portfolio erreichbar ist
-      - /var/www/portfolio:/var/www/portfolio:ro
-    depends_on:
-      - app
-    networks:
-      - expressblog_net
+  # Produktion: Nginx wird nicht mehr in Docker ausgeführt,
+  # sondern direkt auf dem Host, wegen besseremn Monitoring, Logging und fail2ban.
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: expressblog_nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #     # Damit Nginx die Assets des Blogs direkt ausliefern kann
+  #     - .:/app:ro 
+  #     # Damit das Portfolio erreichbar ist
+  #     - /var/www/portfolio:/var/www/portfolio:ro
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - expressblog_net
 
   app:
     image: nullhasvalue/expressblog:latest
+    # Container-Prozess läuft mit dediziertem Docker-User (UID 119)
+    # und Gruppe 34 (www-data), damit Dateirechte zu nginx/www-data passen.
+    ports:
+      - "127.0.0.1:3000:3000" # Erreichbar für Host-Nginx (Prod) & Docker-Nginx (Dev)
     build:
       context: .
       dockerfile: Dockerfile
       target: ${DOCKER_TARGET:-release}
     container_name: expressblog_app
     restart: always
-    expose:
-      - "3000"
+    # expose:
+    #   - "3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=3000
     env_file:
       - ".env.${NODE_ENV:-development}"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - .:/app
-      - /app/node_modules
+      # Produktionsmodus: Code kommt aus dem Image (kein Host-Bind-Mount)
+      # Dadurch bleibt das readonly-RootFS kompatibel und reproduzierbar.
+      # 2. Den Upload-Ordner explizit beschreibbar machen
+      - ./public/assets/media:/app/public/assets/media:rw
+      - ./logs:/app/logs:rw
+      # 4. Temporärer Speicher für den Upload-Vorgang (Buffer)
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 64m
     networks:
       expressblog_net:
         aliases:
@@ -49,6 +68,7 @@ services:
 
   db:
     image: mariadb:latest
+    user: "mysql" # Default user, damit ein Angreifer nicht mit root-Rechten im Container agieren kann
     container_name: expressblog_db
     restart: always
     env_file:

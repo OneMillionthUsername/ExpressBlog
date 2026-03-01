@@ -1,74 +1,23 @@
 name: Deploy to Production
-
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI - Lint & Test"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
-
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      mariadb:
-        image: mariadb:latest
-        env:
-          MARIADB_ROOT_PASSWORD: test_password
-          MARIADB_DATABASE: speculumxDB
-          MARIADB_USER: test_user
-          MARIADB_PASSWORD: test_password
-        options: >-
-          --health-cmd="mariadb-admin ping -h 127.0.0.1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-        ports:
-          - 3306:3306
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run linter
-        run: npm run lint:ci
-
-      - name: Wait for MariaDB
-        run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h "127.0.0.1" -u "root" -p"test_password" &> /dev/null; then
-              echo "MariaDB is up!"
-              exit 0
-            fi
-            echo "Waiting for MariaDB..."
-            sleep 1
-          done
-          exit 1
-
-      - name: Run tests
-        run: npm run test:ci
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: speculumxDB
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     steps:
       - uses: actions/checkout@v4
-
       - name: Deploy to Production Server
         uses: appleboy/ssh-action@master
         with:
@@ -80,7 +29,6 @@ jobs:
             cd /var/www/blog
             
             # 1. SSH-Key explizit für Git-Operationen definieren
-            # Wir nutzen den von dir genannten Key-Namen
             export GIT_SSH_COMMAND="ssh -i ~/.ssh/deployment_key_git -o StrictHostKeyChecking=no"
             
             # 2. Code-Update vom Repository
@@ -88,32 +36,44 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
-            # 3. Umgebungsvariablen für Docker setzen
+            # 3. Berechtigungen korrigieren (UMASK 027 Kompensation)
+            chmod -R o+r /var/www/blog
+            find /var/www/blog -type d -exec chmod o+x {} \;
+            
+            # 4. Umgebungsvariablen für Docker setzen
             export NODE_ENV=production
             export DOCKER_TARGET=release
-            
-            # 4. Fallback für UMASK-Problematik (.env.development Pflicht-Check)
-            if [ ! -f .env.development ]; then
-              echo "Creating .env.development symlink for Docker Compose compatibility"
-              ln -sf .env.production .env.development
-            fi
-            
+
             # 5. Container-Stack neu bauen und starten
             echo "Starting Docker build and compose..."
             docker compose up -d --build
-            
-            # 6. Alten PM2-Prozess stoppen (falls noch aktiv)
-            pm2 stop speculumx-blog || true
-            
-            # 7. Health-Check mit kleiner Verzögerung
+
+            # 6. Health-Check mit kleiner Verzögerung
             echo "Waiting for container to stabilize..."
             sleep 5
             
             if [ "$(docker ps -q -f name=expressblog_app)" ]; then
-              echo "✅ Deployment erfolgreich: Container expressblog_app läuft."
+              echo "Container läuft – prüfe Applikations-Health..."
             else
               echo "❌ Fehler: Container konnte nicht gestartet werden."
               echo "--- Letzte Log-Einträge ---"
               docker logs expressblog_app --tail 20
               exit 1
             fi
+
+            # 7. Echten App-Health prüfen (nicht nur Container-Status)
+            for i in {1..20}; do
+              if curl -fsS "http://127.0.0.1:3000/health" > /dev/null; then
+                echo "✅ Deployment erfolgreich: /health antwortet."
+                exit 0
+              fi
+              echo "Health-Check Versuch $i/20 fehlgeschlagen – warte 2s..."
+              sleep 2
+            done
+
+            echo "❌ Fehler: Container läuft, aber /health ist nicht erreichbar."
+            echo "--- Container-Status ---"
+            docker ps --filter name=expressblog_app
+            echo "--- Letzte Log-Einträge ---"
+            docker logs expressblog_app --tail 50
+            exit 1
