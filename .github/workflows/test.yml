@@ -1,14 +1,16 @@
-name: Tests & Linting
+name: CI - Lint & Test
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     
     services:
       mariadb:
@@ -41,10 +43,13 @@ jobs:
       - name: Run linter
         run: npm run lint:ci
 
+      - name: Install MariaDB client
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
+
       - name: Wait for MariaDB
         run: |
           for i in {1..30}; do
-            if mysqladmin ping -h "127.0.0.1" -u "root" -p"test_password" &> /dev/null; then
+            if mariadb-admin ping -h "127.0.0.1" -u "root" -p"test_password" &> /dev/null; then
               echo "MariaDB is up!"
               exit 0
             fi
@@ -53,8 +58,8 @@ jobs:
           done
           exit 1
 
-      - name: Run tests
-        run: npm run test:coverage
+      - name: Run tests with coverage
+        run: npm run test:ci
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
@@ -63,7 +68,7 @@ jobs:
           DB_PASSWORD: test_password
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
