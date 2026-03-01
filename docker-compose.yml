@@ -23,8 +23,8 @@ services:
 
   app:
     image: nullhasvalue/expressblog:latest
-    # User ändern, weil UMASK den Docker internen user zu wenige Rechte vergibt
-    # damit wird der Container mit dem Host User ausgeführt, damit die Dateien auch auf dem Host die richtigen Rechte haben
+    # Container-Prozess läuft mit dediziertem Docker-User (UID 118)
+    # und Gruppe 33 (www-data), damit Dateirechte zu nginx/www-data passen.
     user: "118:33"
     ports:
       - "127.0.0.1:3000:3000" # Erreichbar für Host-Nginx (Prod) & Docker-Nginx (Dev)

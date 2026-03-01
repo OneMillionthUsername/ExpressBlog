@@ -6,17 +6,32 @@
  * `auth` helpers and performs daily rotation of files.
  */
 
-import { createWriteStream, existsSync, mkdirSync } from 'fs';
+import { createWriteStream, existsSync, mkdirSync, accessSync, constants } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-// Log-Verzeichnis erstellen
-const LOG_DIR = join(__dirname, '..', 'logs');
-if (!existsSync(LOG_DIR)) {
-  mkdirSync(LOG_DIR, { recursive: true });
+const LOG_DIR = process.env.LOG_DIR || join(__dirname, '..', 'logs');
+
+function ensureWritableLogDir(dirPath) {
+  try {
+    if (!existsSync(dirPath)) {
+      mkdirSync(dirPath, { recursive: true });
+    }
+    accessSync(dirPath, constants.W_OK);
+    return true;
+  } catch (error) {
+    const uid = typeof process.getuid === 'function' ? process.getuid() : 'n/a';
+    const gid = typeof process.getgid === 'function' ? process.getgid() : 'n/a';
+    console.error(`[LOGGER] File logging disabled: cannot access log directory "${dirPath}" for writing.`);
+    console.error(`[LOGGER] Runtime identity uid=${uid}, gid=${gid}.`);
+    console.error(`[LOGGER] Reason: ${error.message}`);
+    return false;
+  }
 }
+
+const FILE_LOGGING_ENABLED = ensureWritableLogDir(LOG_DIR);
 // Log-Level Definition
 const LOG_LEVELS = {
   ERROR: 0,
@@ -34,6 +49,11 @@ class Logger {
   }
 
   initializeStreams() {
+    if (!FILE_LOGGING_ENABLED) {
+      this.logStreams = {};
+      return;
+    }
+
     const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
         
     // Verschiedene Log-Dateien für verschiedene Zwecke
@@ -68,6 +88,7 @@ class Logger {
   }
 
   writeToFile(streamName, message) {
+    if (!FILE_LOGGING_ENABLED) return;
     if (this.logStreams[streamName]) {
       this.logStreams[streamName].write(message + '\n');
     }
@@ -128,6 +149,8 @@ class Logger {
 
   // Dateirotation (täglich)
   rotateLogFiles() {
+    if (!FILE_LOGGING_ENABLED) return;
+
     const currentDate = new Date().toISOString().split('T')[0];
     const expectedFile = join(LOG_DIR, `app-${currentDate}.log`);
         

@@ -79,6 +79,7 @@ npm run dev
 Wichtige Variablen (siehe `.env.example`):
 
 - `NODE_ENV`, `PORT`, `HOST`, `DOMAIN`
+- `LOG_LEVEL`, optional `LOG_DIR` (z. B. `/app/logs` im Container)
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 - `JWT_SECRET`
 - `GEMINI_API_KEY`, `TINY_MCE_API_KEY`

@@ -53,10 +53,27 @@ jobs:
             sleep 5
             
             if [ "$(docker ps -q -f name=expressblog_app)" ]; then
-              echo "✅ Deployment erfolgreich: Container expressblog_app läuft."
+              echo "Container läuft – prüfe Applikations-Health..."
             else
               echo "❌ Fehler: Container konnte nicht gestartet werden."
               echo "--- Letzte Log-Einträge ---"
               docker logs expressblog_app --tail 20
               exit 1
             fi
+
+            # 7. Echten App-Health prüfen (nicht nur Container-Status)
+            for i in {1..20}; do
+              if curl -fsS "http://127.0.0.1:3000/health" > /dev/null; then
+                echo "✅ Deployment erfolgreich: /health antwortet."
+                exit 0
+              fi
+              echo "Health-Check Versuch $i/20 fehlgeschlagen – warte 2s..."
+              sleep 2
+            done
+
+            echo "❌ Fehler: Container läuft, aber /health ist nicht erreichbar."
+            echo "--- Container-Status ---"
+            docker ps --filter name=expressblog_app
+            echo "--- Letzte Log-Einträge ---"
+            docker logs expressblog_app --tail 50
+            exit 1
