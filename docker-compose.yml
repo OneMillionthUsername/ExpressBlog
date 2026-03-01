@@ -41,17 +41,20 @@ services:
       - PORT=3000
     env_file:
       - ".env.${NODE_ENV:-development}"
-    readonly: true
+    read_only: true
     security_opt:
       - no-new-privileges:true
     volumes:
       - .:/app:ro
       # 2. Den Upload-Ordner explizit beschreibbar machen
       - ./public/assets/media:/app/public/assets/media:rw
+      - ./logs:/app/logs:rw
       - /app/node_modules:ro
       # 4. Temporärer Speicher für den Upload-Vorgang (Buffer)
       - type: tmpfs
         target: /tmp
+        tmpfs:
+          size: 64m
     networks:
       expressblog_net:
         aliases:
