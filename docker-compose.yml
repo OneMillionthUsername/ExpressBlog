@@ -25,7 +25,6 @@ services:
     image: nullhasvalue/expressblog:latest
     # Container-Prozess läuft mit dediziertem Docker-User (UID 119)
     # und Gruppe 34 (www-data), damit Dateirechte zu nginx/www-data passen.
-    user: "119:34"
     ports:
       - "127.0.0.1:3000:3000" # Erreichbar für Host-Nginx (Prod) & Docker-Nginx (Dev)
     build:
