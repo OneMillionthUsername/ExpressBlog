@@ -41,9 +41,17 @@ services:
       - PORT=3000
     env_file:
       - ".env.${NODE_ENV:-development}"
+    readonly: true
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - .:/app
-      - /app/node_modules
+      - .:/app:ro
+      # 2. Den Upload-Ordner explizit beschreibbar machen
+      - ./public/assets/media:/app/public/assets/media:rw
+      - /app/node_modules:ro
+      # 4. Temporärer Speicher für den Upload-Vorgang (Buffer)
+      - type: tmpfs
+        target: /tmp
     networks:
       expressblog_net:
         aliases:
@@ -58,6 +66,7 @@ services:
 
   db:
     image: mariadb:latest
+    user: "mysql" # Default user, damit ein Angreifer nicht mit root-Rechten im Container agieren kann
     container_name: expressblog_db
     restart: always
     env_file:
