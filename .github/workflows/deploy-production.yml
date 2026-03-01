@@ -43,21 +43,12 @@ jobs:
             # 4. Umgebungsvariablen für Docker setzen
             export NODE_ENV=production
             export DOCKER_TARGET=release
-            
-            # 5. Fallback für UMASK-Problematik (.env.development Pflicht-Check)
-            if [ ! -f .env.development ]; then
-              echo "Creating .env.development symlink for Docker Compose compatibility"
-              ln -sf .env.production .env.development
-            fi
-            
-            # 6. Container-Stack neu bauen und starten
+
+            # 5. Container-Stack neu bauen und starten
             echo "Starting Docker build and compose..."
             docker compose up -d --build
-            
-            # 7. Alten PM2-Prozess stoppen (falls noch aktiv)
-            pm2 stop speculumx-blog || true
-            
-            # 8. Health-Check mit kleiner Verzögerung
+
+            # 6. Health-Check mit kleiner Verzögerung
             echo "Waiting for container to stabilize..."
             sleep 5
             

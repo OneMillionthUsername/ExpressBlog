@@ -185,9 +185,9 @@ Die Pipeline ist damit konsolidiert: keine doppelten Testläufe in separaten Wor
 
 ## Deployment
 
-- PM2-Konfiguration: `ecosystem.config.cjs`
 - Deployment-Skript: `scripts/deploy-production.sh`
 - Docker-basierter Production-Flow ist in `deploy-production.yml` hinterlegt
+- Production-Betrieb: Node.js + MariaDB in rootless Docker, nginx nativ auf dem Host
 
 Weitere Details:
 
