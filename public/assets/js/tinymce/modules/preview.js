@@ -44,11 +44,17 @@ export function updatePreview() {
   // Build preview HTML with title, tags, and content
   const DOMPurify = getDOMPurify();
   if (DOMPurify && DOMPurify.sanitize) {
+    const sanitizeOptions = {
+      USE_PROFILES: { html: true },
+      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'meta', 'link'],
+      ADD_ATTR: ['style', 'class', 'id', 'align'],
+      ALLOW_DATA_ATTR: false,
+    };
     let previewHTML = '';
     
     // Add title if present
     if (title && title.trim()) {
-      previewHTML += `<h1 class="preview-title-heading">${DOMPurify.sanitize(title)}</h1>`;
+      previewHTML += `<h1 class="preview-title-heading">${DOMPurify.sanitize(title, sanitizeOptions)}</h1>`;
     }
     
     // Add tags if present
@@ -57,7 +63,7 @@ export function updatePreview() {
       if (tagList.length > 0) {
         previewHTML += '<div class="preview-tags">';
         tagList.forEach(tag => {
-          previewHTML += `<span class="preview-tag">${DOMPurify.sanitize(tag)}</span>`;
+          previewHTML += `<span class="preview-tag">${DOMPurify.sanitize(tag, sanitizeOptions)}</span>`;
         });
         previewHTML += '</div>';
       }
@@ -69,7 +75,7 @@ export function updatePreview() {
     }
     
     // Add content
-    previewHTML += DOMPurify.sanitize(content);
+    previewHTML += DOMPurify.sanitize(content, sanitizeOptions);
     
     // Show placeholder if everything is empty
     if (!previewHTML.trim()) {

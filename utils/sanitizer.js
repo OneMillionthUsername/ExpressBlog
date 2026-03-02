@@ -22,18 +22,9 @@ const DOMPurifyServer = DOMPurify(window);
 export function sanitizeHtml(html) {
   if (typeof html !== 'string') return html;
   return DOMPurifyServer.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p','br','b','i','strong','em','u',
-      'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3','h4','h5','h6',
-      'footer','cite','hr',
-      'mark','del','s','ins','sub','sup','small','abbr',
-      'table','thead','tbody','tfoot','tr','th','td','caption','colgroup','col',
-      'dl','dt','dd',
-      'figure','figcaption','q','kbd','samp','var','time',
-    ],
-    ALLOWED_ATTR: ['href','title','target','rel','src','alt','datetime','abbr','cite'],
-    FORBID_TAGS: ['script','style'],
-    FORBID_ATTR: ['style', 'class', 'id', 'onclick', 'onload', 'onerror', 'onmouseover', 'javascript'],
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'meta', 'link'],
+    ADD_ATTR: ['style', 'class', 'id', 'align'],
     ALLOW_DATA_ATTR: false,
   });
 }

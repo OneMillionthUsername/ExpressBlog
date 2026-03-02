@@ -53,7 +53,7 @@ export function getTinyMCEConfig() {
     
     // Toolbar
     toolbar: [
-      'undo redo | bold italic underline strikethrough | fontsize forecolor backcolor',
+      'undo redo | bold italic underline strikethrough | fontfamily fontsize forecolor backcolor',
       'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent',
       'link image media table | codesample blockquote customblockquote hr pagebreak | emoticons charmap',
       'searchreplace visualblocks code fullscreen preview | save help',
@@ -64,6 +64,7 @@ export function getTinyMCEConfig() {
     contextmenu: 'link image table configurepermanentpen',
     
     // Formatting
+    font_family_formats: 'Playfair Display=Playfair Display,serif; Crimson Text=Crimson Text,serif; Arial=arial,helvetica,sans-serif; Helvetica=helvetica,sans-serif; Times New Roman=times new roman,times,serif; Georgia=georgia,palatino,serif; Verdana=verdana,geneva,sans-serif; Monospace=monospace',
     font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 20pt 24pt 28pt 32pt 36pt 48pt 60pt 72pt',
     block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre; Address=address',
     
@@ -85,6 +86,10 @@ export function getTinyMCEConfig() {
     images_upload_handler: async (blobInfo, progress) => {
       return await uploadImageMultipart(blobInfo, progress);
     },
+
+    // Keep rich text inline styles/classes so WYSIWYG formatting is visible and persists
+    valid_elements: '*[*]',
+    extended_valid_elements: 'span[*],p[*],div[*],img[*],a[*],table[*],tbody[*],thead[*],tfoot[*],tr[*],th[*],td[*],h1[*],h2[*],h3[*],h4[*],h5[*],h6[*]',
     
     // Image settings
     paste_data_images: true,

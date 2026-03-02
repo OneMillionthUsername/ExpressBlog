@@ -68,16 +68,9 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
         if (domPurifyInstance && typeof domPurifyInstance.sanitize === 'function') {
           // If a DOMPurify-like instance was supplied, use it (tests inject mocks this way)
           return domPurifyInstance.sanitize(obj, {
-            ALLOWED_TAGS: [
-              'p','br','b','i','strong','em','u',
-              'a','ul','ol','li','img','blockquote','pre','code','h1','h2','h3','h4','h5','h6',
-              'footer','cite','hr',
-              'mark','del','s','ins','sub','sup','small','abbr',
-              'table','thead','tbody','tfoot','tr','th','td','caption','colgroup','col',
-              'dl','dt','dd',
-              'figure','figcaption','q','kbd','samp','var','time',
-            ],
-            ALLOWED_ATTR: ['href','title','target','rel','src','alt','datetime','abbr','cite'],
+            USE_PROFILES: { html: true },
+            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'meta', 'link'],
+            ADD_ATTR: ['style', 'class', 'id', 'align'],
             ALLOW_DATA_ATTR: false,
           });
         }

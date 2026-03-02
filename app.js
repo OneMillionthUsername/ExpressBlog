@@ -170,9 +170,9 @@ app.use(helmet({
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
         'https://cdn.tiny.cloud',
-        //'\'unsafe-inline\'',
-        // Note: 'unsafe-inline' avoided when possible
+        '\'unsafe-inline\'',
       ],
+      styleSrcAttr: ['\'unsafe-inline\''],
       fontSrc: [
         '\'self\'',
         'https://fonts.gstatic.com',

@@ -691,8 +691,10 @@ function showModal(content) {
         // to the raw HTML synchronously so UI/tests don't race.
         const DOMPurify = getDOMPurifySync();
         const safeHtml = DOMPurify ? DOMPurify.sanitize(html, {
-          ALLOWED_TAGS: ['p','strong','em','ul','ol','li','a','br','b','i','u'],
-          ALLOWED_ATTR: ['href','target','rel'],
+          USE_PROFILES: { html: true },
+          FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'option', 'meta', 'link'],
+          ADD_ATTR: ['style', 'class', 'id', 'align'],
+          ALLOW_DATA_ATTR: false,
         }) : html;
 
         const editorInstance = tinymce.get && tinymce.get('content');
