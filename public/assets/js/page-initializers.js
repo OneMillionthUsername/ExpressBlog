@@ -89,7 +89,7 @@ function getCurrentPageType() {
   if (page === 'archiv') return 'archiv';
   if (page === 'listCurrentPosts') return 'list_posts';
   if (page === 'mostReadPosts' || path === '/blogpost/most-read' || path.endsWith('/most-read')) return 'most_read';
-  if (page === 'readPost' || /^\/blogpost\/(by-id\/\d+|\d+|[^\/]+)$/.test(path)) return 'read_post';
+  if (page === 'readPost' || /^\/blogpost\/(id\/\d+|\d+|[^\/]+)$/.test(path)) return 'read_post';
   if (page === 'about') return 'about';
   if (path === '/posts') return 'list_posts';
 

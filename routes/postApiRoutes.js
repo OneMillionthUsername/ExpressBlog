@@ -121,7 +121,7 @@ postApiRouter.post('/admin/cache/clear-most-read', globalLimiter, csrfProtection
   }
 });
 
-postApiRouter.get('/by-id/:postId', globalLimiter, validateId, async (req, res) => {
+postApiRouter.get('/id/:postId', globalLimiter, validateId, async (req, res) => {
   const postId = req.params.postId;
   try {
     const post = await postController.getPostById(postId);

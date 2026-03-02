@@ -311,8 +311,8 @@ postRouter.post('/admin/cache/clear-most-read', globalLimiter, csrfProtection, a
   }
 });
 // Numeric ID route should come BEFORE the slug route to avoid numeric slugs being
-// misinterpreted as human-readable slugs. Example: /blogpost/59 -> by-id route.
-postRouter.get('/by-id/:postId', 
+// misinterpreted as human-readable slugs. Example: /blogpost/59 -> id route.
+postRouter.get('/id/:postId', 
   globalLimiter, 
   csrfProtection,
   validateId,
@@ -490,7 +490,7 @@ postRouter.post('/create',
         return res.redirect(303, '/createPost?error=1');
       }
       const postId = Number(result.postId || result.id);
-      res.redirect(303, `/blogpost/by-id/${postId}`);
+      res.redirect(303, `/blogpost/id/${postId}`);
       // Invalidate cached lists
       try {
         simpleCache.del('posts:all');
@@ -525,10 +525,10 @@ postRouter.post('/update/:postId',
     try {
       const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id });
       if (!result) {
-        return res.redirect(303, `/createPost/${postId}?error=1`);
+        return res.redirect(303, `/blogpost/update/${postId}?error=1`);
       }
       const finalId = Number(result.id ?? postId);
-      res.redirect(303, `/blogpost/by-id/${finalId}`);
+      res.redirect(303, `/blogpost/id/${finalId}`);
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
@@ -543,7 +543,7 @@ postRouter.post('/update/:postId',
       } catch (e) { void e; }
     } catch (error) {
       console.error('Error updating blog post', error);
-      res.redirect(303, `/createPost/${postId}?error=1`);
+      res.redirect(303, `/blogpost/update/${postId}?error=1`);
     }
   });
 postRouter.post('/delete/:postId',

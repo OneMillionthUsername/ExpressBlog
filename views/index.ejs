@@ -25,7 +25,7 @@
                                 <% if (p.slug) { %>
                                     <a href="/blogpost/<%= p.slug %>"><%= p.title %></a>
                                 <% } else if (p.id !== undefined && p.id !== null) { %>
-                                    <a href="/blogpost/by-id/<%= p.id %>"><%= p.title %></a>
+                                    <a href="/blogpost/id/<%= p.id %>"><%= p.title %></a>
                                 <% } else { %>
                                     <span><%= p.title %></span>
                                 <% } %>

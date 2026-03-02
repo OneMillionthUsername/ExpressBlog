@@ -16,7 +16,7 @@
                             <div class="most-read-item">
                                 <span class="rank">#<%= idx + 1 %></span>
                                 <div class="most-read-content">
-                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('by-id/' + post.id) %>"><%= post.title %></a></h3>
+                                    <h3><a class="post-link-style" href="/blogpost/<%= post.slug || ('id/' + post.id) %>"><%= post.title %></a></h3>
                                     <p><%= (post.views || 0) %> views | <%= new Date(post.created_at).toLocaleDateString('de-DE') %></p>
                                     <p class="post-excerpt"><%= post.excerpt %></p>
                                 </div>

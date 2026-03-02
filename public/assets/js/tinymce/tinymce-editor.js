@@ -84,7 +84,7 @@ async function initializeTinyMCE() {
       try {
         if (document.getElementById('server-post')) return true;
         const path = window.location && window.location.pathname ? window.location.pathname : '';
-        if (/\/createPost\//.test(path)) return true;
+        if (/\/blogpost\/update\//.test(path)) return true;
         const postId = (typeof getPostIdFromPath === 'function') ? getPostIdFromPath() : null;
         if (postId) return true;
         const search = window.location && window.location.search ? window.location.search : '';

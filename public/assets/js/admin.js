@@ -186,9 +186,9 @@ function resolveCurrentPostId() {
     // 3) Any element with data-post-id (e.g., #post-article)
     const dataEl = document.querySelector('[data-post-id]');
     if (dataEl && dataEl.getAttribute('data-post-id')) return String(dataEl.getAttribute('data-post-id'));
-    // 4) URL pattern /blogpost/123 or /blogpost/by-id/123
+    // 4) URL pattern /blogpost/123 or /blogpost/id/123
     const path = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname : '';
-    const m = path.match(/\/blogpost\/(?:by-id\/)?(\d+)/);
+    const m = path.match(/\/blogpost\/(?:id\/)?(\d+)/);
     if (m && m[1]) return String(m[1]);
     // 5) Legacy query parameter
     const q = getUrlParameter('post');

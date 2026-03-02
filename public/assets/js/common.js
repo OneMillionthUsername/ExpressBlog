@@ -230,15 +230,13 @@ export function getUrlParameter(paramName) {
  - Avoid attaching functions to `window`; prefer exports and delegation.
 */
 export function getPostIdFromPath() {
-  // Match explicit routes like /blogpost/by-id/123, /blogpost/update/123, /blogpost/delete/123
-  let match = window.location.pathname.match(/\/blogpost\/(?:delete|update|by-id)\/(\d+)/);
+  // Match explicit routes like /blogpost/id/123, /blogpost/update/123, /blogpost/delete/123
+  let match = window.location.pathname.match(/\/blogpost\/(?:delete|update|id)\/(\d+)/);
   if (match) return match[1];
   // Also support the shorthand numeric URL /blogpost/123
   match = window.location.pathname.match(/\/blogpost\/(\d+)(?:\/|$)/);
   if (match) return match[1];
-  // Support createPost edit URLs like /createPost/123
-  match = window.location.pathname.match(/\/createPost\/(\d+)(?:\/|$)/);
-  return match ? match[1] : null;
+  return null;
 }
 // Prüft, ob ein Post-Parameter existiert, lädt ggf. den Post und füllt das Formular vor
 // Accepts an optional already-initialized editor instance to skip the tinymce.get() retry
@@ -267,7 +265,7 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
     }
 
     console.log('[checkAndPrefillEditPostForm] Fetching post from API:', postId);
-    let apiResult = await apiRequest(`/api/blogpost/by-id/${postId}`, { method: 'GET' });
+    let apiResult = await apiRequest(`/api/blogpost/id/${postId}`, { method: 'GET' });
     if ((!apiResult || apiResult.success !== true) && apiResult && apiResult.status === 404) {
       console.log('[checkAndPrefillEditPostForm] Trying fallback endpoint');
       apiResult = await apiRequest(`/blogpost/${postId}`, { method: 'GET' });
