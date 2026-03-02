@@ -39,16 +39,31 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap">
     </noscript>
 
-    <%# Bootstrap lokal - kein externes CDN %>
-    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <%# Bootstrap lokal - non-blocking geladen %>
+    <link rel="preload" as="style" id="bootstrap-css" href="/assets/css/bootstrap.min.css" media="print">
 
     <%# TinyMCE CSS nur wenn nötig %>
     <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
     <% } %>
 
-    <%# Eigene CSS-Dateien - alle zusammengeführt in main.css %>
-    <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    <%# Eigene CSS-Dateien - non-blocking geladen %>
+    <link rel="preload" as="style" id="main-css" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>" media="print">
+
+    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
+    (function() {
+        ['bootstrap-css', 'main-css'].forEach(function(id) {
+            var link = document.getElementById(id);
+            if (link) {
+                link.onload = function() { this.rel = 'stylesheet'; this.media = 'all'; };
+            }
+        });
+    })();
+    </script>
+    <noscript>
+        <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    </noscript>
 
     <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Sub specie aeternitatis' %></title>
 
