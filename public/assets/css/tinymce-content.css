@@ -343,8 +343,8 @@
    These rules live here because tinymce-content.css is loaded as content_css inside
    the TinyMCE iframe, where [data-theme="dark"] on <html> is not available. */
 .mce-content-body.dark-mode {
-    background-color: #1e1e1e !important;
-    color: #e0e0e0 !important;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
 }
 .mce-content-body.dark-mode p,
 .mce-content-body.dark-mode li,
@@ -358,7 +358,7 @@
 .mce-content-body.dark-mode s,
 .mce-content-body.dark-mode small,
 .mce-content-body.dark-mode caption {
-    color: #e0e0e0 !important;
+    color: #e0e0e0;
 }
 .mce-content-body.dark-mode h1,
 .mce-content-body.dark-mode h2,
@@ -366,14 +366,14 @@
 .mce-content-body.dark-mode h4,
 .mce-content-body.dark-mode h5,
 .mce-content-body.dark-mode h6 {
-    color: #ffffff !important;
+    color: #ffffff;
 }
-.mce-content-body.dark-mode blockquote p { color: #c0c0c0 !important; }
-.mce-content-body.dark-mode a { color: #ffa726 !important; }
+.mce-content-body.dark-mode blockquote p { color: #c0c0c0; }
+.mce-content-body.dark-mode a { color: #ffa726; }
 .mce-content-body.dark-mode code,
 .mce-content-body.dark-mode pre {
-    background: #2d2d2d !important;
-    color: #f8f8f2 !important;
+    background: #2d2d2d;
+    color: #f8f8f2;
 }
 
 /* === Preview section: tag pills and divider ===
