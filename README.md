@@ -80,6 +80,9 @@ Wichtige Variablen (siehe `.env.example`):
 
 - `NODE_ENV`, `PORT`, `HOST`, `DOMAIN`
 - `LOG_LEVEL`, optional `LOG_DIR` (z. B. `/app/logs` im Container)
+- `LOG_MODES` (CSV: `error,application,debug,auth,access`), optional `LOG_ACCESS_ENABLED`, `LOG_AUTH_ENABLED`
+- Access-Logs in der App sind standardmäßig deaktiviert (Nginx übernimmt); nur bei Bedarf mit `LOG_ACCESS_ENABLED=true` aktivieren
+- optional für Syslog-kompatible Auth-Audits: `SYSLOG_APP_NAME`, `SYSLOG_HOSTNAME`
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 - `JWT_SECRET`
 - `GEMINI_API_KEY`, `TINY_MCE_API_KEY`

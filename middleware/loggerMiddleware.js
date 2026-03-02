@@ -10,6 +10,9 @@ import logger from '../utils/logger.js';
  * @param {import('express').NextFunction} next
  */
 export function loggerMiddleware(req, res, next) {
+  if (typeof logger.isAccessLoggingEnabled === 'function' && !logger.isAccessLoggingEnabled()) {
+    return next();
+  }
   const startTime = Date.now();
   // req.ip respects Express trust proxy setting (reads X-Forwarded-For in production).
   // X-Real-IP is a single-value fallback set by Nginx (proxy_set_header X-Real-IP $remote_addr).

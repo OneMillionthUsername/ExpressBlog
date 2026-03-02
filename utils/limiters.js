@@ -56,6 +56,13 @@ const loginLimiter = rateLimit({
       username: req.body?.username ?? null,
       userAgent: req.get('User-Agent'),
     });
+    logger.authEvent('AUTH_LOGIN_RATE_LIMIT', {
+      ip,
+      username: req.body?.username ?? 'unknown',
+      route: req.originalUrl,
+      method: req.method,
+      userAgent: req.get('User-Agent') || 'unknown',
+    }, 'WARN');
     res.status(429).json({ error: 'Too many login attempts. Please try again later.' });
   },
 });

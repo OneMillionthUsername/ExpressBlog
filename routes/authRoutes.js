@@ -13,6 +13,14 @@ import { IS_PRODUCTION } from '../config/config.js';
 import logger from '../utils/logger.js';
 import csrfProtection from '../utils/csrf.js';
 
+function getClientIp(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0].trim()
+    || req.headers['x-real-ip']
+    || req.ip
+    || req.socket?.remoteAddress
+    || 'unknown';
+}
+
 /**
  * Authentication routes
  *
@@ -63,6 +71,15 @@ authRouter.post('/login',
   async (req, res) => {
     try {
       const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
+      const ip = getClientIp(req);
+      const attemptedUsername = req.body?.username || 'unknown';
+      logger.authEvent('AUTH_LOGIN_ATTEMPT', {
+        ip,
+        username: attemptedUsername,
+        route: req.originalUrl,
+        method: req.method,
+        userAgent: req.get('User-Agent') || 'unknown',
+      }, 'INFO');
       logger.debug('[AUTH] /auth/login request received', {
         bodyKeys: Object.keys(req.body || {}),
         hasUsername: Boolean(req.body && req.body.username),
@@ -88,11 +105,23 @@ authRouter.post('/login',
 
       if (raced === TIMEOUT_SENTINEL) {
         logger.warn(`[AUTH AUDIT] Authentication timed out for username: ${req.body.username}`);
+        logger.authEvent('AUTH_LOGIN_TIMEOUT', {
+          ip,
+          username: attemptedUsername,
+          route: req.originalUrl,
+          reason: 'authentication_timeout',
+        }, 'WARN');
         return res.status(503).json({ success: false, error: 'Authentication timeout' });
       }
       const admin = raced;
       if (!admin) {
         logger.warn(`[AUTH AUDIT] Failed login for username: ${req.body.username}`);
+        logger.authEvent('AUTH_LOGIN_FAILURE', {
+          ip,
+          username: attemptedUsername,
+          route: req.originalUrl,
+          reason: 'invalid_credentials',
+        }, 'WARN');
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
       }
       // Token generation
@@ -107,6 +136,13 @@ authRouter.post('/login',
         path: '/',                 // Für ganze Domain
       });
       logger.info(`[AUTH AUDIT] Successful login for username: ${username} (id: ${id}, role: ${role})`);
+      logger.authEvent('AUTH_LOGIN_SUCCESS', {
+        ip,
+        username,
+        userId: id,
+        role,
+        route: req.originalUrl,
+      }, 'INFO');
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       if (wantsHtml) {
         const fallback = '/createPost';
@@ -125,7 +161,15 @@ authRouter.post('/login',
       });
     } catch (error) {
       const wantsHtml = req.accepts && req.accepts('html') && !req.is('application/json');
+      const ip = getClientIp(req);
+      const attemptedUsername = req.body?.username || 'unknown';
       logger.error(`[AUTH AUDIT] Login error for username: ${req.body && req.body.username}`, error);
+      logger.authEvent('AUTH_LOGIN_ERROR', {
+        ip,
+        username: attemptedUsername,
+        route: req.originalUrl,
+        error: error?.message || 'unknown_error',
+      }, 'ERROR');
       logger.debug('[AUTH] Login error details', {
         message: error && error.message,
         stack: error && error.stack,
