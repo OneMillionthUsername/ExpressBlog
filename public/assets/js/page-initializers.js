@@ -162,7 +162,26 @@ async function initializeCreatePage() {
 
 // Index Page - vereinfacht
 async function initializeIndexPage() {
-  // SSR-only: no client-side fetching required.
+  const heroImage = document.getElementById('hero-theme-image');
+  if (!heroImage) return;
+
+  const applyHeroThemeImage = () => {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    const lightSrc = heroImage.getAttribute('data-light-src');
+    const darkSrc = heroImage.getAttribute('data-dark-src');
+    const nextSrc = isDark ? darkSrc : lightSrc;
+
+    if (nextSrc && heroImage.getAttribute('src') !== nextSrc) {
+      heroImage.setAttribute('src', nextSrc);
+    }
+
+    heroImage.setAttribute('fetchpriority', 'high');
+    heroImage.setAttribute('loading', 'eager');
+  };
+
+  applyHeroThemeImage();
+  window.addEventListener('themeChanged', applyHeroThemeImage);
 }
 
 // Archiv Page - vereinfacht
