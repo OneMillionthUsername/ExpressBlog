@@ -17,8 +17,6 @@ export default function createDbRouter(requireDatabase, routes) {
 
   // Mount the sub-routers (order preserved)
   dbRouter.use('/', routes.staticRouter);
-  // Sitemap may be fine without DB; keep it here for consistency. Move outside if needed.
-  dbRouter.use('/', routes.sitemapRouter);
 
   // Utility routes (e.g., CSRF token endpoint)
   // Expose under /api so clients can fetch /api/csrf-token before making POST requests

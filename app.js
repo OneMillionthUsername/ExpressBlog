@@ -297,6 +297,7 @@ app.get(/\.(js|css)$/, (req, res, next) => {
 
 // 9. Statische Dateien (brauchen keine DB)
 app.use('/', legalRoutes);
+app.use('/', routes.sitemapRouter);
 app.use(express.static(publicDirectoryPath, {
   setHeaders: (res, path) => {
     // Kein CSP für SEO-relevante Dateien, damit sie von Suchmaschinen gecrawlt werden können
