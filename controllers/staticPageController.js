@@ -3,6 +3,7 @@ import { decodeHtmlEntities, withExcerpts, createExcerpt } from '../public/asset
 import categoryController from './categoryController.js';
 import postController from './postController.js';
 import cardController from './cardController.js';
+import { DatabaseService } from '../databases/mariaDB.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
 
@@ -13,12 +14,12 @@ async function showHomePage(req, res) {
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
 
   try {
-    const posts = await postController.getAllPosts();
+    const posts = await DatabaseService.getPublishedPostsForHome();
     const categories = await categoryController.getAllCategories();
     const featuredPosts = (posts || []).slice(0, 3).map(p => ({
       title: decodeHtmlEntities(p.title || ''),
       slug: p.slug,
-      excerpt: createExcerpt(p.content, 150),
+      excerpt: createExcerpt(p.excerpt_source, 150),
     }));
 
     const popularPosts = (posts || [])

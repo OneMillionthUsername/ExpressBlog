@@ -614,6 +614,33 @@ export const DatabaseService = {
       }
     }
   },
+  async getPublishedPostsForHome() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(`
+        SELECT id, slug, title, views, created_at, LEFT(content, 150) AS excerpt_source
+        FROM posts
+        WHERE published = 1
+        ORDER BY created_at DESC
+      `);
+
+      if (!result || result.length === 0) {
+        return [];
+      }
+
+      return result.map((post) => {
+        convertBigInts(post);
+        post.views = Number(post.views) || 0;
+        return post;
+      });
+    } catch (error) {
+      logger.error(`Error in getPublishedPostsForHome: ${error.message}`);
+      throw new databaseError(`Error in getPublishedPostsForHome: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getArchivedPosts(year) {
     // Optional year argument: when provided, return archived posts only for that year.
     let conn;

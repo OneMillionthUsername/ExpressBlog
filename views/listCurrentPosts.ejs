@@ -53,7 +53,7 @@
     </div>
 </div>
 
-<% extraScripts = `
+<% locals.extraScripts = `
 <script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
     (function() {
         const input = document.getElementById('post-filter-input');

@@ -87,11 +87,11 @@ function __safeJson(obj) {
     } catch (e) { return 'null'; } 
 }
 const __nonceAttr = (typeof nonce !== 'undefined') ? ` nonce="${String(nonce)}"` : '';
-extraScripts = '';
+locals.extraScripts = '';
 if (typeof post !== 'undefined' && post) {
-    extraScripts += `<script id="server-post" type="application/json"${__nonceAttr}>${__safeJson(post)}<\/script>`;
+    locals.extraScripts += `<script id="server-post" type="application/json"${__nonceAttr}>${__safeJson(post)}<\/script>`;
 }
-extraScripts += `<script${__nonceAttr}>
+locals.extraScripts += `<script${__nonceAttr}>
     (function() {
         try {
             var serverPostEl = document.getElementById('server-post');

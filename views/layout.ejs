@@ -98,8 +98,8 @@
 
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
-    <% if (typeof extraScripts !== 'undefined' && extraScripts) { %>
-    <%- extraScripts %>
+    <% if (typeof locals !== 'undefined' && locals.extraScripts) { %>
+    <%- locals.extraScripts %>
     <% } %>
 </body>
 </html>
