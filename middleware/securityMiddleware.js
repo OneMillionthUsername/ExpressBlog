@@ -72,9 +72,8 @@ export function createEscapeInputMiddleware(whitelist = []) {
         });
       }
     } catch (err) {
-      // don't crash the server because of bad input
       logger.error('Error in escapeInputMiddleware: %s', err.message);
-      return next();
+      return res.status(400).json({ error: 'Ungültige Eingabedaten' });
     }
     next();
   };

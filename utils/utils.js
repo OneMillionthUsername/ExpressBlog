@@ -1,6 +1,5 @@
 import path from 'path';
 import { DatabaseService } from '../databases/mariaDB.js';
-import { UtilsException } from '../models/customExceptions.js';
 import { sanitizeHtml } from './sanitizer.js';
 
 /**
@@ -97,7 +96,7 @@ export function escapeAllStrings(obj, whitelist = [], path = [], domPurifyInstan
     }
     return obj;
   }
-  throw new UtilsException('Unsupported input type');
+  return obj;
 }
 /**
  * Create a URL-friendly slug from a title.

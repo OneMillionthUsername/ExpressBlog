@@ -169,6 +169,70 @@ function showAdminLoginModal() {
     err.textContent = msg;
     err.style.display = 'block';
   }
+
+  const form = modal.querySelector('form');
+  const submitBtn = document.getElementById('admin-login-submit');
+  const usernameInput = document.getElementById('admin-username');
+  const passwordInput = document.getElementById('admin-password');
+  const GENERIC_LOGIN_ERROR = 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.';
+
+  const clearError = () => {
+    const err = document.getElementById('admin-login-error');
+    if (!err) return;
+    err.textContent = '';
+    err.style.display = 'none';
+  };
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearError();
+
+      const username = (usernameInput && usernameInput.value ? usernameInput.value : '').trim();
+      const password = passwordInput && passwordInput.value ? passwordInput.value : '';
+
+      if (!username || !password) {
+        _showError('Bitte Benutzername und Passwort eingeben.');
+        return;
+      }
+
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          _showError(GENERIC_LOGIN_ERROR);
+          return;
+        }
+
+        setAdmin(true);
+        currentUser = data && data.user ? data.user : null;
+        showFeedback('Login erfolgreich.', 'success');
+
+        if (modal && modal.parentElement) {
+          modal.parentElement.removeChild(modal);
+        }
+
+        reloadPageWithDelay(250);
+      } catch (error) {
+        console.error('Admin-Login fehlgeschlagen:', error);
+        _showError(GENERIC_LOGIN_ERROR);
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
 }
 function resolveCurrentPostId() {
   try {
