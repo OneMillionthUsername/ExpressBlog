@@ -379,20 +379,40 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
     event.preventDefault();
     if (status) status.innerHTML = 'Senden...';
 
-    const data = new FormData(form);
+    // Read the CSRF token at submit time (not at page-load time) so that it is
+    // always current.  Send it as a request header — the body is FormData
+    // (multipart/form-data) which express.urlencoded does NOT parse, so
+    // putting the token only in the body would cause a 403 every single time.
+    const csrfToken = (form.querySelector('input[name="_csrf"]') || {}).value || '';
+
+    const params = new URLSearchParams();
+    params.set('name', (document.getElementById('contact-name') || {}).value || '');
+    params.set('email', (document.getElementById('contact-email') || {}).value || '');
+    params.set('message', (document.getElementById('contact-message') || {}).value || '');
+    params.set('formLoadedAt', loadedAtInput ? loadedAtInput.value : '');
+    params.set('website', (form.querySelector('input[name="website"]') || {}).value || '');
+    if (csrfToken) params.set('_csrf', csrfToken);
+
     try {
       const response = await fetch(form.action, {
         method: form.method,
-        body: data,
-        headers: { 'Accept': 'application/json' },
+        body: params,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
       });
       if (response.ok) {
         setStatusMessage('Danke für deine Nachricht!');
         form.reset();
+        if (loadedAtInput) {
+          loadedAtInput.value = String(Date.now());
+        }
       } else {
         const result = await response.json().catch(() => ({}));
         if (result.errors && status) {
-          setStatusMessage(result.errors.map(error => error.message).join(', '));
+          setStatusMessage(result.errors.map(e => e.message).join(', '));
         } else if (result.error && status) {
           setStatusMessage(result.error);
         } else if (status) {
@@ -401,7 +421,6 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
       }
     } catch (error) {
       setStatusMessage('Oops! Es gab ein Problem beim Senden.');
-      // Log error for debugging and to satisfy lint rules
       console.error('Error while sending contact form:', error);
     }
   });

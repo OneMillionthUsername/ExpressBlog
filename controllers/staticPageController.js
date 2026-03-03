@@ -99,7 +99,10 @@ async function submitContactForm(req, res) {
       isInvalidTimestamp,
       elapsedMs: isInvalidTimestamp ? null : (now - formLoadedAt),
     });
-    return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
+    return res.status(429).json({
+      success: false,
+      error: 'Bitte warte einen Moment und sende das Formular erneut.',
+    });
   }
 
   try {
