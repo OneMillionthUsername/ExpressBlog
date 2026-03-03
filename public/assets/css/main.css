@@ -2031,6 +2031,7 @@ blockquote:after {
 
     .header-section {
         padding: 40px 15px;
+        min-height: 45vh;
     }
 
     /* Ornaments verstecken */
