@@ -68,7 +68,7 @@ flowchart TD
 
   SSR --> C1[Controller Layer]
   API --> C1
-  C1 --> M1[Model Validation (Joi classes)]
+  C1 --> M1["Model Validation (Joi classes)"]
   C1 --> DS[DatabaseService in mariaDB.js]
   DS --> DB
 
