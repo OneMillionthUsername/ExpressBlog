@@ -104,29 +104,37 @@
                     <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
                         <% featuredPosts.forEach(function(fp) { %>
                             <div class="featured-post-card">
-                                <% if (fp.previewImage) { %>
-                                    <img class="featured-post-preview" src="<%= fp.previewImage %>" alt="" loading="lazy" decoding="async" width="72" height="72">
-                                <% } %>
                                 <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
                                 <p class="featured-post-excerpt"><%= fp.excerpt %></p>
-                                <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
+                                <div class="featured-post-actions">
+                                    <% if (fp.previewImage) { %>
+                                        <img class="featured-post-preview" src="<%= fp.previewImage %>" alt="" loading="lazy" decoding="async" width="72" height="72">
+                                    <% } %>
+                                    <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
+                                </div>
                             </div>
                         <% }); %>
                     <% } else { %>
                         <div class="featured-post-card">
                             <h4 class="featured-post-title"><a href="/blogpost/beyond-the-first-magic-trick" class="featured-post-link">AI Agents</a></h4>
                             <p class="featured-post-excerpt">Beyond the first magic trick: The disillusionment with AI agents.</p>
-                            <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
+                            <div class="featured-post-actions">
+                                <a href="/blogpost/beyond-the-first-magic-trick" class="btn btn-outline-primary">Lesen</a>
+                            </div>
                         </div>
                         <div class="featured-post-card">
                             <h4 class="featured-post-title"><a href="/blogpost/vom-archiv-zur-ablenkung" class="featured-post-link">Vom Archiv zur Ablenkung</a></h4>
                             <p class="featured-post-excerpt">ein Blick in die Vergangenheit des Internets – als Cookies noch nur etwas zum Essen waren...</p>
-                            <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
+                            <div class="featured-post-actions">
+                                <a href="/blogpost/vom-archiv-zur-ablenkung" class="btn btn-outline-primary">Lesen</a>
+                            </div>
                         </div>
                         <div class="featured-post-card">
                             <h4 class="featured-post-title"><a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="featured-post-link">Universität Wien</a></h4>
                             <p class="featured-post-excerpt">Wissenschaft im Dienst der Gesinnung</p>
-                            <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
+                            <div class="featured-post-actions">
+                                <a href="/blogpost/universitat-wien-wissenschaft-gesinnung" class="btn btn-outline-primary">Lesen</a>
+                            </div>
                         </div>
                     <% } %>
                 </div>
