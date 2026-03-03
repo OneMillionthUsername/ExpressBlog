@@ -54,17 +54,17 @@ flowchart TD
   Nginx --> Server[server.js]
   Server --> App[app.js]
 
-  App --> MW[Globale Middleware\nhelmet, nonce, compression, cookieParser,\njson/urlencoded, sanitize, rate-limit, logger]
-  App --> Public[Public Mounts\n/legalRoutes, sitemapRouter, express.static, /health]
-  App --> EarlyApi[Early API Mounts\n/api/ai, /api utility, /debug/headers]
+  App --> MW["Globale Middleware<br/>helmet, nonce, compression, cookieParser,<br/>json/urlencoded, sanitize, rate-limit, logger"]
+  App --> Public["Public Mounts<br/>/legalRoutes, sitemapRouter, express.static, /health"]
+  App --> EarlyApi["Early API Mounts<br/>/api/ai, /api utility, /debug/headers"]
 
-  App --> Init[initializeApp()\ninit DB, test conn, init schema]
+  App --> Init["initializeApp()<br/>init DB, test conn, init schema"]
   Init --> DB[(MariaDB Pool / Mock Pool)]
   Init -->|nach Ready| DbRouter[dbRouter via createDbRouter]
 
   DbRouter --> RequireDB[requireDatabase middleware]
-  RequireDB --> SSR[SSR Router\nstaticRoutes, postRoutes, commentsRoutes, cardRoutes]
-  RequireDB --> API[JSON API Router\npostApi, commentsApi, cardApi, auth]
+  RequireDB --> SSR["SSR Router<br/>staticRoutes, postRoutes, commentsRoutes, cardRoutes"]
+  RequireDB --> API["JSON API Router<br/>postApi, commentsApi, cardApi, auth"]
 
   SSR --> C1[Controller Layer]
   API --> C1
@@ -72,10 +72,10 @@ flowchart TD
   C1 --> DS[DatabaseService in mariaDB.js]
   DS --> DB
 
-  API --> Security[Route Security\ncsrfProtection, authenticateToken, requireAdmin]
+  API --> Security["Route Security<br/>csrfProtection, authenticateToken, requireAdmin"]
   SSR --> Security
 
-  App --> EH[Error Handling\ncelebrateErrors -> 404 -> error handler\n(API JSON / SSR render)]
+  App --> EH["Error Handling<br/>celebrateErrors -> 404 -> error handler<br/>(API JSON / SSR render)"]
 ```
 
 ### Typischer Request-Flow (geschützter Write)
