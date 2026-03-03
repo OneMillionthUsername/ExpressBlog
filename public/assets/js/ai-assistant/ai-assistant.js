@@ -62,7 +62,7 @@ import { registerAction } from '../actions/actionRegistry.js';
 // Gemini API Konfiguration
 const GEMINI_CONFIG = {
   apiKey: (GEMINI_API_KEY && GEMINI_API_KEY.length > 0) ? GEMINI_API_KEY : '', // Wird vom Admin gesetzt
-  model: 'gemini-2.5-flash', // Standardmodell (Server-Proxy nutzt dieses Modell)
+  model: 'gemini-3-flash-preview', // Standardmodell, serverseitig mit Fallbacks abgesichert
   maxTokens: 2048,
   temperature: 0.7,
 };
@@ -281,7 +281,9 @@ async function improveText() {
 
 Aufgabe:
 - Verbessere NUR Grammatik, Rechtschreibung und Interpunktion.
-- Ändere NICHTS an Inhalt, Stil oder Struktur.
+- Bewahre Inhalt und Kernaussage vollständig.
+- Du darfst Satzrhythmus, Übergänge, Textfluss und Lesefluss leicht optimieren.
+- Keine inhaltlichen Erweiterungen, keine neuen Fakten, keine Stilbrüche.
 
 KRITISCH - Antwortformat:
 - Trenne die korrigierten Textsegmente mit diesem EXAKTEN Trennzeichen: §§§SEGMENT§§§
@@ -293,8 +295,8 @@ Zwingende Regeln:
 - Behalte die Anzahl und Reihenfolge der Segmente bei.
 - Behalte ALLE Zeilenumbrüche (\\n), Absätze und Whitespaces bei.
 - Entferne KEINE unsichtbaren Zeichen wie [[NBSP]], [[ZWSP]], [[ZWJ]], [[ZWNJ]], [[BOM]], [[SHY]].
-- Füge KEINE neuen Zeichen hinzu, außer Rechtschreibkorrekturen.
-- Keine stilistischen Umschreibungen, keine inhaltlichen Änderungen.
+- Füge KEINE neuen Inhalte/Fakten hinzu.
+- Erlaube nur minimale stilistische Glättungen für besseren Lesefluss bei identischer Aussage.
 
 Beispiel:
 Eingabe:

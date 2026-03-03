@@ -13,6 +13,19 @@ import csrfProtection from '../utils/csrf.js';
  */
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
+const FALLBACK_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+
+function isModelAvailabilityError(err) {
+  const msg = String(err?.message || '').toLowerCase();
+  return (
+    msg.includes('model')
+    || msg.includes('404')
+    || msg.includes('not found')
+    || msg.includes('unavailable')
+    || msg.includes('deprecated')
+  );
+}
 
 // POST /api/ai/generate
 router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
@@ -25,27 +38,54 @@ router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async 
 
     const safeModel = (typeof model === 'string' && model.trim().length > 0)
       ? model.trim()
-      : 'gemini-2.5-flash'; // Stable, free model (2.0 is deprecated)
+      : DEFAULT_GEMINI_MODEL;
 
-    const generativeModel = genAI.getGenerativeModel({ 
-      model: safeModel,
-      // Wenn systemInstruction gesetzt ist (truthy), wird das Objekt { systemInstruction } 
-      // in das Objekt für getGenerativeModel eingebaut. Ist systemInstruction nicht gesetzt, 
-      // passiert nichts.
-      // Kurz: Das ist eine elegante Möglichkeit, ein optionales Feld
-      // nur dann zu übergeben, wenn es vorhanden ist. 
-      ...(systemInstruction && { systemInstruction }),
-    });
+    const modelCandidates = [
+      safeModel,
+      ...FALLBACK_GEMINI_MODELS.filter((candidate) => candidate !== safeModel),
+    ];
 
-    const result = await generativeModel.generateContent(prompt);
+    let usedModel = modelCandidates[0];
+    let result;
+    let lastError;
+
+    for (let i = 0; i < modelCandidates.length; i += 1) {
+      const candidateModel = modelCandidates[i];
+      try {
+        const generativeModel = genAI.getGenerativeModel({
+          model: candidateModel,
+          ...(systemInstruction && { systemInstruction }),
+        });
+        result = await generativeModel.generateContent(prompt);
+        usedModel = candidateModel;
+        break;
+      } catch (modelErr) {
+        lastError = modelErr;
+        const hasNextCandidate = i < modelCandidates.length - 1;
+        if (!isModelAvailabilityError(modelErr) || !hasNextCandidate) {
+          throw modelErr;
+        }
+
+        logger.warn('Gemini model unavailable, retrying with next fallback model', {
+          failedModel: candidateModel,
+          nextModel: modelCandidates[i + 1],
+          error: modelErr.message,
+        });
+      }
+    }
+
+    if (!result) {
+      throw lastError || new Error('No Gemini model available');
+    }
+
     const aiText = result.response.text() || '';
     
-    return res.json({ success: true, data: { text: aiText } });
+    return res.json({ success: true, data: { text: aiText, model: usedModel } });
   } catch (err) {
     logger.error('AI generate route error', { 
       error: err.message, 
       status: err.status || err.statusCode,
-      model: req.body?.model || 'gemini-2.5-flash',
+      model: req.body?.model || DEFAULT_GEMINI_MODEL,
       stack: err.stack,
     });
     
