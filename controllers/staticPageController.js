@@ -1,5 +1,5 @@
 import logger from '../utils/logger.js';
-import { decodeHtmlEntities, withExcerpts, createExcerpt } from '../public/assets/js/shared/text.js';
+import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl } from '../public/assets/js/shared/text.js';
 import categoryController from './categoryController.js';
 import postController from './postController.js';
 import cardController from './cardController.js';
@@ -20,6 +20,7 @@ async function showHomePage(req, res) {
       title: decodeHtmlEntities(p.title || ''),
       slug: p.slug,
       excerpt: createExcerpt(p.excerpt_source, 150),
+      previewImage: extractFirstImageUrl(p.preview_source || p.excerpt_source || ''),
     }));
 
     const popularPosts = (posts || [])

@@ -20,7 +20,11 @@ export function stripHtml(html = '') {
     void e; // silence unused var linter, fallback to regex stripper
   }
   // Fallback: naive tag stripper
-  return String(html).replace(/<[^>]*>/g, '');
+  return String(html)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^>]*$/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function createExcerptFromHtml(html = '', maxLength = 150) {

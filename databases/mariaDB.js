@@ -619,7 +619,7 @@ export const DatabaseService = {
     try {
       conn = await getDatabasePool().getConnection();
       const result = await conn.query(`
-        SELECT id, slug, title, views, created_at, LEFT(content, 150) AS excerpt_source
+        SELECT id, slug, title, views, created_at, LEFT(content, 500) AS excerpt_source, LEFT(content, 5000) AS preview_source
         FROM posts
         WHERE published = 1
         ORDER BY created_at DESC

@@ -23,14 +23,28 @@ export function decodeHtmlEntities(input = '') {
   return s.replace(/(&amp;|&lt;|&gt;|&quot;|&#39;|&apos;|&nbsp;|&ndash;|&mdash;|&hellip;|&lsquo;|&rsquo;|&ldquo;|&rdquo;|&laquo;|&raquo;|&auml;|&ouml;|&uuml;|&Auml;|&Ouml;|&Uuml;|&szlig;)/g, m => map[m] || m);
 }
 
+export function stripHtmlToText(input = '') {
+  const decoded = decodeHtmlEntities(String(input));
+  return decoded
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^>]*$/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function extractFirstImageUrl(htmlContent = '') {
+  const decoded = decodeHtmlEntities(String(htmlContent));
+  const quotedMatch = decoded.match(/<img\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/i);
+  if (quotedMatch && quotedMatch[2]) return quotedMatch[2].trim();
+
+  const unquotedMatch = decoded.match(/<img\b[^>]*\bsrc\s*=\s*([^\s"'<>]+)/i);
+  return unquotedMatch && unquotedMatch[1] ? unquotedMatch[1].trim() : '';
+}
+
 // Strip HTML tags and decode entities to produce a plain-text excerpt.
 // Used server-side via withExcerpts() before rendering templates.
 export function createExcerpt(htmlContent = '', maxLen = 150) {
-  // Decode entities first so double-escaped content (e.g. &lt;p&gt;text&lt;/p&gt;)
-  // gets its angle brackets restored before the tag-stripper runs.
-  const decoded = decodeHtmlEntities(String(htmlContent));
-  const plain = decoded.replace(/<[^>]*>/g, '');
-  const txt = plain.replace(/\s+/g, ' ').trim();
+  const txt = stripHtmlToText(htmlContent);
   if (!txt) return '';
   const excerpt = txt.length > maxLen ? txt.substring(0, maxLen).trimEnd() : txt;
   return excerpt.endsWith('...') ? excerpt : `${excerpt}...`;

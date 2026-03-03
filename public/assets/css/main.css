@@ -311,6 +311,15 @@ main {
     flex-grow: 1; /* Füllt verfügbaren Platz */
 }
 
+.featured-post-preview {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin-bottom: 12px;
+    align-self: flex-start;
+}
+
 /* Posts filter header */
 .posts-header {
     display: flex;

@@ -104,6 +104,9 @@
                     <% if (typeof featuredPosts !== 'undefined' && Array.isArray(featuredPosts) && featuredPosts.length > 0) { %>
                         <% featuredPosts.forEach(function(fp) { %>
                             <div class="featured-post-card">
+                                <% if (fp.previewImage) { %>
+                                    <img class="featured-post-preview" src="<%= fp.previewImage %>" alt="" loading="lazy" decoding="async" width="72" height="72">
+                                <% } %>
                                 <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
                                 <p class="featured-post-excerpt"><%= fp.excerpt %></p>
                                 <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
