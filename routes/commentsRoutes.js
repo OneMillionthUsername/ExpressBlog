@@ -52,7 +52,8 @@ commentsRouter.post('/:postId',
   async (req, res) => {
     try {
       const postId = Number(req.params.postId);
-      await commentsController.createCommentRecord(postId, req.body);
+      const created = await commentsController.createCommentRecord(postId, req.body);
+      await commentsController.sendCommentNotification({ req, postId, comment: created?.comment });
       const redirectTarget = buildSafeRedirect(req, `/blogpost/id/${postId}`, 'ok');
       return res.redirect(303, redirectTarget);
     } catch (error) {

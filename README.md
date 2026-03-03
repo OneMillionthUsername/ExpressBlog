@@ -161,6 +161,17 @@ Wichtige Variablen (siehe `.env.example`):
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 - `JWT_SECRET`
 - `GEMINI_API_KEY`, `TINY_MCE_API_KEY`
+- Kontaktformular SMTP:
+  - `SMTP_HOST` (Docker-Default: `host.docker.internal`)
+  - `SMTP_PORT` (z. B. `25` oder `587`)
+  - `SMTP_SECURE` (`true` für SMTPS, sonst `false`)
+  - optional `SMTP_USER`, `SMTP_PASS`
+  - `CONTACT_FORM_TO` (Empfängeradresse)
+  - optional `CONTACT_FORM_FROM`, `CONTACT_FORM_SUBJECT_PREFIX`
+  - Kommentar-Benachrichtigungen:
+    - `COMMENT_NOTIFY_ENABLED` (`true|false`, Default `true`)
+    - `COMMENT_NOTIFY_TO` (optional; fallback auf `CONTACT_FORM_TO`)
+    - optional `COMMENT_NOTIFY_SUBJECT_PREFIX`
 - optional: `JSON_BODY_LIMIT`, `URLENCODED_BODY_LIMIT`
 
 ## NPM-Skripte

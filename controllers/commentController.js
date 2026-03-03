@@ -4,6 +4,7 @@ import { CommentControllerException } from '../models/customExceptions.js';
 import { sanitizeHtml } from '../utils/sanitizer.js';
 import { escapeHtml } from '../utils/utils.js';
 import { normalizePublished } from '../utils/normalizers.js';
+import contactMailService from '../services/contactMailService.js';
 
 async function createCommentRecord(postId, body) {
   const commentData = {
@@ -46,6 +47,35 @@ async function createCommentRecord(postId, body) {
   }
 
   return result;
+}
+
+async function sendCommentNotification({ req, postId, comment }) {
+  try {
+    const post = await DatabaseService.getPostById(postId);
+    const host = req?.get ? req.get('host') : null;
+    const forwardedProto = req?.get ? req.get('x-forwarded-proto') : null;
+    const proto = req?.secure || forwardedProto === 'https' ? 'https' : 'http';
+    const baseUrl = host ? `${proto}://${host}` : '';
+    const postUrl = baseUrl ? `${baseUrl}/blogpost/id/${postId}#comments-section` : `/blogpost/id/${postId}#comments-section`;
+    const ip = req?.headers?.['x-forwarded-for']?.split(',')[0]?.trim()
+      || req?.headers?.['x-real-ip']
+      || req?.ip
+      || req?.socket?.remoteAddress
+      || 'unknown';
+    const userAgent = req?.get ? (req.get('User-Agent') || 'unknown') : 'unknown';
+
+    await contactMailService.sendCommentNotificationMail({
+      postId,
+      postTitle: post?.title || `Post #${postId}`,
+      postUrl,
+      username: comment?.username || 'Anonym',
+      text: comment?.text || '',
+      ip,
+      userAgent,
+    });
+  } catch (error) {
+    console.error('Error sending comment notification email:', error);
+  }
 }
 
 async function buildValidatedComments(postId) {
@@ -124,7 +154,8 @@ async function deleteCommentRecord(postId, commentId) {
 const createComment = async (req, res) => {
   try {
     const postId = parseInt(req.params.postId);
-    await createCommentRecord(postId, req.body);
+    const created = await createCommentRecord(postId, req.body);
+    await sendCommentNotification({ req, postId, comment: created?.comment });
     res.json({ success: true, message: 'Comment created successfully' });
   } catch (error) {
     console.error('Error creating comment:', error);
@@ -196,6 +227,7 @@ export default {
   createComment,
   getCommentsByPostId,
   deleteComment,
+  sendCommentNotification,
   fetchCommentsByPostId: buildValidatedComments,
   createCommentRecord,
   deleteCommentRecord,

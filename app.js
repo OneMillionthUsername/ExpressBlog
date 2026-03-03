@@ -192,14 +192,13 @@ app.use(helmet({
         '\'self\'',
         'https://generativelanguage.googleapis.com/v1beta/', // for Google Gemini API calls
         'https://cdn.tiny.cloud/1/', // for TinyMCE cloud services (e.g. spell check, image upload)
-        'https://formspree.io', // for email submission from contact form
       ],
       // Allow TinyMCE editor iframe (same-origin) and safe blob/data contexts
       frameSrc: ['\'self\'', 'blob:', 'data:'],
       childSrc: ['\'self\'', 'blob:', 'data:'],
       objectSrc: ['\'none\''],
       baseUri: ['\'self\''],
-      formAction: ['\'self\'', 'https://formspree.io'],
+      formAction: ['\'self\''],
       frameAncestors: ['\'none\''],
       scriptSrcAttr: ['\'unsafe-hashes\'' /*'\'unsafe-inline\''*/], // Allow inline event handlers but require a hash or nonce
     },

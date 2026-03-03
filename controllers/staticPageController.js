@@ -6,6 +6,7 @@ import cardController from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
+import contactMailService from '../services/contactMailService.js';
 
 async function showHomePage(req, res) {
   logger.debug(`[HOME] GET / requested from ${req.ip}, User-Agent: ${req.get('User-Agent')}`);
@@ -66,6 +67,58 @@ function showAboutPage(req, res) {
 
 function redirectAboutHtml(_req, res) {
   res.redirect('/about');
+}
+
+async function submitContactForm(req, res) {
+  const minSubmitDelayMs = 3000;
+  const honeypot = String(req.body?.website || '').trim();
+  const formLoadedAtRaw = String(req.body?.formLoadedAt || '').trim();
+  const formLoadedAt = Number(formLoadedAtRaw);
+  const now = Date.now();
+  const name = String(req.body?.name || '').trim();
+  const email = String(req.body?.email || '').trim();
+  const message = String(req.body?.message || '').trim();
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
+    || req.headers['x-real-ip']
+    || req.ip
+    || req.socket?.remoteAddress
+    || 'unknown';
+  const userAgent = req.get('User-Agent') || 'unknown';
+
+  if (honeypot) {
+    logger.warn('[CONTACT] Honeypot triggered - dropping submission', { ip });
+    return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
+  }
+
+  const isInvalidTimestamp = !Number.isFinite(formLoadedAt) || formLoadedAt <= 0 || formLoadedAt > now;
+  const isTooFast = !isInvalidTimestamp && (now - formLoadedAt < minSubmitDelayMs);
+
+  if (isInvalidTimestamp || isTooFast) {
+    logger.warn('[CONTACT] Timing check triggered - dropping submission', {
+      ip,
+      isInvalidTimestamp,
+      elapsedMs: isInvalidTimestamp ? null : (now - formLoadedAt),
+    });
+    return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
+  }
+
+  try {
+    await contactMailService.sendContactMail({
+      name,
+      email,
+      message,
+      ip,
+      userAgent,
+    });
+
+    return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
+  } catch (error) {
+    logger.error('[CONTACT] Failed to send contact email', {
+      error: error && error.message ? error.message : String(error),
+      ip,
+    });
+    return res.status(500).json({ success: false, error: 'Nachricht konnte nicht gesendet werden.' });
+  }
 }
 
 async function showPostsPage(req, res) {
@@ -154,6 +207,7 @@ export default {
   showHomePage,
   showAboutPage,
   redirectAboutHtml,
+  submitContactForm,
   showPostsPage,
   showCreatePostPage,
   showUpdatePostByIdPage,

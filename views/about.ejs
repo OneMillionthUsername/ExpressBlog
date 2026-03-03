@@ -51,7 +51,15 @@
                             Ich freue mich über Feedback, Diskussionen und Anregungen zu den Themen dieses Blogs. 
                             Hinterlassen Sie gerne Kommentare oder nehmen Sie Kontakt auf.
                         </p>
-                        <form id="my-form" action="https://formspree.io/f/xzzjggry" method="POST" class="mt-3">
+                        <form id="my-form" action="/contact" method="POST" class="mt-3">
+                            <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <% } %>
+                            <input type="hidden" id="contact-form-loaded-at" name="formLoadedAt" value="">
+                            <div style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+                                <label for="contact-website">Website</label>
+                                <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
+                            </div>
                             <div class="form-group">
                                 <label for="contact-name">Name:</label>
                                 <input type="text" id="contact-name" name="name" class="form-control" required>

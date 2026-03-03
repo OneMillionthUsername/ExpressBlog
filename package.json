@@ -64,6 +64,7 @@
     "mariadb": "^3.4.5",
     "multer": "^2.0.2",
     "mysql2": "^3.17.1",
+    "nodemailer": "^8.0.1",
     "sanitize-filename": "^1.6.3",
     "sharp": "^0.34.5",
     "url": "^0.11.4"

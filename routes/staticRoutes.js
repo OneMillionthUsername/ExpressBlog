@@ -1,6 +1,8 @@
 import express from 'express';
 import staticPageController from '../controllers/staticPageController.js';
 import csrfProtection from '../utils/csrf.js';
+import { strictLimiter } from '../utils/limiters.js';
+import { validateFields } from '../middleware/validationMiddleware.js';
 
 /**
  * Routes serving site pages and server-side rendered views.
@@ -21,5 +23,25 @@ staticRouter.get('/blogpost/update/:id', csrfProtection, staticPageController.sh
 
 staticRouter.get('/about.html', staticPageController.redirectAboutHtml);
 staticRouter.get('/posts', csrfProtection, staticPageController.showPostsPage);
+
+staticRouter.post(
+  '/contact',
+  strictLimiter,
+  csrfProtection,
+  validateFields({
+    body: {
+      name: { required: true, type: 'string', min: 2, max: 120 },
+      email: {
+        required: true,
+        type: 'string',
+        min: 5,
+        max: 254,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      },
+      message: { required: true, type: 'string', min: 10, max: 4000 },
+    },
+  }),
+  staticPageController.submitContactForm,
+);
 
 export default staticRouter;

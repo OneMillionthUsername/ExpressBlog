@@ -350,12 +350,31 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
   }
   prefillWhenReady();
 }
-// AJAX-Formular-Handling für Formspree-Kontaktformulare
+// AJAX-Formular-Handling für internes Kontaktformular
 (function() {
   const form = document.getElementById('my-form');
   if (!form) return;
 
+  const loadedAtInput = document.getElementById('contact-form-loaded-at');
+  if (loadedAtInput && !loadedAtInput.value) {
+    loadedAtInput.value = String(Date.now());
+  }
+
   const status = document.getElementById('my-form-status');
+  let statusResetTimer = null;
+
+  function setStatusMessage(message) {
+    if (!status) return;
+    status.innerHTML = message;
+    if (statusResetTimer) {
+      clearTimeout(statusResetTimer);
+    }
+    statusResetTimer = setTimeout(() => {
+      status.innerHTML = '';
+      statusResetTimer = null;
+    }, 3000);
+  }
+
   form.addEventListener('submit', async function handleSubmit(event) {
     event.preventDefault();
     if (status) status.innerHTML = 'Senden...';
@@ -368,18 +387,20 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
         headers: { 'Accept': 'application/json' },
       });
       if (response.ok) {
-        if (status) status.innerHTML = 'Danke für deine Nachricht!';
+        setStatusMessage('Danke für deine Nachricht!');
         form.reset();
       } else {
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
         if (result.errors && status) {
-          status.innerHTML = result.errors.map(error => error.message).join(', ');
+          setStatusMessage(result.errors.map(error => error.message).join(', '));
+        } else if (result.error && status) {
+          setStatusMessage(result.error);
         } else if (status) {
-          status.innerHTML = 'Oops! Es gab ein Problem beim Senden.';
+          setStatusMessage('Oops! Es gab ein Problem beim Senden.');
         }
       }
     } catch (error) {
-      if (status) status.innerHTML = 'Oops! Es gab ein Problem beim Senden.';
+      setStatusMessage('Oops! Es gab ein Problem beim Senden.');
       // Log error for debugging and to satisfy lint rules
       console.error('Error while sending contact form:', error);
     }
