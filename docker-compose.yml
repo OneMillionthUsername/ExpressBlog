@@ -59,7 +59,7 @@ services:
         aliases:
           - app
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:172.18.0.1"
     depends_on:
       db:
         condition: service_healthy

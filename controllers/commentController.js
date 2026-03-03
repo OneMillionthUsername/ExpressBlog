@@ -1,3 +1,4 @@
+import logger from '../utils/logger.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import Comment from '../models/commentModel.js';
 import { CommentControllerException } from '../models/customExceptions.js';
@@ -74,7 +75,9 @@ async function sendCommentNotification({ req, postId, comment }) {
       userAgent,
     });
   } catch (error) {
-    console.error('Error sending comment notification email:', error);
+    logger.error('[COMMENT_NOTIFY] Failed to send comment notification email', {
+      error: error && error.message ? error.message : String(error),
+    });
   }
 }
 

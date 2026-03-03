@@ -32,7 +32,7 @@ function parseBoolean(value, defaultValue = false) {
 }
 
 export const SMTP_HOST = process.env.SMTP_HOST || 'host.docker.internal';
-export const SMTP_PORT = Number(process.env.SMTP_PORT || 25);
+export const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 export const SMTP_SECURE = parseBoolean(process.env.SMTP_SECURE, false);
 export const SMTP_USER = process.env.SMTP_USER || '';
 export const SMTP_PASS = process.env.SMTP_PASS || '';
