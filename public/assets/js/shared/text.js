@@ -32,7 +32,8 @@ export function createExcerpt(htmlContent = '', maxLen = 150) {
   const plain = decoded.replace(/<[^>]*>/g, '');
   const txt = plain.replace(/\s+/g, ' ').trim();
   if (!txt) return '';
-  return txt.length > maxLen ? txt.substring(0, maxLen) + '...' : txt;
+  const excerpt = txt.length > maxLen ? txt.substring(0, maxLen).trimEnd() : txt;
+  return excerpt.endsWith('...') ? excerpt : `${excerpt}...`;
 }
 
 // Pre-compute plain-text excerpts on a posts array before passing to templates.

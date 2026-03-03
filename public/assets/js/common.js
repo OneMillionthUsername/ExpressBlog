@@ -25,8 +25,9 @@ export function stripHtml(html = '') {
 
 export function createExcerptFromHtml(html = '', maxLength = 150) {
   const text = stripHtml(html).trim();
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  if (!text) return '';
+  const excerpt = text.length > maxLength ? text.substring(0, maxLength).trimEnd() : text;
+  return excerpt.endsWith('...') ? excerpt : `${excerpt}...`;
 }
 
 export function createElement(tagName, attributes = {}, html = '') {
