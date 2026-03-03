@@ -18,6 +18,8 @@ export function getTinyMCEConfig() {
     selector: '#content',
     height: 650,
     resize: true,
+    convert_urls: false,
+    relative_urls: false,
     menubar: 'edit view insert format tools help',
     referrer_policy: 'origin',
     cache_suffix: cacheSuffix,

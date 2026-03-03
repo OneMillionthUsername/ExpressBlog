@@ -242,6 +242,15 @@ export function getPostIdFromPath() {
 // Accepts an optional already-initialized editor instance to skip the tinymce.get() retry
 export async function checkAndPrefillEditPostForm(editorInstance) {
   console.log('[checkAndPrefillEditPostForm] Starting...');
+
+  const normalizeEditorContentForEdit = (html) => {
+    if (!html || typeof html !== 'string') return html || '';
+    let normalized = html;
+    normalized = normalized.replace(/(src=["'])\.\.\/(assets\/(?:uploads|media)\/)/gi, '$1/$2');
+    normalized = normalized.replace(/(src=["'])\.\/+(assets\/(?:uploads|media)\/)/gi, '$1/$2');
+    normalized = normalized.replace(/(src=["'])(assets\/(?:uploads|media)\/)/gi, '$1/$2');
+    return normalized;
+  };
   
   // Prefer server-injected post object (SSR) from JSON script to avoid an extra API call.
   let post = null;
@@ -298,8 +307,9 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
     console.log('[prefill] Setting title:', post.title);
     titleEl.value = post.title || '';
     
-    console.log('[prefill] Setting content, length:', post.content?.length || 0);
-    editor.setContent(post.content || '');
+    const normalizedContent = normalizeEditorContentForEdit(post.content || '');
+    console.log('[prefill] Setting content, length:', normalizedContent?.length || 0);
+    editor.setContent(normalizedContent);
     
     const tagsValue = Array.isArray(post.tags)
       ? post.tags.join(', ')
