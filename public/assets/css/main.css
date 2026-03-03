@@ -2176,15 +2176,17 @@ blockquote:after {
     .featured-post-actions {
         flex-direction: row;
         align-items: center;
+        justify-content: space-between;
         gap: 12px;
     }
 
     .featured-post-actions .btn {
-        order: 1;
+        order: 2;
+        margin-left: auto;
     }
 
     .featured-post-actions .featured-post-preview {
-        order: 2;
+        order: 1;
     }
 
     /* SIDEBAR */
