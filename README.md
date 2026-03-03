@@ -44,6 +44,81 @@ tests/          Unit/Integrationstests
 integrationTests/
 ```
 
+## Architektur & Request-Flow
+
+### Komponentenübersicht
+
+```mermaid
+flowchart TD
+  Client[Browser / API Client] --> Nginx[Nginx Reverse Proxy]
+  Nginx --> Server[server.js]
+  Server --> App[app.js]
+
+  App --> MW[Globale Middleware\nhelmet, nonce, compression, cookieParser,\njson/urlencoded, sanitize, rate-limit, logger]
+  App --> Public[Public Mounts\n/legalRoutes, sitemapRouter, express.static, /health]
+  App --> EarlyApi[Early API Mounts\n/api/ai, /api utility, /debug/headers]
+
+  App --> Init[initializeApp()\ninit DB, test conn, init schema]
+  Init --> DB[(MariaDB Pool / Mock Pool)]
+  Init -->|nach Ready| DbRouter[dbRouter via createDbRouter]
+
+  DbRouter --> RequireDB[requireDatabase middleware]
+  RequireDB --> SSR[SSR Router\nstaticRoutes, postRoutes, commentsRoutes, cardRoutes]
+  RequireDB --> API[JSON API Router\npostApi, commentsApi, cardApi, auth]
+
+  SSR --> C1[Controller Layer]
+  API --> C1
+  C1 --> M1[Model Validation (Joi classes)]
+  C1 --> DS[DatabaseService in mariaDB.js]
+  DS --> DB
+
+  API --> Security[Route Security\ncsrfProtection, authenticateToken, requireAdmin]
+  SSR --> Security
+
+  App --> EH[Error Handling\ncelebrateErrors -> 404 -> error handler\n(API JSON / SSR render)]
+```
+
+### Typischer Request-Flow (geschützter Write)
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant N as Nginx
+  participant A as app.js
+  participant G as Global Middleware
+  participant D as requireDatabase
+  participant R as Router (z.B. /api/blogpost)
+  participant S as Security Chain
+  participant CT as Controller
+  participant M as Model Validation
+  participant DB as DatabaseService/MariaDB
+
+  C->>N: POST /api/blogpost/create
+  N->>A: proxied request
+  A->>G: helmet, nonce, parser, sanitize, limiter, logger
+  G-->>A: ok
+  A->>D: DB readiness check (dbRouter)
+  alt DB not ready
+    D-->>C: 503 Service Unavailable
+  else DB ready
+    D->>R: route match
+    R->>S: csrfProtection -> authenticateToken -> requireAdmin
+    alt security fails
+      S-->>C: 401/403
+    else security ok
+      S->>CT: createPost/updatePost/deletePost
+      CT->>M: Joi validate payload/domain
+      M-->>CT: validated entity
+      CT->>DB: SQL via DatabaseService
+      DB-->>CT: result rows/status
+      CT-->>R: domain result
+      R-->>C: JSON 2xx (+ cache invalidation)
+    end
+  end
+
+  Note over A,C: Fehlerpfad: celebrateErrors / 404 / zentraler error handler
+```
+
 ## Schnellstart
 
 ### Option A: Docker (empfohlen)

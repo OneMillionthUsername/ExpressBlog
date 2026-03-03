@@ -403,17 +403,47 @@ function registerDatabaseRoutes() {
   
   // Celebrate validation error handler should be before 404 and other error handlers
   app.use(celebrateErrors());
-  
-  
+
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
-    res.status(404).render('error', {message: 'Seite nicht gefunden'});
-    //send('Sorry, can\'t find that!');
+    if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
+      return res.status(404).json({ error: 'Not Found', message: 'Route not found' });
+    }
+    return res.status(404).render('error', { message: 'Seite nicht gefunden' });
   });
     
   // Error handler MUST be registered AFTER 404 handler
   app.use((err, req, res, _next) => {
-    res.status(500).render('error', {message: err.message});
+    const msg = String(err && err.message || '').toLowerCase();
+    const name = String(err && err.name || '').toLowerCase();
+    const isCsrf = err && (
+      err.code === 'EBADCSRFTOKEN' ||
+      (err.status === 403 && (msg.includes('csrf') || name.includes('csrf'))) ||
+      (name === 'forbiddenerror' && msg.includes('csrf'))
+    );
+
+    const status = isCsrf ? 403 : (err.status || err.statusCode || 500);
+    const isApiSurface = req.path.startsWith('/api') || req.path.startsWith('/auth');
+
+    logger.error('Unhandled route error', {
+      url: req.originalUrl,
+      method: req.method,
+      status,
+      isApiSurface,
+      error: err.message,
+      stack: err.stack,
+    });
+
+    if (isApiSurface) {
+      return res.status(status).json({
+        error: isCsrf ? 'Invalid or missing CSRF token' : 'Internal Server Error',
+        message: isCsrf ? 'CSRF validation failed' : 'Request processing failed',
+      });
+    }
+
+    return res.status(status).render('error', {
+      message: isCsrf ? 'Ungültiger oder fehlender CSRF-Token' : 'Interner Serverfehler',
+    });
   });
     
   logger.info('Database-dependent routes registered');
@@ -530,10 +560,6 @@ export { appStatus };
 //   } 
 //   next();
 // });
-
-// Error-Handling Middleware (MUSS am Ende stehen!)
-app.use(middleware.errorHandlerMiddleware);
-
 
 // Export the app to be used by the server
 export default app;
