@@ -105,23 +105,15 @@ async function submitContactForm(req, res) {
     });
   }
 
-  try {
-    await contactMailService.sendContactMail({
-      name,
-      email,
-      message,
-      ip,
-      userAgent,
+  contactMailService.sendContactMail({ name, email, message, ip, userAgent })
+    .catch(error => {
+      logger.error('[CONTACT] Failed to send contact email', {
+        error: error && error.message ? error.message : String(error),
+        ip,
+      });
     });
 
-    return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
-  } catch (error) {
-    logger.error('[CONTACT] Failed to send contact email', {
-      error: error && error.message ? error.message : String(error),
-      ip,
-    });
-    return res.status(500).json({ success: false, error: 'Nachricht konnte nicht gesendet werden.' });
-  }
+  return res.status(200).json({ success: true, message: 'Nachricht erfolgreich gesendet.' });
 }
 
 async function showPostsPage(req, res) {

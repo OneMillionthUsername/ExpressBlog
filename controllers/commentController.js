@@ -158,7 +158,7 @@ const createComment = async (req, res) => {
   try {
     const postId = parseInt(req.params.postId);
     const created = await createCommentRecord(postId, req.body);
-    await sendCommentNotification({ req, postId, comment: created?.comment });
+    void sendCommentNotification({ req, postId, comment: created?.comment });
     res.json({ success: true, message: 'Comment created successfully' });
   } catch (error) {
     console.error('Error creating comment:', error);

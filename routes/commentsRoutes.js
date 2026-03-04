@@ -53,7 +53,7 @@ commentsRouter.post('/:postId',
     try {
       const postId = Number(req.params.postId);
       const created = await commentsController.createCommentRecord(postId, req.body);
-      await commentsController.sendCommentNotification({ req, postId, comment: created?.comment });
+      void commentsController.sendCommentNotification({ req, postId, comment: created?.comment });
       const redirectTarget = buildSafeRedirect(req, `/blogpost/id/${postId}`, 'ok');
       return res.redirect(303, redirectTarget);
     } catch (error) {
