@@ -21,6 +21,14 @@
             <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% } %>
+            <!-- Bot protection: honeypot (visually hidden, must stay empty) -->
+            <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+                <label for="comment-website">Website</label>
+                <input type="text" id="comment-website" name="website" tabindex="-1" autocomplete="off">
+            </div>
+            <!-- Bot protection: timestamp (filled by JS on page load) -->
+            <input type="hidden" name="formLoadedAt" id="comment-form-loaded-at" value="">
+            <script>(function(){ var f = document.getElementById('comment-form-loaded-at'); if(f) f.value = Date.now(); })();</script>
             <div class="form-group">
                 <label for="comment-username">Name (optional):</label>
                 <input type="text" 

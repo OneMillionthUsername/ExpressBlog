@@ -47,9 +47,41 @@ commentsRouter.post('/:postId',
       username: Joi.string().max(50).allow('', null),
       text: Joi.string().min(1).max(1000).required(),
       _csrf: Joi.string().optional(),
+      website: Joi.string().allow('', null).optional(),
+      formLoadedAt: Joi.string().allow('', null).optional(),
     }),
   }),
   async (req, res) => {
+    const minSubmitDelayMs = 3000;
+    const honeypot = String(req.body?.website || '').trim();
+    const formLoadedAtRaw = String(req.body?.formLoadedAt || '').trim();
+    const formLoadedAt = Number(formLoadedAtRaw);
+    const now = Date.now();
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
+      || req.headers['x-real-ip']
+      || req.ip
+      || req.socket?.remoteAddress
+      || 'unknown';
+
+    if (honeypot) {
+      // Silent fake-success for bots that fill the honeypot field
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/id/${req.params.postId}`, 'ok');
+      return res.redirect(303, redirectTarget);
+    }
+
+    const isInvalidTimestamp = !Number.isFinite(formLoadedAt) || formLoadedAt <= 0 || formLoadedAt > now;
+    const isTooFast = !isInvalidTimestamp && (now - formLoadedAt < minSubmitDelayMs);
+
+    if (isInvalidTimestamp || isTooFast) {
+      console.warn('[COMMENT] Bot timing check triggered', {
+        ip,
+        isInvalidTimestamp,
+        elapsedMs: isInvalidTimestamp ? null : (now - formLoadedAt),
+      });
+      const redirectTarget = buildSafeRedirect(req, `/blogpost/id/${req.params.postId}`, 'error');
+      return res.redirect(303, redirectTarget);
+    }
+
     try {
       const postId = Number(req.params.postId);
       const created = await commentsController.createCommentRecord(postId, req.body);
