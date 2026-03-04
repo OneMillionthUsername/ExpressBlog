@@ -23,6 +23,9 @@ function getTransporter() {
     host: SMTP_HOST,
     port: SMTP_PORT,
     secure: SMTP_SECURE,
+    tls: {
+      rejectUnauthorized: false,
+    },
   };
 
   if (SMTP_USER && SMTP_PASS) {
