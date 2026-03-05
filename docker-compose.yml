@@ -80,6 +80,8 @@ services:
       - MARIADB_DATABASE=${DB_NAME}
       - MARIADB_USER=${DB_USER}
       - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_AUTO_UPGRADE=1
+    command: --innodb-buffer-pool-size=64M --innodb-log-file-size=16M
     expose:
       - "3306"
     volumes:
