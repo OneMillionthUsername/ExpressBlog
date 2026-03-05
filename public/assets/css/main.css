@@ -2273,9 +2273,11 @@ blockquote:after {
         gap: 1rem;
     }
     
-    #admin-login-modal .modal-content {
+    #admin-login-modal .modal-content,
+    #card-create-modal .modal-content {
         width: 95%;
         min-width: 280px;
+        max-width: 95vw;
     }
     
     #admin-login-modal .modal-header {
@@ -2286,8 +2288,10 @@ blockquote:after {
         font-size: 1.5rem;
     }
     
-    #admin-login-modal .modal-body {
-        padding: 2rem 1.5rem;
+    #admin-login-modal .modal-body,
+    #card-create-modal .modal-body {
+        padding: 1rem;
+        gap: 0.25rem;
     }
     
     #admin-login-modal .modal-actions {
@@ -2414,20 +2418,40 @@ blockquote:after {
 
     /* FLOATING MENU - RESPONSIVE */
     .floating-menu {
-        bottom: 20px;
-        right: 20px;
+        bottom: 15px;
+        right: 15px;
+        gap: 8px;
     }
     
     .menu-toggle {
-        width: 46px;
-        height: 46px;
-    }
-    
-    .menu-option[data-tooltip]::before {
-        display: none; /* tooltip pseudo-element is ::before, not ::after */
+        width: 45px;
+        height: 45px;
     }
 
-    /* Previous overwhelming new post enhancements removed for cleaner interface */
+    .menu-toggle img {
+        width: 22px;
+        height: 22px;
+    }
+
+    .menu-option {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .menu-options {
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .menu-option[data-tooltip]::before {
+        display: none;
+    }
+
+    /* EDITOR - CREATE POST */
+    #create-content .editor-container textarea,
+    #create-content .textarea-fallback { min-height: 300px; }
+    #create-content .editor-toolbar { padding: 6px; gap: 6px; }
 }
 
 /* Small Mobile Devices */
@@ -2551,6 +2575,30 @@ blockquote:after {
 
     .most-read-item p {
         font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .main-title {
+        font-size: 1.2rem;
+    }
+    .description {
+        font-size: 0.9rem;
+    }
+    .featured-post-title {
+        font-size: 0.9rem;
+    }
+    .post-link-style {
+        font-size: 1rem;
+    }
+    .post-title {
+        font-size: 1.1rem;
+    }
+    .sub-title {
+        font-size: 1rem;
+    }
+    .btn, .btn-secondary-theme{
+        font-size: 0.85rem;
     }
 }
 
@@ -3348,13 +3396,6 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 #create-content input,
 #create-content textarea,
 #create-content .tox * { transition: none !important; }
-/* Mobile adjustments */
-@media (max-width: 768px) {
-    /* container padding handled by .create-form-section; keep toolbar/textarea tweaks */
-    #create-content .editor-container textarea,
-    #create-content .textarea-fallback { min-height: 300px; }
-    #create-content .editor-toolbar { padding: 6px; gap: 6px; }
-}
 .preview-box h5 { font-size: 1.1rem; }
 .preview-box h6 { font-size: 1rem; }
 .preview-box p {
@@ -3668,36 +3709,6 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 
 [data-theme="dark"] .menu-option {
     box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .floating-menu {
-        bottom: 15px;
-        right: 15px;
-        gap: 8px;
-    }
-    
-    .menu-toggle {
-        width: 45px;
-        height: 45px;
-    }
-    
-    .menu-toggle img {
-        width: 22px;
-        height: 22px;
-    }
-    
-    .menu-option {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
-    }
-    
-    .menu-options {
-        gap: 6px;
-        margin-bottom: 8px;
-    }
 }
 
 /* Focus states - reusing existing focus pattern */
@@ -4178,20 +4189,7 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     box-shadow: none;
 }
 
-/* Responsive: ensure modals fit small screens and keep compact spacing */
-@media (max-width: 768px) {
-    #admin-login-modal .modal-content,
-    #card-create-modal .modal-content {
-        width: 95%;
-        min-width: 280px;
-        max-width: 95vw;
-    }
-    #admin-login-modal .modal-body,
-    #card-create-modal .modal-body {
-        padding: 1rem;
-        gap: 0.25rem;
-    }
-}/*
+/*
 ====================================================
  Übersicht der Hauptbereiche in dieser CSS-Datei:
 ----------------------------------------------------

@@ -66,8 +66,9 @@ sitemapRouter.get('/sitemap.xml', async (req, res) => {
         
         posts.forEach(post => {
           const postDate = post.created_at ? new Date(post.created_at).toISOString() : now;
+          const postPath = post.slug || post.id;
           sitemap += `  <url>
-    <loc>${baseUrl}/blogpost/${post.id}</loc>
+    <loc>${baseUrl}/blogpost/${postPath}</loc>
     <lastmod>${postDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

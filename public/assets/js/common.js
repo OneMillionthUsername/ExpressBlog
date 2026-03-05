@@ -500,7 +500,7 @@ function createFloatingMenu() {
   // Create image icon:
   const clippyImg = document.createElement('img');
   clippyImg.src = '/assets/media/clippy-28.webp';
-  clippyImg.alt = 'Clippy';
+  clippyImg.alt = '';
   clippyImg.width = 28;
   clippyImg.height = 28;
   menuToggle.appendChild(clippyImg);
