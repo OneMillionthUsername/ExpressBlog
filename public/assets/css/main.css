@@ -2603,6 +2603,12 @@ blockquote:after {
     .btn-secondary-theme{
         font-size: 0.85rem;
     }
+    .about-text {
+        font-size: 0.95rem;
+    }
+    .about-quote {
+        font-size: 0.9rem;
+    }
 }
 
 /* ========================================
