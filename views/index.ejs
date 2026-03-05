@@ -107,8 +107,8 @@
                                 <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
                                 <p class="featured-post-excerpt"><%= fp.excerpt %></p>
                                 <div class="featured-post-actions">
-                                    <% if (fp.previewImage) { %>
-                                        <img class="featured-post-preview" src="<%= fp.previewImage %>" alt="" loading="lazy" decoding="async" width="72" height="72">
+                                    <% if (fp.previewImage && fp.previewImage.src) { %>
+                                        <img class="featured-post-preview" src="<%= fp.previewImage.src %>"<% if (fp.previewImage.srcset) { %> srcset="<%= fp.previewImage.srcset %>"<% } %> alt="" loading="lazy" decoding="async" width="72" height="72">
                                     <% } %>
                                     <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
                                 </div>

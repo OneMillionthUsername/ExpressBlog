@@ -21,7 +21,14 @@ async function showHomePage(req, res) {
       title: decodeHtmlEntities(p.title || ''),
       slug: p.slug,
       excerpt: createExcerpt(p.excerpt_source, 150),
-      previewImage: extractFirstImageUrl(p.preview_source || p.excerpt_source || ''),
+      previewImage: (() => {
+        const url = extractFirstImageUrl(p.preview_source || p.excerpt_source || '');
+        if (!url || url.startsWith('http')) return { src: url, srcset: null };
+        const extIndex = url.lastIndexOf('.');
+        if (extIndex === -1) return { src: url, srcset: null };
+        const base = url.substring(0, extIndex);
+        return { src: base + '-72.webp', srcset: base + '-72.webp 1x, ' + base + '-144.webp 2x' };
+      })(),
     }));
 
     const popularPosts = (posts || [])
