@@ -2594,10 +2594,13 @@ blockquote:after {
     .post-title {
         font-size: 1.1rem;
     }
+    .post-content {
+        font-size: 1rem;
+    }
     .sub-title {
         font-size: 1rem;
     }
-    .btn, .btn-secondary-theme{
+    .btn-secondary-theme{
         font-size: 0.85rem;
     }
 }
