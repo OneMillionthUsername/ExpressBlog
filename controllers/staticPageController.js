@@ -22,8 +22,11 @@ async function showHomePage(req, res) {
       slug: p.slug,
       excerpt: createExcerpt(p.excerpt_source, 150),
       previewImage: (() => {
-        const url = extractFirstImageUrl(p.preview_source || p.excerpt_source || '');
-        if (!url || url.startsWith('http')) return { src: url, srcset: null };
+        let url = extractFirstImageUrl(p.preview_source || p.excerpt_source || '');
+        if (!url) return { src: null, srcset: null };
+        if (url.startsWith('http')) return { src: url, srcset: null };
+        const assetsIdx = url.indexOf('/assets/');
+        if (assetsIdx > 0) url = url.substring(assetsIdx);
         const extIndex = url.lastIndexOf('.');
         if (extIndex === -1) return { src: url, srcset: null };
         const base = url.substring(0, extIndex);
