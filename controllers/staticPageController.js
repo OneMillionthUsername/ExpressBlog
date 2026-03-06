@@ -30,7 +30,7 @@ async function showHomePage(req, res) {
         const extIndex = url.lastIndexOf('.');
         if (extIndex === -1) return { src: url, srcset: null };
         const base = url.substring(0, extIndex);
-        return { src: base + '-72.webp', srcset: base + '-72.webp 1x, ' + base + '-144.webp 2x' };
+        return { src: base + '-344.webp', srcset: base + '-344.webp 344w, ' + base + '-688.webp 688w' };
       })(),
     }));
 
