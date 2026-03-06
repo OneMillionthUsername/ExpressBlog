@@ -36,11 +36,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             
-            # 3. Berechtigungen korrigieren (UMASK 027 Kompensation)
-            chmod -R o+r /var/www/blog
-            find /var/www/blog -type d -exec chmod o+x {} \;
-            
-            # 4. Umgebungsvariablen für Docker setzen
+            # 3. Umgebungsvariablen für Docker setzen
             export NODE_ENV=production
             export DOCKER_TARGET=release
 
