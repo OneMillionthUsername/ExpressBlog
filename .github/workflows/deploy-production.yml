@@ -35,8 +35,13 @@ jobs:
             echo "Updating code from GitHub..."
             git fetch origin main
             git reset --hard origin/main
-            
-            # 3. Umgebungsvariablen für Docker setzen
+
+            # 3. Berechtigungen für Nginx korrigieren (UMASK 027 Kompensation)
+            # Nur public/ muss für www-data lesbar sein (statische Assets)
+            find /var/www/blog/public -type f -exec chmod o+r {} \;
+            find /var/www/blog/public -type d -exec chmod o+x {} \;
+
+            # 4. Umgebungsvariablen für Docker setzen
             export NODE_ENV=production
             export DOCKER_TARGET=release
 
