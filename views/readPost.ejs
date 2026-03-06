@@ -2,6 +2,9 @@
     pageTitle = 'Blogpost - Sub specie aeternitatis';
     metaDescription = 'Destillierte Gedanken ...';
     extraHead = typeof post !== 'undefined' && post && post.id ? `<meta name="post-id" content="${post.id}">` : '';
+    if (typeof post !== 'undefined' && post && post.slug) {
+        extraHead += `<link rel="canonical" href="https://speculumx.at/blogpost/${post.slug}">`;
+    }
 %>
 
 <div class="container">
