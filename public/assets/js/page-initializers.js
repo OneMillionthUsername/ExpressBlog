@@ -162,6 +162,28 @@ async function initializeCreatePage() {
 
 // Index Page - vereinfacht
 async function initializeIndexPage() {
+  // Cards pagination
+  const CARDS_PER_PAGE = 9;
+  const items = Array.from(document.querySelectorAll('.discovery-card-item'));
+  if (items.length > CARDS_PER_PAGE) {
+    let page = 0;
+    const totalPages = Math.ceil(items.length / CARDS_PER_PAGE);
+    const prevBtn = document.getElementById('cards-prev');
+    const nextBtn = document.getElementById('cards-next');
+    const pageInfo = document.getElementById('cards-page-info');
+    function renderCards() {
+      items.forEach((el, i) => {
+        el.style.display = (i >= page * CARDS_PER_PAGE && i < (page + 1) * CARDS_PER_PAGE) ? '' : 'none';
+      });
+      if (pageInfo) pageInfo.textContent = (page + 1) + ' / ' + totalPages;
+      if (prevBtn) prevBtn.disabled = page === 0;
+      if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
+    }
+    if (prevBtn) prevBtn.addEventListener('click', function() { if (page > 0) { page--; renderCards(); } });
+    if (nextBtn) nextBtn.addEventListener('click', function() { if (page < totalPages - 1) { page++; renderCards(); } });
+    renderCards();
+  }
+
   const heroImage = document.getElementById('hero-theme-image');
   if (!heroImage) return;
 
