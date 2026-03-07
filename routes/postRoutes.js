@@ -522,8 +522,9 @@ postRouter.post('/update/:postId',
     const updated_at = new Date();
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     const category_id = source.category_id ? Number(source.category_id) : 7;
+    const published = source.published === 'on' || source.published === 'true' || source.published === true;
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id });
+      const result = await postController.updatePost({ id: postId, title, content, tags, updated_at, category_id, published });
       if (!result) {
         return res.redirect(303, `/blogpost/update/${postId}?error=1`);
       }

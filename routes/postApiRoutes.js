@@ -222,8 +222,9 @@ postApiRouter.put('/update/:postId',
     const content = source.content;
     const tags = Array.isArray(source.tags) ? source.tags : parseTags(source.tags);
     const category_id = source.category_id;
+    const published = typeof source.published === 'boolean' ? source.published : source.published === 'true';
     try {
-      const result = await postController.updatePost({ id: postId, title, content, tags, category_id });
+      const result = await postController.updatePost({ id: postId, title, content, tags, category_id, published });
       if (!result) {
         return res.status(400).json({ error: 'Failed to update blog post' });
       }
