@@ -214,10 +214,13 @@ export function prefersJsonResponse(req) {
   const acceptsJson = req && req.accepts && req.accepts('json');
   return Boolean(wantsJsonParam || isAjax || (!acceptsHtml && acceptsJson));
 }
-export function incrementViews(req, postId) {
+export async function incrementViews(req, postId) {
   const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const userAgent = req.get('User-Agent');
   const referer = req.get('Referer');
+
+  const { default: viewTracker } = await import('./viewTracker.js');
+  if (!viewTracker.shouldCount(ipAddress, postId, userAgent)) return;
 
   DatabaseService.increasePostViews(postId, ipAddress, userAgent, referer).catch(err => {
     console.error('Fehler beim Tracking:', err);
