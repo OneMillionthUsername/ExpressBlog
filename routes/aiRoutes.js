@@ -1,109 +1,147 @@
 import express from 'express';
 import logger from '../utils/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_API_KEY } from '../config/config.js';
+import { ANTHROPIC_API_KEY, GEMINI_API_KEY } from '../config/config.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 import csrfProtection from '../utils/csrf.js';
 
 /**
  * AI helper routes (protected admin-only endpoints).
  *
- * Uses the official Google Generative AI SDK for cleaner, simpler code.
- * Example: POST /generate - forwards prompt to Gemini API and returns generated text.
+ * Primary: Anthropic Claude (claude-sonnet-4-6 → claude-haiku-4-5-20251001)
+ *   — only active when ANTHROPIC_API_KEY is set and @anthropic-ai/sdk is installed
+ * Fallback: Google Gemini (gemini-3-flash-preview → gemini-2.5-flash → gemini-2.5-flash-lite)
  */
 const router = express.Router();
+
+// Dynamic import: SDK is optional — if not installed or key missing, Claude is simply skipped
+let anthropic = null;
+if (ANTHROPIC_API_KEY) {
+  try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+    logger.debug('Anthropic Claude SDK loaded, will be used as primary AI provider');
+  } catch {
+    logger.warn('ANTHROPIC_API_KEY is set but @anthropic-ai/sdk is not installed — falling back to Gemini');
+  }
+}
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+const CLAUDE_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'];
 const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
 const FALLBACK_GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
-function isModelAvailabilityError(err) {
-  const msg = String(err?.message || '').toLowerCase();
+function isAvailabilityError(err) {
+  const msg = String(err?.message || err?.status || '').toLowerCase();
   return (
     msg.includes('model')
     || msg.includes('404')
     || msg.includes('not found')
     || msg.includes('unavailable')
     || msg.includes('deprecated')
+    || msg.includes('overloaded')
   );
+}
+
+async function tryClause(prompt, systemInstruction) {
+  let lastError;
+  for (const model of CLAUDE_MODELS) {
+    try {
+      const params = {
+        model,
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }],
+      };
+      if (systemInstruction) params.system = systemInstruction;
+      const message = await anthropic.messages.create(params);
+      const text = message.content?.[0]?.text ?? '';
+      return { text, model };
+    } catch (err) {
+      lastError = err;
+      const hasNext = model !== CLAUDE_MODELS[CLAUDE_MODELS.length - 1];
+      if (!isAvailabilityError(err) || !hasNext) throw err;
+      logger.warn('Claude model unavailable, trying next', { failedModel: model, error: err.message });
+    }
+  }
+  throw lastError;
+}
+
+async function tryGemini(prompt, systemInstruction, preferredModel) {
+  const candidates = [
+    preferredModel || DEFAULT_GEMINI_MODEL,
+    ...FALLBACK_GEMINI_MODELS.filter(m => m !== preferredModel),
+  ];
+  let lastError;
+  for (let i = 0; i < candidates.length; i++) {
+    const model = candidates[i];
+    try {
+      const generativeModel = genAI.getGenerativeModel({
+        model,
+        ...(systemInstruction && { systemInstruction }),
+      });
+      const result = await generativeModel.generateContent(prompt);
+      return { text: result.response.text() || '', model };
+    } catch (err) {
+      lastError = err;
+      const hasNext = i < candidates.length - 1;
+      if (!isAvailabilityError(err) || !hasNext) throw err;
+      logger.warn('Gemini model unavailable, trying next', { failedModel: model, nextModel: candidates[i + 1], error: err.message });
+    }
+  }
+  throw lastError;
 }
 
 // POST /api/ai/generate
 router.post('/generate', csrfProtection, authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { prompt, systemInstruction, model } = req.body || {};
-    
+
     if (!prompt || typeof prompt !== 'string' || prompt.length > 20000) {
       return res.status(400).json({ success: false, error: 'Invalid prompt. Must be a string with max 20000 characters.' });
     }
 
-    const safeModel = (typeof model === 'string' && model.trim().length > 0)
-      ? model.trim()
-      : DEFAULT_GEMINI_MODEL;
+    let aiResult;
 
-    const modelCandidates = [
-      safeModel,
-      ...FALLBACK_GEMINI_MODELS.filter((candidate) => candidate !== safeModel),
-    ];
-
-    let usedModel = modelCandidates[0];
-    let result;
-    let lastError;
-
-    for (let i = 0; i < modelCandidates.length; i += 1) {
-      const candidateModel = modelCandidates[i];
+    // Claude first (if key is configured)
+    if (anthropic) {
       try {
-        const generativeModel = genAI.getGenerativeModel({
-          model: candidateModel,
-          ...(systemInstruction && { systemInstruction }),
-        });
-        result = await generativeModel.generateContent(prompt);
-        usedModel = candidateModel;
-        break;
-      } catch (modelErr) {
-        lastError = modelErr;
-        const hasNextCandidate = i < modelCandidates.length - 1;
-        if (!isModelAvailabilityError(modelErr) || !hasNextCandidate) {
-          throw modelErr;
-        }
-
-        logger.warn('Gemini model unavailable, retrying with next fallback model', {
-          failedModel: candidateModel,
-          nextModel: modelCandidates[i + 1],
-          error: modelErr.message,
-        });
+        aiResult = await tryClause(prompt, systemInstruction);
+        logger.debug('AI request served by Claude', { model: aiResult.model });
+      } catch (claudeErr) {
+        logger.warn('Claude failed, falling back to Gemini', { error: claudeErr.message });
       }
     }
 
-    if (!result) {
-      throw lastError || new Error('No Gemini model available');
+    // Gemini fallback
+    if (!aiResult) {
+      const preferredGeminiModel = (typeof model === 'string' && model.trim() && !model.startsWith('claude'))
+        ? model.trim()
+        : DEFAULT_GEMINI_MODEL;
+      aiResult = await tryGemini(prompt, systemInstruction, preferredGeminiModel);
+      logger.debug('AI request served by Gemini', { model: aiResult.model });
     }
 
-    const aiText = result.response.text() || '';
-    
-    return res.json({ success: true, data: { text: aiText, model: usedModel } });
+    return res.json({ success: true, data: { text: aiResult.text, model: aiResult.model } });
   } catch (err) {
-    logger.error('AI generate route error', { 
-      error: err.message, 
+    logger.error('AI generate route error', {
+      error: err.message,
       status: err.status || err.statusCode,
-      model: req.body?.model || DEFAULT_GEMINI_MODEL,
       stack: err.stack,
     });
-    
-    // Provide helpful error messages
+
     let statusCode = 500;
     let errorMessage = 'Internal server error';
-    
-    if (err.message?.includes('API key')) {
+    if (err.message?.includes('API key') || err.status === 401) {
       statusCode = 502;
       errorMessage = 'API authentication failed - check API key configuration';
-    } else if (err.message?.includes('quota') || err.message?.includes('429')) {
+    } else if (err.message?.includes('quota') || err.status === 429) {
       statusCode = 429;
       errorMessage = 'API quota exceeded - please try again later';
-    } else if (err.message?.includes('model') || err.message?.includes('404')) {
+    } else if (err.message?.includes('model') || err.status === 404) {
       statusCode = 400;
       errorMessage = 'Model not found or unavailable';
     }
-    
+
     return res.status(statusCode).json({ success: false, error: errorMessage });
   }
 });

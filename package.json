@@ -42,6 +42,7 @@
   },
   "homepage": "https://github.com/OneMillionthUsername/ExpressBlog#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.55.0",
     "@dr.pogodin/csurf": "^1.16.5",
     "@google/genai": "^1.39.0",
     "@google/generative-ai": "^0.24.1",
