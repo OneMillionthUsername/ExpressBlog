@@ -24,7 +24,7 @@ describe('escapeHtml', () => {
   it('escapes all five HTML special characters', () => {
     expect(escapeHtml('<script>alert("xss")</script>'))
       .toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
-    expect(escapeHtml("it's & that")).toBe('it&#39;s &amp; that');
+    expect(escapeHtml('it\'s & that')).toBe('it&#39;s &amp; that');
   });
 
   it('returns non-strings unchanged', () => {

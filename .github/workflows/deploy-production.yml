@@ -47,18 +47,18 @@ jobs:
 
             # 5. Container-Stack neu bauen und starten
             echo "Starting Docker build and compose..."
-            docker compose up -d --build
+            docker compose --env-file .env.production up -d --build
 
             # 6. Health-Check mit kleiner Verzögerung
             echo "Waiting for container to stabilize..."
             sleep 5
             
-            if [ "$(docker ps -q -f name=expressblog_app)" ]; then
+            if [ "$(docker ps -q -f name=speculumx_app)" ]; then
               echo "Container läuft – prüfe Applikations-Health..."
             else
               echo "❌ Fehler: Container konnte nicht gestartet werden."
               echo "--- Letzte Log-Einträge ---"
-              docker logs expressblog_app --tail 20
+              docker logs speculumx_app --tail 20
               exit 1
             fi
 
@@ -74,7 +74,7 @@ jobs:
 
             echo "❌ Fehler: Container läuft, aber /health ist nicht erreichbar."
             echo "--- Container-Status ---"
-            docker ps --filter name=expressblog_app
+            docker ps --filter name=speculumx_app
             echo "--- Letzte Log-Einträge ---"
-            docker logs expressblog_app --tail 50
+            docker logs speculumx_app --tail 50
             exit 1
