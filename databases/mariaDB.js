@@ -840,7 +840,7 @@ export const DatabaseService = {
     try {
       conn = await getDatabasePool().getConnection();
       const result = await conn.query(
-        'SELECT * FROM posts WHERE published = 0 AND published_at IS NULL ORDER BY created_at DESC'
+        'SELECT * FROM posts WHERE published = 0 AND published_at IS NULL ORDER BY created_at DESC',
       );
       if (!result || result.length === 0) return [];
       return result.map(post => {
@@ -862,7 +862,7 @@ export const DatabaseService = {
     try {
       conn = await getDatabasePool().getConnection();
       const result = await conn.query(
-        'SELECT * FROM posts WHERE published = 0 AND published_at IS NOT NULL ORDER BY published_at DESC'
+        'SELECT * FROM posts WHERE published = 0 AND published_at IS NOT NULL ORDER BY published_at DESC',
       );
       if (!result || result.length === 0) return [];
       return result.map(post => {
