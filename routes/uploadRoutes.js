@@ -48,6 +48,10 @@ uploadRouter.post('/image',
       const mediaDir = path.join(publicRoot, 'assets', 'media', yyyy, mm);
       await fs.mkdir(mediaDir, { recursive: true });
 
+      // Media-Objekt für Datenbank erstellen (postId optional)
+      const parsedPostId = req.body && req.body.postId ? Number(req.body.postId) : null;
+      const postId = Number.isFinite(parsedPostId) && parsedPostId > 0 ? parsedPostId : null;
+
       // Resolve a human-readable filename prefix from the post slug (if postId available)
       let prefix = null;
       if (postId) {
@@ -92,10 +96,6 @@ uploadRouter.post('/image',
       await transformer.toFile(outPath);
 
       const publicUrl = `/assets/media/${yyyy}/${mm}/${encodeURIComponent(outFile)}`;
-
-      // Media-Objekt für Datenbank erstellen (postId optional)
-      const parsedPostId = req.body && req.body.postId ? Number(req.body.postId) : null;
-      const postId = Number.isFinite(parsedPostId) && parsedPostId > 0 ? parsedPostId : null;
 
       const rawAlt = req.body && typeof req.body.alt_text !== 'undefined' ? String(req.body.alt_text) : '';
       const altText = rawAlt.trim() !== '' ? rawAlt.trim() : undefined;
