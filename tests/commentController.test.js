@@ -1,118 +1,189 @@
-// Tests for comment-related functionality (avoiding ESM module linking issues)
-// We test the utilities and logic that the controller uses rather than the controller itself
+/** @jest-environment node */
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-describe('Comment Controller Functionality', () => {
-  describe('HTML sanitization and escaping', () => {
-    it('should escape dangerous HTML characters', () => {
-      // Test escaping logic inline to avoid imports
-      const escapeHtml = (text) => {
-        if (!text) return '';
-        return text
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      };
-      
-      const dangerous = '<script>alert("xss")</script>';
-      const escaped = escapeHtml(dangerous);
-      
-      expect(escaped).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
-      expect(escaped).not.toContain('<script>');
-      expect(escaped).not.toContain('alert("');
+const mockDb = {
+  createComment: jest.fn(),
+  getCommentsByPostId: jest.fn(),
+  deleteComment: jest.fn(),
+  getPostById: jest.fn(),
+};
+const mockSanitizeHtml = jest.fn((s) => s);
+const mockSendMail = jest.fn();
+
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: mockDb,
+}));
+jest.unstable_mockModule('../utils/sanitizer.js', () => ({
+  sanitizeHtml: mockSanitizeHtml,
+}));
+jest.unstable_mockModule('../utils/logger.js', () => ({
+  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+}));
+jest.unstable_mockModule('../services/contactMailService.js', () => ({
+  default: { sendCommentNotificationMail: mockSendMail },
+}));
+jest.unstable_mockModule('../utils/normalizers.js', () => ({
+  normalizePublished: (v) => Boolean(v),
+}));
+
+const { default: commentController } = await import('../controllers/commentController.js');
+const { CommentControllerException } = await import('../models/customExceptions.js');
+const Comment = (await import('../models/commentModel.js')).default;
+
+// Minimal valid comment body (createCommentRecord adds postId, created_at, etc.)
+const makeBody = (overrides = {}) => ({
+  text: 'This is a valid comment.',
+  username: 'TestUser',
+  ...overrides,
+});
+
+// Minimal valid comment row as returned from DB
+const makeDbComment = (overrides = {}) => ({
+  id: 1,
+  text: 'This is a valid comment.',
+  username: 'TestUser',
+  approved: true,
+  published: true,
+  created_at: new Date('2025-01-01'),
+  updated_at: new Date('2025-01-01'),
+  ip_address: null,
+  ...overrides,
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockSanitizeHtml.mockImplementation((s) => s);
+  mockSendMail.mockResolvedValue(undefined);
+  mockDb.createComment.mockResolvedValue({ affectedRows: 1, comment: { text: 'x' } });
+});
+
+describe('commentController', () => {
+  describe('createCommentRecord', () => {
+    it('throws on Joi validation failure (empty text)', async () => {
+      await expect(commentController.createCommentRecord(1, makeBody({ text: '' })))
+        .rejects.toThrow(CommentControllerException);
     });
 
-    it('should handle username normalization logic', () => {
-      const normalizeUsername = (username) => {
-        if (!username || String(username).trim() === '') {
-          return 'Anonym';
-        }
-        // Escape HTML in username
-        return String(username)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      };
-
-      expect(normalizeUsername('')).toBe('Anonym');
-      expect(normalizeUsername(null)).toBe('Anonym');
-      expect(normalizeUsername('   ')).toBe('Anonym');
-      expect(normalizeUsername('normal')).toBe('normal');
-      expect(normalizeUsername('<script>evil</script>')).toBe('&lt;script&gt;evil&lt;/script&gt;');
+    it('throws on Joi validation failure (text too long)', async () => {
+      await expect(commentController.createCommentRecord(1, makeBody({ text: 'x'.repeat(1001) })))
+        .rejects.toThrow('Validation failed:');
     });
 
-    it('should handle comment text processing logic', () => {
-      const processCommentText = (text) => {
-        if (!text) return '';
-        // Simulate sanitization - remove dangerous tags but keep basic formatting
-        return String(text)
-          .replace(/<script[^>]*>.*?<\/script>/gi, '')
-          .replace(/<style[^>]*>.*?<\/style>/gi, '')
-          .replace(/javascript:/gi, '')
-          .replace(/on\w+\s*=/gi, ''); // Remove event handlers
-      };
+    it('sanitizes the comment text via sanitizeHtml', async () => {
+      mockSanitizeHtml.mockReturnValue('<p>clean</p>');
+      await commentController.createCommentRecord(1, makeBody({ text: '<script>bad</script>' }));
+      expect(mockSanitizeHtml).toHaveBeenCalledWith('<script>bad</script>');
+    });
 
-      const dangerous = '<p>Good content</p><script>alert("bad")</script>';
-      const processed = processCommentText(dangerous);
-      
-      expect(processed).toContain('<p>Good content</p>');
-      expect(processed).not.toContain('<script>');
-      expect(processed).not.toContain('alert');
+    it('falls back to escapeHtml when sanitizeHtml throws', async () => {
+      mockSanitizeHtml.mockImplementation(() => { throw new Error('sanitizer unavailable'); });
+      // Should not throw — falls back to escapeHtml
+      await expect(commentController.createCommentRecord(1, makeBody()))
+        .resolves.toBeDefined();
+    });
+
+    it('defaults username to Anonym when empty', async () => {
+      await commentController.createCommentRecord(1, makeBody({ username: '' }));
+      // DB should have been called with Anonym (we can check via mock call args)
+      const [, commentArg] = mockDb.createComment.mock.calls[0];
+      expect(commentArg.username).toBe('Anonym');
+    });
+
+    it('HTML-escapes the username', async () => {
+      await commentController.createCommentRecord(1, makeBody({ username: '<script>evil</script>' }));
+      const [, commentArg] = mockDb.createComment.mock.calls[0];
+      expect(commentArg.username).not.toContain('<script>');
+      expect(commentArg.username).toContain('&lt;');
+    });
+
+    it('throws when DB returns no affectedRows', async () => {
+      mockDb.createComment.mockResolvedValue({ affectedRows: 0 });
+      await expect(commentController.createCommentRecord(1, makeBody()))
+        .rejects.toThrow('Failed to save comment to database');
+    });
+
+    it('throws when DB returns null', async () => {
+      mockDb.createComment.mockResolvedValue(null);
+      await expect(commentController.createCommentRecord(1, makeBody()))
+        .rejects.toThrow('Failed to save comment to database');
+    });
+
+    it('returns the DB result on success', async () => {
+      const dbResult = { affectedRows: 1, insertId: 42 };
+      mockDb.createComment.mockResolvedValue(dbResult);
+      const result = await commentController.createCommentRecord(1, makeBody());
+      expect(result).toBe(dbResult);
     });
   });
 
-  describe('validation logic', () => {
-    it('should validate comment structure', () => {
-      const isValidComment = (commentData) => {
-        if (!commentData || typeof commentData !== 'object') return false;
-        if (!commentData.postId || typeof commentData.postId !== 'number') return false;
-        if (!commentData.text || typeof commentData.text !== 'string') return false;
-        if (commentData.text.trim().length === 0) return false;
-        return true;
-      };
+  describe('fetchCommentsByPostId', () => {
+    it('throws for invalid postId (NaN)', async () => {
+      await expect(commentController.fetchCommentsByPostId(NaN))
+        .rejects.toThrow('Invalid post ID provided');
+    });
 
-      expect(isValidComment(null)).toBe(false);
-      expect(isValidComment({})).toBe(false);
-      expect(isValidComment({ postId: 1 })).toBe(false);
-      expect(isValidComment({ postId: 1, text: '' })).toBe(false);
-      expect(isValidComment({ postId: 1, text: '   ' })).toBe(false);
-      expect(isValidComment({ postId: 1, text: 'Valid comment' })).toBe(true);
+    it('throws for postId <= 0', async () => {
+      await expect(commentController.fetchCommentsByPostId(0))
+        .rejects.toThrow('Invalid post ID provided');
+    });
+
+    it('returns empty array when no comments exist', async () => {
+      mockDb.getCommentsByPostId.mockResolvedValue([]);
+      expect(await commentController.fetchCommentsByPostId(1)).toEqual([]);
+    });
+
+    it('returns Comment instances for valid published comments', async () => {
+      mockDb.getCommentsByPostId.mockResolvedValue([makeDbComment()]);
+      const result = await commentController.fetchCommentsByPostId(1);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toBeInstanceOf(Comment);
+    });
+
+    it('skips unpublished comments', async () => {
+      mockDb.getCommentsByPostId.mockResolvedValue([
+        makeDbComment({ id: 1, published: true }),
+        makeDbComment({ id: 2, published: false }),
+      ]);
+      const result = await commentController.fetchCommentsByPostId(1);
+      expect(result).toHaveLength(1);
+    });
+
+    it('skips comments that fail Joi validation', async () => {
+      mockDb.getCommentsByPostId.mockResolvedValue([
+        makeDbComment(),
+        { id: 2, text: '', published: true }, // fails: text min 1
+      ]);
+      const result = await commentController.fetchCommentsByPostId(1);
+      expect(result).toHaveLength(1);
     });
   });
 
-  describe('error handling patterns', () => {
-    it('should create proper error responses', () => {
-      const createErrorResponse = (message, originalError = null) => {
-        return {
-          success: false,
-          message: message,
-          error: originalError ? originalError.message : null,
-        };
-      };
-
-      const response = createErrorResponse('Validation failed');
-      expect(response.success).toBe(false);
-      expect(response.message).toBe('Validation failed');
-
-      const responseWithError = createErrorResponse('Database error', new Error('Connection failed'));
-      expect(responseWithError.error).toBe('Connection failed');
+  describe('deleteCommentRecord', () => {
+    it('throws for invalid commentId (NaN)', async () => {
+      await expect(commentController.deleteCommentRecord(1, NaN))
+        .rejects.toThrow('Invalid comment ID provided');
     });
 
-    it('should create success responses', () => {
-      const createSuccessResponse = (message, data = null) => {
-        return {
-          success: true,
-          message: message,
-          data: data,
-        };
-      };
+    it('throws for commentId <= 0', async () => {
+      await expect(commentController.deleteCommentRecord(1, 0))
+        .rejects.toThrow('Invalid comment ID provided');
+    });
 
-      const response = createSuccessResponse('Comment created successfully');
-      expect(response.success).toBe(true);
-      expect(response.message).toBe('Comment created successfully');
+    it('throws for invalid postId', async () => {
+      await expect(commentController.deleteCommentRecord(0, 5))
+        .rejects.toThrow('Invalid post ID provided');
+    });
+
+    it('throws when deletion fails', async () => {
+      mockDb.deleteComment.mockResolvedValue({ success: false });
+      await expect(commentController.deleteCommentRecord(1, 5))
+        .rejects.toThrow('Comment not found or deletion failed');
+    });
+
+    it('returns the result on success', async () => {
+      mockDb.deleteComment.mockResolvedValue({ success: true });
+      const result = await commentController.deleteCommentRecord(1, 5);
+      expect(result.success).toBe(true);
     });
   });
 });

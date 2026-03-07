@@ -1,378 +1,189 @@
-
+/** @jest-environment node */
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-// Inline Admin implementation to avoid module linking
-class Admin {
-  constructor(data) {
-    this.id = data.id;
-    this.username = data.username;
-    this.password_hash = data.password_hash;
-    this.role = data.role || 'admin';
-    this.email = data.email;
-    this.full_name = data.full_name;
-    this.active = data.active !== undefined ? data.active : true;
-    this.locked_until = data.locked_until;
-    this.created_at = data.created_at;
-    this.updated_at = data.updated_at;
-  }
-
-  static validate(adminData) {
-    const errors = [];
-    if (!adminData.username || adminData.username.trim() === '') {
-      errors.push('Username is required');
-    }
-    if (!adminData.email || adminData.email.trim() === '') {
-      errors.push('Email is required');
-    }
-    
-    if (errors.length > 0) {
-      return {
-        error: { details: errors.map(msg => ({ message: msg })) },
-        value: null,
-      };
-    }
-    
-    return { error: null, value: adminData };
-  }
-}
-
-// Mock functions for database operations
-const mockGetAdminByUsername = jest.fn();
-const mockUpdateAdminLoginSuccess = jest.fn();
-const mockUpdateAdminLoginFailure = jest.fn();
-const mockUpdateAdminStatus = jest.fn();
-
-// Mock DatabaseService inline
-const DatabaseService = {
-  getAdminByUsername: mockGetAdminByUsername,
-  updateAdminLoginSuccess: mockUpdateAdminLoginSuccess,
-  updateAdminLoginFailure: mockUpdateAdminLoginFailure,
-  updateAdminStatus: mockUpdateAdminStatus,
+const mockDb = {
+  getAdminByUsername: jest.fn(),
+  updateAdminLoginSuccess: jest.fn(),
+  updateAdminLoginFailure: jest.fn(),
+  updateAdminStatus: jest.fn(),
 };
+const mockBcryptCompare = jest.fn();
 
-// Mock bcrypt inline
-const bcrypt = {
-  compare: jest.fn(),
-};
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: mockDb,
+}));
+jest.unstable_mockModule('bcrypt', () => ({
+  default: { compare: mockBcryptCompare },
+}));
+jest.unstable_mockModule('../utils/logger.js', () => ({
+  default: { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} },
+}));
 
-// Inline adminController implementation
-const adminController = {
-  async authenticateAdmin(username, password) {
-    if (!username || !password || username.trim() === '' || password.trim() === '') {
-      throw new Error('Username and password are required');
-    }
+const { default: adminController } = await import('../controllers/adminController.js');
+const { AdminControllerException } = await import('../models/customExceptions.js');
+const { Admin } = await import('../models/adminModel.js');
 
-    try {
-      const adminData = await DatabaseService.getAdminByUsername(username);
-      if (!adminData) {
-        return null;
-      }
-
-      const validation = Admin.validate(adminData);
-      if (validation.error) {
-        const errorMessages = validation.error.details.map(detail => detail.message).join('; ');
-        throw new Error(`Validation failed: ${errorMessages}`);
-      }
-
-      // Check if admin is active and not locked
-      if (!adminData.active) {
-        throw new Error('Admin account is inactive or locked');
-      }
-
-      if (adminData.locked_until) {
-        const lockDate = new Date(adminData.locked_until);
-        if (lockDate > new Date()) {
-          throw new Error('Admin account is inactive or locked');
-        }
-      }
-
-      const passwordMatch = await bcrypt.compare(password, adminData.password_hash);
-      if (!passwordMatch) {
-        await DatabaseService.updateAdminLoginFailure(adminData.id);
-        return null;
-      }
-
-      await DatabaseService.updateAdminLoginSuccess(adminData.id);
-      
-      return {
-        id: adminData.id,
-        username: adminData.username,
-        role: adminData.role,
-        email: adminData.email,
-        full_name: adminData.full_name,
-      };
-    } catch (error) {
-      if (error.message.includes('Username and password are required') ||
-          error.message.includes('Validation failed') ||
-          error.message.includes('Admin account is inactive or locked')) {
-        throw error;
-      }
-      throw new Error(`Error during admin authentication: ${error.message}`);
-    }
-  },
-
-  async getAdminByUsername(username) {
-    if (!username || username.trim() === '') {
-      throw new Error('Valid username is required');
-    }
-
-    try {
-      const adminData = await DatabaseService.getAdminByUsername(username);
-      if (!adminData) {
-        throw new Error('Admin not found');
-      }
-
-      const validation = Admin.validate(adminData);
-      if (validation.error) {
-        const errorMessages = validation.error.details.map(detail => detail.message).join('; ');
-        throw new Error(`Validation failed: ${errorMessages}`);
-      }
-
-      return new Admin(adminData);
-    } catch (error) {
-      if (error.message.includes('Valid username is required') ||
-          error.message.includes('Admin not found') ||
-          error.message.includes('Validation failed')) {
-        throw error;
-      }
-      throw new Error(`Error fetching admin by username: ${error.message}`);
-    }
-  },
-
-  async updateAdminLoginSuccess(username) {
-    try {
-      return await DatabaseService.updateAdminLoginSuccess(username);
-    } catch (error) {
-      throw new Error(`Error updating admin login success: ${error.message}`);
-    }
-  },
-
-  async updateAdminLoginFailure(username) {
-    try {
-      return await DatabaseService.updateAdminLoginFailure(username);
-    } catch (error) {
-      throw new Error(`Error updating admin login failure: ${error.message}`);
-    }
-  },
-
-  async updateAdminStatus(username, status) {
-    try {
-      return await DatabaseService.updateAdminStatus(username, status);
-    } catch (error) {
-      throw new Error(`Error updating admin status: ${error.message}`);
-    }
-  },
-};
-
-let consoleSpy;
+// Minimal valid admin data satisfying the Joi schema
+const makeAdmin = (overrides = {}) => ({
+  id: 1,
+  username: 'testadmin',
+  password_hash: '$2b$10$hashedpassword_long_enough',
+  email: 'admin@example.com',
+  full_name: 'Test Admin',
+  role: 'admin',
+  active: true,
+  locked_until: null,
+  created_at: new Date('2024-01-01'),
+  updated_at: new Date('2024-01-01'),
+  ...overrides,
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
-  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-  // Set up default mock implementations
-  mockGetAdminByUsername.mockResolvedValue(null);
-  mockUpdateAdminLoginSuccess.mockResolvedValue(true);
-  mockUpdateAdminLoginFailure.mockResolvedValue(true);
-  mockUpdateAdminStatus.mockResolvedValue(true);
-
-  // Set up bcrypt.compare mock
-  bcrypt.compare.mockResolvedValue(true);
+  mockDb.updateAdminLoginSuccess.mockResolvedValue(true);
+  mockDb.updateAdminLoginFailure.mockResolvedValue(true);
 });
 
-afterEach(() => {
-  jest.restoreAllMocks();
-  jest.clearAllTimers();
-});
-
-describe('AdminController', () => {
-  describe('authenticateAdmin', () => {
-    const mockAdminData = {
-      id: 1,
-      username: 'testadmin',
-      password_hash: '$2b$10$hashedpassword',
-      role: 'admin',
-      email: 'test@example.com',
-      full_name: 'Test Admin',
-      active: true,
-      locked_until: null,
-    };
-    it('should throw error when username or password is empty', async () => {
-      await expect(adminController.authenticateAdmin('', 'password123'))
-        .rejects.toThrow('Username and password are required');
-      await expect(adminController.authenticateAdmin('testadmin', ''))
-        .rejects.toThrow('Username and password are required');
-    });
-    it('should throw error when username is empty', async () => {
+describe('adminController', () => {
+  describe('getAdminByUsername', () => {
+    it('throws (wrapped) when username is empty', async () => {
       await expect(adminController.getAdminByUsername(''))
         .rejects.toThrow('Valid username is required');
+      await expect(adminController.getAdminByUsername(null))
+        .rejects.toThrow(AdminControllerException);
     });
-    it('should authenticate valid admin successfully', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue(mockAdminData);
-      bcrypt.compare.mockResolvedValue(true);
-      mockUpdateAdminLoginSuccess.mockResolvedValue(true);
 
-      // Act
-      const result = await adminController.authenticateAdmin('testadmin', 'password123');
+    it('throws (wrapped) when admin not found', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(null);
+      await expect(adminController.getAdminByUsername('nobody'))
+        .rejects.toThrow('Admin not found');
+    });
 
-      // Assert
+    it('throws (wrapped) when DB data fails Joi validation', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue({ username: 'x', role: 'admin' }); // missing password_hash, created_at
+      await expect(adminController.getAdminByUsername('x'))
+        .rejects.toThrow('Validation failed:');
+    });
+
+    it('returns an Admin instance for valid data', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin());
+      const result = await adminController.getAdminByUsername('testadmin');
+      expect(result).toBeInstanceOf(Admin);
+      expect(result.username).toBe('testadmin');
+      expect(result.role).toBe('admin');
+    });
+
+    it('throws (wrapped) when DB throws', async () => {
+      mockDb.getAdminByUsername.mockRejectedValue(new Error('Connection refused'));
+      await expect(adminController.getAdminByUsername('testadmin'))
+        .rejects.toThrow(AdminControllerException);
+    });
+  });
+
+  describe('authenticateAdmin', () => {
+    it('throws directly (not wrapped) for empty username', async () => {
+      await expect(adminController.authenticateAdmin('', 'password'))
+        .rejects.toThrow('Username and password are required');
+    });
+
+    it('throws directly (not wrapped) for short password', async () => {
+      // password.length < 3 triggers the guard
+      await expect(adminController.authenticateAdmin('admin', 'ab'))
+        .rejects.toThrow('Username and password are required');
+    });
+
+    it('returns null when admin not found', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(null);
+      const result = await adminController.authenticateAdmin('nobody', 'password123');
+      expect(result).toBeNull();
+    });
+
+    it('throws (wrapped) for inactive account', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin({ active: false }));
+      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
+        .rejects.toThrow('Admin account is inactive or locked');
+    });
+
+    it('throws (wrapped) for locked account', async () => {
+      const futureDate = new Date(Date.now() + 3600_000).toISOString();
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin({ locked_until: futureDate }));
+      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
+        .rejects.toThrow('Admin account is inactive or locked');
+    });
+
+    it('returns null and records failure on wrong password', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin());
+      mockBcryptCompare.mockResolvedValue(false);
+      const result = await adminController.authenticateAdmin('testadmin', 'wrongpassword');
+      expect(result).toBeNull();
+      expect(mockDb.updateAdminLoginFailure).toHaveBeenCalledWith(1);
+    });
+
+    it('returns admin payload and records success on correct password', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin());
+      mockBcryptCompare.mockResolvedValue(true);
+      const result = await adminController.authenticateAdmin('testadmin', 'correctpassword');
       expect(result).toEqual({
         id: 1,
         username: 'testadmin',
         role: 'admin',
-        email: 'test@example.com',
+        email: 'admin@example.com',
         full_name: 'Test Admin',
       });
-      expect(mockGetAdminByUsername).toHaveBeenCalledWith('testadmin');
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', '$2b$10$hashedpassword');
-      expect(mockUpdateAdminLoginSuccess).toHaveBeenCalledWith(1);
-    });
-    it('should return null for invalid password', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue(mockAdminData);
-      bcrypt.compare.mockResolvedValue(false);
-      mockUpdateAdminLoginFailure.mockResolvedValue(true);
-
-      // Act
-      const result = await adminController.authenticateAdmin('testadmin', 'wrongpassword');
-
-      // Assert
-      expect(result).toBeNull();
-      expect(mockUpdateAdminLoginFailure).toHaveBeenCalledWith(1);
+      expect(mockDb.updateAdminLoginSuccess).toHaveBeenCalledWith(1);
+      expect(mockDb.updateAdminLoginFailure).not.toHaveBeenCalled();
     });
 
-    it('should return null for non-existent admin', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue(null);
-
-      // Act
-      const result = await adminController.authenticateAdmin('nonexistent', 'password123');
-
-      // Assert
-      expect(result).toBeNull();
-      expect(mockGetAdminByUsername).toHaveBeenCalledWith('nonexistent');
-    });
-
-    it('should throw error for inactive admin', async () => {
-      // Arrange
-      const inactiveAdmin = { ...mockAdminData, active: false };
-      mockGetAdminByUsername.mockResolvedValue(inactiveAdmin);
-
-      // Act
-      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
-        .rejects.toThrow('Admin account is inactive or locked');
-    });
-
-    it('should throw error for locked admin', async () => {
-      // Arrange
-      const lockedAdmin = {
-        ...mockAdminData,
-        locked_until: new Date(Date.now() + 3600000).toISOString(), // 1 hour in future
-      };
-      mockGetAdminByUsername.mockResolvedValue(lockedAdmin);
-
-      // Act
-      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
-        .rejects.toThrow('Admin account is inactive or locked');
-    });
-
-    it('should throw error when validation fails', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue({ invalid: 'data' }); // Missing required fields
-
-      // Act
-      await expect(adminController.getAdminByUsername('testadmin'))
-        .rejects.toThrow('Validation failed: Username is required; Email is required');
-    });
-
-    it('should throw error when database error occurs', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockRejectedValue(new Error('Database error'));
-
-      // Act
-      await expect(adminController.authenticateAdmin('testadmin', 'password123'))
-        .rejects.toThrow('Error during admin authentication: Database error');
+    it('does not include password_hash in returned payload', async () => {
+      mockDb.getAdminByUsername.mockResolvedValue(makeAdmin());
+      mockBcryptCompare.mockResolvedValue(true);
+      const result = await adminController.authenticateAdmin('testadmin', 'password123');
+      expect(result).not.toHaveProperty('password_hash');
     });
   });
-  describe('getAdminByUsername', () => {
-    it('should return admin when found and valid', async () => {
-      // Arrange
-      const mockAdminData = {
-        id: 1,
-        username: 'testadmin',
-        email: 'test@example.com',
-      };
-      mockGetAdminByUsername.mockResolvedValue(mockAdminData);
 
-      // Act
-      const result = await adminController.getAdminByUsername('testadmin');
-
-      // Assert
-      expect(result).toBeInstanceOf(Admin);
-      expect(result.id).toBe(1);
-      expect(result.username).toBe('testadmin');
-      expect(result.email).toBe('test@example.com');
-      expect(result.role).toBe('admin'); // default value
-      expect(result.active).toBe(true); // default value
-      expect(mockGetAdminByUsername).toHaveBeenCalledWith('testadmin');
-    });
-
-    it('should throw error when admin not found', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(adminController.getAdminByUsername('nonexistent'))
-        .rejects.toThrow('Admin not found');
-    });
-
-    it('should throw error when validation fails', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockResolvedValue({ invalid: 'data' });
-
-      // Act & Assert
-      await expect(adminController.getAdminByUsername('testadmin'))
-        .rejects.toThrow('Validation failed: Username is required; Email is required');
-    });
-
-    it('should throw error when database error occurs', async () => {
-      // Arrange
-      mockGetAdminByUsername.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(adminController.getAdminByUsername('testadmin'))
-        .rejects.toThrow('Error fetching admin by username: Database error');
-    });
-  });
-  describe('updateAdminLoginFailure', () => {
-    it('should throw error when database error occurs', async () => {
-      // Arrange
-      mockUpdateAdminLoginFailure.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(adminController.updateAdminLoginFailure('testadmin'))
-        .rejects.toThrow('Error updating admin login failure: Database error');
-    });
-  });
-  describe('updateAdminStatus', () => {
-    it('should throw error when database error occurs', async () => {
-      // Arrange
-      mockUpdateAdminStatus.mockRejectedValue(new Error('Database error'));
-
-      // Act & Assert
-      await expect(adminController.updateAdminStatus('testadmin', 'active'))
-        .rejects.toThrow('Error updating admin status: Database error');
-    });
-  });
   describe('updateAdminLoginSuccess', () => {
-    it('should throw error when database error occurs', async () => {
-      // Arrange
-      mockUpdateAdminLoginSuccess.mockRejectedValue(new Error('Database error'));
+    it('returns the DB result on success', async () => {
+      mockDb.updateAdminLoginSuccess.mockResolvedValue(true);
+      expect(await adminController.updateAdminLoginSuccess(1)).toBe(true);
+    });
 
-      // Act & Assert
-      await expect(adminController.updateAdminLoginSuccess('testadmin'))
-        .rejects.toThrow('Error updating admin login success: Database error');
+    it('throws (wrapped) when DB returns falsy', async () => {
+      mockDb.updateAdminLoginSuccess.mockResolvedValue(null);
+      await expect(adminController.updateAdminLoginSuccess(1))
+        .rejects.toThrow('Failed to update admin login success');
+    });
+
+    it('throws (wrapped) when DB throws', async () => {
+      mockDb.updateAdminLoginSuccess.mockRejectedValue(new Error('DB error'));
+      await expect(adminController.updateAdminLoginSuccess(1))
+        .rejects.toThrow(AdminControllerException);
+    });
+  });
+
+  describe('updateAdminLoginFailure', () => {
+    it('returns the DB result on success', async () => {
+      mockDb.updateAdminLoginFailure.mockResolvedValue(true);
+      expect(await adminController.updateAdminLoginFailure(1)).toBe(true);
+    });
+
+    it('throws (wrapped) when DB returns falsy', async () => {
+      mockDb.updateAdminLoginFailure.mockResolvedValue(null);
+      await expect(adminController.updateAdminLoginFailure(1))
+        .rejects.toThrow('Failed to update admin login failure');
+    });
+  });
+
+  describe('updateAdminStatus', () => {
+    it('returns the DB result on success', async () => {
+      mockDb.updateAdminStatus.mockResolvedValue(true);
+      expect(await adminController.updateAdminStatus(1, { active: false })).toBe(true);
+    });
+
+    it('throws (wrapped) when DB returns falsy', async () => {
+      mockDb.updateAdminStatus.mockResolvedValue(null);
+      await expect(adminController.updateAdminStatus(1, { active: false }))
+        .rejects.toThrow('Failed to update admin status');
     });
   });
 });

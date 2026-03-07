@@ -1,245 +1,205 @@
+/** @jest-environment node */
 import { describe, expect, it, jest } from '@jest/globals';
 
-// Mock global fetch for API tests
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({ success: true, data: 'test' }),
-  }),
-);
+// Mock mariaDB to avoid DB connection at import time (only needed for incrementViews)
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: { increasePostViews: jest.fn() },
+}));
+jest.unstable_mockModule('./sanitizer.js', () => ({
+  sanitizeHtml: jest.fn((s) => s),
+}));
 
-describe('Utils Functions', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+const {
+  escapeHtml,
+  unescapeHtml,
+  escapeAllStrings,
+  createSlug,
+  truncateSlug,
+  convertBigInts,
+  parseTags,
+  sanitizeFilename,
+} = await import('../utils/utils.js');
+
+describe('escapeHtml', () => {
+  it('escapes all five HTML special characters', () => {
+    expect(escapeHtml('<script>alert("xss")</script>'))
+      .toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+    expect(escapeHtml("it's & that")).toBe('it&#39;s &amp; that');
   });
 
-  describe('escapeHtml', () => {
-    it('should escape HTML special characters', () => {
-      // Test the escaping logic inline
-      const escapeHtml = (text) => {
-        if (!text || typeof text !== 'string') return text;
-        return text
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      };
-
-      expect(escapeHtml('<script>alert("test")</script>'))
-        .toBe('&lt;script&gt;alert(&quot;test&quot;)&lt;/script&gt;');
-      expect(escapeHtml('Hello & Goodbye')).toBe('Hello &amp; Goodbye');
-      expect(escapeHtml('')).toBe('');
-      expect(escapeHtml(null)).toBe(null);
-    });
-
-    it('should return non-string values unchanged', () => {
-      const escapeHtml = (text) => {
-        if (!text || typeof text !== 'string') return text;
-        return text.replace(/&/g, '&amp;');
-      };
-
-      expect(escapeHtml(123)).toBe(123);
-      expect(escapeHtml(undefined)).toBe(undefined);
-    });
+  it('returns non-strings unchanged', () => {
+    expect(escapeHtml(42)).toBe(42);
+    expect(escapeHtml(null)).toBe(null);
+    expect(escapeHtml(undefined)).toBe(undefined);
   });
 
-  describe('unescapeHtml', () => {
-    it('should unescape HTML entities', () => {
-      const unescapeHtml = (text) => {
-        if (!text || typeof text !== 'string') return text;
-        return text
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#039;/g, '\'')
-          .replace(/&amp;/g, '&'); // Must be last to avoid double replacement
-      };
+  it('returns empty string unchanged', () => {
+    expect(escapeHtml('')).toBe('');
+  });
+});
 
-      expect(unescapeHtml('&lt;script&gt;alert(&quot;test&quot;)&lt;/script&gt;'))
-        .toBe('<script>alert("test")</script>');
-      expect(unescapeHtml('Hello &amp; Goodbye')).toBe('Hello & Goodbye');
-    });
-
-    it('should return non-string values unchanged', () => {
-      const unescapeHtml = (text) => {
-        if (!text || typeof text !== 'string') return text;
-        return text.replace(/&amp;/g, '&');
-      };
-
-      expect(unescapeHtml(123)).toBe(123);
-      expect(unescapeHtml(null)).toBe(null);
-    });
+describe('unescapeHtml', () => {
+  it('reverses all five HTML entities', () => {
+    expect(unescapeHtml('&lt;b&gt;&amp;&quot;&#39;&lt;/b&gt;'))
+      .toBe('<b>&"\'</b>');
   });
 
-  describe('createSlug', () => {
-    it('should create URL-friendly slugs', () => {
-      const createSlug = (title) => {
-        if (!title) return '';
-        return title
-          .toLowerCase()
-          .replace(/[äöüß]/g, (match) => {
-            const map = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
-            return map[match] || match;
-          })
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '')
-          .substring(0, 50);
-      };
-
-      expect(createSlug('Hello World!')).toBe('hello-world');
-      expect(createSlug('Müller & Söhne GmbH')).toBe('mueller-soehne-gmbh');
-      expect(createSlug('Test   Multiple   Spaces')).toBe('test-multiple-spaces');
-      expect(createSlug('')).toBe('');
-    });
-
-    it('should truncate long slugs', () => {
-      const createSlug = (title) => {
-        if (!title) return '';
-        return title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '')
-          .substring(0, 50);
-      };
-
-      const longTitle = 'This is a very long title that should be truncated to fifty characters maximum';
-      const result = createSlug(longTitle);
-      expect(result.length).toBeLessThanOrEqual(50);
-      expect(result).toBe('this-is-a-very-long-title-that-should-be-truncated');
-    });
+  it('handles &amp; last to avoid double-decoding', () => {
+    // &amp;lt; should become &lt; (not <)
+    expect(unescapeHtml('&amp;lt;')).toBe('&lt;');
   });
 
-  describe('sanitizeFilename', () => {
-    it('should remove dangerous characters from filenames', () => {
-      const sanitizeFilename = (filename) => {
-        if (!filename) return '';
-        // Remove path separators and dangerous characters
-        return filename
-          .replace(/[/\\:*?"<>|]/g, '_')
-          .replace(/\.\./g, '__')
-          .substring(0, 255);
-      };
+  it('returns non-strings unchanged', () => {
+    expect(unescapeHtml(42)).toBe(42);
+  });
+});
 
-      expect(sanitizeFilename('test/file.txt')).toBe('test_file.txt');
-      expect(sanitizeFilename('danger<script>.js')).toBe('danger_script_.js');
-      expect(sanitizeFilename('../../etc/passwd')).toBe('______etc_passwd');
-      expect(sanitizeFilename('normal-file.txt')).toBe('normal-file.txt');
-    });
+describe('escapeAllStrings', () => {
+  it('escapes strings in a flat object', () => {
+    const result = escapeAllStrings({ name: '<b>test</b>', count: 5 });
+    expect(result.name).toBe('&lt;b&gt;test&lt;/b&gt;');
+    expect(result.count).toBe(5);
   });
 
-  describe('convertBigInts', () => {
-    it('should convert BigInt values to strings', () => {
-      const convertBigInts = (obj) => {
-        if (obj === null || obj === undefined) return obj;
-        if (typeof obj === 'bigint') {
-          return obj.toString();
-        }
-        if (Array.isArray(obj)) {
-          return obj.map(convertBigInts);
-        }
-        if (typeof obj === 'object') {
-          const result = {};
-          for (const [key, value] of Object.entries(obj)) {
-            result[key] = convertBigInts(value);
-          }
-          return result;
-        }
-        return obj;
-      };
-
-      expect(convertBigInts(BigInt(123))).toBe('123');
-      expect(convertBigInts({ id: BigInt(456), name: 'test' }))
-        .toEqual({ id: '456', name: 'test' });
-      expect(convertBigInts([BigInt(1), BigInt(2)]))
-        .toEqual(['1', '2']);
-    });
-
-    it('should handle primitive BigInts', () => {
-      const convertBigInts = (obj) => {
-        if (typeof obj === 'bigint') {
-          return obj.toString();
-        }
-        return obj;
-      };
-
-      expect(convertBigInts(BigInt(789))).toBe('789');
-    });
-
-    it('should handle very large BigInts', () => {
-      const convertBigInts = (obj) => {
-        if (typeof obj === 'bigint') {
-          try {
-            return obj.toString();
-          } catch {
-            return 'NaN';
-          }
-        }
-        return obj;
-      };
-
-      const hugeBigInt = BigInt('123456789012345678901234567890');
-      expect(convertBigInts(hugeBigInt)).toBe('123456789012345678901234567890');
-    });
+  it('escapes strings in nested objects', () => {
+    const result = escapeAllStrings({ a: { b: '<x>' } });
+    expect(result.a.b).toBe('&lt;x&gt;');
   });
 
-  describe('makeApiRequest simulation', () => {
-    it('should handle GET requests', async () => {
-      const makeApiRequest = async (url, options = {}) => {
-        const response = await global.fetch(url, options);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return response.json();
-      };
+  it('escapes strings in arrays', () => {
+    const result = escapeAllStrings(['<a>', '<b>']);
+    expect(result).toEqual(['&lt;a&gt;', '&lt;b&gt;']);
+  });
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ success: true, data: 'test' }),
-      });
+  it('skips whitelisted keys (passes through via domPurifyInstance mock)', () => {
+    const mockPurify = { sanitize: jest.fn((s) => `SANITIZED:${s}`) };
+    const result = escapeAllStrings({ content: '<p>hello</p>' }, ['content'], [], mockPurify);
+    expect(mockPurify.sanitize).toHaveBeenCalled();
+    expect(result.content).toBe('SANITIZED:<p>hello</p>');
+  });
 
-      const result = await makeApiRequest('https://api.example.com/data', { method: 'GET' });
-      expect(result).toEqual({ success: true, data: 'test' });
-      expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/data', { method: 'GET' });
-    });
+  it('throws on prototype-polluting keys', () => {
+    expect(() => escapeAllStrings({ __proto__: 'evil' })).toThrow('Forbidden key detected');
+    expect(() => escapeAllStrings({ constructor: 'evil' })).toThrow('Forbidden key detected');
+  });
 
-    it('should handle POST requests', async () => {
-      const makeApiRequest = async (url, options = {}) => {
-        const response = await global.fetch(url, options);
-        return response.json();
-      };
+  it('returns null and undefined unchanged', () => {
+    expect(escapeAllStrings(null)).toBeNull();
+    expect(escapeAllStrings(undefined)).toBeUndefined();
+  });
+});
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        status: 201,
-        json: () => Promise.resolve({ success: true, id: 123 }),
-      });
+describe('createSlug', () => {
+  it('lowercases and replaces spaces with hyphens', () => {
+    expect(createSlug('Hello World')).toBe('hello-world');
+  });
 
-      const result = await makeApiRequest('https://api.example.com/data', {
-        method: 'POST',
-        body: JSON.stringify({ name: 'test' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+  it('converts German umlauts', () => {
+    expect(createSlug('Müller & Söhne GmbH')).toBe('mueller-soehne-gmbh');
+    expect(createSlug('Straße und Übung')).toBe('strasse-und-uebung');
+  });
 
-      expect(result).toEqual({ success: true, id: 123 });
-    });
+  it('collapses multiple hyphens', () => {
+    expect(createSlug('Test   Multiple   Spaces')).toBe('test-multiple-spaces');
+  });
 
-    it('should handle network errors', async () => {
-      const makeApiRequest = async (url, options = {}) => {
-        try {
-          const response = await global.fetch(url, options);
-          return response.json();
-        } catch (error) {
-          throw new Error('Network error');
-        }
-      };
+  it('removes leading and trailing hyphens', () => {
+    expect(createSlug('  hello world  ')).toBe('hello-world');
+  });
 
-      global.fetch.mockRejectedValueOnce(new Error('Connection failed'));
+  it('truncates at maxLength (default 50) on a word boundary', () => {
+    const long = 'this is a very long title that exceeds fifty chars exactly here';
+    const result = createSlug(long);
+    expect(result.length).toBeLessThanOrEqual(50);
+    expect(result).not.toMatch(/-$/);
+  });
 
-      await expect(makeApiRequest('https://api.example.com/data', { method: 'GET' }))
-        .rejects.toThrow('Network error');
-    });
+  it('returns empty string for falsy input', () => {
+    expect(createSlug('')).toBe('');
+    expect(createSlug(null)).toBe('');
+  });
+});
+
+describe('truncateSlug', () => {
+  it('returns slug unchanged when within limit', () => {
+    expect(truncateSlug('hello-world', 50)).toBe('hello-world');
+  });
+
+  it('truncates at the last hyphen to avoid mid-word cut', () => {
+    expect(truncateSlug('hello-world-foo', 12)).toBe('hello-world');
+  });
+
+  it('hard-truncates when no hyphen found within limit', () => {
+    expect(truncateSlug('helloworld', 5)).toBe('hello');
+  });
+});
+
+describe('convertBigInts', () => {
+  it('converts safe BigInt to Number', () => {
+    expect(convertBigInts(BigInt(42))).toBe(42);
+  });
+
+  it('returns NaN for BigInt exceeding MAX_SAFE_INTEGER', () => {
+    expect(convertBigInts(BigInt(Number.MAX_SAFE_INTEGER) + 1n)).toBeNaN();
+  });
+
+  it('converts BigInt fields in objects', () => {
+    const obj = { id: BigInt(7), name: 'test' };
+    const result = convertBigInts(obj);
+    expect(result.id).toBe(7);
+    expect(result.name).toBe('test');
+  });
+
+  it('converts BigInt elements in arrays', () => {
+    expect(convertBigInts([BigInt(1), BigInt(2)])).toEqual([1, 2]);
+  });
+
+  it('leaves numbers and strings unchanged', () => {
+    expect(convertBigInts(42)).toBe(42);
+    expect(convertBigInts('hello')).toBe('hello');
+  });
+});
+
+describe('parseTags', () => {
+  it('returns arrays unchanged', () => {
+    expect(parseTags(['a', 'b'])).toEqual(['a', 'b']);
+  });
+
+  it('parses JSON string of array', () => {
+    expect(parseTags('["foo","bar"]')).toEqual(['foo', 'bar']);
+  });
+
+  it('parses comma-separated string', () => {
+    expect(parseTags('foo, bar, baz')).toEqual(['foo', 'bar', 'baz']);
+  });
+
+  it('returns empty array for null or undefined', () => {
+    expect(parseTags(null)).toEqual([]);
+    expect(parseTags(undefined)).toEqual([]);
+  });
+
+  it('returns empty array for empty string', () => {
+    expect(parseTags('')).toEqual([]);
+  });
+});
+
+describe('sanitizeFilename', () => {
+  it('removes path traversal', () => {
+    // path.basename strips directory components
+    expect(sanitizeFilename('../../etc/passwd')).toBe('passwd');
+  });
+
+  it('replaces forbidden characters with underscore', () => {
+    expect(sanitizeFilename('file<name>.txt')).toBe('file_name_.txt');
+    expect(sanitizeFilename('my file name.txt')).toBe('my_file_name.txt');
+  });
+
+  it('preserves alphanumeric, dot, dash, underscore', () => {
+    expect(sanitizeFilename('normal-file_v2.txt')).toBe('normal-file_v2.txt');
+  });
+
+  it('truncates to 255 characters', () => {
+    const long = 'a'.repeat(300) + '.txt';
+    expect(sanitizeFilename(long).length).toBeLessThanOrEqual(255);
   });
 });
