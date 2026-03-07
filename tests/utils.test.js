@@ -5,7 +5,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 jest.unstable_mockModule('../databases/mariaDB.js', () => ({
   DatabaseService: { increasePostViews: jest.fn() },
 }));
-jest.unstable_mockModule('./sanitizer.js', () => ({
+jest.unstable_mockModule('../utils/sanitizer.js', () => ({
   sanitizeHtml: jest.fn((s) => s),
 }));
 
@@ -79,7 +79,9 @@ describe('escapeAllStrings', () => {
   });
 
   it('throws on prototype-polluting keys', () => {
-    expect(() => escapeAllStrings({ __proto__: 'evil' })).toThrow('Forbidden key detected');
+    // { __proto__: 'evil' } in object literal syntax sets the prototype, not an own property.
+    // JSON.parse creates a real own property named __proto__.
+    expect(() => escapeAllStrings(JSON.parse('{"__proto__": "evil"}'))).toThrow('Forbidden key detected');
     expect(() => escapeAllStrings({ constructor: 'evil' })).toThrow('Forbidden key detected');
   });
 

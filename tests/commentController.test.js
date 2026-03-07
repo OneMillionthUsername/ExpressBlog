@@ -46,7 +46,7 @@ const makeDbComment = (overrides = {}) => ({
   published: true,
   created_at: new Date('2025-01-01'),
   updated_at: new Date('2025-01-01'),
-  ip_address: null,
+  ip_address: undefined,
   ...overrides,
 });
 
