@@ -35,6 +35,9 @@ const nonceMiddleware = (req, res, next) => {
       '\'sha256-Mia3q7J61OxNlAZtRNAwCYtIrMyDLicwwyzKx08ck64=\'',
       '\'sha256-oydFwnrbKG8DPlBdKhCupyIlRdDQx1Cmood6fNWEkL8=\'',
       '\'sha256-BSTKIYoPCaklkJ9YS/ZVYuKW8e+DG8jZJCXznBzHjgg=\'',
+      // Honeypot style-Attribute (about.ejs, comments.ejs)
+      '\'sha256-XhH0UlrLtQ3wHjN97+oLq0EnUrvNr9Im/BHeMd/rKws=\'', // left:-10000px
+      '\'sha256-v7UQ5O51L9R6L6dKW9YuMYcZnV8RdOixsfqGJTqiDKc=\'', // left:-9999px
     ];
     
     // Ersetze die bestehende CSP mit Nonce-Unterstützung für scripts UND erlaubte Hashes
@@ -45,7 +48,7 @@ const nonceMiddleware = (req, res, next) => {
     
     // Füge Nonce für style-src hinzu und erlaube unsafe-hashes für style-Attribute plus bekannte Hashes
     updatedCSP = updatedCSP.replace(
-      /style-src ([^;]*)/,
+      /style-src(?!-attr) ([^;]*)/,
       `style-src $1 'nonce-${nonce}' 'unsafe-hashes' ${knownStyleHashes.join(' ')}`,
     );
     
