@@ -405,6 +405,24 @@ const deletePost = async (postId) => {
     throw new PostControllerException(`Error deleting post: ${error.message}`, error);
   }
 };
+const getDrafts = async () => {
+  try {
+    const posts = await DatabaseService.getDrafts();
+    return posts.map(p => new Post(p));
+  } catch (error) {
+    throw new PostControllerException(`Error fetching drafts: ${error.message}`, error);
+  }
+};
+
+const getUnpublishedPosts = async () => {
+  try {
+    const posts = await DatabaseService.getUnpublishedPosts();
+    return posts.map(p => new Post(p));
+  } catch (error) {
+    throw new PostControllerException(`Error fetching unpublished posts: ${error.message}`, error);
+  }
+};
+
 export default {
   getPostBySlug,
   createPost,
@@ -419,4 +437,6 @@ export default {
   getPostsChecksum,
   getPostsByCategory,
   getPostsByCategoryId,
+  getDrafts,
+  getUnpublishedPosts,
 };

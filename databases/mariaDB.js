@@ -805,6 +805,10 @@ export const DatabaseService = {
       if(!result || result.affectedRows === 0) {
         throw new Error(`Failed to update post with id ${post.id}`);
       }
+      // Set published_at on first publish (only if not already set)
+      if (post.published) {
+        await conn.query('UPDATE posts SET published_at = COALESCE(published_at, NOW()) WHERE id = ?', [post.id]);
+      }
       return { success: true };
     } catch (error) {
       logger.error(`Error in updatePost: ${error.message}`);
@@ -827,6 +831,50 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in deletePost: ${error.message}`);
       throw new databaseError(`Error in deletePost: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getDrafts() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 0 AND published_at IS NULL ORDER BY created_at DESC'
+      );
+      if (!result || result.length === 0) return [];
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) post.author = 'author';
+        return post;
+      });
+    } catch (error) {
+      logger.error(`Error in getDrafts: ${error.message}`);
+      throw new databaseError(`Error in getDrafts: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getUnpublishedPosts() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 0 AND published_at IS NOT NULL ORDER BY published_at DESC'
+      );
+      if (!result || result.length === 0) return [];
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) post.author = 'author';
+        return post;
+      });
+    } catch (error) {
+      logger.error(`Error in getUnpublishedPosts: ${error.message}`);
+      throw new databaseError(`Error in getUnpublishedPosts: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }

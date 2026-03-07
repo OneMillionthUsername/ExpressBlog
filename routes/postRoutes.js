@@ -184,6 +184,30 @@ async function getAllHandler(req, res) {
 
 postRouter.get('/all', globalLimiter, csrfProtection, getAllHandler);
 
+postRouter.get('/admin/drafts',
+  globalLimiter,
+  csrfProtection,
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const [drafts, unpublished] = await Promise.all([
+        postController.getDrafts(),
+        postController.getUnpublishedPosts(),
+      ]);
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('adminDrafts', { drafts, unpublished, isAdmin, csrfToken });
+    } catch (error) {
+      logger.error('Error loading drafts/unpublished posts:', error.message);
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(500).render('error', { message: 'Serverfehler beim Laden der Entwürfe', isAdmin, csrfToken });
+    }
+  });
+
 postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (req, res) => {
   const categorySlug = req.params.categorySlug;
   try {

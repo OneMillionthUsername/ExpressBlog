@@ -12,6 +12,7 @@ export class Post {
     published = true,
     created_at = new Date(),
     updated_at = new Date(),
+    published_at = null,
     category_id = null,
     category = null,
   } = {}) {
@@ -25,6 +26,7 @@ export class Post {
     this.published = !!published;
     this.created_at = new Date(created_at);
     this.updated_at = new Date(updated_at);
+    this.published_at = published_at ? new Date(published_at) : null;
     this.category_id = category_id;
     this.category = category;
   }
@@ -45,6 +47,7 @@ export const postSchema = Joi.object({
   published: Joi.alternatives().try(Joi.boolean(), Joi.number().integer().valid(0, 1)).optional(),
   created_at: Joi.date().optional(),
   updated_at: Joi.date().optional(),
+  published_at: Joi.date().allow(null).optional(),
   media: Joi.array().items(Joi.object({
     id: Joi.number().integer().optional(),
     original_name: Joi.string().max(255).optional(),

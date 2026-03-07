@@ -59,11 +59,12 @@ sitemapRouter.get('/sitemap.xml', async (req, res) => {
     try {
       // Blog Posts hinzufügen
       logger.debug('Fetching blog posts for sitemap');
-      const posts = await DatabaseService.getAllPosts();
-      
+      const allPosts = await DatabaseService.getAllPosts();
+      const posts = Array.isArray(allPosts) ? allPosts.filter(p => p.published) : [];
+
       if (posts && posts.length > 0) {
         logger.debug(`Adding ${posts.length} blog posts to sitemap`);
-        
+
         posts.forEach(post => {
           const postDate = post.created_at ? new Date(post.created_at).toISOString() : now;
           const postPath = post.slug || post.id;
@@ -145,6 +146,7 @@ Crawl-delay: 1
 # Disallow admin areas (falls vorhanden)
 Disallow: /admin/
 Disallow: /api/
+Disallow: /blogpost/admin/
 Disallow: /*.json$
 `;
 

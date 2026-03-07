@@ -1,0 +1,68 @@
+<%
+    pageTitle = 'Entwürfe & zurückgezogene Posts - Admin';
+    metaDescription = '';
+    metaRobots = 'noindex, nofollow';
+%>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area">
+
+                <h2 class="mb-4">Entwürfe</h2>
+                <% if (typeof drafts !== 'undefined' && Array.isArray(drafts) && drafts.length > 0) { %>
+                    <div id="drafts-list">
+                        <% drafts.forEach(function(post) { %>
+                            <article class="blog-post-card">
+                                <div class="post-meta">
+                                    <span class="post-date">Erstellt: <%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
+                                    <span class="post-author">von <%= post.author || 'Gast' %></span>
+                                </div>
+                                <h2 class="post-title">
+                                    <span class="post-link"><%= post.title || 'Untitled' %></span>
+                                </h2>
+                                <div class="post-footer">
+                                    <a href="/blogpost/update/<%= post.id %>" class="btn btn-sm btn-outline-warning">Bearbeiten / Veröffentlichen</a>
+                                </div>
+                            </article>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted">Keine Entwürfe vorhanden.</p>
+                <% } %>
+
+                <hr class="my-5">
+
+                <h2 class="mb-4">Zurückgezogene Posts</h2>
+                <% if (typeof unpublished !== 'undefined' && Array.isArray(unpublished) && unpublished.length > 0) { %>
+                    <div id="unpublished-list">
+                        <% unpublished.forEach(function(post) { %>
+                            <article class="blog-post-card">
+                                <div class="post-meta">
+                                    <span class="post-date">Erstellt: <%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
+                                    <% if (post.published_at) { %>
+                                        <span class="post-date ml-3">Zuletzt veröffentlicht: <%= new Date(post.published_at).toLocaleDateString('de-DE') %></span>
+                                    <% } %>
+                                    <span class="post-author">von <%= post.author || 'Gast' %></span>
+                                </div>
+                                <h2 class="post-title">
+                                    <span class="post-link"><%= post.title || 'Untitled' %></span>
+                                </h2>
+                                <div class="post-footer">
+                                    <a href="/blogpost/update/<%= post.id %>" class="btn btn-sm btn-outline-warning">Bearbeiten / Veröffentlichen</a>
+                                </div>
+                            </article>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted">Keine zurückgezogenen Posts vorhanden.</p>
+                <% } %>
+
+            </div>
+        </div>
+    </div>
+    <div class="navigation text-center mt-4">
+        <a href="/blogpost/all" class="btn btn-outline-primary">Alle Posts</a>
+        <a href="/createPost" class="btn btn-outline-success ml-2">Neuen Post erstellen</a>
+    </div>
+</div>
