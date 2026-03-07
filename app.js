@@ -255,21 +255,12 @@ app.use(express.urlencoded({
 app.use(middleware.createEscapeInputMiddleware(['content', 'description']));
 
 // 6. Rate Limiting (statische Dateien ausgenommen)
+// Nur path-basierte Prüfung – req.url.includes('.js') etc. wäre zu breit
+// und würde z.B. /api/attack.js vom Rate-Limiting ausnehmen.
 app.use((req, res, next) => {
-  // Rate Limiting für statische Assets überspringen
-  if (req.url.startsWith('/assets/') || 
-      req.url.startsWith('/public/') ||
-      req.url.includes('.js') ||
-      req.url.includes('.css') ||
-      req.url.includes('.ico') ||
-      req.url.includes('.png') ||
-      req.url.includes('.jpg') ||
-      req.url.includes('.jpeg') ||
-      req.url.includes('.webp') ||
-      req.url.includes('.svg')) {
+  if (req.path.startsWith('/assets/') || req.path.startsWith('/public/')) {
     return next();
   }
-  // Rate Limiting nur für dynamische Inhalte
   return globalLimiter(req, res, next);
 });
 

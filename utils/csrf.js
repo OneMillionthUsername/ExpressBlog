@@ -11,7 +11,7 @@ const csrfProtection = csrf({
     // Only use 'none' if frontend and backend are on different domains
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production', // HTTPS only in Production
-    maxAge: 60 * 60 * 1000,  // 1 Stunde Lebensdauer
+    maxAge: 60 * 60,          // 1 Stunde Lebensdauer (in Sekunden, cookie-Package-Konvention)
   },
   // CSRF-Token aus Header ODER Body akzeptieren
   value: (req) => {
