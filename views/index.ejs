@@ -141,14 +141,21 @@
             </div>
         </div>
     </div>
+    <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 9) { %>
+    <div id="cards-pagination" class="text-center mt-3">
+        <button id="cards-prev" class="btn btn-sm btn-outline-secondary mr-2">‹</button>
+        <span id="cards-page-info"></span>
+        <button id="cards-next" class="btn btn-sm btn-outline-secondary ml-2">›</button>
+    </div>
+    <% } %>
 </div>
 
 <div class="container my-5">
     <h3 class="featured-title">Fundstücke & Empfehlungen</h3>
     <div class="row" id="discoveries-grid">
         <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
-            <% cards.slice(0, 9).forEach(function(card) { %>
-                <div class="col-md-4 mb-4">
+            <% cards.forEach(function(card, cardIndex) { %>
+                <div class="col-md-4 mb-4 discovery-card-item" data-card-index="<%= cardIndex %>">
                     <div class="card discovery-card h-100">
                         <% if (card.img_link) { %>
                             <%
@@ -192,3 +199,28 @@
     </div>
 </div>
 
+<% locals.extraScripts = (locals.extraScripts || '') + `
+<script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
+    (function() {
+        const CARDS_PER_PAGE = 9;
+        const items = Array.from(document.querySelectorAll('.discovery-card-item'));
+        if (items.length <= CARDS_PER_PAGE) return;
+        let page = 0;
+        const totalPages = Math.ceil(items.length / CARDS_PER_PAGE);
+        const prevBtn = document.getElementById('cards-prev');
+        const nextBtn = document.getElementById('cards-next');
+        const pageInfo = document.getElementById('cards-page-info');
+        function render() {
+            items.forEach((el, i) => {
+                el.style.display = (i >= page * CARDS_PER_PAGE && i < (page + 1) * CARDS_PER_PAGE) ? '' : 'none';
+            });
+            if (pageInfo) pageInfo.textContent = (page + 1) + ' / ' + totalPages;
+            if (prevBtn) prevBtn.disabled = page === 0;
+            if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
+        }
+        if (prevBtn) prevBtn.addEventListener('click', function() { if (page > 0) { page--; render(); } });
+        if (nextBtn) nextBtn.addEventListener('click', function() { if (page < totalPages - 1) { page++; render(); } });
+        render();
+    })();
+</script>
+`; %>

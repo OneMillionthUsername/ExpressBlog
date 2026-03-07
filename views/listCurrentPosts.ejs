@@ -8,10 +8,16 @@
         <div class="col-md-10">
             <div class="content-area">
                 <div class="posts-header">
-                    <div class="form-group mb-0">
+                    <% if (typeof activeTag !== 'undefined' && activeTag) { %>
+                        <div class="active-tag-banner mb-2">
+                            Tag: <strong><%= activeTag %></strong>
+                            <a href="/blogpost/all" class="ml-2 btn btn-sm btn-outline-secondary">× Zurücksetzen</a>
+                        </div>
+                    <% } %>
+                    <form id="tag-search-form" class="form-group mb-0" action="/blogpost/tag" method="GET">
                         <label class="sr-only" for="post-filter-input">Posts filtern</label>
-                        <input id="post-filter-input" class="form-control post-filter-input" type="search" placeholder="Posts filtern...">
-                    </div>
+                        <input id="post-filter-input" class="form-control post-filter-input" type="search" name="q" placeholder="Tag suchen (Enter zum Filtern)..." autocomplete="off">
+                    </form>
                 </div>
                 <div id="blogPostsList">
                     <% if (typeof posts !== 'undefined' && Array.isArray(posts) && posts.length > 0) { %>
@@ -43,6 +49,7 @@
                         </div>
                     <% } %>
                 </div>
+                <%- include('partials/pagination', { pagination: typeof pagination !== 'undefined' ? pagination : null }) %>
             </div>
         </div>
     </div>
@@ -56,17 +63,15 @@
 <% locals.extraScripts = `
 <script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
     (function() {
+        const form = document.getElementById('tag-search-form');
         const input = document.getElementById('post-filter-input');
-        const cards = Array.from(document.querySelectorAll('.blog-post-card'));
-        if (!input || cards.length === 0) return;
-        const normalize = (str) => String(str || '').toLowerCase();
-        const cardText = new Map();
-        cards.forEach(card => { cardText.set(card, normalize(card.textContent)); });
-        input.addEventListener('input', () => {
-            const q = normalize(input.value).trim();
-            cards.forEach(card => {
-                card.style.display = (!q || (cardText.get(card) || '').includes(q)) ? '' : 'none';
-            });
+        if (!form || !input) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tag = input.value.trim();
+            if (tag) {
+                window.location.href = '/blogpost/tag/' + encodeURIComponent(tag);
+            }
         });
     })();
 </script>

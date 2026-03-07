@@ -879,6 +879,195 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getPublishedPostsCount() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT COUNT(*) AS count FROM posts WHERE published = 1');
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getPublishedPostsCount: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPublishedPostsPaginated(limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 1 ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [limit, offset],
+      );
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) post.author = 'author';
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getPublishedPostsPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getCurrentPostsCount() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND created_at >= NOW() - INTERVAL 3 MONTH',
+      );
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getCurrentPostsCount: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getCurrentPostsPaginated(limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 1 AND created_at >= NOW() - INTERVAL 3 MONTH ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [limit, offset],
+      );
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) post.author = 'author';
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getCurrentPostsPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsCountByCategory(category) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND category_id = (SELECT id FROM categories WHERE slug = ?)',
+        [category],
+      );
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getPostsCountByCategory: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsByCategoryPaginated(category, limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 1 AND category_id = (SELECT id FROM categories WHERE slug = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [category, limit, offset],
+      );
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        if (post.author === null || post.author === undefined) post.author = 'author';
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getPostsByCategoryPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsCountByTag(tag) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND tags LIKE ?',
+        [`%${tag}%`],
+      );
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getPostsCountByTag: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPostsByTagPaginated(tag, limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM posts WHERE published = 1 AND tags LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [`%${tag}%`, limit, offset],
+      );
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getPostsByTagPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getArchivedPostsCount(year) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      let result;
+      if (year !== undefined && year !== null) {
+        result = await conn.query(
+          'SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND YEAR(created_at) = ? AND created_at < NOW() - INTERVAL 3 MONTH',
+          [Number(year)],
+        );
+      } else {
+        result = await conn.query(
+          'SELECT COUNT(*) AS count FROM posts WHERE published = 1 AND created_at < NOW() - INTERVAL 3 MONTH',
+        );
+      }
+      return Number(result[0].count) || 0;
+    } catch (error) {
+      throw new databaseError(`Error in getArchivedPostsCount: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getArchivedPostsPaginated(year, limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      let result;
+      if (year !== undefined && year !== null) {
+        result = await conn.query(
+          'SELECT * FROM posts WHERE published = 1 AND YEAR(created_at) = ? AND created_at < NOW() - INTERVAL 3 MONTH ORDER BY created_at DESC LIMIT ? OFFSET ?',
+          [Number(year), limit, offset],
+        );
+      } else {
+        result = await conn.query(
+          'SELECT * FROM posts WHERE published = 1 AND created_at < NOW() - INTERVAL 3 MONTH ORDER BY created_at DESC LIMIT ? OFFSET ?',
+          [limit, offset],
+        );
+      }
+      return result.map(post => {
+        convertBigInts(post);
+        post.tags = parseTags(post.tags);
+        post.published = normalizePublished(post.published);
+        return post;
+      });
+    } catch (error) {
+      throw new databaseError(`Error in getArchivedPostsPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async createPost(postData) {
     let conn;
     try {

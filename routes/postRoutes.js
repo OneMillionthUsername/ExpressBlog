@@ -17,7 +17,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import categoryController from '../controllers/categoryController.js';
-import postController from '../controllers/postController.js';
+import postController, { getAllPostsPaginated, getCurrentPostsPaginated, getPostsByCategoryPaginated, getPostsByTagPaginated, getArchivedPostsPaginated, PAGE_SIZE } from '../controllers/postController.js';
 import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
@@ -32,6 +32,19 @@ import { escapeAllStrings } from '../utils/utils.js';
 import { withExcerpts } from '../public/assets/js/shared/text.js';
 
 const postRouter = express.Router();
+
+function parsePage(req) {
+  return Math.max(1, parseInt(req.query && req.query.page) || 1);
+}
+
+function buildPagination(currentPage, total, baseUrl, extraParams) {
+  return {
+    currentPage,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+    baseUrl,
+    extraParams: extraParams || '',
+  };
+}
 
 async function buildReadPostViewData(req, res, post) {
   const isAdmin = getSsrAdmin(res);
@@ -72,100 +85,16 @@ async function getAllHandler(req, res) {
   });
   
   try {
-    logger.debug(`[${requestId}] GET /all: Checking cache for all posts`);
-    const cacheKey = 'posts:all';
-    let posts = simpleCache.get(cacheKey);
-    let controllerDuration = null;
-    if (!posts) {
-      logger.debug(`[${requestId}] GET /all: Cache miss - loading posts from controller`);
-      const controllerStartTime = Date.now();
-      posts = await postController.getAllPosts();
-      const controllerEndTime = Date.now();
-      controllerDuration = controllerEndTime - controllerStartTime;
-      logger.debug(`[${requestId}] GET /all: Controller returned in ${controllerDuration}ms`);
-      // Cache the result for 60 seconds
-      simpleCache.set(cacheKey, posts, 60 * 1000);
-    } else {
-      controllerDuration = 'cache';
-      logger.debug(`[${requestId}] GET /all: Cache hit - returning cached posts`);
-    }
-    
-    logger.debug(`[${requestId}] GET /all: Controller returned data`, {
-      posts_count: posts ? posts.length : 'null',
-      posts_type: typeof posts,
-      posts_is_array: Array.isArray(posts),
-      controller_duration_ms: controllerDuration,
-      first_post_sample: posts && posts.length > 0 ? {
-        id: posts[0].id,
-        title: posts[0].title?.substring(0, 50),
-        slug: posts[0].slug,
-      } : null,
-    });
-    
-    // Auch leere Arrays sind gültige Antworten
+    const page = parsePage(req);
+    const { posts, total } = await getAllPostsPaginated(page);
     const response = convertBigInts(posts) || [];
-    logger.debug(`[${requestId}] GET /all: Prepared response`, {
-      response_length: response.length,
-      response_type: typeof response,
-      response_is_array: Array.isArray(response),
-      conversion_applied: 'convertBigInts',
-    });
+    const pagination = buildPagination(page, total, '/blogpost/all');
     
-    // Prefer controller-provided checksum as ETag to avoid hashing the full payload on every request.
-    try {
-      let etag;
-      try {
-        const checksum = typeof postController.getPostsChecksum === 'function' ? await postController.getPostsChecksum() : null;
-        if (checksum) {
-          etag = `"${checksum}"`;
-          logger.debug(`[${requestId}] GET /all: Using controller checksum for ETag`);
-        }
-      } catch (innerErr) {
-        // If controller checksum retrieval fails, fall back to hashing below
-        logger.debug(`[${requestId}] GET /all: Controller checksum retrieval failed: ${innerErr.message}`);
-      }
-
-      // If we don't have an etag yet, compute it from the response body (SHA-1). Quoted per RFC.
-      if (!etag) {
-        const bodyString = JSON.stringify(response);
-        const hash = crypto.createHash('sha1').update(bodyString).digest('hex');
-        etag = `"${hash}"`;
-        logger.debug(`[${requestId}] GET /all: Computed ETag from response body`);
-      }
-
-      const incoming = req.get('If-None-Match');
-      if (incoming && incoming === etag) {
-        logger.debug(`[${requestId}] GET /all: ETag matched - returning 304`);
-        res.status(304).set('ETag', etag).end();
-        return;
-      }
-
-      // Set ETag and Cache-Control for short client-side caching
-      res.set('ETag', etag);
-      // Clients may cache for a short duration; server still validates with If-None-Match
-      res.set('Cache-Control', 'private, max-age=30, must-revalidate');
-
-      logger.debug(`[${requestId}] GET /all: Sending successful response with ETag`);
-      // Render HTML for human-driven browser navigation (SSR-only)
-      try {
-        const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
-        const isAdmin = getSsrAdmin(res);
-        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('listCurrentPosts', { posts: safePosts, isAdmin, csrfToken });
-      } catch (_e) {
-        const isAdmin = getSsrAdmin(res);
-        const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-        applySsrNoCache(res, { varyCookie: true });
-        return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken });
-      }
-    } catch (err) {
-      logger.error(`[${requestId}] GET /all: Error computing ETag: ${err.message}`);
-      // Fallback: render without ETag
-      const isAdmin = getSsrAdmin(res);
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin });
-    }
+    const safePosts = withExcerpts(Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response);
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { posts: safePosts, isAdmin, csrfToken, pagination });
     
   } catch (error) {
     logger.debug(`[${requestId}] GET /all: Error occurred`, {
@@ -208,24 +137,39 @@ postRouter.get('/admin/drafts',
     }
   });
 
+postRouter.get('/tag/:tag', globalLimiter, csrfProtection, async (req, res) => {
+  const tag = req.params.tag;
+  try {
+    const page = parsePage(req);
+    const { posts, total } = await getPostsByTagPaginated(tag, page);
+    const response = convertBigInts(posts) || posts;
+    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const pagination = buildPagination(page, total, `/blogpost/tag/${tag}`);
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, activeTag: tag, pagination });
+  } catch (error) {
+    console.error('Error loading blog posts by tag', error);
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    applySsrNoCache(res, { varyCookie: true });
+    res.status(500).render('error', { message: 'Serverfehler beim Laden der Blogposts nach Tag', isAdmin, csrfToken });
+  }
+});
+
 postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (req, res) => {
   const categorySlug = req.params.categorySlug;
   try {
-    const posts = await postController.getPostsByCategory(categorySlug);
+    const page = parsePage(req);
+    const { posts, total } = await getPostsByCategoryPaginated(categorySlug, page);
     const response = convertBigInts(posts) || posts;
-    try {
-      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, category: categorySlug });
-    }
-    catch (_e) {
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('listCurrentPosts', { posts: withExcerpts(response), isAdmin, csrfToken, category: categorySlug });
-    }
+    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const pagination = buildPagination(page, total, `/blogpost/category/${categorySlug}`);
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('listCurrentPosts', { posts: withExcerpts(safeResponse), isAdmin, csrfToken, category: categorySlug, pagination });
   } catch (error) {
     console.error('Error loading blog posts by category', error);
     const isAdmin = getSsrAdmin(res);
@@ -425,40 +369,33 @@ postRouter.get('/:maybeId',
 // interpreted as a slug. Register it here (after numeric id handler).
 postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
   try {
-    // Support optional year filter via ?year=YYYY. Use distinct cache keys for year-specific results.
     const yearParam = req.query && req.query.year ? String(req.query.year).trim() : null;
-    const cacheKey = yearParam ? `posts:archive:${yearParam}` : 'posts:archive';
-    let posts = simpleCache.get(cacheKey);
-    if (!posts) {
-      const year = yearParam ? Number(yearParam) : undefined;
-      posts = await postController.getArchivedPosts(year);
-      // Cache per-year and overall archive lists; no TTL -> default inside simpleCache
-      simpleCache.set(cacheKey, posts);
-    }
-    // Also provide the list of available archive years for client-side UI
-    const yearsCacheKey = 'posts:archive:years';
-    let archiveYears = simpleCache.get(yearsCacheKey);
-    if (!archiveYears) {
-      try {
-        archiveYears = await postController.getArchivedYears();
-        simpleCache.set(yearsCacheKey, archiveYears, 60 * 60 * 1000); // cache years for 1h
-      } catch (_e) {
-        archiveYears = [];
-      }
-    }
+    const year = yearParam ? Number(yearParam) : undefined;
+    const page = parsePage(req);
+
+    const [{ posts, total }, archiveYears] = await Promise.all([
+      getArchivedPostsPaginated(year, page),
+      (async () => {
+        const yearsCacheKey = 'posts:archive:years';
+        let years = simpleCache.get(yearsCacheKey);
+        if (!years) {
+          try {
+            years = await postController.getArchivedYears();
+            simpleCache.set(yearsCacheKey, years, 60 * 60 * 1000);
+          } catch (_e) { years = []; }
+        }
+        return years;
+      })(),
+    ]);
+
     const response = convertBigInts(posts) || posts;
-    try {
-      const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: withExcerpts(safeResponse), archiveYears, isAdmin, csrfToken });
-    } catch (_e) {
-      const isAdmin = getSsrAdmin(res);
-      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-      applySsrNoCache(res, { varyCookie: true });
-      return res.render('archiv', { posts: withExcerpts(response), archiveYears: archiveYears || [], isAdmin, csrfToken });
-    }
+    const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const extraParams = yearParam ? `&year=${yearParam}` : '';
+    const pagination = buildPagination(page, total, '/blogpost/archive', extraParams);
+    applySsrNoCache(res, { varyCookie: true });
+    return res.render('archiv', { posts: withExcerpts(safeResponse), archiveYears, isAdmin, csrfToken, pagination });
   } catch (error) {
     console.error('Error loading archived blog posts', error);
     const isAdmin = getSsrAdmin(res);

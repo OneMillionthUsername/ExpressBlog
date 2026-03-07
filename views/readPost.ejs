@@ -42,7 +42,7 @@
                                     <div class="tags-label">Tags:</div>
                                     <div class="tags-list">
                                         <% post.tags.forEach(function(tag) { %>
-                                            <span class="tag"><%= tag %></span>
+                                            <a href="/blogpost/tag/<%= encodeURIComponent(tag) %>" class="tag"><%= tag %></a>
                                         <% }); %>
                                     </div>
                                 <% } %>

@@ -424,6 +424,23 @@ const getUnpublishedPosts = async () => {
 };
 
 /**
+ * Holt alle veröffentlichten Posts für einen bestimmten Tag.
+ * @param {string} tag
+ * @returns {Promise<Post[]>}
+ * @throws {PostControllerException}
+ */
+const getPostsByTag = async (tag) => {
+  try {
+    const posts = await DatabaseService.getPostsByTag(tag);
+    return posts
+      .filter(p => p.published)
+      .map(p => new Post(p));
+  } catch (error) {
+    throw new PostControllerException(`Error fetching posts by tag: ${error.message}`, error);
+  }
+};
+
+/**
  * Holt einen Post anhand der ID unabhängig vom Veröffentlichungsstatus (für Admin-Bearbeitung).
  * @param {string|number} postId
  * @returns {Promise<Post>}
@@ -463,4 +480,57 @@ export default {
   getDrafts,
   getUnpublishedPosts,
   getPostByIdForEdit,
+  getPostsByTag,
+};
+export const PAGE_SIZE = 10;
+
+function validateAndMap(posts) {
+  return posts
+    .map(p => { const { error, value } = Post.validate(p); return error ? null : new Post(value); })
+    .filter(Boolean);
+}
+
+export const getAllPostsPaginated = async (page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.getPublishedPostsPaginated(PAGE_SIZE, offset),
+    DatabaseService.getPublishedPostsCount(),
+  ]);
+  return { posts: validateAndMap(posts), total };
+};
+
+export const getCurrentPostsPaginated = async (page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.getCurrentPostsPaginated(PAGE_SIZE, offset),
+    DatabaseService.getCurrentPostsCount(),
+  ]);
+  return { posts: validateAndMap(posts), total };
+};
+
+export const getPostsByCategoryPaginated = async (category, page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.getPostsByCategoryPaginated(category, PAGE_SIZE, offset),
+    DatabaseService.getPostsCountByCategory(category),
+  ]);
+  return { posts: validateAndMap(posts), total };
+};
+
+export const getPostsByTagPaginated = async (tag, page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.getPostsByTagPaginated(tag, PAGE_SIZE, offset),
+    DatabaseService.getPostsCountByTag(tag),
+  ]);
+  return { posts: validateAndMap(posts), total };
+};
+
+export const getArchivedPostsPaginated = async (year, page) => {
+  const offset = (page - 1) * PAGE_SIZE;
+  const [posts, total] = await Promise.all([
+    DatabaseService.getArchivedPostsPaginated(year, PAGE_SIZE, offset),
+    DatabaseService.getArchivedPostsCount(year),
+  ]);
+  return { posts: validateAndMap(posts), total };
 };

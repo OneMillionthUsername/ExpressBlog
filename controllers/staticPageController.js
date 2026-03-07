@@ -1,7 +1,7 @@
 import logger from '../utils/logger.js';
 import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl } from '../public/assets/js/shared/text.js';
 import categoryController from './categoryController.js';
-import postController from './postController.js';
+import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postController.js';
 import cardController from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
@@ -130,9 +130,16 @@ async function showPostsPage(req, res) {
   try {
     const isAdmin = getSsrAdmin(res);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
-    const posts = await postController.getCurrentPosts();
+    const page = Math.max(1, parseInt(req.query && req.query.page) || 1);
+    const { posts, total } = await getCurrentPostsPaginated(page);
+    const pagination = {
+      currentPage: page,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+      baseUrl: '/posts',
+      extraParams: '',
+    };
     applySsrNoCache(res, { varyCookie: true });
-    return res.render('listCurrentPosts', { posts: withExcerpts(posts), isAdmin, csrfToken });
+    return res.render('listCurrentPosts', { posts: withExcerpts(posts), isAdmin, csrfToken, pagination });
   } catch (err) {
     logger.error('[POSTS] Error rendering listCurrentPosts:', err && err.message);
     const isAdmin = getSsrAdmin(res);
