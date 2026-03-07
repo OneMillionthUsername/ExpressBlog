@@ -35,6 +35,16 @@ document.addEventListener('DOMContentLoaded', async function() {
       initializeAdminDelegation();
     }
 
+    // Close hamburger menu on outside click
+    const menuToggle = document.getElementById('menu-toggle');
+    if (menuToggle) {
+      document.addEventListener('click', function(e) {
+        if (menuToggle.checked && !e.target.closest('.navbar')) {
+          menuToggle.checked = false;
+        }
+      });
+    }
+
     // 4. Seiten-spezifische Initialisierung
     await initializeCurrentPage();
 
