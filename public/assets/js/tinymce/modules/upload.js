@@ -51,8 +51,13 @@ function debugUploadResponse(result, context = 'Upload') {
  * @returns {Promise<string>} Image URL
  */
 export async function uploadImageMultipart(blobInfo, progress) {
-  const blob = blobInfo.blob();
-  const filename = blobInfo.filename() || 'upload.jpg';
+  let blob = blobInfo.blob();
+  const filename = blobInfo.filename() || 'paste.png';
+
+  // Pasted clipboard images often have an empty MIME type — default to image/png
+  if (!blob.type) {
+    blob = new Blob([blob], { type: 'image/png' });
+  }
 
   // Validate image
   validateImageBeforeUpload(blob);

@@ -9,8 +9,9 @@ import csrfProtection from '../utils/csrf.js';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
-import crypto from 'crypto';
 import { sanitizeFilename } from '../utils/utils.js';
+import { getDatabasePool } from '../databases/mariaDB.js';
+
 
 /**
  * Routes for media uploads.
@@ -47,9 +48,35 @@ uploadRouter.post('/image',
       const mediaDir = path.join(publicRoot, 'assets', 'media', yyyy, mm);
       await fs.mkdir(mediaDir, { recursive: true });
 
-      const baseName = safeOriginal.replace(path.extname(safeOriginal), '') || 'image';
-      const unique = crypto.randomBytes(8).toString('hex');
-      const outFile = `${Date.now()}-${unique}-${baseName}.webp`;
+      // Resolve a human-readable filename prefix from the post slug (if postId available)
+      let prefix = null;
+      if (postId) {
+        try {
+          let conn;
+          try {
+            conn = await getDatabasePool().getConnection();
+            const rows = await conn.query('SELECT slug FROM posts WHERE id = ? LIMIT 1', [postId]);
+            if (rows && rows.length > 0 && rows[0].slug) {
+              prefix = rows[0].slug;
+            }
+          } finally {
+            if (conn) conn.release();
+          }
+        } catch (_e) { /* fall back to original name */ }
+      }
+      if (!prefix) {
+        prefix = (safeOriginal.replace(path.extname(safeOriginal), '') || 'image');
+      }
+
+      // Sequential counter: count existing files in this month's dir with the same prefix
+      let n = 1;
+      try {
+        const existing = await fs.readdir(mediaDir);
+        const pattern = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-\\d+\\.webp$`);
+        n = existing.filter(f => pattern.test(f)).length + 1;
+      } catch (_e) { /* directory may not exist yet, n stays 1 */ }
+
+      const outFile = `${prefix}-${n}.webp`;
       const outPath = path.join(mediaDir, outFile);
 
       // Server-side optimization for LCP: rotate via EXIF, resize, encode to WebP
