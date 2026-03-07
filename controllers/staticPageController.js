@@ -208,6 +208,11 @@ async function showUpdatePostByIdPage(req, res) {
   });
 }
 
+function showAdminPage(req, res) {
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+  return res.render('adminPanel', { isAdmin: true, csrfToken });
+}
+
 export default {
   showHomePage,
   showAboutPage,
@@ -216,4 +221,5 @@ export default {
   showPostsPage,
   showCreatePostPage,
   showUpdatePostByIdPage,
+  showAdminPage,
 };

@@ -3,6 +3,7 @@ import staticPageController from '../controllers/staticPageController.js';
 import csrfProtection from '../utils/csrf.js';
 import { strictLimiter } from '../utils/limiters.js';
 import { validateFields } from '../middleware/validationMiddleware.js';
+import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
 /**
  * Routes serving site pages and server-side rendered views.
@@ -23,6 +24,7 @@ staticRouter.get('/blogpost/update/:id', csrfProtection, staticPageController.sh
 
 staticRouter.get('/about.html', staticPageController.redirectAboutHtml);
 staticRouter.get('/posts', csrfProtection, staticPageController.showPostsPage);
+staticRouter.get('/admin', csrfProtection, authenticateToken, requireAdmin, staticPageController.showAdminPage);
 
 staticRouter.post(
   '/contact',

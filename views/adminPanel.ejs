@@ -1,0 +1,42 @@
+<%
+    pageTitle = 'Admin - Sub specie aeternitatis';
+    metaDescription = '';
+    metaRobots = 'noindex, nofollow';
+%>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="content-area">
+                <h2 class="mb-4">Administration</h2>
+                <div class="admin-panel-grid">
+
+                    <a href="/createPost" class="admin-panel-card">
+                        <span class="admin-panel-icon">✏️</span>
+                        <span class="admin-panel-label">Post erstellen</span>
+                    </a>
+
+                    <a href="/cards/create" class="admin-panel-card">
+                        <span class="admin-panel-icon">🗂</span>
+                        <span class="admin-panel-label">Card erstellen</span>
+                    </a>
+
+                    <a href="/blogpost/admin/drafts" class="admin-panel-card">
+                        <span class="admin-panel-icon">📋</span>
+                        <span class="admin-panel-label">Entwürfe & zurückgezogene Posts</span>
+                    </a>
+
+                </div>
+
+                <div class="mt-5">
+                    <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                    <form method="POST" action="/auth/logout" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit" class="btn btn-outline-danger">Logout</button>
+                    </form>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

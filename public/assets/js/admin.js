@@ -3,8 +3,6 @@
 import { showFeedback } from './feedback.js';
 // Import helpers from common module instead of relying on window globals
 import {
-  createElement,
-  elementExists,
   hideElement,
   reloadPageWithDelay,
   getUrlParameter,
@@ -36,83 +34,32 @@ async function checkAdminStatusCached() {
   return adminStatusCache.result;
 }
 // Cookie-basiertes Admin Logout 
-async function adminLogout() {
-  if (!isAdmin()) {
-    return;
-  }
-  const logoutForm = document.getElementById('admin-logout-form');
-  if (logoutForm && typeof logoutForm.submit === 'function') {
-    logoutForm.submit();
-    return;
-  }
-    
-  // Lokale Variablen zurücksetzen
-  setAdmin(false);
-  currentUser = null;
-  adminStatusCache = {
-    promise: null,
-    result: null,
-    timestamp: 0,
-    ttl: 5 * 60 * 1000
-  };
-    
-  updateNavigationVisibility();
-
-  // Seite neu laden, um server-seitigen Status zu aktualisieren
-  reloadPageWithDelay();
-}
 // Funktion zum Aktualisieren der Navigation basierend auf Admin-Status
 function updateNavigationVisibility() {
-  const createNavItem = document.getElementById('admin-create-link');
-  if (createNavItem) {
-    createNavItem.style.display = isAdmin() ? 'block' : 'none';
+  const adminNavLink = document.getElementById('admin-nav-link');
+  if (adminNavLink) {
+    adminNavLink.style.display = isAdmin() ? 'block' : 'none';
   }
-  const createCardItem = document.getElementById('admin-createCard-modal');
-  if (createCardItem) {
-    createCardItem.style.display = isAdmin() ? 'block' : 'none';
-  }
-    
+
   // Create-Links auf anderen Seiten
   const createLinks = document.querySelectorAll('.create-link');
   createLinks.forEach(link => {
     link.style.display = isAdmin() ? 'inline-block' : 'none';
   });
-    
+
   // Navigation auf /createPost (Admin-geschützte vs. öffentliche Navigation)
   const publicNavigation = document.getElementById('public-navigation');
   if (publicNavigation) {
     publicNavigation.style.display = isAdmin() ? 'none' : 'block';
   }
-    
-  // Admin-Toolbar und Login-Button entsprechend ein-/ausblenden
-  if (isAdmin()) {
-    createAdminToolbar();
-    hideElement('admin-login-btn');
-  } else {
-    hideElement('admin-toolbar');
+
+  if (!isAdmin()) {
     const adminControls = document.getElementById('admin-controls');
     if (adminControls) {
       hideElement('admin-controls');
       adminControls.innerHTML = '';
     }
-    // Admin-Login-Button wird vom Floating Menu System verwaltet
   }
-}
-// Admin-Toolbar erstellen
-function createAdminToolbar() {
-  if (!isAdmin()) return;
-  // Prüfen ob Toolbar bereits existiert
-  if (elementExists('admin-toolbar')) return;
-  const toolbar = createElement('div');
-  toolbar.id = 'admin-toolbar';
-  toolbar.className = 'admin-toolbar';
-  toolbar.innerHTML = `
-        <span>Admin-Modus aktiv</span>
-    `;
-  document.body.prepend(toolbar);
-  // Attach local listener for admin toolbar actions to avoid inline handlers
-  // Body-Padding anpassen wegen der Toolbar
-  document.body.style.paddingTop = ADMIN_CONFIG.TOOLBAR_HEIGHT;
 }
 // Modal anzeigen
 function showAdminLoginModal() {
@@ -315,22 +262,15 @@ async function initializeAdminSystem() {
 function addAdminMenuItemToNavbar() {
   if (isAdmin()) {
     const menu = document.getElementById('navbar-menu-items');
-    if (menu && !document.getElementById('admin-create-link')) {
-      const createLi = document.createElement('li');
-      createLi.id = 'admin-create-link';
-  createLi.innerHTML = '<a href="/createPost">Post erstellen</a>';
-      menu.insertBefore(createLi, menu.firstChild.nextSibling);
-    }
-    if (menu && !document.getElementById('admin-createCard-modal')) {
-      const createCardLi = document.createElement('li');
-      createCardLi.id = 'admin-createCard-modal';
-      createCardLi.innerHTML = '<a href="/cards/create">Card erstellen</a>';
-      menu.insertBefore(createCardLi, menu.firstChild.nextSibling);
+    if (menu && !document.getElementById('admin-nav-link')) {
+      const adminLi = document.createElement('li');
+      adminLi.id = 'admin-nav-link';
+      adminLi.innerHTML = '<a href="/admin">Admin</a>';
+      menu.insertBefore(adminLi, menu.firstChild.nextSibling);
     }
   }
 }
 const ADMIN_CONFIG = {
-  TOOLBAR_HEIGHT: '30px',
   ELEMENT_WAIT_TIMEOUT: 5000,
 };
 
