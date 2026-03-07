@@ -15,9 +15,8 @@
  */
 
 import express from 'express';
-import crypto from 'crypto';
 import categoryController from '../controllers/categoryController.js';
-import postController, { getAllPostsPaginated, getCurrentPostsPaginated, getPostsByCategoryPaginated, getPostsByTagPaginated, getArchivedPostsPaginated, PAGE_SIZE } from '../controllers/postController.js';
+import postController, { getAllPostsPaginated, getPostsByCategoryPaginated, getPostsByTagPaginated, getArchivedPostsPaginated, PAGE_SIZE } from '../controllers/postController.js';
 import commentsController from '../controllers/commentController.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import { convertBigInts, incrementViews, createSlug, parseTags, getSsrAdmin, applySsrNoCache } from '../utils/utils.js';
