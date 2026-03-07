@@ -423,6 +423,29 @@ const getUnpublishedPosts = async () => {
   }
 };
 
+/**
+ * Holt einen Post anhand der ID unabhängig vom Veröffentlichungsstatus (für Admin-Bearbeitung).
+ * @param {string|number} postId
+ * @returns {Promise<Post>}
+ * @throws {PostControllerException}
+ */
+const getPostByIdForEdit = async (postId) => {
+  try {
+    logger.debug(`postController.getPostByIdForEdit: Received postId=${postId} (type=${typeof postId})`);
+    const post = await DatabaseService.getPostById(postId);
+    if (!post) {
+      throw new PostControllerException('Post not found');
+    }
+    const { error, value } = Post.validate(post);
+    if (error) {
+      throw new PostControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
+    }
+    return new Post(value);
+  } catch (error) {
+    throw new PostControllerException(`Error fetching post by id for edit: ${error.message}`, error);
+  }
+};
+
 export default {
   getPostBySlug,
   createPost,
@@ -439,4 +462,5 @@ export default {
   getPostsByCategoryId,
   getDrafts,
   getUnpublishedPosts,
+  getPostByIdForEdit,
 };

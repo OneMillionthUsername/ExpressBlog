@@ -192,7 +192,7 @@ async function showUpdatePostByIdPage(req, res) {
   let serverPost = null;
   try {
     if (postId && /^[0-9]+$/.test(String(postId))) {
-      serverPost = await postController.getPostById(postId);
+      serverPost = await postController.getPostByIdForEdit(postId);
     }
   } catch (fetchErr) {
     logger.debug('[UPDATEPOST] Could not fetch post by id for prefill:', fetchErr && fetchErr.message);
