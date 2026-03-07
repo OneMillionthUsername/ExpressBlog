@@ -677,6 +677,15 @@ main {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
 }
+/* Honeypot: off-screen, invisible to humans, findable by bots */
+.hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
 .comment-form-container {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     padding: 35px;

@@ -22,7 +22,7 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% } %>
             <!-- Bot protection: honeypot (visually hidden, must stay empty) -->
-            <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+            <div aria-hidden="true" class="hp-field">
                 <label for="comment-website">Website</label>
                 <input type="text" id="comment-website" name="website" tabindex="-1" autocomplete="off">
             </div>
