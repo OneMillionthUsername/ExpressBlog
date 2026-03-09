@@ -51,9 +51,14 @@ body {
     color: var(--text);
     font-family: var(--mono);
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1.55;
     overflow-x: hidden;
     min-height: 100vh;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.45;
 }
 
 /* TECHNIQUE 05: Global noise grain overlay */
@@ -139,16 +144,37 @@ a:hover { color: var(--text); }
     display: flex;
 }
 
-.menu-items li { font-size: 9px; }
+.menu-items li { font-size: 9px !important; }
 
 .navbar a {
     color: var(--dim);
-    font-family: var(--mono);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    font-weight: 400;
+    font-family: var(--mono) !important;
+    font-size: 9px !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    font-weight: 400 !important;
     transition: color 0.2s;
+}
+
+/* Hamburger mobile links — main.css setzt 1.2rem, hart überschreiben */
+.navbar .menu-items li a,
+.navbar .menu-items li .nav-link-button {
+    font-size: 8px !important;
+    font-weight: 400 !important;
+    font-family: var(--mono) !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    padding: 0.4rem 0.8rem !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+.navbar .menu-items li a:hover,
+.navbar .menu-items li .nav-link-button:hover {
+    color: var(--gold) !important;
+    background: transparent !important;
+    padding-left: 0.8rem !important;
 }
 
 .navbar a:hover,
@@ -159,7 +185,7 @@ a:hover { color: var(--text); }
     border: none;
     color: var(--dim);
     font-family: var(--mono);
-    font-size: 9px;
+    font-size: 8px !important;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     cursor: pointer;
@@ -183,7 +209,7 @@ a:hover { color: var(--text); }
     }
     .menu-items li {
         border-bottom: 1px solid var(--line);
-        padding: 0.6rem 1rem;
+        padding: 0.4rem 1rem;
         margin-left: 0;
     }
 }
@@ -1798,12 +1824,29 @@ a:hover { color: var(--text); }
     color: var(--red) !important;
 }
 
-/* Comment form container */
+/* Comment form container — offen, goldene linke Linie */
 .comment-form-container {
-    background: var(--surf) !important;
-    border: 1px solid var(--line) !important;
-    padding: 2rem !important;
-    margin-bottom: 2.5rem !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    border-left: 2px solid var(--gold) !important;
+    padding: 0 0 0 2rem !important;
+    margin-bottom: 3rem !important;
+    position: relative;
+}
+
+/* Faded gold shimmer oben links */
+.comment-form-container::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    width: 2px;
+    height: 2.5rem;
+    background: var(--gold);
+    opacity: 0.5;
+    filter: blur(4px);
+    pointer-events: none;
 }
 
 .comment-form-container h4,
@@ -1812,14 +1855,15 @@ a:hover { color: var(--text); }
     font-size: 8px !important;
     font-weight: 400 !important;
     font-style: normal !important;
-    letter-spacing: 0.3em !important;
+    letter-spacing: 0.35em !important;
     text-transform: uppercase !important;
-    color: var(--dim) !important;
-    margin: 0 0 1.5rem 0 !important;
+    color: var(--gold) !important;
+    opacity: 0.55;
+    margin: 0 0 1.8rem 0 !important;
 }
 
 .comment-form .form-group {
-    margin-bottom: 1.2rem !important;
+    margin-bottom: 1.4rem !important;
 }
 
 .comment-form label {
@@ -1828,40 +1872,43 @@ a:hover { color: var(--text); }
     letter-spacing: 0.25em !important;
     text-transform: uppercase !important;
     color: var(--dim) !important;
-    margin-bottom: 0.4rem !important;
+    margin-bottom: 0.35rem !important;
     display: block !important;
 }
 
+/* Bottom-border only — passend zur Suchleiste */
 .comment-form .form-control {
-    background: var(--bg) !important;
-    background-color: var(--bg) !important;
-    border: 1px solid var(--line-hi) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-hi) !important;
     border-radius: 0 !important;
     color: var(--text) !important;
     font-family: var(--mono) !important;
-    font-size: 12px !important;
-    padding: 0.6rem 0.8rem !important;
+    font-size: 11px !important;
+    padding: 0.5rem 0 !important;
     box-shadow: none !important;
     outline: none !important;
-    transition: border-color 0.2s !important;
+    transition: border-bottom-color 0.25s !important;
     -webkit-text-fill-color: var(--text) !important;
 }
 
 .comment-form .form-control:focus {
-    border-color: var(--gold) !important;
+    border-bottom-color: var(--gold) !important;
     box-shadow: none !important;
-    background: var(--bg) !important;
+    background: transparent !important;
 }
 
 .comment-form .form-control::placeholder {
     color: var(--dim) !important;
-    font-size: 10px !important;
-    letter-spacing: 0.06em !important;
+    font-size: 9px !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
 }
 
 .comment-form textarea.form-control {
     resize: vertical;
-    min-height: 7rem;
+    min-height: 6rem;
 }
 
 .comment-form .form-text {
@@ -1893,53 +1940,78 @@ a:hover { color: var(--text); }
     margin-top: 0;
 }
 
+/* Kommentar-Eintrag: linke Timeline-Linie, Einrückung */
 .comment-item {
-    padding: 1.4rem 0;
+    padding: 1.4rem 0 1.4rem 2rem;
     border-top: 1px solid var(--line);
+    border-radius: 0 !important;
+    background: transparent !important;
+    position: relative;
 }
 
 .comment-item:last-child {
     border-bottom: 1px solid var(--line);
 }
 
+/* Vertikale Akzentlinie links — wird beim Hover gold */
+.comment-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1.4rem;
+    bottom: 1.4rem;
+    width: 1px;
+    background: var(--line-hi);
+    transition: background 0.35s ease;
+}
+
+.comment-item:hover::before {
+    background: var(--gold);
+}
+
 .comment-header {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.6rem;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 1.2rem;
+    margin-bottom: 0.7rem;
     flex-wrap: wrap;
 }
 
 .comment-username {
     font-family: var(--mono) !important;
-    font-size: 9px !important;
-    letter-spacing: 0.18em !important;
+    font-size: 8px !important;
+    letter-spacing: 0.2em !important;
     text-transform: uppercase !important;
     color: var(--text) !important;
 }
 
+/* Zeit — nicht am rechten Rand, bleibt in Flussposition */
 .comment-time {
     font-family: var(--mono) !important;
     font-size: 8px !important;
-    letter-spacing: 0.12em !important;
+    letter-spacing: 0.1em !important;
     color: var(--dim) !important;
+    /* explizit kein margin-left: auto */
 }
 
 .comment-text {
     font-family: var(--mono) !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     color: var(--text) !important;
-    line-height: 1.7 !important;
+    line-height: 1.65 !important;
     letter-spacing: 0.02em !important;
 }
 
 .comment-delete-btn {
     font-size: 10px !important;
     padding: 0.15rem 0.5rem !important;
+    border-radius: 0 !important;
     border-color: var(--red) !important;
     color: var(--red) !important;
-    opacity: 0.5;
+    opacity: 0.4;
     transition: opacity 0.2s !important;
+    margin-left: auto;
 }
 
 .comment-delete-btn:hover {
@@ -1954,4 +2026,133 @@ a:hover { color: var(--text); }
     color: var(--dim) !important;
     letter-spacing: 0.08em !important;
     text-align: center !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ABOUT PAGE
+   ═══════════════════════════════════════════════════════════════ */
+
+.about-title {
+    font-family: var(--serif) !important;
+    font-size: 1.8rem !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    color: var(--text) !important;
+    text-align: left !important;
+    text-shadow: none !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.about-subtitle {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: 0.32em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin: 2.5rem 0 1rem 0 !important;
+    border-top: 1px solid var(--line) !important;
+    padding-top: 1.5rem !important;
+}
+
+.about-text {
+    font-family: var(--mono) !important;
+    font-size: 13px !important;
+    line-height: 1.65 !important;
+    color: var(--text) !important;
+    margin-bottom: 1rem !important;
+}
+
+.about-list {
+    font-family: var(--mono) !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: var(--text) !important;
+    padding-left: 1.2rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.about-list li {
+    margin-bottom: 0.4rem !important;
+}
+
+/* CSS-generierte Anführungszeichen deaktivieren — werden direkt im HTML gesetzt */
+.about-quote::before,
+.about-quote::after {
+    content: none !important;
+    display: none !important;
+}
+
+.about-quote {
+    font-family: var(--serif) !important;
+    font-size: 0.95rem !important;
+    font-style: italic !important;
+    font-weight: 300 !important;
+    text-align: left !important;
+    margin: 2.5rem 0 !important;
+    padding: 1.5rem 1.5rem 1.5rem 2rem !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-left: 2px solid var(--gold) !important;
+    color: var(--dim) !important;
+    line-height: 1.6 !important;
+}
+
+[data-theme="dark"] .about-quote,
+[data-theme="light"] .about-quote {
+    background: transparent !important;
+    border-radius: 0 !important;
+}
+
+.about-quote .blockquote-footer {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin-top: 1rem !important;
+    opacity: 0.7;
+}
+
+.author-box {
+    margin: 1.5rem 0 !important;
+    padding: 1rem 0 !important;
+}
+
+.author-img {
+    width: 120px !important;
+    height: 120px !important;
+    border-radius: 0 !important;
+    border: 1px solid var(--line-hi) !important;
+    box-shadow: none !important;
+    filter: grayscale(0.4) sepia(0.15) !important;
+}
+
+.author-name {
+    font-family: var(--mono) !important;
+    font-size: 9px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.3em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin-bottom: 0 !important;
+}
+
+/* Kontakt-Formular — gleiche Sprache wie comment-form */
+.contact-section {
+    margin-top: 2.5rem !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-left: 2px solid var(--gold) !important;
+    padding-left: 2rem !important;
+}
+
+[data-theme="dark"] .about-page-content .content-area,
+[data-theme="light"] .about-page-content .content-area {
+    background: transparent !important;
+    border-radius: 0 !important;
 }
