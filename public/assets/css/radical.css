@@ -50,7 +50,7 @@ body {
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.6;
     overflow-x: hidden;
     min-height: 100vh;
@@ -1287,14 +1287,14 @@ a:hover { color: var(--text); }
 /* Title — full width headline */
 .post-title {
     font-family: var(--serif) !important;
-    font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
+    font-size: clamp(1rem, 2.5vw, 1.7rem) !important;
     font-weight: 300 !important;
     font-style: italic !important;
-    line-height: 1.1 !important;
+    line-height: 1.15 !important;
     margin: 0 !important;
     padding: 0 !important;
     color: var(--text) !important;
-    letter-spacing: -0.02em !important;
+    letter-spacing: -0.015em !important;
     text-transform: none !important;
     position: relative;
     z-index: 1;
@@ -1321,16 +1321,28 @@ a:hover { color: var(--text); }
     width: 5rem;
 }
 
-.post-link, .post-link-style {
+.post-link {
     color: var(--text) !important;
     text-decoration: none !important;
     transition: color 0.2s !important;
     display: block !important;
+    font-size: inherit !important;
 }
 
-.post-link:hover, .post-link-style:hover {
-    color: var(--gold) !important;
+.post-link:hover { color: var(--gold) !important; }
+
+/* post-link-style: in Archiv/MostRead — erbt von h3, kein eigenes Upscaling */
+.post-link-style {
+    color: var(--text) !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
+    font-size: inherit !important;
+    font-style: inherit !important;
+    font-weight: inherit !important;
+    font-family: inherit !important;
 }
+
+.post-link-style:hover { color: var(--gold) !important; }
 
 /* Excerpt — hidden, reveals on hover */
 .post-excerpt {
@@ -1400,6 +1412,20 @@ a:hover { color: var(--text); }
     padding: 2.2rem 0;
     border-top: 1px solid var(--line);
     position: relative;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-left: none !important;
+    transform: none !important;
+}
+
+[data-theme="dark"] .most-read-item,
+[data-theme="light"] .most-read-item {
+    background: transparent !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 /* Rank ausblenden */
@@ -1413,11 +1439,11 @@ a:hover { color: var(--text); }
 
 .most-read-content h3 {
     font-family: var(--serif) !important;
-    font-size: clamp(1.1rem, 3vw, 1.7rem) !important;
+    font-size: clamp(1rem, 2.2vw, 1.4rem) !important;
     font-weight: 300 !important;
     font-style: italic !important;
     line-height: 1.15 !important;
-    margin: 0 0 0.5rem 0 !important;
+    margin: 0 0 0.45rem 0 !important;
     letter-spacing: -0.01em !important;
 }
 
@@ -1540,6 +1566,19 @@ a:hover { color: var(--text); }
     padding: 1.4rem 0 1.4rem 1.5rem;
     border-top: 1px solid var(--line);
     position: relative;
+    border-radius: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-left: none !important;
+}
+
+[data-theme="dark"] .archive-post-item,
+[data-theme="light"] .archive-post-item {
+    background: transparent !important;
+    background-image: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }
 
 .archive-post-item::after {
@@ -1561,10 +1600,10 @@ a:hover { color: var(--text); }
 .archive-post-item h3 {
     grid-area: title;
     font-family: var(--serif) !important;
-    font-size: clamp(1rem, 2.5vw, 1.35rem) !important;
+    font-size: clamp(0.9rem, 2vw, 1.15rem) !important;
     font-weight: 300 !important;
     font-style: italic !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
     margin: 0 !important;
     letter-spacing: -0.01em !important;
     align-self: baseline;
