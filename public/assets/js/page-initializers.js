@@ -194,33 +194,6 @@ async function initializeIndexPage() {
     renderCards();
   }
 
-  const heroImage = document.getElementById('hero-theme-image');
-  if (!heroImage) return;
-
-  const applyHeroThemeImage = () => {
-    const html = document.documentElement;
-    const isDark = html.getAttribute('data-theme') === 'dark';
-    const lightSrc = heroImage.getAttribute('data-light-src');
-    const darkSrc = heroImage.getAttribute('data-dark-src');
-    const lightSrcset = heroImage.getAttribute('data-light-srcset');
-    const darkSrcset = heroImage.getAttribute('data-dark-srcset');
-    const nextSrc = isDark ? darkSrc : lightSrc;
-    const nextSrcset = isDark ? darkSrcset : lightSrcset;
-
-    if (nextSrc && heroImage.getAttribute('src') !== nextSrc) {
-      heroImage.setAttribute('src', nextSrc);
-    }
-
-    if (nextSrcset && heroImage.getAttribute('srcset') !== nextSrcset) {
-      heroImage.setAttribute('srcset', nextSrcset);
-    }
-
-    heroImage.setAttribute('fetchpriority', 'high');
-    heroImage.setAttribute('loading', 'eager');
-  };
-
-  applyHeroThemeImage();
-  window.addEventListener('themeChanged', applyHeroThemeImage);
 }
 
 // Archiv Page - vereinfacht
