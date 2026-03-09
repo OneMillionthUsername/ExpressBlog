@@ -2251,3 +2251,91 @@ a:hover { color: var(--text); }
     background: transparent !important;
     border-radius: 0 !important;
 }
+
+/* ── ABOUT PAGE SVG BACKGROUND ── */
+.about-bg-graph {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: visible;
+}
+
+.about-page-content .row {
+    position: relative;
+    z-index: 1;
+}
+
+.about-bg-graph .bg-traces {
+    mix-blend-mode: screen;
+}
+
+.about-bg-graph .bg-line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 3500;
+}
+
+.about-bg-graph .bg-l1 {
+    stroke: var(--gold);
+    stroke-width: 0.7;
+    animation: aboutDraw1 38s ease-in-out infinite;
+}
+
+.about-bg-graph .bg-l2 {
+    stroke: var(--blue);
+    stroke-width: 0.6;
+    animation: aboutDraw2 52s ease-in-out -18s infinite;
+}
+
+.about-bg-graph .bg-l3 {
+    stroke: var(--gold);
+    stroke-width: 0.5;
+    animation: aboutDraw3 44s ease-in-out -30s infinite;
+}
+
+.about-bg-graph .bg-l4 {
+    stroke: var(--red);
+    stroke-width: 0.45;
+    animation: aboutDraw4 60s ease-in-out -10s infinite;
+}
+
+@keyframes aboutDraw1 {
+    0%   { stroke-dashoffset: 3500; opacity: 0; }
+    6%   { opacity: 0.18; }
+    65%  { stroke-dashoffset: 0; opacity: 0.18; }
+    82%  { opacity: 0.18; }
+    93%  { opacity: 0; }
+    100% { stroke-dashoffset: 3500; opacity: 0; }
+}
+
+@keyframes aboutDraw2 {
+    0%   { stroke-dashoffset: 3500; opacity: 0; }
+    6%   { opacity: 0.11; }
+    65%  { stroke-dashoffset: 0; opacity: 0.11; }
+    82%  { opacity: 0.11; }
+    93%  { opacity: 0; }
+    100% { stroke-dashoffset: 3500; opacity: 0; }
+}
+
+@keyframes aboutDraw3 {
+    0%   { stroke-dashoffset: 3500; opacity: 0; }
+    6%   { opacity: 0.10; }
+    65%  { stroke-dashoffset: 0; opacity: 0.10; }
+    82%  { opacity: 0.10; }
+    93%  { opacity: 0; }
+    100% { stroke-dashoffset: 3500; opacity: 0; }
+}
+
+@keyframes aboutDraw4 {
+    0%   { stroke-dashoffset: 3500; opacity: 0; }
+    6%   { opacity: 0.07; }
+    65%  { stroke-dashoffset: 0; opacity: 0.07; }
+    82%  { opacity: 0.07; }
+    93%  { opacity: 0; }
+    100% { stroke-dashoffset: 3500; opacity: 0; }
+}
+
