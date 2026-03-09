@@ -30,14 +30,29 @@
         fetchpriority="high"
         loading="eager"
         decoding="async">
-    <div class="d-flex justify-content-center align-items-center mb-2">
-        <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
-        <h1 class="mt-5 main-title mb-0">Ratio et Realitas</h1>
-        <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ml-3">
+    <div class="rgb-circles" aria-hidden="true">
+        <div class="rgb-c rgb-c--red"></div>
+        <div class="rgb-c rgb-c--cyan"></div>
+        <div class="rgb-c rgb-c--yellow"></div>
     </div>
-    <h2 class="mt-3 sub-title">In statu nascendi</h2>
-    <p class="mt-3 description">Ein Blog über Philosophie und alles was mich sonst noch interessiert</p>
-    <hr class="header-divider">
+    <div class="hero-glass-content">
+        <div class="d-flex justify-content-center align-items-center mb-2">
+            <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ornament-flip-y mr-3">
+            <h1 class="mt-5 main-title mb-0">Ratio et Realitas</h1>
+            <img src="/assets/ornaments/1131824.svg" alt="Ornament" class="ornament ml-3">
+        </div>
+        <div class="hero-diff-band">
+            <h2 class="sub-title">In statu nascendi</h2>
+        </div>
+        <p class="mt-3 description">Ein Blog über Philosophie und alles was mich sonst noch interessiert</p>
+        <hr class="header-divider">
+    </div>
+</div>
+<div class="stroke-divider-wrap" aria-hidden="true">
+    <svg class="stroke-divider-svg" viewBox="0 0 1200 30" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="stroke-draw-path" d="M0 15 C100 5,200 25,300 15 S400 5,500 15 S600 25,700 15 S800 5,900 15 S1000 25,1100 15 L1200 15"/>
+        <path class="stroke-draw-path stroke-draw-path--2" d="M0 20 Q200 8,400 20 T800 20 T1200 20"/>
+    </svg>
 </div>
 <div class="container-fluid">
     <div class="row">
@@ -164,6 +179,7 @@
                                     imgSrcset = base + '-688.webp';
                                 }
                             %>
+                            <div class="card-img-wrap">
                             <img class="card-img-top"
                                 src="<%= imgSrc %>"
                                 <% if (imgSrcset) { %>
@@ -173,6 +189,7 @@
                                 width="344"
                                 height="310"
                                 alt="<%= card.title %>">
+                        </div>
                         <% } %>
                         <div class="card-body">
                             <h5 class="card-title"><%= card.title %></h5>

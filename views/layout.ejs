@@ -23,8 +23,8 @@
     <%# so local CSS determines first paint instantly, and dark mode applies correctly. %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" id="google-fonts-link" 
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" 
+    <link rel="preload" as="style" id="google-fonts-link"
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap"
         media="print">
 
     <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
@@ -36,7 +36,7 @@
     })();
     </script>
     <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap">
     </noscript>
 
     <%# Bootstrap lokal %>
@@ -49,6 +49,7 @@
 
     <%# Eigene CSS-Dateien %>
     <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    <link rel="stylesheet" href="/assets/css/radical.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
 
     <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Sub specie aeternitatis' %></title>
 
