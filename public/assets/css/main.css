@@ -961,6 +961,21 @@ main {
     color: var(--color-hover);
     text-decoration: underline;
 }
+.footer-admin-link {
+    display: none;
+}
+.footer-admin-link button {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-family: var(--mono);
+}
+.footer-admin-link button:hover {
+    color: var(--gold);
+}
 /* ====== MOST READ POSTS PAGE STYLES ====== */
 /* Most Read Posts Container */
 .most-read-list {
@@ -2150,8 +2165,10 @@ blockquote:after {
     }
     .navigation .btn,
     .navigation a.btn {
-        width: 100%;
-        max-width: 340px;
+        width: auto;
+        max-width: 200px;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
         margin: 0 auto !important;
         text-align: center;
     }
@@ -2579,6 +2596,15 @@ blockquote:after {
     }
 
     /* FLOATING MENU */
+    .floating-menu {
+        display: none !important;
+    }
+
+    .footer-admin-link {
+        display: block;
+        margin-top: 8px;
+    }
+
     .menu-toggle {
         width: 45px;
         height: 45px;
@@ -3584,52 +3610,31 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
 }
 
-/* Menu toggle button - extends existing .btn styles */
 .menu-toggle {
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    background: var(--color-accent);
-    border: 2px solid var(--color-accent);
-    border-radius: 50%;
-    color: white;
+    background: var(--surf-2);
+    border: 1px solid var(--line-hi);
+    border-radius: 0;
     cursor: pointer;
-    transition: var(--transition);
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    transition: border-color 0.2s;
     order: 2;
-    font-family: var(--font-secondary);
-    position: relative;
-    overflow: hidden;
 }
-/* .menu-toggle::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-} */
-.menu-toggle:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(255, 152, 0, 0.4);
+
+.menu-toggle:hover,
+.menu-toggle:focus {
+    border-color: var(--gold);
+    outline: none;
 }
-.menu-toggle:hover::before {
-    transform: translateX(100%);
-}
+
 .menu-toggle.active {
-    background: #dc3545;
-    border-color: #dc3545;
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    border-color: var(--red);
 }
 
 .menu-toggle img {
@@ -3639,16 +3644,14 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     pointer-events: none;
 }
 
-/* Menu options container */
 .menu-options {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(20px);
-    transition: var(--transition);
-    margin-bottom: 10px;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
     order: 1;
 }
 
@@ -3658,150 +3661,56 @@ body[data-theme="dark"] .confirm-modal .modal-content,
     transform: translateY(0);
 }
 
-/* Menu option buttons - extends existing .btn patterns */
 .menu-option {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid var(--color-secondary);
-    background: var(--color-secondary);
-    color: white;
+    width: 46px;
+    height: 46px;
+    border-radius: 0;
+    border: 1px solid var(--line-hi);
+    background: var(--surf-2);
+    color: var(--dim);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    transition: var(--transition);
-    box-shadow: 0 2px 8px rgba(162, 127, 77, 0.15);
-    font-family: var(--font-secondary);
+    font-family: var(--mono);
+    transition: border-color 0.2s, color 0.2s;
     position: relative;
-    overflow: hidden;
 }
 
-.menu-option:hover {
-    transform: scale(1.1);
-    border-color: var(--color-accent);
-    background: var(--color-accent);
-    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.2);
-}
-/* Simple New Badge for "Gerade veröffentlicht" */
-.menu-bar {
-    width: 18px;
-    height: 2px;
-    background: #ecf0f1;
-    border-radius: 1px;
-    position: relative;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.menu-bar::before {
-    content: '';
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    background: #3498db;
-    border-radius: 50%;
-    top: 50%;
-    transform: translateY(-50%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 4px rgba(52, 152, 219, 0.4);
-}
-.menu-bar.bar-1::before {
-    left: 2px;
-}
-.menu-bar.bar-2::before {
-    right: 2px;
-}
-.menu-bar.bar-3::before {
-    left: 6px;
-}
-.menu-toggle:hover .menu-bar.bar-1::before {
-    left: 12px;
-}
-.menu-toggle:hover .menu-bar.bar-2::before {
-    right: 12px;
-}
-.menu-toggle:hover .menu-bar.bar-3::before {
-    left: 2px;
-}
-/* Active state - transform to X */
-.menu-toggle.active .menu-bar.bar-1 {
-    transform: rotate(45deg) translate(5px, 5px);
-}
-.menu-toggle.active .menu-bar.bar-2 {
-    opacity: 0;
-    transform: scale(0);
-}
-.menu-toggle.active .menu-bar.bar-3 {
-    transform: rotate(-45deg) translate(5px, -5px);
-}
-.menu-toggle.active .menu-bar::before {
-    opacity: 0;
-    transform: scale(0);
-}
-
-
-/* Specific button styles */
-.dark-mode-btn {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.admin-btn {
-    font-size: 20px;
-}
-
-.scroll-top-btn {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-/* Dark mode adjustments */
-[data-theme="dark"] .menu-toggle {
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
-}
-
-[data-theme="dark"] .menu-toggle.active {
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-[data-theme="dark"] .menu-option {
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
-}
-
-/* Focus states - reusing existing focus pattern */
-.menu-toggle:focus,
+.menu-option:hover,
 .menu-option:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+    border-color: var(--gold);
+    color: var(--gold);
+    outline: none;
 }
 
-/* Active states */
 .menu-toggle:active,
 .menu-option:active {
-    transform: scale(0.95);
+    opacity: 0.7;
 }
 
-/* Tooltip enhancement */
+.admin-btn { font-size: 20px; }
+.scroll-top-btn { font-size: 18px; font-weight: bold; }
+
 .menu-option[data-tooltip]:hover::before {
     content: attr(data-tooltip);
     position: absolute;
-    right: 50px;
+    right: 52px;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
+    background: var(--surf-2);
+    border: 1px solid var(--line-hi);
+    color: var(--text);
     padding: 4px 8px;
-    border-radius: var(--border-radius);
+    border-radius: 0;
     font-size: 12px;
     white-space: nowrap;
     z-index: 1001;
-    font-family: var(--font-secondary);
+    font-family: var(--mono);
 }
 
-[data-theme="dark"] .menu-option[data-tooltip]:hover::before {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--color-text);
-}/* ========================================
+/* ========================================
    MODAL STYLES
    ======================================== */
 /* Modal Overlay */
@@ -4762,28 +4671,6 @@ body[data-theme="dark"] .confirm-modal .modal-content,
 [data-theme="dark"] .most-read-item:hover {
     box-shadow: 0 8px 24px rgba(162, 127, 77, 0.15);
     border-color: rgba(162, 127, 77, 0.25);
-}
-
-/* Dark mode adjustments */
-[data-theme="dark"] .menu-toggle {
-    background: linear-gradient(135deg, #1a252f, #2c3e50);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 
-                0 0 0 1px rgba(255, 255, 255, 0.15);
-}
-
-[data-theme="dark"] .menu-option {
-    background: linear-gradient(135deg, #1a252f, #34495e);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .admin-btn {
-    background: linear-gradient(135deg, #6a4c93, #8e44ad);
-}
-
-[data-theme="dark"] .menu-option[data-tooltip]::after {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--color-text);
 }
 
 /* ========================================

@@ -509,18 +509,6 @@ function createFloatingMenu() {
   const menuOptions = document.createElement('div');
   menuOptions.className = 'menu-options';
     
-  // Create dark mode button
-  const darkModeBtn = document.createElement('button');
-  darkModeBtn.className = 'menu-option dark-mode-btn';
-  darkModeBtn.title = 'Dark Mode umschalten';
-  darkModeBtn.setAttribute('data-tooltip', 'Dark Mode');
-  darkModeBtn.setAttribute('aria-label', 'Dark Mode umschalten');
-  updateDarkModeButtonIcon(darkModeBtn);
-  darkModeBtn.addEventListener('click', () => {
-    toggleDarkMode();
-    updateDarkModeButtonIcon(darkModeBtn);
-  });
-    
   // Create admin button
   const adminBtn = document.createElement('button');
   adminBtn.className = 'menu-option admin-btn';
@@ -548,7 +536,6 @@ function createFloatingMenu() {
     
   // Add options to container
   menuOptions.appendChild(scrollTopBtn);
-  menuOptions.appendChild(darkModeBtn);
   menuOptions.appendChild(adminBtn);
     
   // Add elements to menu - options first (above), then toggle button (bottom)
@@ -558,7 +545,7 @@ function createFloatingMenu() {
   // Menu toggle functionality
   let isMenuOpen = false;
   menuToggle.addEventListener('click', () => {
-    isMenuOpen = !isMenuOpen;
+    isMenuOpen = !menuToggle.classList.contains('active');
     menuToggle.classList.toggle('active', isMenuOpen);
     menuOptions.classList.toggle('active', isMenuOpen);
     menuToggle.title = isMenuOpen ? 'Menü schließen' : 'Menü öffnen';
@@ -574,6 +561,16 @@ function createFloatingMenu() {
     
   // Add to page
   document.body.appendChild(floatingMenu);
+
+  // Push menu above footer when footer becomes visible
+  const footer = document.querySelector('.site-footer');
+  if (footer) {
+    const observer = new IntersectionObserver((entries) => {
+      const visibleHeight = entries[0].intersectionRect.height;
+      floatingMenu.style.bottom = visibleHeight > 0 ? (visibleHeight + 15) + 'px' : '';
+    }, { threshold: Array.from({ length: 21 }, (_, i) => i / 20) });
+    observer.observe(footer);
+  }
 }
 // Exported helper to close the floating menu from other modules or delegated handlers
 export function closeFloatingMenu() {
