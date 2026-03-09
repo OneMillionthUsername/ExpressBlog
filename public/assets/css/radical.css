@@ -868,6 +868,10 @@ a:hover { color: var(--text); }
     object-fit: cover;
     filter: sepia(0.22) contrast(1.05) brightness(0.88);
     transition: filter 0.5s;
+    /* Bootstrap setzt border-top-*-radius auf card-img-top — hart überschreiben */
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
 }
 
 @media (min-width: 768px) {
@@ -1135,6 +1139,531 @@ a:hover { color: var(--text); }
 /* Reset Bootstrap card borders that bleed through */
 .card.discovery-card { border: 1px solid var(--line) !important; }
 
+/* ═══════════════════════════════════════════════════════════════
+   BLOG POST PAGES  — listCurrentPosts / mostRead / archiv
+   ═══════════════════════════════════════════════════════════════
+
+   Konzept: Asymmetrische Redaktion.
+   Auf Desktop schweben Datum + Autor absolut rechts außerhalb des
+   Flusses. Der Titel spannt die volle Breite. Kein Box-Modell.
+   Nur Typographie, Leerraum und eine Goldlinie die wächst.
+   ─────────────────────────────────────────────────────────────── */
+
+/* ── TAG FILTER FORM ── */
+.posts-header {
+    margin-bottom: 0 !important;
+    padding-bottom: 2rem !important;
+}
+
+.active-tag-banner {
+    display: block !important;
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.28em !important;
+    text-transform: uppercase !important;
+    color: var(--gold) !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Suchleiste bricht aus dem Content-Padding heraus → volle Spaltenbreite */
+#tag-search-form {
+    margin-left: -1rem !important;
+    margin-right: -1rem !important;
+}
+
+@media (min-width: 768px) {
+    #tag-search-form {
+        margin-left: -2rem !important;
+        margin-right: -2rem !important;
+    }
+}
+
+.post-filter-input {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-hi) !important;
+    border-radius: 0 !important;
+    color: var(--text) !important;
+    font-family: var(--serif) !important;
+    font-size: clamp(1rem, 2.5vw, 1.4rem) !important;
+    font-style: italic !important;
+    font-weight: 300 !important;
+    letter-spacing: -0.01em !important;
+    padding: 0.9rem 1rem !important;
+    box-shadow: none !important;
+    outline: none !important;
+    width: 100%;
+    transition: border-bottom-color 0.25s !important;
+}
+
+.post-filter-input:focus {
+    background: transparent !important;
+    border-bottom-color: var(--gold) !important;
+    box-shadow: none !important;
+}
+
+.post-filter-input::placeholder {
+    color: var(--dim) !important;
+    font-size: 9px !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+}
+
+/* ── BLOG POST LIST ── */
+#blogPostsList { padding: 0; }
+
+.blog-post-card {
+    position: relative;
+    padding: 2.8rem 0;
+    border-top: 1px solid var(--line);
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible;
+    /* backdrop-filter transition */
+    transition: background 0.4s;
+}
+
+/* Darkroom wash on hover — whole row gets a subtle sepia+dim */
+.blog-post-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: backdrop-filter 0.55s ease, -webkit-backdrop-filter 0.55s ease;
+}
+
+.blog-post-card:hover::before {
+    backdrop-filter: brightness(0.86) sepia(0.2) contrast(1.06);
+    -webkit-backdrop-filter: brightness(0.86) sepia(0.2) contrast(1.06);
+}
+
+/* Post meta — mobile: inline row */
+.post-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    margin: 0 0 0.9rem 0 !important;
+    position: relative;
+    z-index: 1;
+}
+
+.post-date, .post-author {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.18em !important;
+}
+
+/* Desktop: meta floats absolute right, stacked vertically */
+@media (min-width: 768px) {
+    .blog-post-card { padding: 3.2rem 0; }
+
+    .post-meta {
+        position: absolute !important;
+        top: 3.2rem;
+        right: 0;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 0.25rem !important;
+        margin: 0 !important;
+        text-align: right;
+    }
+
+    .post-meta .post-date::after {
+        display: none;
+    }
+}
+
+/* Title — full width headline */
+.post-title {
+    font-family: var(--serif) !important;
+    font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--text) !important;
+    letter-spacing: -0.02em !important;
+    text-transform: none !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* On desktop: right-pad to not collide with absolute meta */
+@media (min-width: 768px) {
+    .post-title { padding-right: 11rem !important; }
+}
+
+/* Short gold rule — grows on hover */
+.post-title::after {
+    content: '';
+    display: block;
+    width: 1.8rem;
+    height: 1px;
+    background: var(--gold);
+    margin-top: 1rem;
+    opacity: 0.55;
+    transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blog-post-card:hover .post-title::after {
+    width: 5rem;
+}
+
+.post-link, .post-link-style {
+    color: var(--text) !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
+    display: block !important;
+}
+
+.post-link:hover, .post-link-style:hover {
+    color: var(--gold) !important;
+}
+
+/* Excerpt — hidden, reveals on hover */
+.post-excerpt {
+    font-family: var(--mono) !important;
+    font-size: 11px !important;
+    color: var(--dim) !important;
+    line-height: 1.72 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+    position: relative;
+    z-index: 1;
+    transition:
+        max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s ease,
+        margin-top 0.35s ease !important;
+}
+
+.blog-post-card:hover .post-excerpt {
+    max-height: 8rem !important;
+    opacity: 1 !important;
+    margin-top: 1.1rem !important;
+}
+
+/* On desktop: excerpt indented to match title baseline */
+@media (min-width: 768px) {
+    .blog-post-card:hover .post-excerpt {
+        padding-right: 11rem;
+    }
+}
+
+.post-footer {
+    display: none; /* views aren't shown — too noisy on hover */
+}
+
+/* No-posts placeholder */
+.no-posts-card {
+    padding: 4rem 0 !important;
+    background: transparent !important;
+    border: none !important;
+    text-align: left !important;
+}
+
+.no-posts-card h3 {
+    font-family: var(--serif) !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    font-size: 1.5rem !important;
+    color: var(--dim) !important;
+}
+
+.no-posts-card p {
+    font-family: var(--mono) !important;
+    font-size: 10px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.08em !important;
+}
+
+/* ── MOST READ ── */
+#mostReadPosts {
+    padding: 0;
+}
+
+.most-read-item {
+    display: block;
+    padding: 2.2rem 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+}
+
+/* Rank ausblenden */
+.rank {
+    display: none !important;
+}
+
+.most-read-content {
+    min-width: 0;
+}
+
+.most-read-content h3 {
+    font-family: var(--serif) !important;
+    font-size: clamp(1.1rem, 3vw, 1.7rem) !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    line-height: 1.15 !important;
+    margin: 0 0 0.5rem 0 !important;
+    letter-spacing: -0.01em !important;
+}
+
+/* Gold rule on h3 — same grow-on-hover as post-title */
+.most-read-content h3::after {
+    content: '';
+    display: block;
+    width: 1.2rem;
+    height: 1px;
+    background: var(--gold);
+    margin-top: 0.6rem;
+    opacity: 0.45;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.most-read-item:hover .most-read-content h3::after {
+    width: 3.5rem;
+}
+
+.most-read-content p {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    margin: 0 0 0.4rem 0 !important;
+}
+
+/* Most-read excerpt always visible — stronger selector beats !important on .post-excerpt */
+#mostReadPosts .post-excerpt {
+    max-height: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    display: block !important;
+    margin-top: 0.5rem !important;
+    font-family: var(--mono) !important;
+    font-size: 10px !important;
+    color: var(--dim) !important;
+    line-height: 1.7 !important;
+    padding-right: 0 !important;
+}
+
+/* Loading: minimal pulse bar */
+.loading-spinner {
+    padding: 3rem 0;
+}
+
+.spinner {
+    display: block;
+    width: 2.5rem;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.5;
+    margin-bottom: 1.2rem;
+    animation: pulseBar 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseBar {
+    0%, 100% { width: 2.5rem; opacity: 0.5; }
+    50%       { width: 0.5rem; opacity: 0.15; }
+}
+
+.loading-spinner p {
+    font-family: var(--mono) !important;
+    font-size: 9px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+}
+
+/* ── ARCHIV ── */
+.archive-years {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid var(--line);
+}
+
+.archive-years label {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.25em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin: 0 0.4rem 0 0 !important;
+}
+
+.archive-years .btn-group { flex-wrap: wrap; gap: 2px; }
+
+/* Year heading — dünner Separator-Label */
+.archive-year-heading {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: 0.32em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    opacity: 0.45;
+    border-top: 1px solid var(--line) !important;
+    padding-top: 2rem !important;
+    padding-bottom: 1.2rem !important;
+    margin: 0 !important;
+}
+
+/* Archive entries: date left, title right — named grid-areas fix DOM order */
+.archive-post-item {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+        "date  title"
+        ".     excerpt";
+    column-gap: 2.5rem;
+    row-gap: 0;
+    padding: 1.4rem 0 1.4rem 1.5rem;
+    border-top: 1px solid var(--line);
+    position: relative;
+}
+
+.archive-post-item::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--gold);
+    width: 0;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.archive-post-item:hover::after {
+    width: 100%;
+}
+
+/* DOM order: h3 first → assign to title area */
+.archive-post-item h3 {
+    grid-area: title;
+    font-family: var(--serif) !important;
+    font-size: clamp(1rem, 2.5vw, 1.35rem) !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    letter-spacing: -0.01em !important;
+    align-self: baseline;
+}
+
+/* DOM order: p.post-meta second → assign to date area */
+.archive-post-item .post-meta {
+    grid-area: date !important;
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.1em !important;
+    text-transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    /* Override desktop absolute from blog-post-card context */
+    position: static !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    text-align: left !important;
+    align-self: baseline;
+}
+
+/* Excerpt in right column, below title */
+.archive-post-item .post-excerpt {
+    grid-area: excerpt !important;
+    font-family: var(--mono) !important;
+    font-size: 10px !important;
+    color: var(--dim) !important;
+    line-height: 1.68 !important;
+    margin-top: 0.4rem !important;
+    max-height: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    padding-right: 0 !important;
+}
+
+/* Mobile: archive stacked */
+@media (max-width: 575px) {
+    .archive-post-item {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "date"
+            "title"
+            "excerpt";
+        gap: 0.3rem;
+        padding-left: 0;
+    }
+}
+
+/* ── PAGINATION — Bootstrap override ── */
+.pagination-nav {
+    margin-top: 2.5rem !important;
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem !important;
+}
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.page-item .page-link {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid var(--line-hi) !important;
+    color: var(--dim) !important;
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.22em !important;
+    text-transform: uppercase !important;
+    border-radius: 0 !important;
+    padding: 0.4rem 0.9rem !important;
+    transition: border-color 0.2s, color 0.2s !important;
+    box-shadow: none !important;
+}
+
+.page-item .page-link:hover {
+    border-color: var(--gold) !important;
+    color: var(--gold) !important;
+    background: transparent !important;
+}
+
+.page-item.active .page-link {
+    border-color: var(--gold) !important;
+    color: var(--gold) !important;
+    background: transparent !important;
+}
+
+.page-item.disabled .page-link {
+    opacity: 0.2 !important;
+    pointer-events: none !important;
+    border-color: var(--line) !important;
+}
+
 /* ── ECKIGE BUTTONS — alle Bootstrap-Varianten ── */
 .btn,
 .btn:focus,
@@ -1168,4 +1697,222 @@ a:hover { color: var(--text); }
 .popover,
 .tooltip-inner {
     border-radius: 0 !important;
+}
+
+/* ── COMMENTS ── */
+.comments-section {
+    margin-top: 3rem;
+    padding-top: 0;
+}
+
+.comments-divider hr {
+    border: none !important;
+    border-top: 1px solid var(--line) !important;
+    margin: 0 0 2.5rem 0 !important;
+}
+
+.comments-title {
+    font-family: var(--serif) !important;
+    font-size: 1.4rem !important;
+    font-weight: 300 !important;
+    font-style: italic !important;
+    color: var(--text) !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 0 2rem 0 !important;
+    text-transform: none !important;
+}
+
+.comments-title .badge {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    font-style: normal !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.15em !important;
+    background: transparent !important;
+    border: 1px solid var(--line-hi) !important;
+    color: var(--dim) !important;
+    vertical-align: middle !important;
+    padding: 0.25em 0.55em !important;
+    margin-left: 0.5rem !important;
+}
+
+/* Alert messages */
+.alert-success,
+.alert-danger {
+    background: transparent !important;
+    border: 1px solid !important;
+    border-radius: 0 !important;
+    font-family: var(--mono) !important;
+    font-size: 9px !important;
+    letter-spacing: 0.12em !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.alert-success {
+    border-color: var(--green) !important;
+    color: var(--green) !important;
+}
+
+.alert-danger {
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+}
+
+/* Comment form container */
+.comment-form-container {
+    background: var(--surf) !important;
+    border: 1px solid var(--line) !important;
+    padding: 2rem !important;
+    margin-bottom: 2.5rem !important;
+}
+
+.comment-form-container h4,
+.comments-list-container h4 {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: 0.3em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin: 0 0 1.5rem 0 !important;
+}
+
+.comment-form .form-group {
+    margin-bottom: 1.2rem !important;
+}
+
+.comment-form label {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.25em !important;
+    text-transform: uppercase !important;
+    color: var(--dim) !important;
+    margin-bottom: 0.4rem !important;
+    display: block !important;
+}
+
+.comment-form .form-control {
+    background: var(--bg) !important;
+    background-color: var(--bg) !important;
+    border: 1px solid var(--line-hi) !important;
+    border-radius: 0 !important;
+    color: var(--text) !important;
+    font-family: var(--mono) !important;
+    font-size: 12px !important;
+    padding: 0.6rem 0.8rem !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: border-color 0.2s !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+
+.comment-form .form-control:focus {
+    border-color: var(--gold) !important;
+    box-shadow: none !important;
+    background: var(--bg) !important;
+}
+
+.comment-form .form-control::placeholder {
+    color: var(--dim) !important;
+    font-size: 10px !important;
+    letter-spacing: 0.06em !important;
+}
+
+.comment-form textarea.form-control {
+    resize: vertical;
+    min-height: 7rem;
+}
+
+.comment-form .form-text {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.1em !important;
+    margin-top: 0.3rem !important;
+}
+
+.char-counter {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.1em !important;
+}
+
+.text-danger {
+    color: var(--red) !important;
+}
+
+/* Honeypot hidden field */
+.hp-field {
+    display: none !important;
+}
+
+/* Comments list */
+.comments-list-container {
+    margin-top: 0;
+}
+
+.comment-item {
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--line);
+}
+
+.comment-item:last-child {
+    border-bottom: 1px solid var(--line);
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.comment-username {
+    font-family: var(--mono) !important;
+    font-size: 9px !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    color: var(--text) !important;
+}
+
+.comment-time {
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.12em !important;
+    color: var(--dim) !important;
+}
+
+.comment-text {
+    font-family: var(--mono) !important;
+    font-size: 12px !important;
+    color: var(--text) !important;
+    line-height: 1.7 !important;
+    letter-spacing: 0.02em !important;
+}
+
+.comment-delete-btn {
+    font-size: 10px !important;
+    padding: 0.15rem 0.5rem !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+    opacity: 0.5;
+    transition: opacity 0.2s !important;
+}
+
+.comment-delete-btn:hover {
+    opacity: 1 !important;
+    border-color: var(--red) !important;
+    color: var(--red) !important;
+}
+
+.no-comments p {
+    font-family: var(--mono) !important;
+    font-size: 10px !important;
+    color: var(--dim) !important;
+    letter-spacing: 0.08em !important;
+    text-align: center !important;
 }
