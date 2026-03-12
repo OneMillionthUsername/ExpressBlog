@@ -426,62 +426,15 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
   });
 })();
 /* ========================================
-   DARK MODE FUNCTIONALITY
+   FLOATING MENU
    ======================================== */
 
-// Dark Mode State Management
-let isDarkMode = false;
-// Dark Mode initialization
+// Design is always dark — no toggle needed.
 export function initializeDarkMode() {
-  // Check for saved theme preference or default to light mode
-  const savedTheme = localStorage.getItem('blog-theme');
-    
-  if (savedTheme) {
-    isDarkMode = savedTheme === 'dark';
-  } else {
-    // Check system preference
-    isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-    
-  // Apply the theme
-  applyTheme(isDarkMode);
-    
-  // Apply theme to TinyMCE if it exists
-  // if (typeof window.applyTinyMCETheme === 'function') {
-  //     window.applyTinyMCETheme(isDarkMode);
-  // }
-    
-  // Create floating menu with dark mode toggle
+  document.documentElement.setAttribute('data-theme', 'dark');
   createFloatingMenu();
-    
-  // Listen for system theme changes
-  if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      if (!localStorage.getItem('blog-theme')) {
-        isDarkMode = e.matches;
-        applyTheme(isDarkMode);
-        updateToggleButton();
-        // Apply theme to TinyMCE
-        // if (typeof window.applyTinyMCETheme === 'function') {
-        //     window.applyTinyMCETheme(isDarkMode);
-        // }
-      }
-    });
-  }
 }
-// Apply theme to document
-function applyTheme(darkMode) {
-  const html = document.documentElement;
-    
-  if (darkMode) {
-    html.setAttribute('data-theme', 'dark');
-  } else {
-    html.removeAttribute('data-theme');
-  }
-    
-  isDarkMode = darkMode;
-}
-// Create floating menu system with dark mode toggle and admin login
+// Create floating menu system
 function createFloatingMenu() {
   // Check if menu already exists
   if (document.getElementById('floating-menu')) return;
@@ -583,48 +536,7 @@ export function closeFloatingMenu() {
   // If there was an internal isMenuOpen state, we can't access it here; rely on DOM to represent closed state
   if (menuToggle) menuToggle.title = 'Menü öffnen';
 }
-function updateDarkModeButtonIcon(button) {
-  if (!button) return;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  button.innerHTML = isDark ? '○' : '●';
-}
-// Update toggle button icon
-function updateToggleButtonIcon(button = null) {
-  // Update new floating menu dark mode button
-  const darkModeBtn = document.querySelector('.dark-mode-btn');
-  if (darkModeBtn) {
-    updateDarkModeButtonIcon(darkModeBtn);
-  }
-}
-// Update toggle button after theme change
-function updateToggleButton() {
-  updateToggleButtonIcon();
-}
-// Toggle dark mode
-function toggleDarkMode() {
-  isDarkMode = !isDarkMode;
-    
-  // Apply theme
-  applyTheme(isDarkMode);
-    
-  // Dispatch theme change event for other components (TinyMCE listens to this)
-  window.dispatchEvent(new CustomEvent('themeChanged', {
-    detail: { isDarkMode },
-  }));
-    
-  // Update button
-  updateToggleButton();
-    
-  // Save preference
-  localStorage.setItem('blog-theme', isDarkMode ? 'dark' : 'light');
-    
-  // Show notification
-  showNotification(
-    isDarkMode ? 'Dark Mode aktiviert 🌙' : 'Light Mode aktiviert ☀️', 
-    'success',
-  );
-}
-// Auto-initialize dark mode when DOM is loaded
+// Auto-initialize when DOM is loaded
 // Skip automatic initialization during tests to avoid manipulating a minimal jsdom
 // environment which may not include expected elements.
 if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {

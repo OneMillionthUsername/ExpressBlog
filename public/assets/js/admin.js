@@ -171,7 +171,7 @@ function showAdminLoginModal() {
           modal.parentElement.removeChild(modal);
         }
 
-        reloadPageWithDelay(250);
+        reloadPageWithDelay(1500);
       } catch (error) {
         console.error('Admin-Login fehlgeschlagen:', error);
         _showError(GENERIC_LOGIN_ERROR);
