@@ -45,6 +45,20 @@ function buildPagination(currentPage, total, baseUrl, extraParams) {
   };
 }
 
+function isPageOutOfRange(page, total) {
+  if (page <= 1) return false;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages === 0) return true;
+  return page > totalPages;
+}
+
+function renderPaginationNotFound(req, res) {
+  const isAdmin = getSsrAdmin(res);
+  const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+  applySsrNoCache(res, { varyCookie: true });
+  return res.status(404).render('notFound', { isAdmin, csrfToken });
+}
+
 async function buildReadPostViewData(req, res, post) {
   const isAdmin = getSsrAdmin(res);
   // lade comments
@@ -86,6 +100,10 @@ async function getAllHandler(req, res) {
   try {
     const page = parsePage(req);
     const { posts, total } = await getAllPostsPaginated(page);
+    if (isPageOutOfRange(page, total)) {
+      logger.debug(`[${requestId}] GET /all: page out of range page=${page} total=${total}`);
+      return renderPaginationNotFound(req, res);
+    }
     const response = convertBigInts(posts) || [];
     const pagination = buildPagination(page, total, '/blogpost/all');
     
@@ -141,6 +159,9 @@ postRouter.get('/tag/:tag', globalLimiter, csrfProtection, async (req, res) => {
   try {
     const page = parsePage(req);
     const { posts, total } = await getPostsByTagPaginated(tag, page);
+    if (isPageOutOfRange(page, total)) {
+      return renderPaginationNotFound(req, res);
+    }
     const response = convertBigInts(posts) || posts;
     const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
@@ -162,6 +183,9 @@ postRouter.get('/category/:categorySlug', globalLimiter, csrfProtection, async (
   try {
     const page = parsePage(req);
     const { posts, total } = await getPostsByCategoryPaginated(categorySlug, page);
+    if (isPageOutOfRange(page, total)) {
+      return renderPaginationNotFound(req, res);
+    }
     const response = convertBigInts(posts) || posts;
     const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
@@ -386,6 +410,10 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
         return years;
       })(),
     ]);
+
+    if (isPageOutOfRange(page, total)) {
+      return renderPaginationNotFound(req, res);
+    }
 
     const response = convertBigInts(posts) || posts;
     const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;

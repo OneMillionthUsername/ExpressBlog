@@ -132,9 +132,14 @@ async function showPostsPage(req, res) {
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     const page = Math.max(1, parseInt(req.query && req.query.page) || 1);
     const { posts, total } = await getCurrentPostsPaginated(page);
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    if (page > 1 && (totalPages === 0 || page > totalPages)) {
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(404).render('notFound', { isAdmin, csrfToken });
+    }
     const pagination = {
       currentPage: page,
-      totalPages: Math.ceil(total / PAGE_SIZE),
+      totalPages,
       baseUrl: '/posts',
       extraParams: '',
     };
