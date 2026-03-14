@@ -5,6 +5,7 @@
     if (typeof post !== 'undefined' && post && post.slug) {
         extraHead += `<link rel="canonical" href="https://speculumx.at/blogpost/${post.slug}">`;
     }
+    extraHead += '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css">';
 %>
 
 <div class="container">
@@ -108,4 +109,6 @@ locals.extraScripts += `<script${__nonceAttr}>
         } catch (err) { console.debug('defensive spinner removal failed', err); }
     })();
 <\/script>`;
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"><\/script>';
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"><\/script>';
 %>
