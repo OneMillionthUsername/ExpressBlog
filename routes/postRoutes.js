@@ -154,6 +154,15 @@ postRouter.get('/admin/drafts',
     }
   });
 
+// Fallback: /tag?q=xxx → /tag/:tag (when JS doesn't intercept the form)
+postRouter.get('/tag', globalLimiter, (req, res) => {
+  const tag = req.query.q;
+  if (tag) {
+    return res.redirect(`/blogpost/tag/${encodeURIComponent(tag.trim())}`);
+  }
+  return res.redirect('/blogpost/all');
+});
+
 postRouter.get('/tag/:tag', globalLimiter, csrfProtection, async (req, res) => {
   const tag = req.params.tag;
   try {

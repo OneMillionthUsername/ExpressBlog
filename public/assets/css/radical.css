@@ -1195,6 +1195,9 @@ a:hover { color: var(--text); }
     transition: background 0.35s;
     border: none !important;
     border-radius: 0 !important;
+    display: flex;
+    flex-direction: column;
+    min-height: 160px;
 }
 
 /* TECHNIQUE 03: backdrop-filter sepia on card hover */
@@ -1270,19 +1273,23 @@ a:hover { color: var(--text); }
 
 .featured-post-actions {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
+    justify-content: space-between;
     gap: 0.8rem;
     position: relative;
     z-index: 2;
+    margin-top: auto;
 }
 
 /* TECHNIQUE 01: mix-blend-mode on preview thumbnail */
 .featured-post-preview {
-    width: 48px !important;
-    height: 48px !important;
+    width: 56px !important;
+    height: 56px !important;
     object-fit: cover;
     opacity: 0.65;
     mix-blend-mode: luminosity;
+    order: 2;
+    margin-left: auto;
     filter: contrast(1.15);
     flex-shrink: 0;
 }
@@ -1871,11 +1878,14 @@ a:hover { color: var(--text); }
     background: transparent;
     color: var(--red);
     border: 1px solid var(--red);
-    font-family: var(--mono);
-    font-size: 8px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    padding: 0.4rem 1rem;
+    font-family: var(--mono) !important;
+    font-size: 8px !important;
+    letter-spacing: 0.25em !important;
+    text-transform: uppercase !important;
+    padding: 0.4rem 1rem !important;
+    min-width: 160px;
+    text-align: center;
+    justify-content: center;
     cursor: pointer;
     transition: border-color 0.2s, color 0.2s;
     display: inline-flex;
