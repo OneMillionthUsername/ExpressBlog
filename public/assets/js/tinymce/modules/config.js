@@ -89,9 +89,27 @@ export function getTinyMCEConfig() {
       return await uploadImageMultipart(blobInfo, progress);
     },
 
-    // Keep rich text inline styles/classes so WYSIWYG formatting is visible and persists
+    // Keep rich text — but strip pasted inline styles from AI tools (Gemini, ChatGPT)
     valid_elements: '*[*]',
     extended_valid_elements: 'span[*],p[*],div[*],img[*],a[*],table[*],tbody[*],thead[*],tfoot[*],tr[*],th[*],td[*],h1[*],h2[*],h3[*],h4[*],h5[*],h6[*]',
+
+    paste_preprocess: function(plugin, args) {
+      let c = args.content;
+      // Strip AI wrapper divs (Gemini class="markdown ...")
+      c = c.replace(/<div\b[^>]*class="[^"]*markdown[^"]*"[^>]*>([\s\S]*?)<\/div>\s*$/i, '$1');
+      // Remove all style attributes
+      c = c.replace(/\s*style="[^"]*"/gi, '');
+      // Unwrap empty spans
+      c = c.replace(/<span\b(?:\s+class="[^"]*")?\s*>([\s\S]*?)<\/span>/gi, '$1');
+      // Remove AI-specific attributes
+      c = c.replace(/\s*(?:id|dir|aria-\w+|data-[\w-]+)="[^"]*"/gi, '');
+      // Remove Gemini-specific classes
+      c = c.replace(/\s*class="[^"]*(?:ng-tns|ng-star|ng-trigger|ng-animate|gds-title|code-block-decoration|formatted-code|animated-opacity|markdown-main)[^"]*"/gi, '');
+      // Clean up empty class attrs and divs
+      c = c.replace(/\s*class=""/g, '');
+      c = c.replace(/<div\s*>\s*<\/div>/gi, '');
+      args.content = c;
+    },
     
     // Image settings
     paste_data_images: true,

@@ -8,6 +8,7 @@ import { DatabaseService } from '../databases/mariaDB.js';
 import { PostControllerException } from '../models/customExceptions.js';
 import logger from '../utils/logger.js';
 import crypto from 'crypto';
+import { cleanPostContent } from '../public/assets/js/shared/text.js';
 
 // Lightweight posts checksum/version - updated on mutations to avoid hashing full payload
 /**
@@ -58,6 +59,9 @@ const getPostBySlug = async (slug) => {
  * @throws {PostControllerException} Bei Validierungs- oder DB-Fehlern.
  */
 const createPost = async (postData) => {
+  if (postData && postData.content) {
+    postData.content = cleanPostContent(postData.content);
+  }
   const { error, value } = Post.validate(postData);
   if (error) {
     throw new PostControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
@@ -118,6 +122,9 @@ const updatePost = async (postData) => {
     throw new PostControllerException('Validation failed: slug missing');
   }
   postData.slug = existing.slug;
+  if (postData.content) {
+    postData.content = cleanPostContent(postData.content);
+  }
   if (typeof postData.author === 'undefined') postData.author = existing.author;
   if (typeof postData.published === 'undefined') postData.published = existing.published;
   if (typeof postData.created_at === 'undefined') postData.updated_at = new Date();

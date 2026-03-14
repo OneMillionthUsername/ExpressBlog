@@ -55,6 +55,44 @@ export const withExcerpts = (posts) => Array.isArray(posts)
   ? posts.map(p => ({ ...p, excerpt: createExcerpt(p.content) }))
   : posts;
 
+// Clean pasted HTML content: strip inline styles, unwrap presentational wrappers,
+// remove AI-generated container divs (Gemini, ChatGPT), while keeping semantic HTML.
+export function cleanPostContent(html = '') {
+  let s = String(html);
+
+  // 1. Unwrap Gemini/AI wrapper divs (class="markdown markdown-main-panel ...")
+  s = s.replace(/<div\b[^>]*class="[^"]*markdown[^"]*"[^>]*>([\s\S]*?)<\/div>\s*$/i, '$1');
+
+  // 2. Remove all style attributes
+  s = s.replace(/\s*style="[^"]*"/gi, '');
+
+  // 3. Unwrap spans that only served as style carriers (no meaningful attributes left)
+  //    <span>text</span> → text
+  s = s.replace(/<span\b(?:\s+(?:class="[^"]*"))?\s*>([\s\S]*?)<\/span>/gi, '$1');
+
+  // 4. Remove empty class attributes left behind
+  s = s.replace(/\s*class=""/g, '');
+
+  // 5. Remove AI-specific attributes (id, dir, aria-*, data-*)
+  s = s.replace(/\s*(?:id|dir|aria-\w+|data-[\w-]+)="[^"]*"/gi, '');
+
+  // 6. Remove Gemini-specific classes from remaining elements
+  s = s.replace(/\s*class="[^"]*(?:ng-tns|ng-star|ng-trigger|ng-animate|gds-title|code-block-decoration|formatted-code|animated-opacity|markdown-main)[^"]*"/gi, '');
+
+  // 7. Clean up empty wrapper divs left behind
+  s = s.replace(/<div\s*>\s*<\/div>/gi, '');
+  s = s.replace(/<div\s*>\s*(<(?:div|p|h[1-6]|ul|ol|hr|pre|blockquote|table)\b)/gi, '$1');
+  s = s.replace(/(<\/(?:div|p|h[1-6]|ul|ol|hr|pre|blockquote|table)>)\s*<\/div>/gi, '$1');
+
+  // 8. Collapse excessive whitespace between tags
+  s = s.replace(/>\s{2,}</g, '> <');
+
+  // 9. Remove leading/trailing whitespace
+  s = s.trim();
+
+  return s;
+}
+
 // Minimal HTML escaper for text content
 export function escapeHtml(str = '') {
   const s = String(str);
