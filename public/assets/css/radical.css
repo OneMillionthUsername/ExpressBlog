@@ -2681,8 +2681,8 @@ a:hover { color: var(--text); }
 
     .navigation .btn,
     .form-actions .btn {
-        width: 100%;
-        max-width: 280px;
+        width: auto;
+        min-width: 160px;
     }
 }
 
