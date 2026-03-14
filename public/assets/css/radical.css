@@ -390,6 +390,17 @@ main {
 
 /* ── UTILITIES ── */
 .hidden { display: none !important; }
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
 .ornament-flip-y { transform: scaleY(-1); }
 
 /* ── TYPOGRAPHY ── */
@@ -429,7 +440,7 @@ a:hover { color: var(--text); }
 .navbar-container {
     /* Mobile: compact */
     width: 100%;
-    height: 52px;
+    height: 64px;
     padding: 0 1rem;
     display: flex;
     align-items: center;
@@ -441,7 +452,7 @@ a:hover { color: var(--text); }
    Reads on any background — inverts underlying colour */
 .logo {
     font-family: var(--serif) !important;
-    font-size: 1rem !important;
+    font-size: 1.3rem !important;
     font-weight: 300 !important;
     font-style: italic !important;
     letter-spacing: -0.01em !important;
@@ -608,7 +619,7 @@ a:hover { color: var(--text); }
         padding: 0 2rem;
     }
     .logo {
-        font-size: 1.2rem !important;
+        font-size: 1.6rem !important;
     }
     .menu-items li {
         margin-left: 0.8rem;
@@ -865,10 +876,10 @@ a:hover { color: var(--text); }
     width: 50px;
 }
 
-/* Ornaments — subtle gold tint */
+/* Ornaments — gold tint */
 .ornament {
-    opacity: 0.22;
-    filter: invert(1) sepia(1) saturate(3) hue-rotate(10deg) brightness(0.85);
+    opacity: 0.35;
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(15deg) brightness(0.9);
     /* Mobile: smaller */
     width: 28px !important;
     height: auto !important;
@@ -925,10 +936,10 @@ a:hover { color: var(--text); }
     padding-right: 0;
 }
 
+
 .row {
     margin-left: 0;
     margin-right: 0;
-    border-top: 1px solid var(--line);
 }
 
 /* ── SIDEBAR — Mobile first ── */
@@ -1042,12 +1053,17 @@ a:hover { color: var(--text); }
 .col-md-9 { padding-left: 0; padding-right: 0; }
 
 .content-area {
-    padding: 1.5rem 1rem;
+    padding: 2rem 1rem 0;
     background: var(--bg);
+    max-width: 895px;
+}
+
+.col-md-9 .content-area {
+    max-width: 100%;
 }
 
 @media (min-width: 768px) {
-    .content-area { padding: 2.5rem 2rem; }
+    .content-area { padding: 2.5rem 2rem 0; }
 }
 
 /* Section titles */
@@ -1058,9 +1074,10 @@ a:hover { color: var(--text); }
     font-style: italic !important;
     color: var(--text) !important;
     letter-spacing: -0.01em !important;
+    margin-top: 0 !important;
     margin-bottom: 1.2rem !important;
     padding-bottom: 0.7rem !important;
-    border-bottom: 1px solid var(--line) !important;
+    border-bottom: none !important;
     text-transform: none !important;
     text-align: center !important;
 }
@@ -1150,7 +1167,6 @@ a:hover { color: var(--text); }
     grid-template-columns: 1fr;
     gap: 1px;
     background: var(--line);
-    border: 1px solid var(--line);
     border-radius: 0 !important;
 }
 
@@ -1162,16 +1178,12 @@ a:hover { color: var(--text); }
 
 .featured-post-card {
     background: var(--surf);
-    padding: 1.5rem !important;
+    padding: 1.2rem 1.5rem !important;
     position: relative;
     overflow: hidden;
     transition: background 0.35s;
     border: none !important;
     border-radius: 0 !important;
-}
-
-@media (min-width: 768px) {
-    .featured-post-card { padding: 2rem !important; }
 }
 
 /* TECHNIQUE 03: backdrop-filter sepia on card hover */
@@ -1369,15 +1381,15 @@ a:hover { color: var(--text); }
 .container.my-5 {
     background: var(--bg);
     max-width: 100%;
-    border-top: 1px solid var(--line);
+    border-top: none;
     /* Mobile: smaller spacing */
-    padding-top: 2rem !important;
+    padding-top: 0 !important;
     padding-bottom: 2rem !important;
 }
 
 @media (min-width: 768px) {
     .container.my-5 {
-        padding-top: 3rem !important;
+        padding-top: 0 !important;
         padding-bottom: 3rem !important;
     }
 }
@@ -1551,7 +1563,7 @@ a:hover { color: var(--text); }
 .floating-menu {
     position: fixed;
     bottom: 30px;
-    right: 30px;
+    right: 2rem;
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -2074,7 +2086,7 @@ a:hover { color: var(--text); }
 .blog-post-card {
     position: relative;
     padding: 2.2rem 2rem;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(162, 127, 77, 0.15);
     margin-bottom: 1.5rem;
     background: transparent !important;
     border-radius: 0 !important;
@@ -2246,7 +2258,12 @@ a:hover { color: var(--text); }
 }
 
 .post-footer {
-    display: none; /* views aren't shown — too noisy on hover */
+    font-family: var(--serif) !important;
+    font-size: 0.85rem !important;
+    font-style: italic !important;
+    color: var(--dim) !important;
+    letter-spacing: 0 !important;
+    margin-top: 0.8rem !important;
 }
 
 /* No-posts placeholder */
@@ -2315,7 +2332,7 @@ a:hover { color: var(--text); }
     display: block;
     padding: 2.2rem 2rem;
     margin-bottom: 1.5rem;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(232, 197, 71, 0.15);
     border-left: none;
     position: relative;
     border-radius: 0 !important;
@@ -2324,6 +2341,10 @@ a:hover { color: var(--text); }
     box-shadow: none !important;
     transform: none !important;
     transition: border-color 0.3s;
+}
+
+.most-read-item:first-child {
+    margin-top: 1rem;
 }
 
 .most-read-item:hover {
@@ -2465,8 +2486,12 @@ a:hover { color: var(--text); }
         ".     excerpt";
     column-gap: 2.5rem;
     row-gap: 0;
-    padding: 1.4rem 0 1.4rem 1.5rem;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 0.8rem;
     border-top: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.5rem;
     position: relative;
     border-radius: 0 !important;
     background: transparent !important;
@@ -2938,9 +2963,15 @@ a:hover { color: var(--text); }
 
 .about-intro-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 30px;
-    margin: 30px 0;
+    margin: 0;
+}
+
+.about-intro-row .about-subtitle {
+    margin-top: 0 !important;
+    border-top: none !important;
+    padding-top: 0 !important;
 }
 
 .about-intro-text {
@@ -3064,6 +3095,11 @@ a:hover { color: var(--text); }
     border: none !important;
 }
 
+#contact-message {
+    max-height: 200px;
+    resize: vertical;
+}
+
 .about-page-content .content-area {
     background: transparent !important;
     border-radius: 0 !important;
@@ -3081,7 +3117,6 @@ a:hover { color: var(--text); }
     padding: 40px;
     margin-bottom: 30px;
     border: 1px solid var(--line);
-    border-left: 3px solid var(--gold);
 }
 
 .create-form {
