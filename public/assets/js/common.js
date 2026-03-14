@@ -548,6 +548,18 @@ if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 't
   }
 }
 
+// Collapse-Toggle (Bootstrap-Ersatz)
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-collapse]');
+    if (!trigger) return;
+    const target = document.querySelector(trigger.getAttribute('data-collapse'));
+    if (!target) return;
+    const isShown = target.classList.toggle('show');
+    trigger.setAttribute('aria-expanded', isShown);
+  });
+}
+
 // Einheitliche Alert-Modal Funktion
 export function showAlertModal(message) {
   const modalHtml = `

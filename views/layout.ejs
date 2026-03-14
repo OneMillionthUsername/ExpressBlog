@@ -26,9 +26,6 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap">
     </noscript>
 
-    <%# Bootstrap lokal %>
-    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
-
     <%# TinyMCE CSS nur wenn nötig %>
     <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
@@ -74,11 +71,6 @@
             </div>
         </div>
     </footer>
-
-    <%# jQuery + Popper + Bootstrap JS - lokal %>
-    <script src="/assets/js/jquery.min.js"></script>
-    <script src="/assets/js/popper.min.js"></script>
-    <script src="/assets/js/bootstrap.min.js"></script>
 
     <script src="/vendor/dompurify.min.js"></script>
 

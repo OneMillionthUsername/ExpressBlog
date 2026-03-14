@@ -16,7 +16,7 @@ export function showFeedback(message, type = 'info') {
   feedback.className = `alert ${alertClass} alert-dismissible fade show`;
   feedback.innerHTML = `
         ${message}
-        <button type="button" class="close" data-dismiss="alert">
+        <button type="button" class="close" onclick="this.closest('.alert').remove()">
             <span>&times;</span>
         </button>
     `;
