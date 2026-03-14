@@ -16,7 +16,7 @@
     --line:     rgba(255,255,255,0.07);
     --line-hi:  rgba(255,255,255,0.15);
     --text:     #e6e1d8;
-    --dim:      rgba(230,225,216,0.38);
+    --dim:      rgba(230,225,216,0.55);
     --gold:     #e8c547;
     --red:      #c74b3a;
     --blue:     #4a9abe;
@@ -1152,7 +1152,7 @@ a:hover { color: var(--text); }
     font-family: var(--mono);
     font-size: 0.85rem;
     line-height: 1.6;
-    color: var(--dim);
+    color: rgba(230, 225, 216, 0.75);
     white-space: pre;
     word-break: normal;
     word-wrap: normal;
@@ -1211,8 +1211,8 @@ a:hover { color: var(--text); }
     display: grid;
     /* Mobile: single column */
     grid-template-columns: 1fr;
-    gap: 1px;
-    background: var(--line);
+    gap: 20px;
+    background: transparent;
     border-radius: 0 !important;
 }
 
@@ -1227,7 +1227,7 @@ a:hover { color: var(--text); }
     padding: 1.2rem 1.5rem !important;
     position: relative;
     overflow: hidden;
-    transition: background 0.35s;
+    transition: background 0s, border 0s;
     border: none !important;
     border-radius: 0 !important;
     display: flex;
@@ -1248,7 +1248,8 @@ a:hover { color: var(--text); }
 }
 
 .featured-post-card:hover {
-    background: var(--surf-2);
+    background: #050505 !important;
+    border: 1px solid rgba(232, 197, 71, 0.45) !important;
     transform: scale(1.02);
     z-index: 2;
 }
@@ -1270,7 +1271,7 @@ a:hover { color: var(--text); }
     z-index: 1;
 }
 
-.featured-post-card:hover::after { opacity: 0.45; }
+.featured-post-card:hover::after { opacity: 0; }
 
 .featured-post-title {
     font-family: var(--serif) !important;
@@ -1350,7 +1351,7 @@ a:hover { color: var(--text); }
 .btn-outline-primary:hover {
     border-color: var(--gold) !important;
     color: var(--gold) !important;
-    background: transparent !important;
+    background: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Alle weiteren Button-Varianten — einheitliches dunkles Design */
@@ -1410,8 +1411,8 @@ a:hover { color: var(--text); }
 .btn-dark:hover {
     border-color: var(--gold) !important;
     color: var(--gold) !important;
-    background: transparent !important;
-    background-color: transparent !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    background-color: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* Pagination — etwas größere Schrift für ‹ › Pfeile */
@@ -1510,6 +1511,7 @@ a:hover { color: var(--text); }
 
 .discovery-card:hover {
     border-color: var(--line-hi) !important;
+    background: rgba(0, 0, 0, 0.35);
     transform: scale(1.03);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
@@ -2157,6 +2159,7 @@ a:hover { color: var(--text); }
 
 .blog-post-card:hover {
     border-color: var(--line-hi);
+    background: rgba(0, 0, 0, 0.35);
 }
 
 /* Darkroom wash on hover — whole row gets a subtle sepia+dim */
@@ -2409,6 +2412,7 @@ a:hover { color: var(--text); }
 
 .most-read-item:hover {
     border-color: var(--line-hi);
+    background: #050505 !important;
 }
 
 /* Rank ausblenden */
@@ -2576,6 +2580,10 @@ a:hover { color: var(--text); }
     background: var(--gold);
     width: 0;
     transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.archive-post-item:hover {
+    background: rgba(0, 0, 0, 0.35) !important;
 }
 
 .archive-post-item:hover::after {
