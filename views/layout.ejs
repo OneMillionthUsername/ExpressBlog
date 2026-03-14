@@ -3,19 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-
-    <%# Theme-Script: muss blockierend sein um FOUC zu vermeiden - das ist OK %>
-    <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= String(nonce) %>"<% } %>>
-        (function(){
-            try {
-                var saved = localStorage.getItem('blog-theme');
-                var dark = saved ? (saved === 'dark') : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                if (dark) document.documentElement.setAttribute('data-theme','dark');
-            } catch(e) { /* no-op */ }
-        })();
-    </script>
-
     <%# Google Fonts: preconnect + non-blocking load via print/onload trick %>
     <%# Render-blocking external stylesheets cause a white-flash before first paint, %>
     <%# which then animates via "* { transition: all 0.3s ease }" → visible flicker. %>

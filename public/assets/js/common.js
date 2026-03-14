@@ -431,7 +431,6 @@ export async function checkAndPrefillEditPostForm(editorInstance) {
 
 // Design is always dark — no toggle needed.
 export function initializeDarkMode() {
-  document.documentElement.setAttribute('data-theme', 'dark');
   createFloatingMenu();
 }
 // Create floating menu system

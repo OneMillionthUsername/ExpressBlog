@@ -1236,13 +1236,7 @@ a:hover { color: var(--text); }
     display: none;
 }
 
-/* ── DARK / LIGHT THEME OVERRIDE ──
-   Site is now always dark regardless of system preference */
-[data-theme="dark"] body,
-[data-theme="light"] body {
-    background-color: var(--bg) !important;
-    color: var(--text) !important;
-}
+/* Body defaults are set in GLOBAL section above — no theme override needed */
 
 /* ── BOOTSTRAP COMPONENT RESETS ── */
 .collapse { background: transparent !important; }
@@ -1541,8 +1535,7 @@ a:hover { color: var(--text); }
     transform: none !important;
 }
 
-[data-theme="dark"] .most-read-item,
-[data-theme="light"] .most-read-item {
+.most-read-item {
     background: transparent !important;
     background-image: none !important;
     border-radius: 0 !important;
@@ -1694,8 +1687,7 @@ a:hover { color: var(--text); }
     border-left: none !important;
 }
 
-[data-theme="dark"] .archive-post-item,
-[data-theme="light"] .archive-post-item {
+.archive-post-item {
     background: transparent !important;
     background-image: none !important;
     border-radius: 0 !important;
@@ -2194,8 +2186,7 @@ a:hover { color: var(--text); }
     line-height: 1.6 !important;
 }
 
-[data-theme="dark"] .about-quote,
-[data-theme="light"] .about-quote {
+.about-quote {
     background: transparent !important;
     border-radius: 0 !important;
 }
@@ -2243,8 +2234,7 @@ a:hover { color: var(--text); }
     border: none !important;
 }
 
-[data-theme="dark"] .about-page-content .content-area,
-[data-theme="light"] .about-page-content .content-area {
+.about-page-content .content-area {
     background: transparent !important;
     border-radius: 0 !important;
 }

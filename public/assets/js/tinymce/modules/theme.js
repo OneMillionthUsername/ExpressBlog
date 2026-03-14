@@ -1,32 +1,18 @@
 // Theme Module
-// Handles dark mode and theme switching for TinyMCE
+// Design is always dark — tinymce-content.css handles all styling.
+// These functions are kept as no-ops for API compatibility.
 
 /**
- * Apply theme to TinyMCE editor
- * @param {Object} editor - TinyMCE editor instance
+ * Apply theme to TinyMCE editor (no-op, always dark via CSS)
+ * @param {Object} _editor - TinyMCE editor instance (unused)
  */
-export function applyTinyMCETheme(editor) {
-  if (!editor || !editor.getBody) return;
-  try {
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-    const body = editor.getBody();
-    if (!body) return;
-    // Toggle CSS class on the editor body — styles defined in tinymce-content.css.
-    // This avoids injecting inline <style> tags which require CSP nonces.
-    body.classList.toggle('dark-mode', isDarkMode);
-  } catch (error) {
-    console.error('Error applying TinyMCE theme:', error);
-  }
+export function applyTinyMCETheme(_editor) {
+  // No-op: tinymce-content.css is always dark
 }
 
 /**
- * Update TinyMCE theme for all editors
+ * Update TinyMCE theme for all editors (no-op, always dark via CSS)
  */
 export function updateTinyMCETheme() {
-  if (typeof tinymce === 'undefined') return;
-  
-  const editor = tinymce.get('content');
-  if (editor) {
-    applyTinyMCETheme(editor);
-  }
+  // No-op: tinymce-content.css is always dark
 }
