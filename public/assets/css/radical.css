@@ -1477,6 +1477,10 @@ a:hover { color: var(--text); }
     filter: contrast(1.45) brightness(0.58) sepia(0.12);
 }
 
+.discovery-card-item {
+    padding: 0.5rem;
+}
+
 .discovery-card {
     background: var(--surf) !important;
     background-color: var(--surf) !important;
@@ -1484,10 +1488,14 @@ a:hover { color: var(--text); }
     border-radius: 0 !important;
     position: relative;
     overflow: hidden;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 
-.discovery-card:hover { border-color: var(--line-hi) !important; }
+.discovery-card:hover {
+    border-color: var(--line-hi) !important;
+    transform: scale(1.03);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
 
 .card {
     border-radius: 0 !important;
