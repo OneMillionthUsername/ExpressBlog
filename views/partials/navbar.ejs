@@ -5,7 +5,7 @@
 <% const __assetVersion = (typeof assetVersion !== 'undefined') ? String(assetVersion || '') : ''; %>
 <nav class="navbar">
     <div class="navbar-container">
-
+    <a href="/" aria-label="Startseite"><span class="logo">Sub specie aeternitatis</span></a>
     <input type="checkbox" id="menu-toggle" aria-label="Menü öffnen"/>
     <label for="menu-toggle" class="hamburger-lines" aria-hidden="true">
         <span class="line line1"></span>
@@ -30,7 +30,6 @@
         </li>
         <% } %>
     </ul>
-    <a href="/" aria-label="Startseite"><span class="logo">Sub specie aeternitatis</span></a>
     </div>
 </nav>
 <script id="server-config" type="application/json"<%- __nonceAttr %>>
