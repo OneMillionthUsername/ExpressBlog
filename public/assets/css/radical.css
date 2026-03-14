@@ -11,8 +11,8 @@
 /* ── DESIGN TOKENS ── */
 :root {
     --bg:       #080807;
-    --surf:     #0f0f0d;
-    --surf-2:   #141412;
+    --surf:     #131311;
+    --surf-2:   #1a1a17;
     --line:     rgba(255,255,255,0.07);
     --line-hi:  rgba(255,255,255,0.15);
     --text:     #e6e1d8;
@@ -374,6 +374,7 @@ body {
     display: flex;
     flex-direction: column;
     margin: 0;
+    isolation: isolate;
     padding: 0;
 }
 
@@ -390,7 +391,7 @@ body::after {
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     opacity: 0.025;
     pointer-events: none;
-    z-index: 9000;
+    z-index: -1;
 }
 
 main {
@@ -441,10 +442,10 @@ a:hover { color: var(--text); }
     left: 0;
     width: 100%;
     z-index: 9002;
-    background: rgba(8,8,7,0.92) !important;
+    background: #050504 !important;
     /* TECHNIQUE 03: backdrop-filter on navbar */
-    backdrop-filter: blur(16px) saturate(1.2) brightness(0.9);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2) brightness(0.9);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
     border-bottom: 1px solid var(--line);
 }
 
@@ -576,7 +577,7 @@ a:hover { color: var(--text); }
         left: 0;
         width: 280px;
         min-width: 280px;
-        background: var(--bg);
+        background: #050504;
         border-right: 1px solid var(--line-hi);
         border-bottom: 1px solid var(--line-hi);
         display: flex;
@@ -780,9 +781,9 @@ a:hover { color: var(--text); }
     text-align: center;
     /* Mobile: compact padding */
     padding: 2rem 1.5rem;
-    backdrop-filter: blur(8px) brightness(0.4) contrast(1.1);
-    -webkit-backdrop-filter: blur(8px) brightness(0.4) contrast(1.1);
-    background: rgba(8,8,7,0.22);
+    backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
+    -webkit-backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
+    background: rgba(20,20,18,0.3);
     border: 1px solid var(--line-hi);
     width: 92%;
     margin: 2.5rem auto;
@@ -1468,20 +1469,9 @@ a:hover { color: var(--text); }
 
 .container.my-5 .featured-title { padding-left: 0.5rem; }
 
-/* TECHNIQUE 05: noise overlay on card image wrapper */
 .card-img-wrap {
     position: relative;
     overflow: hidden;
-}
-
-.card-img-wrap::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    opacity: 0.1;
-    mix-blend-mode: overlay;
-    pointer-events: none;
 }
 
 /* TECHNIQUE 03: sepia/noir on discovery card images */
