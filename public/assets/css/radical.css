@@ -1176,6 +1176,112 @@ a:hover { color: var(--text); }
 .footer-links a { color: var(--dim); transition: color 0.2s; }
 .footer-links a:hover { color: var(--gold); }
 
+/* ── FLOATING MENU SYSTEM ── */
+.floating-menu {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.menu-toggle {
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surf-2);
+    border: 1px solid var(--line-hi);
+    cursor: pointer;
+    transition: border-color 0.2s;
+    order: 2;
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus {
+    border-color: var(--gold);
+    outline: none;
+}
+
+.menu-toggle.active {
+    border-color: var(--red);
+}
+
+.menu-toggle img {
+    width: 28px;
+    height: 28px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    order: 1;
+}
+
+.menu-options.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.menu-option {
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--line-hi);
+    background: var(--surf-2);
+    color: var(--dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: var(--mono);
+    transition: border-color 0.2s, color 0.2s;
+    position: relative;
+}
+
+.menu-option:hover,
+.menu-option:focus {
+    border-color: var(--gold);
+    color: var(--gold);
+    outline: none;
+}
+
+.menu-toggle:active,
+.menu-option:active {
+    opacity: 0.7;
+}
+
+.admin-btn { font-size: 20px; }
+.scroll-top-btn { font-size: 18px; font-weight: bold; }
+
+.menu-option[data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surf-2);
+    border: 1px solid var(--line-hi);
+    color: var(--text);
+    padding: 4px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1001;
+    font-family: var(--mono);
+}
+
 /* ── ADMIN LOGIN MODAL ── */
 #admin-login-modal.modal {
     position: fixed;
@@ -2800,6 +2906,187 @@ a:hover { color: var(--text); }
     color: var(--dim);
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* ── MODAL SYSTEM (Alert, AI, API-Key) ── */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px) saturate(140%);
+    -webkit-backdrop-filter: blur(4px) saturate(140%);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.modal-container {
+    max-width: 640px;
+    width: min(92%, 640px);
+    padding: 24px 26px 22px;
+    background: var(--surf);
+    color: var(--text);
+    border: 1px solid var(--line-hi);
+    box-shadow:
+        0 2px 4px -1px rgba(0,0,0,0.25),
+        0 8px 24px -2px rgba(0,0,0,0.35),
+        0 0 0 1px rgba(255,255,255,0.04) inset;
+    line-height: 1.45;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.modal-container h4,
+.modal-container h3,
+.modal-container h2 {
+    margin: 0 0 14px;
+    font-weight: 600;
+    letter-spacing: 0.25px;
+    color: inherit;
+}
+
+.modal-container pre.modal-content {
+    background: rgba(255,255,255,0.05);
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: inherit;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.modal-container .modal-content {
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    color: inherit;
+}
+
+.modal-container .modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.modal-button {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.modal-button:hover {
+    filter: brightness(0.85);
+}
+
+.modal-button.secondary {
+    background: var(--surf-2, #3d4653);
+}
+
+/* Scrollbars inside modal (WebKit) */
+.modal-container pre.modal-content::-webkit-scrollbar { height: 8px; }
+.modal-container pre.modal-content::-webkit-scrollbar-track { background: transparent; }
+.modal-container pre.modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25);
+    border-radius: 4px;
+}
+
+/* AI Summary Modal */
+.ai-summary-modal-container {
+    max-width: 500px;
+    padding: 20px;
+    background: var(--surf);
+    border: 1px solid var(--line-hi);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.ai-summary-modal-header {
+    color: var(--text);
+    margin-bottom: 15px;
+}
+
+.ai-summary-modal-content {
+    line-height: 1.6;
+    color: var(--dim);
+}
+
+.ai-summary-modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.ai-summary-modal-button-primary {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.ai-summary-modal-button-primary:hover {
+    filter: brightness(0.85);
+}
+
+.ai-summary-modal-button-secondary {
+    background: var(--surf-2, #596273);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.ai-summary-modal-button-secondary:hover {
+    filter: brightness(0.85);
+}
+
+/* Confirm Modal (admin delete confirmation) */
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    z-index: 99999;
+}
+
+.confirm-modal .modal-content {
+    max-width: 520px;
+    width: min(92%, 520px);
+    padding: 18px 20px;
+    background: var(--surf);
+    color: var(--text);
+    border: 1px solid var(--line-hi);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+.confirm-modal .modal-body p {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+}
+
+.confirm-modal .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
 }
 
 /* ── ABOUT PAGE SVG BACKGROUND ── */
