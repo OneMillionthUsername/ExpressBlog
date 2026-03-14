@@ -58,22 +58,24 @@
 
 .container-fluid {
     width: 100%;
-    padding-left: 15px;
-    padding-right: 15px;
+    padding-left: 0;
+    padding-right: 0;
     box-sizing: border-box;
 }
 
 .row {
     display: flex;
     flex-wrap: wrap;
-    margin-left: -15px;
-    margin-right: -15px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .row > * {
     box-sizing: border-box;
-    padding-left: 15px;
-    padding-right: 15px;
+    flex: 0 0 100%;
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* Columns — mobile first (full width by default) */
@@ -332,6 +334,10 @@
 
 /* ═══════════════════════════════════════════════════════════════ */
 
+/* ── RESET (Bootstrap-Ersatz) ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
 /* ── GLOBAL ── */
 html {
     background-color: var(--bg);
@@ -348,6 +354,8 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    margin: 0;
+    padding: 0;
 }
 
 p {
@@ -1440,10 +1448,7 @@ a:hover { color: var(--text); }
     object-fit: cover;
     filter: sepia(0.22) contrast(1.05) brightness(0.88);
     transition: filter 0.5s;
-    /* Bootstrap setzt border-top-*-radius auf card-img-top — hart überschreiben */
-    border-radius: 0 !important;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
+    border-radius: 0;
 }
 
 @media (min-width: 768px) {
