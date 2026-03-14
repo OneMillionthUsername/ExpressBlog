@@ -153,7 +153,11 @@ postApiRouter.get('/archive', globalLimiter, async (req, res) => {
         archiveYears = [];
       }
     }
-    return res.json({ posts: convertBigInts(posts) || posts, archiveYears });
+    const result = convertBigInts(posts) || posts;
+    if (yearParam && (!result || result.length === 0)) {
+      return res.status(404).json({ posts: [], archiveYears, error: 'No posts found for the requested year' });
+    }
+    return res.json({ posts: result, archiveYears });
   } catch (error) {
     console.error('Error loading archived blog posts (api)', error);
     return res.status(500).json({ error: 'Server failed to load archived blog posts' });

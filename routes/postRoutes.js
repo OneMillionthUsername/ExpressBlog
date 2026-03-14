@@ -424,6 +424,13 @@ postRouter.get('/archive', globalLimiter, csrfProtection, async (req, res) => {
       return renderPaginationNotFound(req, res);
     }
 
+    if (yearParam && total === 0) {
+      const isAdmin = getSsrAdmin(res);
+      const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(404).render('archiv', { posts: [], archiveYears, isAdmin, csrfToken, pagination: null });
+    }
+
     const response = convertBigInts(posts) || posts;
     const safeResponse = Array.isArray(response) ? response.map(p => escapeAllStrings(p, ['content', 'description'])) : response;
     const isAdmin = getSsrAdmin(res);
