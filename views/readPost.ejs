@@ -109,6 +109,11 @@ locals.extraScripts += `<script${__nonceAttr}>
         } catch (err) { console.debug('defensive spinner removal failed', err); }
     })();
 <\/script>`;
-locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"><\/script>';
+locals.extraScripts += '<script data-manual src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"><\/script>';
 locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"><\/script>';
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"><\/script>';
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"><\/script>';
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"><\/script>';
+locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"><\/script>';
+locals.extraScripts += `<script${__nonceAttr}>Prism.highlightAll();<\/script>`;
 %>
