@@ -34,8 +34,7 @@
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
     <% } %>
 
-    <%# Eigene CSS-Dateien %>
-    <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
+    <%# Eigene CSS-Dateien — main.css entfernt (radical.css ist jetzt die einzige Custom-CSS) %>
     <link rel="stylesheet" href="/assets/css/radical.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
 
     <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Sub specie aeternitatis' %></title>

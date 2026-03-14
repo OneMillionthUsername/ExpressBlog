@@ -78,6 +78,10 @@ main {
     flex: 1;
 }
 
+/* ── UTILITIES ── */
+.hidden { display: none !important; }
+.ornament-flip-y { transform: scaleY(-1); }
+
 /* ── TYPOGRAPHY ── */
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--serif);
@@ -200,8 +204,33 @@ a:hover { color: var(--text); }
     background-color: var(--dim) !important;
 }
 
+.menu-home { display: none; }
+
+/* Hamburger line transforms */
+.navbar-container .hamburger-lines .line1 {
+    transform-origin: 0% 0%;
+    transition: transform 0.4s ease-in-out;
+}
+.navbar-container .hamburger-lines .line2 {
+    transition: transform 0.2s ease-in-out;
+}
+.navbar-container .hamburger-lines .line3 {
+    transform-origin: 0% 100%;
+    transition: transform 0.4s ease-in-out;
+}
+.navbar-container input[type="checkbox"]:checked ~ .hamburger-lines .line1 {
+    transform: rotate(45deg);
+}
+.navbar-container input[type="checkbox"]:checked ~ .hamburger-lines .line2 {
+    transform: scaleY(0);
+}
+.navbar-container input[type="checkbox"]:checked ~ .hamburger-lines .line3 {
+    transform: rotate(-45deg);
+}
+
 /* Mobile: menu stacked */
 @media (max-width: 767px) {
+    .navbar .menu-items .menu-home { display: list-item; }
     .menu-items {
         background: rgba(8,8,7,0.97) !important;
         border-bottom: 1px solid var(--line);
@@ -1135,6 +1164,10 @@ a:hover { color: var(--text); }
     .card-footer { padding: 0.8rem 1.4rem !important; }
 }
 
+@media (max-width: 768px) {
+    #discoveries-grid { gap: 1rem; }
+}
+
 /* ── FOOTER ── */
 .site-footer {
     background: var(--surf) !important;
@@ -1175,6 +1208,18 @@ a:hover { color: var(--text); }
 
 .footer-links a { color: var(--dim); transition: color 0.2s; }
 .footer-links a:hover { color: var(--gold); }
+
+.footer-admin-link { display: none; }
+.footer-admin-link button {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-family: var(--mono);
+}
+.footer-admin-link button:hover { color: var(--gold); }
 
 /* ── FLOATING MENU SYSTEM ── */
 .floating-menu {
@@ -1595,6 +1640,14 @@ a:hover { color: var(--text); }
     margin-top: 16px;
 }
 
+.alert-heading {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: inherit;
+}
+
 /* ── BOOTSTRAP COMPONENT RESETS ── */
 .collapse { background: transparent !important; }
 .dropdown-menu {
@@ -1880,6 +1933,40 @@ a:hover { color: var(--text); }
     font-size: 10px !important;
     color: var(--dim) !important;
     letter-spacing: 0.08em !important;
+}
+
+/* Tags & post views */
+.tag {
+    background: var(--surf-2);
+    color: var(--dim);
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s;
+    margin: 0 6px 6px 0;
+    border: 1px solid var(--line);
+    display: inline-block;
+}
+
+.tag:hover {
+    color: var(--gold);
+    border-color: var(--gold);
+}
+
+.post-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.post-views {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.1em;
 }
 
 /* ── MOST READ ── */
@@ -2181,6 +2268,25 @@ a:hover { color: var(--text); }
     border-color: var(--line) !important;
 }
 
+/* Navigation row (used on multiple pages for button groups) */
+.navigation {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .navigation {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 15px;
+        gap: 10px;
+    }
+}
+
 /* ── ECKIGE BUTTONS — alle Bootstrap-Varianten ── */
 .btn,
 .btn:focus,
@@ -2214,6 +2320,10 @@ a:hover { color: var(--text); }
 .popover,
 .tooltip-inner {
     border-radius: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .btn-icon { font-size: 1.1rem; }
 }
 
 /* ── COMMENTS ── */
@@ -2484,6 +2594,23 @@ a:hover { color: var(--text); }
    ABOUT PAGE
    ═══════════════════════════════════════════════════════════════ */
 
+.about-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.about-intro-row {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.about-intro-text {
+    flex: 1;
+}
+
 .about-title {
     font-family: var(--serif) !important;
     font-size: 1.8rem !important;
@@ -2605,6 +2732,20 @@ a:hover { color: var(--text); }
 }
 
 /* ── CREATE POST PAGE ── */
+.create-page-container {
+    max-width: clamp(900px, 90vw, 1200px);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.create-form-section {
+    background: var(--surf);
+    padding: 40px;
+    margin-bottom: 30px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+}
+
 .create-form {
     max-width: 100%;
     margin: 0 auto;
