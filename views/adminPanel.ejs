@@ -28,14 +28,6 @@
 
                 </div>
 
-                <div class="mt-5">
-                    <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
-                    <form method="POST" action="/auth/logout" class="d-inline">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit" class="btn btn-outline-danger">Logout</button>
-                    </form>
-                    <% } %>
-                </div>
             </div>
         </div>
     </div>

@@ -116,6 +116,8 @@
 /* ── DISPLAY UTILITIES ── */
 .d-flex { display: flex; }
 .d-block { display: block; }
+.d-inline { display: inline; }
+.d-inline-block { display: inline-block; }
 .d-none { display: none; }
 .w-100 { width: 100%; }
 .h-100 { height: 100%; }
@@ -149,7 +151,7 @@
 .btn:hover { text-decoration: none; }
 .btn:focus { outline: 0; }
 .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-.btn-lg { padding: 0.5rem 1rem; font-size: 1.25rem; }
+.btn-lg { padding: 0.5rem 1.2rem; font-size: 0.875rem; }
 .btn-group { display: inline-flex; }
 .btn-group > .btn { border-radius: 0; }
 
@@ -344,6 +346,8 @@ body {
     line-height: 1.55;
     overflow-x: hidden;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 p {
@@ -1319,6 +1323,18 @@ a:hover { color: var(--text); }
 .btn-outline-secondary,
 .btn-outline-secondary:focus,
 .btn-outline-secondary:active,
+.btn-outline-danger,
+.btn-outline-danger:focus,
+.btn-outline-danger:active,
+.btn-outline-success,
+.btn-outline-success:focus,
+.btn-outline-success:active,
+.btn-outline-warning,
+.btn-outline-warning:focus,
+.btn-outline-warning:active,
+.btn-outline-info,
+.btn-outline-info:focus,
+.btn-outline-info:active,
 .btn-primary,
 .btn-primary:focus,
 .btn-primary:active,
@@ -1344,6 +1360,10 @@ a:hover { color: var(--text); }
 
 .btn-secondary-theme:hover,
 .btn-outline-secondary:hover,
+.btn-outline-danger:hover,
+.btn-outline-success:hover,
+.btn-outline-warning:hover,
+.btn-outline-info:hover,
 .btn-primary:hover,
 .btn-danger:hover,
 .btn-success:hover,
@@ -1848,29 +1868,29 @@ a:hover { color: var(--text); }
 }
 
 .admin-delete-btn {
-    background: var(--red);
-    color: #fff;
-    border: 2px solid var(--red);
-    padding: 10px 20px;
+    background: transparent;
+    color: var(--red);
+    border: 1px solid var(--red);
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
     cursor: pointer;
-    font-weight: 600;
-    margin-top: 10px;
-    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, color 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
 .admin-delete-btn:hover {
-    background: #a33527;
-    border-color: #a33527;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(199, 75, 58, 0.4);
+    border-color: var(--gold);
+    color: var(--gold);
+    background: transparent;
 }
 
 .admin-delete-btn:active {
-    transform: translateY(0);
-    box-shadow: none;
+    opacity: 0.8;
 }
 
 /* ── NOTIFICATION SYSTEM ── */
