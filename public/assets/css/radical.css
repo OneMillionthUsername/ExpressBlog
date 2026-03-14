@@ -184,7 +184,18 @@
 .form-check-input { position: absolute; margin-top: 0.3rem; margin-left: -1.25rem; }
 .form-check-label { margin-bottom: 0; }
 .form-text { display: block; margin-top: 0.25rem; }
-.form-actions { margin-top: 1rem; }
+.form-actions {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.form-actions .btn {
+    min-width: 160px;
+    text-align: center;
+}
 
 /* ── ALERT BASE ── */
 .alert {
@@ -1198,7 +1209,11 @@ a:hover { color: var(--text); }
     z-index: 0;
 }
 
-.featured-post-card:hover { background: var(--surf-2); }
+.featured-post-card:hover {
+    background: var(--surf-2);
+    transform: scale(1.02);
+    z-index: 2;
+}
 
 .featured-post-card:hover::before {
     backdrop-filter: sepia(0.5) brightness(1.05);
@@ -1448,7 +1463,7 @@ a:hover { color: var(--text); }
     border-radius: 0 !important;
     position: relative;
     overflow: hidden;
-    transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    transition: border-color 0.3s, transform 0s, box-shadow 0s;
 }
 
 .discovery-card:hover {
@@ -2637,14 +2652,27 @@ a:hover { color: var(--text); }
     align-items: center;
     gap: 8px;
     padding: 0.5rem 0;
+    padding-bottom: 3.75rem;
+}
+
+.navigation .btn {
+    min-width: 160px;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
-    .navigation {
+    .navigation,
+    .form-actions {
         flex-direction: column;
         align-items: center;
         padding: 0 15px;
         gap: 8px;
+    }
+
+    .navigation .btn,
+    .form-actions .btn {
+        width: 100%;
+        max-width: 280px;
     }
 }
 
@@ -2968,6 +2996,13 @@ a:hover { color: var(--text); }
     margin: 0;
 }
 
+@media (max-width: 767px) {
+    .about-intro-row {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
 .about-intro-row .about-subtitle {
     margin-top: 0 !important;
     border-top: none !important;
@@ -3105,11 +3140,40 @@ a:hover { color: var(--text); }
     border-radius: 0 !important;
 }
 
+/* Editor/Create page buttons — uniform width */
+.create-form-section .btn {
+    min-width: 180px;
+    text-align: center;
+}
+
 /* ── CREATE POST PAGE ── */
 .create-page-container {
     max-width: clamp(900px, 90vw, 1200px);
     margin: 0 auto;
     padding: 0 20px;
+}
+
+@media (max-width: 320px) {
+    .create-page-container {
+        padding: 0 8px;
+    }
+    .create-form-section .btn {
+        min-width: 0;
+        width: 100%;
+        font-size: 7px !important;
+        padding: 0.35rem 0.5rem !important;
+    }
+    .create-form-section {
+        padding: 15px;
+    }
+    .form-label {
+        font-size: 0.9rem;
+    }
+    .create-input,
+    .comment-form .form-control {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
 }
 
 .create-form-section {
@@ -3156,6 +3220,10 @@ a:hover { color: var(--text); }
 /* Force left alignment for the create page */
 #admin-required.content-area,
 #create-content.content-area { text-align: left; }
+
+.create-page-container .content-area {
+    max-width: 100%;
+}
 
 .form-preview {
     display: none;
