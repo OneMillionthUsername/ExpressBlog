@@ -538,31 +538,45 @@ a:hover { color: var(--text); }
         transition: transform 0.4s ease-in-out;
     }
 
+    .logo { display: none; }
+
     .navbar .menu-items {
         position: absolute;
         top: 52px;
         left: 0;
-        width: 250px;
-        min-width: 250px;
-        background: rgba(8,8,7,0.97) !important;
-        border-bottom: 1px solid var(--line);
+        width: 280px;
+        min-width: 280px;
+        background: var(--bg);
+        border-right: 1px solid var(--line-hi);
+        border-bottom: 1px solid var(--line-hi);
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        padding: 1rem;
+        padding: 1rem 0;
         transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
         z-index: 998;
         list-style: none;
         margin: 0;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+    }
+
+    .navbar .menu-items li a,
+    .navbar .menu-items li .nav-link-button {
+        font-size: 10px !important;
+        letter-spacing: 0.15em !important;
+        color: var(--text) !important;
+        padding: 0.6rem 1.5rem !important;
     }
 
     .menu-items li {
         border-bottom: 1px solid var(--line);
-        padding: 0.4rem 1rem;
+        padding: 0;
         margin-left: 0;
         width: 100%;
     }
+
+    .menu-items li:last-child { border-bottom: none; }
 
     .navbar .menu-items .menu-home { display: list-item; }
 
@@ -578,9 +592,6 @@ a:hover { color: var(--text); }
     .navbar-container input[type="checkbox"]:checked ~ .hamburger-lines .line3 {
         transform: rotate(-45deg);
     }
-    .navbar-container input[type="checkbox"]:checked ~ .logo {
-        display: none;
-    }
 }
 
 /* Desktop: normal horizontal nav */
@@ -592,7 +603,13 @@ a:hover { color: var(--text); }
         font-size: 1.2rem !important;
     }
     .menu-items li {
-        margin-left: 2rem;
+        margin-left: 0.8rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .menu-items li {
+        margin-left: 1.5rem;
     }
 }
 
