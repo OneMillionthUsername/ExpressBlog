@@ -61,24 +61,22 @@
 
     <div class="navigation text-center mt-4">
         <a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a>
-        <a href="/" class="btn btn-outline-secondary ml-2">Zur Startseite</a>
-        <a href="/createPost" class="btn btn-outline-success ml-2 create-link hidden">Neuen Post erstellen</a>
-        <div id="admin-controls" class="mt-4">
-            <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
-            <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline">
-                <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <% } %>
-                <button type="submit" class="btn admin-delete-btn ml-2" data-confirm="Möchten Sie diesen Beitrag wirklich löschen?">
-                    Post löschen
-                </button>
-            </form>
-            <a href="/blogpost/update/<%= post.id %>" class="btn btn-outline-warning ml-2">
-                <span class="btn-icon">✏️</span>
-                Post bearbeiten
-            </a>
+        <a href="/" class="btn btn-outline-secondary">Zur Startseite</a>
+        <a href="/createPost" class="btn btn-outline-success create-link hidden">Neuen Post erstellen</a>
+        <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
+        <form id="admin-controls" method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline">
+            <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% } %>
-        </div>
+            <button type="submit" class="btn admin-delete-btn" data-confirm="Möchten Sie diesen Beitrag wirklich löschen?">
+                Post löschen
+            </button>
+        </form>
+        <a href="/blogpost/update/<%= post.id %>" class="btn btn-outline-warning">
+            <span class="btn-icon">✏️</span>
+            Post bearbeiten
+        </a>
+        <% } %>
     </div>
 </div>
 
