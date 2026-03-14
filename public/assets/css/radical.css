@@ -1915,7 +1915,24 @@ a:hover { color: var(--text); }
     opacity: 0.8;
 }
 
-/* ── NOTIFICATION SYSTEM ── */
+/* ── FEEDBACK / NOTIFICATION SYSTEM ── */
+#comment-feedback {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 420px;
+    width: calc(100vw - 40px);
+}
+
+#comment-feedback .alert {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
 .notification-container {
     position: fixed;
     top: 80px;

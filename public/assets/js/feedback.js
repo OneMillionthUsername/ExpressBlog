@@ -14,13 +14,17 @@ export function showFeedback(message, type = 'info') {
     
   const feedback = document.createElement('div');
   feedback.className = `alert ${alertClass} alert-dismissible fade show`;
-  feedback.innerHTML = `
-        ${message}
-        <button type="button" class="close" onclick="this.closest('.alert').remove()">
-            <span>&times;</span>
-        </button>
-    `;
-    
+  const msgSpan = document.createElement('span');
+  msgSpan.innerHTML = message;
+  feedback.appendChild(msgSpan);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'close';
+  closeBtn.innerHTML = '<span>&times;</span>';
+  closeBtn.addEventListener('click', () => feedback.remove());
+  feedback.appendChild(closeBtn);
+
   feedbackContainer.appendChild(feedback);
     
   // Auto-remove nach 4 Sekunden
