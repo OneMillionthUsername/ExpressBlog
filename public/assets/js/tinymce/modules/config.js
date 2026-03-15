@@ -52,7 +52,35 @@ export function getTinyMCEConfig() {
       'save', 'directionality', 'emoticons',
       'codesample', 'nonbreaking', 'pagebreak', 'quickbars',
     ],
-    
+
+    // Code sample languages (Prism autoloader fetches grammars on demand)
+    codesample_languages: [
+      { text: 'HTML/XML', value: 'markup' },
+      { text: 'CSS', value: 'css' },
+      { text: 'JavaScript', value: 'javascript' },
+      { text: 'TypeScript', value: 'typescript' },
+      { text: 'JSON', value: 'json' },
+      { text: 'Bash/Shell', value: 'bash' },
+      { text: 'Python', value: 'python' },
+      { text: 'Java', value: 'java' },
+      { text: 'C', value: 'c' },
+      { text: 'C++', value: 'cpp' },
+      { text: 'C#', value: 'csharp' },
+      { text: 'Go', value: 'go' },
+      { text: 'Rust', value: 'rust' },
+      { text: 'PHP', value: 'php' },
+      { text: 'Ruby', value: 'ruby' },
+      { text: 'SQL', value: 'sql' },
+      { text: 'YAML', value: 'yaml' },
+      { text: 'INI', value: 'ini' },
+      { text: 'Log', value: 'log' },
+      { text: 'Nginx', value: 'nginx' },
+      { text: 'Docker', value: 'docker' },
+      { text: 'Markdown', value: 'markdown' },
+      { text: 'Diff', value: 'diff' },
+      { text: 'Plain Text', value: 'plaintext' },
+    ],
+
     // Toolbar
     toolbar: [
       'undo redo | bold italic underline strikethrough | fontfamily fontsize forecolor backcolor',

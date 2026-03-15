@@ -114,6 +114,11 @@ document.querySelectorAll('pre[class*="language-"] > code:not([class*="language-
     var m = c.parentElement.className.match(/language-[\\w-]+/);
     if (m) c.classList.add(m[0]);
 });
+document.querySelectorAll('pre:not([class*="language-"])').forEach(function(p) {
+    p.classList.add('language-none');
+    var c = p.querySelector('code');
+    if (c && !c.className.match(/language-/)) c.classList.add('language-none');
+});
 <\/script>`;
 locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"><\/script>';
 locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"><\/script>';
