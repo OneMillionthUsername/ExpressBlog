@@ -1197,22 +1197,6 @@ a:hover { color: var(--text); }
     display: block !important;
 }
 
-/* Drop Cap */
-.preview-box p:first-of-type:first-letter,
-.blogpost-content p:first-of-type:first-letter,
-.post-content p:first-of-type:first-letter {
-    font-family: var(--serif);
-    font-size: 4.5rem;
-    font-weight: 700;
-    line-height: 0.8;
-    float: left;
-    margin: 8px 8px 0 0;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: var(--gold);
-}
 
 .preview-box img {
     max-width: 100% !important;

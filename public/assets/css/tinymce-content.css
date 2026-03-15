@@ -104,22 +104,6 @@
     color: var(--color-text);
 }
 
-/* ── 4. DROP CAP ── */
-.post-content p:first-of-type:first-letter,
-.preview-box p:first-of-type:first-letter {
-    font-family: var(--font-primary);
-    font-size: 4.5rem;
-    font-weight: 700;
-    line-height: 0.8;
-    float: left;
-    margin: 8px 8px 0 0;
-    color: var(--color-secondary);
-    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: none;
-}
 
 /* ── 5. IMAGES, BLOCKQUOTES, LISTS, LINKS ── */
 
