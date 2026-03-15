@@ -13,40 +13,17 @@ function getDOMPurify() {
 }
 
 /**
- * Lazy-load Prism and highlight code blocks in the preview container
+ * Highlight code blocks in the preview container using Prism (if loaded)
  */
-let prismLoaded = false;
 function highlightPreviewCode(container) {
-  const codeBlocks = container.querySelectorAll('pre > code, pre[class*="language-"]');
-  if (!codeBlocks.length) return;
+  if (typeof Prism === 'undefined') return;
 
-  const run = () => {
-    if (typeof Prism === 'undefined') return;
-    container.querySelectorAll('pre:not([class*="language-"])').forEach(function(p) {
-      p.classList.add('language-plaintext');
-      var c = p.querySelector('code');
-      if (c && !c.className.match(/language-/)) c.classList.add('language-plaintext');
-    });
-    Prism.highlightAllUnder(container);
-  };
-
-  if (typeof Prism !== 'undefined') {
-    run();
-    return;
-  }
-
-  if (prismLoaded) return;
-  prismLoaded = true;
-
-  const core = document.createElement('script');
-  core.src = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js';
-  core.onload = function() {
-    const auto = document.createElement('script');
-    auto.src = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js';
-    auto.onload = run;
-    document.head.appendChild(auto);
-  };
-  document.head.appendChild(core);
+  container.querySelectorAll('pre:not([class*="language-"])').forEach(function(p) {
+    p.classList.add('language-plaintext');
+    var c = p.querySelector('code');
+    if (c && !c.className.match(/language-/)) c.classList.add('language-plaintext');
+  });
+  Prism.highlightAllUnder(container);
 }
 
 /**
