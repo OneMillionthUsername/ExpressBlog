@@ -81,37 +81,30 @@
     </div>
 </div>
 
-<% 
-function __safeJson(obj) { 
-    try { 
-        const s = JSON.stringify(obj); 
-        return s.replace(/</g, '\\u003c').replace(/-->/g, '--\\u003e').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029'); 
-    } catch (e) { return 'null'; } 
-}
-const __nonceAttr = (typeof nonce !== 'undefined') ? ` nonce="${String(nonce)}"` : '';
-locals.extraScripts = '';
-if (typeof post !== 'undefined' && post) {
-    locals.extraScripts += `<script id="server-post" type="application/json"${__nonceAttr}>${__safeJson(post)}<\/script>`;
-}
-locals.extraScripts += `<script${__nonceAttr}>
-    (function() {
-        try {
-            var serverPostEl = document.getElementById('server-post');
-            if (serverPostEl) {
-                var loadingEl = document.getElementById('loading');
-                if (loadingEl && loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
-                var postArticle = document.getElementById('post-article');
-                if (postArticle) {
-                    postArticle.classList.remove('hidden');
-                    postArticle.style.display = 'block';
-                }
+<% if (typeof post !== 'undefined' && post) { %>
+<script id="server-post" type="application/json"<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>><%- (function(obj){ try { var s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029'); } catch(e){ return 'null'; } })(post) %></script>
+<% } %>
+
+<script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
+(function() {
+    try {
+        var serverPostEl = document.getElementById('server-post');
+        if (serverPostEl) {
+            var loadingEl = document.getElementById('loading');
+            if (loadingEl && loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+            var postArticle = document.getElementById('post-article');
+            if (postArticle) {
+                postArticle.classList.remove('hidden');
+                postArticle.style.display = 'block';
             }
-        } catch (err) { console.debug('defensive spinner removal failed', err); }
-    })();
-<\/script>`;
-locals.extraScripts += `<script${__nonceAttr}>
+        }
+    } catch (err) { console.debug('defensive spinner removal failed', err); }
+})();
+</script>
+
+<script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
 document.querySelectorAll('pre[class*="language-"] > code:not([class*="language-"])').forEach(function(c) {
-    var m = c.parentElement.className.match(/language-[\\w-]+/);
+    var m = c.parentElement.className.match(/language-[\w-]+/);
     if (m) c.classList.add(m[0]);
 });
 document.querySelectorAll('pre:not([class*="language-"])').forEach(function(p) {
@@ -119,7 +112,7 @@ document.querySelectorAll('pre:not([class*="language-"])').forEach(function(p) {
     var c = p.querySelector('code');
     if (c && !c.className.match(/language-/)) c.classList.add('language-plaintext');
 });
-<\/script>`;
-locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"><\/script>';
-locals.extraScripts += '<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"><\/script>';
-%>
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>

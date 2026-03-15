@@ -272,6 +272,7 @@ app.set('views', join(__dirname, 'views'));
 import ejsLayouts from 'express-ejs-layouts';
 app.use(ejsLayouts);
 app.set('layout', 'layout');
+app.set('layout extractScripts', true);
 // 8. Explizite MIME-Type-Behandlung für kritische statische Dateien
 app.get(/\.(js|css)$/, (req, res, next) => {
   if (req.url.endsWith('.js')) {

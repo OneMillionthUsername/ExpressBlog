@@ -60,19 +60,17 @@
     </div>
 </div>
 
-<% locals.extraScripts = `
-<script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
-    (function() {
-        const form = document.getElementById('tag-search-form');
-        const input = document.getElementById('post-filter-input');
-        if (!form || !input) return;
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const tag = input.value.trim();
-            if (tag) {
-                window.location.href = '/blogpost/tag/' + encodeURIComponent(tag);
-            }
-        });
-    })();
+<script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
+(function() {
+    var form = document.getElementById('tag-search-form');
+    var input = document.getElementById('post-filter-input');
+    if (!form || !input) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var tag = input.value.trim();
+        if (tag) {
+            window.location.href = '/blogpost/tag/' + encodeURIComponent(tag);
+        }
+    });
+})();
 </script>
-`; %>

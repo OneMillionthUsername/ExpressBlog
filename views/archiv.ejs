@@ -55,16 +55,14 @@
     </div>
 </div>
 
-<% locals.extraScripts = `
-<script${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>
-    (function() {
-        try {
-            const archiveEl = document.getElementById('archivePosts');
-            if (archiveEl && archiveEl.querySelectorAll('.archive-post-item').length > 0) {
-                const spinner = archiveEl.querySelector('.loading-spinner');
-                if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
-            }
-        } catch (err) { /* non-critical */ }
-    })();
+<script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>
+(function() {
+    try {
+        var archiveEl = document.getElementById('archivePosts');
+        if (archiveEl && archiveEl.querySelectorAll('.archive-post-item').length > 0) {
+            var spinner = archiveEl.querySelector('.loading-spinner');
+            if (spinner && spinner.parentNode) spinner.parentNode.removeChild(spinner);
+        }
+    } catch (err) { /* non-critical */ }
+})();
 </script>
-`; %>
