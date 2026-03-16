@@ -225,11 +225,10 @@ async function addReadPostAdminControls() {
 
   if (adminControls) {
     adminControls.innerHTML = `
-      <button type="button" data-action="delete-post" data-post-id="${postId}" class="btn admin-delete-btn btn-lg ml-2">
+      <button type="button" data-action="delete-post" data-post-id="${postId}" class="btn admin-delete-btn">
         Post löschen
       </button>
-      <button type="button" class="btn btn-outline-warning btn-lg ml-2" data-action="edit-post" data-post-id="${postId}">
-        <span class="btn-icon">✏️</span>
+      <button type="button" class="btn btn-outline-warning" data-action="edit-post" data-post-id="${postId}">
         Post bearbeiten
       </button>
     `;

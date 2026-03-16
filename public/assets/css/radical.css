@@ -108,8 +108,6 @@
 .mt-4 { margin-top: 1.5rem; }
 .mt-5 { margin-top: 3rem; }
 .mt-15 { margin-top: 15rem; }
-.ml-2 { margin-left: 0.5rem; }
-.ml-3 { margin-left: 1rem; }
 .mr-2 { margin-right: 0.5rem; }
 .mr-3 { margin-right: 1rem; }
 .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; }
@@ -1863,14 +1861,14 @@ a:hover { color: var(--text); }
 
 .admin-delete-btn {
     background: transparent;
-    color: var(--red);
-    border: 1px solid var(--red);
+    color: var(--dim);
+    border: 1px solid var(--line-hi);
     font-family: var(--mono);
     font-size: 8px;
     letter-spacing: 0.25em;
     text-transform: uppercase;
     padding: 0.4rem 1rem;
-    min-width: 160px;
+    min-width: 180px;
     text-align: center;
     justify-content: center;
     cursor: pointer;
@@ -1883,7 +1881,7 @@ a:hover { color: var(--text); }
 .admin-delete-btn:hover {
     border-color: var(--gold);
     color: var(--gold);
-    background: transparent;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .admin-delete-btn:active {
@@ -2603,19 +2601,34 @@ a:hover { color: var(--text); }
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
-    padding: 0.5rem 0;
-    padding-bottom: 3.75rem;
+    padding: 0.5rem 1rem;
+    padding-bottom: 5rem;
 }
 
 .navigation .btn {
-    min-width: 160px;
+    min-width: 180px;
     text-align: center;
 }
 
+.navigation form {
+    display: contents;
+}
+
 @media (max-width: 768px) {
-    .navigation,
+    .navigation {
+        flex-direction: column;
+        align-items: stretch;
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    .navigation .btn {
+        width: 100%;
+        min-width: 0;
+    }
+
     .form-actions {
         flex-direction: column;
         align-items: center;
@@ -2623,7 +2636,6 @@ a:hover { color: var(--text); }
         gap: 8px;
     }
 
-    .navigation .btn,
     .form-actions .btn {
         width: auto;
         min-width: 160px;
@@ -3288,6 +3300,8 @@ a:hover { color: var(--text); }
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     appearance: auto;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 #create-content .editor-toolbar select[name="category_id"]:focus {
@@ -3407,6 +3421,9 @@ a:hover { color: var(--text); }
     padding: 5px 10px;
     background: var(--surf);
     border: 1px solid var(--line);
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .toolbar-label {

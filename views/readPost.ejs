@@ -60,12 +60,12 @@
         </div>
     </div>
 
-    <div class="navigation text-center mt-4 mb-5">
+    <div class="navigation mt-4 mb-5">
         <a href="/posts" class="btn btn-outline-primary">Alle Blogposts</a>
         <a href="/" class="btn btn-outline-secondary">Zur Startseite</a>
         <a href="/createPost" class="btn btn-outline-success create-link hidden">Neuen Post erstellen</a>
         <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
-        <form id="admin-controls" method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline">
+        <form id="admin-controls" method="POST" action="/blogpost/delete/<%= post.id %>">
             <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <% } %>
@@ -74,7 +74,6 @@
             </button>
         </form>
         <a href="/blogpost/update/<%= post.id %>" class="btn btn-outline-warning">
-            <span class="btn-icon">✏️</span>
             Post bearbeiten
         </a>
         <% } %>

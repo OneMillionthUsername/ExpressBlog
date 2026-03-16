@@ -41,7 +41,7 @@
                                 <div class="post-meta">
                                     <span class="post-date">Erstellt: <%= new Date(post.created_at).toLocaleDateString('de-DE') %></span>
                                     <% if (post.published_at) { %>
-                                        <span class="post-date ml-3">Zuletzt veröffentlicht: <%= new Date(post.published_at).toLocaleDateString('de-DE') %></span>
+                                        <span class="post-date">Zuletzt veröffentlicht: <%= new Date(post.published_at).toLocaleDateString('de-DE') %></span>
                                     <% } %>
                                     <span class="post-author">von <%= post.author || 'Gast' %></span>
                                 </div>
@@ -61,8 +61,8 @@
             </div>
         </div>
     </div>
-    <div class="navigation text-center mt-4 mb-5">
+    <div class="navigation mt-4 mb-5">
         <a href="/blogpost/all" class="btn btn-outline-primary">Alle Posts</a>
-        <a href="/createPost" class="btn btn-outline-success ml-2">Neuen Post erstellen</a>
+        <a href="/createPost" class="btn btn-outline-success">Neuen Post erstellen</a>
     </div>
 </div>

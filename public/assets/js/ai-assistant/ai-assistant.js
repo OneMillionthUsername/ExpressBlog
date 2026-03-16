@@ -547,10 +547,10 @@ Regeln:
           <button data-action="apply-summary" data-html="${encodeURIComponent(summary)}" class="ai-summary-modal-button-apply">
             ➕ Einfügen
           </button>
-          <button data-action="copy-summary" data-text="${encodeURIComponent(summary)}" class="ai-summary-modal-button-primary ml-2">
+          <button data-action="copy-summary" data-text="${encodeURIComponent(summary)}" class="ai-summary-modal-button-primary">
             📋 Kopieren
           </button>
-          <button data-action="close" class="ai-summary-modal-button-secondary ml-2">Schließen</button>
+          <button data-action="close" class="ai-summary-modal-button-secondary">Schließen</button>
         </div>
       </div>
     `;
