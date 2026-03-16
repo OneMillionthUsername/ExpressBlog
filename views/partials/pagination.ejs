@@ -1,16 +1,44 @@
 <% if (typeof pagination !== 'undefined' && pagination && pagination.totalPages > 1) { %>
+<%
+  const current = pagination.currentPage;
+  const total = pagination.totalPages;
+  const delta = 2;
+  const pages = [];
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      pages.push(i);
+    }
+  }
+
+  const display = [];
+  let prev = 0;
+  for (const p of pages) {
+    if (prev && p - prev > 1) {
+      display.push({ type: 'ellipsis' });
+    }
+    display.push({ type: 'page', value: p });
+    prev = p;
+  }
+%>
 <nav class="pagination-nav mt-4" aria-label="Seitennavigation">
     <ul class="pagination justify-content-center flex-wrap">
-        <li class="page-item <%= pagination.currentPage <= 1 ? 'disabled' : '' %>">
-            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %><%= pagination.extraParams || '' %>">‹</a>
+        <li class="page-item <%= current <= 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= current - 1 %><%= pagination.extraParams || '' %>">‹</a>
         </li>
-        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-            <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
-                <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= i %><%= pagination.extraParams || '' %>"><%= i %></a>
-            </li>
+        <% for (const item of display) { %>
+            <% if (item.type === 'ellipsis') { %>
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+            <% } else { %>
+                <li class="page-item <%= item.value === current ? 'active' : '' %>">
+                    <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= item.value %><%= pagination.extraParams || '' %>"><%= item.value %></a>
+                </li>
+            <% } %>
         <% } %>
-        <li class="page-item <%= pagination.currentPage >= pagination.totalPages ? 'disabled' : '' %>">
-            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %><%= pagination.extraParams || '' %>">›</a>
+        <li class="page-item <%= current >= total ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= current + 1 %><%= pagination.extraParams || '' %>">›</a>
         </li>
     </ul>
 </nav>
