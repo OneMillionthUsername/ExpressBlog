@@ -34,6 +34,7 @@ export function getTinyMCEConfig() {
     content_css: [
       'https://cdn.jsdelivr.net/npm/tinymce@6/skins/content/default/content.min.css',
       'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
+      'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css',
       '/assets/css/tinymce-content.css',
     ],
     
@@ -212,9 +213,17 @@ export function getTinyMCEConfig() {
         document.dispatchEvent(new CustomEvent('tinymce:contentChanged'));
       });
       
-      // Apply dark mode theme
+      // Apply dark mode theme and inject Prism Okaidia CSS after
+      // TinyMCE's codesample plugin injects its bundled (light) Prism CSS
       editor.on('init', function() {
         applyTinyMCETheme(editor);
+        var doc = editor.getDoc();
+        if (doc && doc.head) {
+          var link = doc.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css';
+          doc.head.appendChild(link);
+        }
       });
       
       // Listen for theme changes
