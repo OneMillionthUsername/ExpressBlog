@@ -42,10 +42,10 @@ export function updatePreview() {
   // Get title, tags, and content
   const title = titleElement ? titleElement.value : '';
   const tags = tagsElement ? tagsElement.value : '';
-  
+
   const tinymceEditor = tinymce.get('content');
   let content = '';
-  
+
   if (tinymceEditor) {
     content = tinymceEditor.getContent();
   } else {
@@ -65,12 +65,12 @@ export function updatePreview() {
       ALLOW_DATA_ATTR: false,
     };
     let previewHTML = '';
-    
+
     // Add title if present
     if (title && title.trim()) {
       previewHTML += `<h1 class="preview-title-heading">${DOMPurify.sanitize(title, sanitizeOptions)}</h1>`;
     }
-    
+
     // Add tags if present
     if (tags && tags.trim()) {
       const tagList = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
@@ -87,15 +87,15 @@ export function updatePreview() {
     if (previewHTML) {
       previewHTML += '<hr class="preview-divider">';
     }
-    
+
     // Add content
     previewHTML += DOMPurify.sanitize(content, sanitizeOptions);
-    
+
     // Show placeholder if everything is empty
     if (!previewHTML.trim()) {
       previewHTML = '<p class="preview-placeholder">Die Vorschau wird hier angezeigt, sobald du schreibst...</p>';
     }
-    
+
     previewContentElement.innerHTML = previewHTML;
     highlightPreviewCode(previewContentElement);
   } else {
@@ -138,7 +138,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
       updatePreview();
     }
   });
-  
+
   // Listen for TinyMCE content changes to update preview
   document.addEventListener('tinymce:contentChanged', function() {
     const previewBox = document.querySelector('.form-preview');
@@ -146,7 +146,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
       updatePreview();
     }
   });
-  
+
   // Listen for AI assistant refresh requests (always update, regardless of visibility)
   document.addEventListener('ai-assistant:refresh-preview', function() {
     updatePreview();
