@@ -2,7 +2,7 @@ import logger from '../utils/logger.js';
 import { decodeHtmlEntities, withExcerpts, createExcerpt, extractFirstImageUrl } from '../public/assets/js/shared/text.js';
 import categoryController from './categoryController.js';
 import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postController.js';
-import cardController from './cardController.js';
+import cardController, { CARDS_PER_PAGE } from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
 import { TINY_MCE_API_KEY } from '../config/config.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
@@ -48,10 +48,22 @@ async function showHomePage(req, res) {
       try { return new Date(p.created_at).getFullYear(); } catch { return null; }
     }).filter(Boolean))).sort((a, b) => b - a);
 
+    const cardsPage = Math.max(1, parseInt(req.query.cardsPage, 10) || 1);
     let cards = [];
+    let cardsPagination = null;
     try {
-      const allCards = await cardController.getAllCards();
-      cards = Array.isArray(allCards) ? allCards.filter(c => c.published !== false) : [];
+      const result = await cardController.getCardsPaginated(cardsPage);
+      cards = result.cards;
+      const totalCardPages = Math.ceil(result.total / CARDS_PER_PAGE);
+      if (totalCardPages > 1) {
+        cardsPagination = {
+          currentPage: cardsPage,
+          totalPages: totalCardPages,
+          baseUrl: '/',
+          extraParams: '',
+          paramName: 'cardsPage',
+        };
+      }
     } catch (cardErr) {
       logger.error('[HOME] GET / - Error fetching cards:', cardErr);
       cards = [];
@@ -59,7 +71,7 @@ async function showHomePage(req, res) {
 
     logger.debug('[HOME] GET / - Rendering index.ejs with featured posts:', { featured_slugs: featuredPosts.map(p => p.slug) });
     applySsrNoCache(res, { varyCookie: true });
-    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, isAdmin, csrfToken, categories });
+    res.render('index', { featuredPosts, popularPosts, archiveYears, cards, cardsPagination, isAdmin, csrfToken, categories });
     logger.debug('[HOME] GET / - Successfully rendered index.ejs');
   } catch (error) {
     logger.error('[HOME] GET / - Error rendering index.ejs:', error);

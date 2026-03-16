@@ -98,9 +98,34 @@ const deleteCard = async (id) => {
     throw new CardControllerException(`Error deleting card: ${error.message}`, error);
   }
 };
+export const CARDS_PER_PAGE = 9;
+
+const getCardsPaginated = async (page) => {
+  const offset = (page - 1) * CARDS_PER_PAGE;
+  try {
+    const [cards, total] = await Promise.all([
+      DatabaseService.getCardsPaginated(CARDS_PER_PAGE, offset),
+      DatabaseService.getPublishedCardsCount(),
+    ]);
+    const validCards = [];
+    for (const card of (cards || [])) {
+      const { error, value } = Card.validate(card);
+      if (error) {
+        console.error('Validation failed for card:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      validCards.push(new Card(value));
+    }
+    return { cards: validCards, total };
+  } catch (error) {
+    throw new CardControllerException(`Error getting paginated cards: ${error.message}`, error);
+  }
+};
+
 export default {
   createCard,
   getAllCards,
+  getCardsPaginated,
   getCardById,
   deleteCard,
 };

@@ -41,6 +41,8 @@ const mockCreateCard = jest.fn();
 const mockGetAllCards = jest.fn();
 const mockGetCardById = jest.fn();
 const mockDeleteCard = jest.fn();
+const mockGetCardsPaginated = jest.fn();
+const mockGetPublishedCardsCount = jest.fn();
 
 // Mock DatabaseService inline to avoid imports
 const DatabaseService = {
@@ -48,6 +50,8 @@ const DatabaseService = {
   getAllCards: mockGetAllCards,
   getCardById: mockGetCardById,
   deleteCard: mockDeleteCard,
+  getCardsPaginated: mockGetCardsPaginated,
+  getPublishedCardsCount: mockGetPublishedCardsCount,
 };
 
 // Inline cardController implementation 
@@ -101,6 +105,25 @@ const cardController = {
     return new Card(card);
   },
 
+  async getCardsPaginated(page) {
+    const CARDS_PER_PAGE = 9;
+    const offset = (page - 1) * CARDS_PER_PAGE;
+    const [cards, total] = await Promise.all([
+      DatabaseService.getCardsPaginated(CARDS_PER_PAGE, offset),
+      DatabaseService.getPublishedCardsCount(),
+    ]);
+    const validCards = [];
+    for (const card of (cards || [])) {
+      const validation = Card.validate(card);
+      if (validation.error) {
+        console.error('Validation failed for card:', validation.error.details[0].message);
+        continue;
+      }
+      validCards.push(new Card(card));
+    }
+    return { cards: validCards, total };
+  },
+
   async deleteCard(id) {
     if (!id || id <= 0 || typeof id !== 'number') {
       throw new Error('Invalid card ID');
@@ -130,6 +153,8 @@ beforeEach(() => {
   mockGetAllCards.mockResolvedValue([]);
   mockGetCardById.mockResolvedValue(null);
   mockDeleteCard.mockResolvedValue(true);
+  mockGetCardsPaginated.mockResolvedValue([]);
+  mockGetPublishedCardsCount.mockResolvedValue(0);
 });
 
 afterEach(() => {
@@ -228,6 +253,41 @@ describe('CardController', () => {
       expect(result[1].title).toBe('Another Valid');
     });
   });
+  describe('getCardsPaginated', () => {
+    it('should return paginated cards and total', async () => {
+      const cards = [
+        { id: 1, title: 'Card 1', link: 'http://c1.com', img_link: 'http://c1.jpg' },
+        { id: 2, title: 'Card 2', link: 'http://c2.com', img_link: 'http://c2.jpg' },
+      ];
+      mockGetCardsPaginated.mockResolvedValue(cards);
+      mockGetPublishedCardsCount.mockResolvedValue(20);
+
+      const result = await cardController.getCardsPaginated(1);
+
+      expect(result.cards).toHaveLength(2);
+      expect(result.total).toBe(20);
+      expect(mockGetCardsPaginated).toHaveBeenCalledWith(9, 0);
+      expect(mockGetPublishedCardsCount).toHaveBeenCalled();
+    });
+    it('should return empty cards when none exist', async () => {
+      mockGetCardsPaginated.mockResolvedValue([]);
+      mockGetPublishedCardsCount.mockResolvedValue(0);
+
+      const result = await cardController.getCardsPaginated(1);
+
+      expect(result.cards).toEqual([]);
+      expect(result.total).toBe(0);
+    });
+    it('should calculate correct offset for page 3', async () => {
+      mockGetCardsPaginated.mockResolvedValue([]);
+      mockGetPublishedCardsCount.mockResolvedValue(30);
+
+      await cardController.getCardsPaginated(3);
+
+      expect(mockGetCardsPaginated).toHaveBeenCalledWith(9, 18);
+    });
+  });
+
   describe('getCardById', () => {
     it('should return card when found', async () => {
       const card = { id: 1, title: 'Test', link: 'http://test.com', img_link: 'http://test.jpg' };

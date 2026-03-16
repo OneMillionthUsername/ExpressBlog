@@ -2,6 +2,7 @@
 <%
   const current = pagination.currentPage;
   const total = pagination.totalPages;
+  const paramName = pagination.paramName || 'page';
   const delta = 2;
   const pages = [];
 
@@ -24,7 +25,7 @@
 <nav class="pagination-nav mt-4" aria-label="Seitennavigation">
     <ul class="pagination justify-content-center flex-wrap">
         <li class="page-item <%= current <= 1 ? 'disabled' : '' %>">
-            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= current - 1 %><%= pagination.extraParams || '' %>">‹</a>
+            <a class="page-link" href="<%= pagination.baseUrl %>?<%= paramName %>=<%= current - 1 %><%= pagination.extraParams || '' %>">‹</a>
         </li>
         <% for (const item of display) { %>
             <% if (item.type === 'ellipsis') { %>
@@ -33,12 +34,12 @@
                 </li>
             <% } else { %>
                 <li class="page-item <%= item.value === current ? 'active' : '' %>">
-                    <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= item.value %><%= pagination.extraParams || '' %>"><%= item.value %></a>
+                    <a class="page-link" href="<%= pagination.baseUrl %>?<%= paramName %>=<%= item.value %><%= pagination.extraParams || '' %>"><%= item.value %></a>
                 </li>
             <% } %>
         <% } %>
         <li class="page-item <%= current >= total ? 'disabled' : '' %>">
-            <a class="page-link" href="<%= pagination.baseUrl %>?page=<%= current + 1 %><%= pagination.extraParams || '' %>">›</a>
+            <a class="page-link" href="<%= pagination.baseUrl %>?<%= paramName %>=<%= current + 1 %><%= pagination.extraParams || '' %>">›</a>
         </li>
     </ul>
 </nav>

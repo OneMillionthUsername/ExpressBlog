@@ -1207,6 +1207,39 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getCardsPaginated(limit, offset) {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT * FROM cards WHERE published = 1 ORDER BY id DESC LIMIT ? OFFSET ?',
+        [limit, offset],
+      );
+      return (result || []).map(card => {
+        const converted = { ...convertBigInts(card) };
+        converted.published = normalizePublished(converted.published);
+        return converted;
+      });
+    } catch (error) {
+      logger.error(`Error in getCardsPaginated: ${error.message}`);
+      throw new databaseError(`Error in getCardsPaginated: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async getPublishedCardsCount() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT COUNT(*) AS count FROM cards WHERE published = 1');
+      return Number(result[0].count);
+    } catch (error) {
+      logger.error(`Error in getPublishedCardsCount: ${error.message}`);
+      throw new databaseError(`Error in getPublishedCardsCount: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getCardById(cardId) {
     let conn;
     try {
