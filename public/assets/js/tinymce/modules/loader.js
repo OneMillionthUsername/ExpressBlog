@@ -16,55 +16,8 @@ export async function loadTinyMceScript() {
   if (typeof tinymce !== 'undefined') {
     return true;
   }
-  
-  try {
-    const localLoaded = await tryLocalTinyMCE();
-    if (localLoaded) {
-      return true;
-    } else {
-      showNotification('Warning', 'Local TinyMCE could not be loaded, attempting cloud fallback.');
-    }
-  } catch (error) {
-    showNotification('Error', `Local TinyMCE loading failed: ${error.message}`);
-  }
-  
-  return await tryCloudTinyMCE();
-}
 
-/**
- * Try loading TinyMCE from Tiny Cloud CDN
- * @returns {Promise<boolean>}
- */
-async function tryCloudTinyMCE() {
-  const apiKey = TINYMCE_CONFIG.apiKey || TINYMCE_CONFIG.defaultKey;
-  const scriptUrl = `https://cdn.tiny.cloud/1/${apiKey}/tinymce/6/tinymce.min.js`;
-  const timeoutDuration = 10000;
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.referrerPolicy = 'origin';
-
-    const timeout = setTimeout(() => {
-      showNotification('Error', 'TinyMCE Cloud Loading Timeout');
-      document.head.removeChild(script);
-      reject(new Error('TinyMCE Cloud Loading Timeout'));
-    }, timeoutDuration);
-
-    script.onload = () => {
-      clearTimeout(timeout);
-      resolve(true);
-    };
-
-    script.onerror = () => {
-      clearTimeout(timeout);
-      showNotification('Error', 'Failed to load TinyMCE script from Cloud');
-      document.head.removeChild(script);
-      reject(new Error('TinyMCE Cloud Loading Failed'));
-    };
-
-    document.head.appendChild(script);
-  });
+  return await tryLocalTinyMCE();
 }
 
 /**
@@ -74,8 +27,6 @@ async function tryCloudTinyMCE() {
 async function tryLocalTinyMCE() {
   const localPaths = [
     '/assets/js/tinymce/tinymce.min.js',
-    '/node_modules/tinymce/tinymce.min.js',
-    'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js',
   ];
   const errors = [];
 

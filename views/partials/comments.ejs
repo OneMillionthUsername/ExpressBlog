@@ -28,7 +28,7 @@
             </div>
             <!-- Bot protection: timestamp (filled by JS on page load) -->
             <input type="hidden" name="formLoadedAt" id="comment-form-loaded-at" value="">
-            <script>(function(){ var f = document.getElementById('comment-form-loaded-at'); if(f) f.value = Date.now(); })();</script>
+            <script<% if (typeof nonce !== 'undefined') { %> nonce="<%= nonce %>"<% } %>>(function(){ var f = document.getElementById('comment-form-loaded-at'); if(f) f.value = Date.now(); })();</script>
             <div class="form-group">
                 <label for="comment-username">Name (optional):</label>
                 <input type="text" 

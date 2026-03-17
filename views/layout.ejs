@@ -30,6 +30,10 @@
     <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
     <% } %>
+    <%# Prism.js Syntax-Highlighting CSS nur wenn nötig %>
+    <% if (typeof usePrism !== 'undefined' && usePrism) { %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css">
+    <% } %>
 
     <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
 
@@ -73,9 +77,6 @@
 
     <script src="/vendor/dompurify.min.js"></script>
 
-    <% if (typeof useTinyMce !== 'undefined' && useTinyMce && typeof tinyMceKey !== 'undefined' && tinyMceKey) { %>
-    <script src="https://cdn.tiny.cloud/1/<%= tinyMceKey %>/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <% } %>
 
     <script src="/assets/js/page-initializers.js" type="module"></script>
 
