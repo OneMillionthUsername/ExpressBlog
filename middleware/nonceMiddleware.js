@@ -22,6 +22,12 @@ const nonceMiddleware = (req, res, next) => {
   const cspHeader = res.getHeader('Content-Security-Policy') || '';
 
   if (cspHeader) {
+    // TinyMCE injiziert dynamisch <style>-Elemente die keine Nonce bekommen können
+    const tinymceStyleHashes = [
+      '\'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=\'', // empty style element
+      '\'sha256-Mia3q7J61OxNlAZtRNAwCYtIrMyDLicwwyzKx08ck64=\'', // TinyMCE skin style
+    ];
+
     // Nonce für script-src und style-src hinzufügen
     let updatedCSP = cspHeader.replace(
       /script-src ([^;]*)/,
@@ -30,7 +36,7 @@ const nonceMiddleware = (req, res, next) => {
 
     updatedCSP = updatedCSP.replace(
       /style-src(?!-attr) ([^;]*)/,
-      `style-src $1 'nonce-${nonce}'`,
+      `style-src $1 'nonce-${nonce}' 'unsafe-hashes' ${tinymceStyleHashes.join(' ')}`,
     );
 
     res.setHeader('Content-Security-Policy', updatedCSP);
