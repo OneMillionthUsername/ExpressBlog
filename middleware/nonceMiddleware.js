@@ -28,10 +28,15 @@ const nonceMiddleware = (req, res, next) => {
       '\'sha256-Mia3q7J61OxNlAZtRNAwCYtIrMyDLicwwyzKx08ck64=\'', // TinyMCE skin style
     ];
 
+    // TinyMCE executor.js erstellt dynamisch Inline-Scripts die keine Nonce bekommen
+    const tinymceScriptHashes = [
+      '\'sha256-C0d30RW4IMywlXnx8PG0b2EsyhP36uq8ljzfmRP2RC0=\'', // TinyMCE executor inline script
+    ];
+
     // Nonce für script-src und style-src hinzufügen
     let updatedCSP = cspHeader.replace(
       /script-src ([^;]*)/,
-      `script-src $1 'nonce-${nonce}'`,
+      `script-src $1 'nonce-${nonce}' 'unsafe-hashes' ${tinymceScriptHashes.join(' ')}`,
     );
 
     updatedCSP = updatedCSP.replace(
