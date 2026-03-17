@@ -223,7 +223,7 @@ app.use((req, res, next) => {
     const token = authService.extractTokenFromRequest(req);
     if (token) {
       const decoded = authService.verifyToken(token);
-      if (decoded && decoded.isAdmin) isAdmin = true;
+      if (decoded && decoded.role === 'admin') isAdmin = true;
     }
   } catch { /* ignore token errors */ }
   res.locals.isAdmin = isAdmin;

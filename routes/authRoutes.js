@@ -126,7 +126,7 @@ authRouter.post('/login',
       }
       // Token generation
       const { id, username, role, full_name } = admin;
-      const token = authService.generateToken({ id, username, role, full_name });
+      const token = authService.generateToken({ id, role });
       logger.debug('[AUTH] Token generated successfully for user', { id, username, role, full_name });
       res.cookie(AUTH_COOKIE_NAME, token, {
         httpOnly: true,           // Nicht per JavaScript lesbar

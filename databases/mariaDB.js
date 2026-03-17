@@ -1447,6 +1447,26 @@ export const DatabaseService = {
    * @returns {Promise<Object|null>} Normalisiertes Admin-Objekt oder `null` wenn nicht gefunden.
    * @throws {databaseError} Bei DB-Fehlern.
    */
+  async getAdminById(id) {
+    let conn;
+    try {
+      if (!id || isNaN(id)) {
+        throw new databaseError('Admin ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query(
+        'SELECT id, username, role, full_name, active FROM admins WHERE id = ? LIMIT 1',
+        [id],
+      );
+      if (!result || result.length === 0) return null;
+      return convertBigInts({ ...result[0] });
+    } catch (error) {
+      logger.error(`Error in getAdminById: ${error.message}`);
+      throw new databaseError(`Error in getAdminById: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getAdminByUsername(username) {
     let conn;
     try {

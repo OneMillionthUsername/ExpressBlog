@@ -23,20 +23,21 @@ describe('authService', () => {
   });
 
   it('generateToken creates a valid token that verifyToken decodes', () => {
-    const user = { id: 42, username: 'admin', role: 'admin' };
+    const user = { id: 42, role: 'admin' };
     const token = generateToken(user);
     expect(typeof token).toBe('string');
 
     const decoded = verifyToken(token);
-    expect(decoded).toMatchObject({ id: 42, username: 'admin', role: 'admin' });
-    // ensure issuer and audience are present
+    expect(decoded).toMatchObject({ id: 42, role: 'admin' });
+    expect(decoded.username).toBeUndefined();
+    expect(decoded.full_name).toBeUndefined();
+    expect(decoded.isAdmin).toBeUndefined();
     expect(decoded.iss).toBeDefined();
     expect(decoded.aud).toBeDefined();
   });
 
   it('generateToken throws with missing required fields', () => {
     expect(() => generateToken({})).toThrow('Invalid user data for token generation');
-    expect(() => generateToken({ id: 1, username: 'x' })).toThrow();
-    expect(() => generateToken({ id: 1, role: 'admin' })).toThrow();
+    expect(() => generateToken({ id: 1 })).toThrow();
   });
 });
