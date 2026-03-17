@@ -2,7 +2,7 @@
 <%
     pageTitle = 'Blogpost erstellen - Sub specie aeternitatis';
     useTinyMce = true;
-    extraHead = (typeof extraHead === 'string' ? extraHead : '') + '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css">';
+    usePrism = true;
     if (typeof post !== 'undefined' && post) {
         extraHead += `<script id="server-post" type="application/json"${typeof nonce !== 'undefined' ? ' nonce="' + String(nonce) + '"' : ''}>${(function(obj){ try { const s = JSON.stringify(obj); return s.replace(/</g,'\\u003c').replace(/-->/g,'--\\u003e'); } catch(e){ return 'null'; } })(post)}<\/script>`;
     }

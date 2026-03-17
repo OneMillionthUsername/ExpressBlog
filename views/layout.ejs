@@ -30,6 +30,10 @@
     <% if (typeof useTinyMce !== 'undefined' && useTinyMce) { %>
     <link rel="stylesheet" href="/assets/css/tinymce-content.css">
     <% } %>
+    <%# Prism.js Syntax-Highlighting CSS nur wenn nötig %>
+    <% if (typeof usePrism !== 'undefined' && usePrism) { %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css">
+    <% } %>
 
     <link rel="stylesheet" href="/assets/css/main.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '' %>">
 
