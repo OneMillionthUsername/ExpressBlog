@@ -8,6 +8,12 @@ jest.unstable_mockModule('../utils/utils.js', () => ({
   escapeAllStrings: (obj) => obj,
   sanitizeFilename: (n) => n,
 }));
+const mockGetAdminById = jest.fn();
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: {
+    getAdminById: mockGetAdminById,
+  },
+}));
 jest.unstable_mockModule('../utils/logger.js', () => ({
   default: {
     debug: () => {},
@@ -63,6 +69,10 @@ describe('Admin authorization integration (micro app)', () => {
     process.env.NODE_ENV = 'test';
     app = buildTestApp();
     agent = request.agent(app); // persist cookies
+  });
+
+  beforeEach(() => {
+    mockGetAdminById.mockResolvedValue({ username: 'admin', full_name: 'Admin' });
   });
 
   it('GET /debug/headers -> 401 without token', async () => {

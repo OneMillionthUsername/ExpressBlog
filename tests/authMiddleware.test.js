@@ -3,10 +3,17 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 // Mock authService before importing middleware
 const mockExtract = jest.fn();
 const mockVerify = jest.fn();
+const mockGetAdminById = jest.fn();
 
 jest.unstable_mockModule('../services/authService.js', () => ({
   extractTokenFromRequest: mockExtract,
   verifyToken: mockVerify,
+}));
+
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: {
+    getAdminById: mockGetAdminById,
+  },
 }));
 
 // Import after mocks are set up
@@ -69,15 +76,36 @@ describe('authMiddleware', () => {
       const res = createMockRes();
       const next = jest.fn();
 
-      const user = { id: 1, username: 'admin', role: 'admin', isAdmin: true };
       mockExtract.mockReturnValue('valid');
-      mockVerify.mockReturnValue(user);
+      mockVerify.mockReturnValue({ id: 1, role: 'admin' });
+      mockGetAdminById.mockResolvedValue({ username: 'admin', full_name: 'Admin User' });
 
       await authenticateToken(req, res, next);
 
-      expect(req.user).toEqual(user);
+      expect(req.user).toEqual({
+        id: 1,
+        role: 'admin',
+        isAdmin: true,
+        username: 'admin',
+        full_name: 'Admin User',
+      });
       expect(next).toHaveBeenCalledTimes(1);
       expect(res.status).not.toHaveBeenCalledWith(401);
+    });
+
+    it('returns 401 when admin not found in DB', async () => {
+      const req = { headers: { authorization: 'Bearer valid' }, cookies: {} };
+      const res = createMockRes();
+      const next = jest.fn();
+
+      mockExtract.mockReturnValue('valid');
+      mockVerify.mockReturnValue({ id: 999, role: 'admin' });
+      mockGetAdminById.mockResolvedValue(null);
+
+      await authenticateToken(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(next).not.toHaveBeenCalled();
     });
   });
 
@@ -113,7 +141,7 @@ describe('authMiddleware', () => {
     });
 
     it('calls next() when user is admin', () => {
-      const req = { user: { id: 1, username: 'admin', role: 'admin', isAdmin: true } };
+      const req = { user: { id: 1, username: 'admin', role: 'admin' } };
       const res = createMockRes();
       const next = jest.fn();
 

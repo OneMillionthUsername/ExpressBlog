@@ -5,6 +5,12 @@ jest.unstable_mockModule('../utils/utils.js', () => ({
   escapeAllStrings: (obj) => obj,
   sanitizeFilename: (n) => n,
 }));
+const mockGetAdminById = jest.fn().mockResolvedValue({ username: 'default', full_name: 'Default User' });
+jest.unstable_mockModule('../databases/mariaDB.js', () => ({
+  DatabaseService: {
+    getAdminById: mockGetAdminById,
+  },
+}));
 jest.unstable_mockModule('../utils/logger.js', () => ({
   default: {
     debug: () => {},
@@ -51,6 +57,10 @@ function makeRes() {
 }
 
 describe('Security middleware and auth guards', () => {
+  beforeEach(() => {
+    mockGetAdminById.mockResolvedValue({ username: 'default', full_name: 'Default User' });
+  });
+
   beforeAll(async () => {
     jest.restoreAllMocks();
     jest.clearAllMocks();
@@ -135,13 +145,14 @@ describe('Security middleware and auth guards', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('authenticateToken attaches user from Authorization header', () => {
-      const token = jwt.sign({ id: 1, username: 'alice', role: 'admin', isAdmin: true, iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+    it('authenticateToken attaches user from Authorization header', async () => {
+      const token = jwt.sign({ id: 1, role: 'admin', iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
       const req = makeReq({ headers: { Authorization: `Bearer ${token}` } });
       const res = makeRes();
       const next = jest.fn();
 
-      authenticateToken(req, res, next);
+      mockGetAdminById.mockResolvedValue({ username: 'alice', full_name: 'Alice' });
+      await authenticateToken(req, res, next);
 
       expect(res.statusCode).toBe(200);
       expect(req.user).toBeDefined();
@@ -150,13 +161,14 @@ describe('Security middleware and auth guards', () => {
       expect(next).toHaveBeenCalledTimes(1);
     });
 
-    it('authenticateToken attaches user from auth cookie', () => {
-      const token = jwt.sign({ id: 2, username: 'bob', role: 'user', iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+    it('authenticateToken attaches user from auth cookie', async () => {
+      const token = jwt.sign({ id: 2, role: 'user', iss: 'blog-app', aud: 'blog-users' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
       const req = makeReq({ cookies: { [AUTH_COOKIE_NAME]: token } });
       const res = makeRes();
       const next = jest.fn();
 
-      authenticateToken(req, res, next);
+      mockGetAdminById.mockResolvedValue({ username: 'bob', full_name: 'Bob' });
+      await authenticateToken(req, res, next);
 
       expect(res.statusCode).toBe(200);
       expect(req.user).toBeDefined();
