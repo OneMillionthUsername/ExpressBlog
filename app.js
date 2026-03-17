@@ -169,7 +169,7 @@ app.use(helmet({
         'https://cdnjs.cloudflare.com',
         // Nonce wird dynamisch hinzugefügt für Inline-Styles (nonceMiddleware)
       ],
-      styleSrcAttr: ['\'unsafe-inline\''],
+      styleSrcAttr: ['\'none\''],
       fontSrc: [
         '\'self\'',
         'https://fonts.gstatic.com',
@@ -194,7 +194,7 @@ app.use(helmet({
       baseUri: ['\'self\''],
       formAction: ['\'self\''],
       frameAncestors: ['\'none\''],
-      scriptSrcAttr: ['\'unsafe-hashes\'' /*'\'unsafe-inline\''*/], // Allow inline event handlers but require a hash or nonce
+      scriptSrcAttr: ['\'none\''],
     },
   },
   hsts: false, // nginx setzt HSTS mit proxy_hide_header
