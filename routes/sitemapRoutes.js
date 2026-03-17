@@ -7,7 +7,7 @@ import { isAppReady } from '../app.js';
  * Routes for generating sitemap and robots.txt.
  *
  * - `GET /sitemap.xml` produces an XML sitemap including static pages,
- *   blog posts and cards where available.
+ *   blog posts where available.
  * - `GET /robots.txt` returns a permissive robots file pointing to the sitemap.
  */
 const sitemapRouter = express.Router();
@@ -80,31 +80,6 @@ sitemapRouter.get('/sitemap.xml', async (req, res) => {
     } catch (dbError) {
       logger.warn('Could not fetch posts for sitemap:', dbError.message);
       // Weiter ohne Posts
-    }
-
-    try {
-      // Cards/Discoveries hinzufügen (falls vorhanden)
-      logger.debug('Fetching cards for sitemap');
-      const cards = await DatabaseService.getAllCards();
-      
-      if (cards && cards.length > 0) {
-        logger.debug(`Adding ${cards.length} cards to sitemap`);
-        
-        cards.forEach(card => {
-          if (card.published) { // Nur veröffentlichte Cards
-            sitemap += `  <url>
-    <loc>${baseUrl}/cards/${card.id}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-`;
-          }
-        });
-      }
-    } catch (dbError) {
-      logger.warn('Could not fetch cards for sitemap:', dbError.message);
-      // Weiter ohne Cards
     }
 
     sitemap += '</urlset>';
