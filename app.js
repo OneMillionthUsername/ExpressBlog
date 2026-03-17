@@ -203,11 +203,7 @@ app.use(helmet({
       scriptSrcAttr: ['\'unsafe-hashes\'' /*'\'unsafe-inline\''*/], // Allow inline event handlers but require a hash or nonce
     },
   },
-  hsts: config.IS_PRODUCTION ? {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  } : false,
+  hsts: false, // nginx setzt HSTS mit proxy_hide_header
   noSniff: true,
   frameguard: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
