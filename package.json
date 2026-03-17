@@ -22,8 +22,9 @@
     "migrate": "knex migrate:latest",
     "migrate:target": "knex migrate:up",
     "migrate:rollback": "knex migrate:rollback",
-    "postinstall": "npm run copy:dompurify",
+    "postinstall": "npm run copy:dompurify && npm run copy:tinymce",
     "copy:dompurify": "node scripts/copy-dompurify.mjs",
+    "copy:tinymce": "node scripts/copy-tinymce.mjs",
     "sanitize-db": "node scripts/sanitize-db-posts.js",
     "sanitize-db:dry": "node scripts/sanitize-db-posts.js --dry-run",
     "sanitize-db:prod": "node scripts/run-sanitize-prod.mjs",
@@ -68,6 +69,7 @@
     "nodemailer": "^8.0.1",
     "sanitize-filename": "^1.6.3",
     "sharp": "^0.34.5",
+    "tinymce": "^6.8.6",
     "url": "^0.11.4"
   },
   "devDependencies": {

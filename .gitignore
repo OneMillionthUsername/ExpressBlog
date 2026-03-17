@@ -19,6 +19,14 @@ scripts/check-remote-post.*
 scripts/collect-server-logs.ps1
 
 
+# TinyMCE library assets (copied from node_modules via postinstall)
+public/assets/js/tinymce/tinymce.min.js
+public/assets/js/tinymce/skins/
+public/assets/js/tinymce/icons/
+public/assets/js/tinymce/themes/
+public/assets/js/tinymce/plugins/
+public/assets/js/tinymce/models/
+
 # IDE
 .vscode/
 .idea/

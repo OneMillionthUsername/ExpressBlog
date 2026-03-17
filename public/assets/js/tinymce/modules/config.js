@@ -29,10 +29,10 @@ export function getTinyMCEConfig() {
     branding: false,
     license_key: 'gpl',
     
-    // Skin and icons configuration for jsDelivr CDN
-    skin_url: 'https://cdn.jsdelivr.net/npm/tinymce@6/skins/ui/oxide',
+    // Skin and icons configuration (local, copied via postinstall)
+    skin_url: '/assets/js/tinymce/skins/ui/oxide',
     content_css: [
-      'https://cdn.jsdelivr.net/npm/tinymce@6/skins/content/default/content.min.css',
+      '/assets/js/tinymce/skins/content/default/content.min.css',
       'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap',
       'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css',
       '/assets/css/tinymce-content.css',

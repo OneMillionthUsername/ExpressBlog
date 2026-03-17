@@ -158,10 +158,8 @@ app.use(helmet({
       defaultSrc: ['\'self\''],
       scriptSrc: [
         '\'self\'',
-        'https://cdn.tiny.cloud',
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
-        'https://generativelanguage.googleapis.com',
         // Nonce wird dynamisch hinzugefügt für Inline-Scripts
       ],
       styleSrc: [
@@ -169,7 +167,6 @@ app.use(helmet({
         'https://fonts.googleapis.com',
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
-        'https://cdn.tiny.cloud',
         // Nonce wird dynamisch hinzugefügt für Inline-Styles (nonceMiddleware)
       ],
       styleSrcAttr: ['\'unsafe-inline\''],
@@ -184,14 +181,11 @@ app.use(helmet({
         'blob:',
         'https:',
         'https://images.unsplash.com',
-        'https://cdn.tiny.cloud',
         'https://avatars.githubusercontent.com',
         'https://cdn.jsdelivr.net',
       ],
       connectSrc: [
         '\'self\'',
-        'https://generativelanguage.googleapis.com/v1beta/', // for Google Gemini API calls
-        'https://cdn.tiny.cloud/1/', // for TinyMCE cloud services (e.g. spell check, image upload)
       ],
       // Allow TinyMCE editor iframe (same-origin) and safe blob/data contexts
       frameSrc: ['\'self\'', 'blob:', 'data:'],
@@ -203,11 +197,7 @@ app.use(helmet({
       scriptSrcAttr: ['\'unsafe-hashes\'' /*'\'unsafe-inline\''*/], // Allow inline event handlers but require a hash or nonce
     },
   },
-  hsts: config.IS_PRODUCTION ? {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  } : false,
+  hsts: false, // nginx setzt HSTS mit proxy_hide_header
   noSniff: true,
   frameguard: { action: 'deny' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
