@@ -65,7 +65,7 @@ authRouter.post('/login',
   celebrate({
     [Segments.BODY]: Joi.object({
       username: Joi.string().min(1).max(100).required(),
-      password: Joi.string().min(8).max(100).required(),
+      password: Joi.string().min(1).max(100).required(),
     }),
   }),
   async (req, res) => {

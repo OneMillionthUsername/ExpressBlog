@@ -30,7 +30,7 @@ import nonceMiddleware from './middleware/nonceMiddleware.js';
 import compression from 'compression';
 import { authenticateToken, requireAdmin } from './middleware/authMiddleware.js';
 import * as authService from './services/authService.js';
-import { errors as celebrateErrors } from 'celebrate';
+import { isCelebrateError } from 'celebrate';
 import legalRoutes from './routes/legalRoutes.js';
 
 // App-Status Management
@@ -382,8 +382,15 @@ function registerDatabaseRoutes() {
   const dbRouter = createDbRouter(requireDatabase, routes);
   app.use('/', dbRouter);
   
-  // Celebrate validation error handler should be before 404 and other error handlers
-  app.use(celebrateErrors());
+  // Celebrate validation error handler — generic message to avoid information disclosure
+  app.use((err, req, res, next) => {
+    if (!isCelebrateError(err)) return next(err);
+    logger.debug('[VALIDATION] celebrate error', {
+      url: req.originalUrl,
+      details: [...err.details.values()].map(d => d.message),
+    });
+    res.status(400).json({ error: 'Invalid request data' });
+  });
 
   // 404 handler MUST be registered AFTER all routes
   app.use((req, res, _next) => {
