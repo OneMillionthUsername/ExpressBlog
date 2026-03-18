@@ -2,9 +2,6 @@
 # Wir nutzen Bookworm-slim für die nötigen Build-Tools (Python/G++)
 FROM node:22-bookworm-slim AS build
 
-# npm auf die neueste Version aktualisieren
-RUN npm install -g npm@latest
-
 # Installiere Abhängigkeiten für native Node-Module
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -29,6 +26,9 @@ RUN npm run build --if-present
 # --- STAGE 2: Production Release (Die Gummizelle) ---
 # Minimalistisches Alpine Linux für minimale Angriffsfläche
 FROM node:22-alpine AS release
+
+# npm auf die neueste Version aktualisieren
+RUN npm install -g npm@latest
 
 WORKDIR /app
 ENV NODE_ENV=production
