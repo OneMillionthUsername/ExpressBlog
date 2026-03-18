@@ -3,16 +3,8 @@
 
 // (Vereinfacht) Keine mehrfachen Lade-Guards mehr – Modul wird idempotent gehalten.
 
-// NOTE: This file runs in the browser; importing server-side config files here
-// causes the browser to attempt to fetch `/api/config/google-api-key` which can return
-// HTML and produce a MIME-type error. Instead, obtain any API keys at
-// runtime via an API endpoint. The /api/google-api-key endpoint fetches
-// the server-side GEMINI_API_KEY securely for authenticated admins.
-
-// The Gemini API key MUST never be present in browser code. All AI calls go
-// through a server-proxied endpoint (`/api/ai/generate`) that uses the
-// server-side key. Keep a local empty placeholder only for non-key flows.
-let GEMINI_API_KEY = '';
+// All AI calls go through the server-proxied endpoint `/api/ai/generate`.
+// The API key never leaves the server.
 
 // DOMPurify handling: prefer a synchronous check of `window.DOMPurify` so
 // UI actions (and tests) are not blocked by network imports. We also start a
@@ -59,51 +51,20 @@ import { makeApiRequest } from '../api.js';
 import { showAlertModal, showNotification } from '../common.js';
 import { registerAction } from '../actions/actionRegistry.js';
 
-// Gemini API Konfiguration
+// Gemini API Konfiguration (Key bleibt serverseitig, alle Calls laufen über /api/ai/generate)
 const GEMINI_CONFIG = {
-  apiKey: (GEMINI_API_KEY && GEMINI_API_KEY.length > 0) ? GEMINI_API_KEY : '', // Wird vom Admin gesetzt
   model: 'gemini-3-flash-preview', // Standardmodell, serverseitig mit Fallbacks abgesichert
   maxTokens: 2048,
   temperature: 0.7,
 };
 
-// API-Schlüssel vom Server laden
-async function loadGeminiApiKey() {
-  // Versuche, den API-Key vom Server zu laden
-  try {
-    const apiResult = await makeApiRequest('/api/google-api-key', { method: 'GET' });
-    if (apiResult && apiResult.success === true) {
-      // apiResult.data ist das Server-JSON: {data: {apiKey: "..."}}
-      const serverData = apiResult.data;
-      if (serverData && serverData.data && serverData.data.apiKey) {
-        const apiKey = serverData.data.apiKey;
-        if (apiKey.trim() !== '' && apiKey.length > 10) {
-          GEMINI_CONFIG.apiKey = apiKey;
-          console.log('Gemini API key loaded successfully');
-          return true;
-        }
-      }
-      console.warn('Ungültiger oder leerer Gemini API-Schlüssel vom Server erhalten.');
-      return false;
-    }
-    // Kein gültiger Key vom Server, zeige Setup
-    console.warn('Kein gültiger Gemini API-Schlüssel gefunden. Bitte API-Schlüssel eingeben.');
-    return false;
-  } catch (error) {
-    console.error('Fehler beim Laden des Gemini API-Schlüssels:', error);
-    return false;
-  }
-}
-
 // API-Schlüssel Setup-Dialog
 function showApiKeySetup() {
-  const currentKey = GEMINI_CONFIG.apiKey;
   const message =
-        'Google Gemini API-Schlüssel eingeben:\n\n' +
+        'Google Gemini API-Schlüssel einrichten:\n\n' +
         '1. Gehe zu: https://aistudio.google.com/app/apikey\n' +
         '2. Erstelle einen kostenlosen API-Schlüssel\n' +
-        '3. Kopiere den Schlüssel in die .env Datei\n\n' +
-        `Aktueller Schlüssel: ${currentKey ? currentKey.substring(0, 10) + '...' : 'Nicht gesetzt'}`;
+        '3. Kopiere den Schlüssel in die .env Datei auf dem Server';
   const modalHtml = `
         <div class="modal-overlay" id="api-key-modal">
             <div class="modal-container">
@@ -592,7 +553,6 @@ async function generateTitleSuggestions() {
   }
     
   try {
-    console.log('API Key:', GEMINI_CONFIG.apiKey ? 'SET' : 'EMPTY');
     const systemInstruction = `Du bist ein erfahrener Blogautor. Erstelle einen ansprechenden Titel für den folgenden Blogpost.
 
 Regeln:
@@ -759,29 +719,6 @@ function closeModal() {
     }
   }
 }
-// AI-Button-Status aktualisieren
-function updateAIButtons() {
-  const hasApiKey = !!GEMINI_CONFIG.apiKey;
-  const aiButtons = document.querySelectorAll('.ai-btn');
-    
-  aiButtons.forEach(btn => {
-    if (hasApiKey) {
-      btn.disabled = false;
-      btn.title = 'AI-Funktion verfügbar';
-    } else {
-      btn.disabled = true;
-      btn.title = 'API-Schlüssel erforderlich - Klicke auf "AI Setup"';
-    }
-  });
-}
-
-// AI-System initialisieren
-async function initializeAISystem() {
-  // API-Schlüssel laden
-  await loadGeminiApiKey();
-  // Button-Status aktualisieren
-  updateAIButtons();
-}
 
 let _aiActionsRegistered = false;
 function registerAiActions() {
@@ -796,9 +733,6 @@ function registerAiActions() {
 
 function initAiAssistant() {
   registerAiActions();
-  // Note: initializeAISystem is async but we don't need to wait for it here
-  // The API key loading and button updates will happen after actions are registered
-  initializeAISystem().catch(err => console.error('AI system initialization failed:', err));
 }
 
 // Note: initAiAssistant() is now called explicitly from page-initializers.js
@@ -813,9 +747,6 @@ export {
   showApiKeySetup,
   copyToClipboard,
   fallbackCopy,
-  updateAIButtons,
-  initializeAISystem,
   initAiAssistant,
-  loadGeminiApiKey,
   callGeminiAPI,
 };
