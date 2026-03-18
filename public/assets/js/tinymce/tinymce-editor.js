@@ -2,7 +2,7 @@
 // Simplified and modularized version
 
 // Import core modules
-import { loadTinyMceScript, showTinyMceApiKeySetup } from './modules/loader.js';
+import { loadTinyMceScript } from './modules/loader.js';
 import { getTinyMCEConfig } from './modules/config.js';
 import { saveDraft, saveDraftSilent, clearDraft, loadDraft } from './modules/draft.js';
 import { updatePreview, togglePreview } from './modules/preview.js';
@@ -241,7 +241,6 @@ function registerCoreActions() {
   registerAction('updatePreview', updatePreview);
   registerAction('togglePreview', togglePreview);
   registerAction('resetForm', resetForm);
-  registerAction('showTinyMceApiKeySetup', showTinyMceApiKeySetup);
   registerAction('add-tag', (e, el) => {
     const tag = el?.getAttribute('data-tag');
     if (tag) {

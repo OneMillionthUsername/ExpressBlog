@@ -4,7 +4,6 @@ import categoryController from './categoryController.js';
 import postController, { getCurrentPostsPaginated, PAGE_SIZE } from './postController.js';
 import cardController, { CARDS_PER_PAGE } from './cardController.js';
 import { DatabaseService } from '../databases/mariaDB.js';
-import { TINY_MCE_API_KEY } from '../config/config.js';
 import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
 import contactMailService from '../services/contactMailService.js';
 
@@ -170,30 +169,23 @@ function getCreateViewBaseContext(req, res) {
   const isAdmin = getSsrAdmin(res);
   const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
   const formError = req.query && req.query.error ? 'Blogpost konnte nicht gespeichert werden.' : null;
-  const tinyMceKey = isAdmin ? TINY_MCE_API_KEY : null;
-  return { isAdmin, csrfToken, formError, tinyMceKey };
+  return { isAdmin, csrfToken, formError };
 }
 
 async function renderCreatePostView(req, res, { post = null, formAction = '/blogpost/create' } = {}) {
   try {
-    const { isAdmin, csrfToken, formError, tinyMceKey } = getCreateViewBaseContext(req, res);
-    
-    logger.debug('[CREATEPOST] SSR computed flags', {
-      isAdmin,
-      tinyMceKeyProvided: !!tinyMceKey,
-    });
+    const { isAdmin, csrfToken, formError } = getCreateViewBaseContext(req, res);
 
     const categories = await categoryController.getAllCategories();
     logger.debug('[CREATEPOST] Fetched categories for createPost view', { categoryCount: Array.isArray(categories) ? categories.length : 0 });
 
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { tinyMceKey, isAdmin, post, csrfToken, formAction, formError, categories });
+    res.render('createPost', { isAdmin, post, csrfToken, formAction, formError, categories });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
     applySsrNoCache(res, { varyCookie: true });
     res.render('createPost', {
-      tinyMceKey: null,
       isAdmin: false,
       post: null,
       csrfToken,

@@ -3,11 +3,6 @@
 
 import { showNotification } from '../../common.js';
 
-const TINYMCE_CONFIG = {
-  apiKey: 'no-api-key',
-  defaultKey: 'no-api-key',
-};
-
 /**
  * Load TinyMCE script from local, jsDelivr, or Tiny Cloud
  * @returns {Promise<boolean>}
@@ -82,40 +77,3 @@ function loadScriptFromPath(src, timeoutDuration = 5000) {
   });
 }
 
-/**
- * Show TinyMCE API Key setup dialog
- */
-export function showTinyMceApiKeySetup() {
-  const currentKey = TINYMCE_CONFIG.apiKey;
-    
-  const message = 
-    'TinyMCE API-Schlüssel Setup:\n\n' +
-    'KOSTENLOS registrieren:\n' +
-    '1. Gehe zu: https://www.tiny.cloud/\n' +
-    '2. Klicke "Get Started for FREE"\n' +
-    '3. Registriere dich mit E-Mail\n' +
-    '4. Kopiere deinen API-Schlüssel aus dem Dashboard\n' +
-    '5. Füge ihn in der .env Datei ein\n\n' +
-    'HINWEIS: Ohne API-Schlüssel wird automatisch\n' +
-    'die lokale Version verwendet (weniger Features)\n\n' +
-    `Aktueller Schlüssel: ${currentKey ? currentKey.substring(0, 10) + '...' : 'Nicht gesetzt'}`;
-
-  const modalHtml = `
-    <div class="modal-overlay" id="tinymce-api-key-modal">
-      <div class="modal-container">
-        <pre class="modal-content">${message}</pre>
-        <div class="modal-footer">
-          <button id="tinymce-api-key-close" class="modal-button">Schließen</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-  document.getElementById('tinymce-api-key-close').addEventListener('click', () => {
-    document.getElementById('tinymce-api-key-modal').remove();
-  });
-  
-  document.getElementById('tinymce-api-key-modal').focus();
-}
