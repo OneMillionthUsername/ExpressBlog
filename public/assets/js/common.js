@@ -454,7 +454,7 @@ function createFloatingMenu() {
   clippyImg.src = '/assets/media/clippy-28.webp';
   clippyImg.alt = '';
   clippyImg.width = 28;
-  clippyImg.height = 28;
+  clippyImg.height = 26;
   menuToggle.appendChild(clippyImg);
     
   // Create menu options container
