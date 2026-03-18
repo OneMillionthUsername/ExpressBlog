@@ -29,19 +29,31 @@ for (const entry of whitelistEntries) {
   }
 }
 
-function isWhitelisted(req) {
-  if (whitelistEntries.length === 0) return false;
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
+// Normalise IPv4-mapped IPv6 addresses (::ffff:x.x.x.x → x.x.x.x)
+// so that rate-limit counters are consistent regardless of format.
+function normalizeIp(ip) {
+  if (ip && ip.startsWith('::ffff:')) return ip.slice(7);
+  return ip;
+}
+
+function getClientIp(req) {
+  const raw = req.headers['x-forwarded-for']?.split(',')[0].trim()
     || req.headers['x-real-ip']
     || req.ip
     || req.socket.remoteAddress;
+  return normalizeIp(raw);
+}
+
+function isWhitelisted(req) {
+  if (whitelistEntries.length === 0) return false;
+  const ip = getClientIp(req);
   return ip ? whitelist.check(ip) : false;
 }
 
 // Shared handler that logs every rate-limit block
 function makeHandler(limiterName) {
   return (req, res, _next, _options) => {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     logger.warn(`[RATE-LIMIT] ${limiterName} exceeded`, {
       ip,
       method: req.method,
@@ -57,6 +69,7 @@ function makeHandler(limiterName) {
 const baseLimiterConfig = {
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => getClientIp(req) || 'unknown',
   message: { error: 'Rate limit exceeded' },
 };
 
@@ -78,13 +91,12 @@ const globalLimiter = rateLimit({
 });
 
 const loginLimiter = rateLimit({
+  ...baseLimiterConfig,
   windowMs: 15 * 60 * 1000,
   max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
   skip: isWhitelisted,
   handler: (req, res, _next, _options) => {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.headers['x-real-ip'] || req.ip || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     logger.warn('[SECURITY] Login rate-limit exceeded – possible brute-force attack', {
       ip,
       username: req.body?.username ?? null,
