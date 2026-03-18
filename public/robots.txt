@@ -1,11 +1,7 @@
 # robots.txt für SpeculumX Blog
-# Erlaubt allen Suchmaschinen, die Website zu crawlen, außer Admin- und API-Bereiche
 
 User-agent: *
-Disallow: /admin/
-Disallow: /api/
 Disallow: /private/
-Disallow: /blogpost/admin/
 Crawl-delay: 1
 
 Sitemap: https://speculumx.at/sitemap.xml
