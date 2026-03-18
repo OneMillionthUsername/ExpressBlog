@@ -132,6 +132,13 @@ if (!__assetVersion) {
 // set the values for the views to use
 app.use((req, res, next) => {
   res.locals.assetVersion = __assetVersion;
+  res.locals.pageTitle = 'Sub specie aeternitatis';
+  res.locals.metaDescription = '';
+  res.locals.metaRobots = '';
+  res.locals.extraHead = '';
+  res.locals.script = '';
+  res.locals.useTinyMce = false;
+  res.locals.usePrism = false;
   next();
 });
 
