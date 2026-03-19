@@ -142,10 +142,8 @@ export function convertBigInts(obj) {
 
   if (obj == null) return obj;
   if (Array.isArray(obj)) return obj.map(convertBigInts);
+  if (obj instanceof Date || Buffer.isBuffer(obj)) return obj;
   if (typeof obj === 'object') {
-    // Only process plain objects — leave Date, Buffer, RegExp etc. untouched
-    const proto = Object.getPrototypeOf(obj);
-    if (proto !== null && proto !== Object.prototype) return obj;
     const result = {};
     for (const key in obj) {
       const val = obj[key];
