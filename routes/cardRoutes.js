@@ -150,12 +150,25 @@ cardRouter.post('/:id/delete',
   requireAdmin,
   async (req, res) => {
     const cardId = parseInt(req.params.id);
+    const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
+
+    const referer = req.headers.referer || '';
+    let returnTo = '/cards/manage';
+    try {
+      const refUrl = new URL(referer);
+      if (refUrl.hostname === req.hostname) {
+        returnTo = refUrl.pathname;
+      }
+    } catch { /* invalid URL, use default */ }
+
     try {
       await cardController.deleteCard(cardId);
-      return res.redirect(303, '/cards/manage');
+      if (wantsJson) return res.json({ success: true, returnTo });
+      return res.redirect(303, returnTo);
     } catch (error) {
       logger.error('Error deleting card (SSR):', error);
-      return res.redirect(303, '/cards/manage?cardDeleteError=1');
+      if (wantsJson) return res.status(500).json({ error: 'Fehler beim Löschen der Card' });
+      return res.redirect(303, returnTo);
     }
   },
 );

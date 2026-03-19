@@ -562,9 +562,22 @@ postRouter.post('/delete/:postId',
     logger.debug('DELETE /delete: req.params: ' + JSON.stringify(req.params));
     logger.debug('DELETE /delete: Attempting to delete post ' + postId);
     logger.debug('DELETE /delete: postId type: ' + typeof postId + ', value: ' + postId);
+
+    const referer = req.headers.referer || '';
+    let returnTo = '/';
+    try {
+      const refUrl = new URL(referer);
+      if (refUrl.hostname === req.hostname) {
+        returnTo = refUrl.pathname;
+      }
+    } catch { /* invalid URL, use default */ }
+
+    const wantsJson = req.headers.accept && req.headers.accept.includes('application/json');
+
     if (validationService.isValidIdSchema(postId) === false) {
       logger.debug('DELETE /delete: Invalid postId ' + postId);
-      return res.redirect(303, '/posts?error=invalid');
+      if (wantsJson) return res.status(400).json({ error: 'Ungültige Post-ID' });
+      return res.redirect(303, returnTo);
     }
     logger.debug('DELETE /delete: postId valid, proceeding to delete');
     try {
@@ -572,9 +585,9 @@ postRouter.post('/delete/:postId',
       const result = await postController.deletePost(postId);
       logger.debug('DELETE /delete: postController.deletePost returned ' + JSON.stringify(result));
       if (!result) {
-        return res.redirect(303, '/posts?error=delete');
+        if (wantsJson) return res.status(404).json({ error: 'Post nicht gefunden oder konnte nicht gelöscht werden' });
+        return res.redirect(303, returnTo);
       }
-      res.redirect(303, '/posts?deleted=1');
       try {
         simpleCache.del('posts:all');
         simpleCache.del('posts:mostRead');
@@ -587,9 +600,12 @@ postRouter.post('/delete/:postId',
         const _id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         logger.debug('[' + _id + '] DELETE /delete: invalidated caches posts:all, posts:mostRead, posts:archive, and year archives');
       } catch (e) { void e; }
+      if (wantsJson) return res.json({ success: true, returnTo });
+      res.redirect(303, returnTo);
     } catch (error) {
       logger.error('Error deleting blog post', error);
-      res.redirect(303, '/posts?error=delete');
+      if (wantsJson) return res.status(500).json({ error: 'Interner Fehler beim Löschen' });
+      res.redirect(303, returnTo);
     }
   });
 

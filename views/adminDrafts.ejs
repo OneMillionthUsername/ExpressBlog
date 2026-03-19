@@ -23,7 +23,7 @@
                                 </h2>
                                 <div class="post-footer">
                                     <a href="/blogpost/update/<%= post.id %>" class="btn btn-sm btn-outline-warning">Bearbeiten / Veröffentlichen</a>
-                                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline ms-2" onsubmit="return confirm('Post wirklich löschen?')">
+                                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline ms-2">
                                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
                                     </form>
@@ -54,7 +54,7 @@
                                 </h2>
                                 <div class="post-footer">
                                     <a href="/blogpost/update/<%= post.id %>" class="btn btn-sm btn-outline-warning">Bearbeiten / Veröffentlichen</a>
-                                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline ms-2" onsubmit="return confirm('Post wirklich löschen?')">
+                                    <form method="POST" action="/blogpost/delete/<%= post.id %>" class="d-inline ms-2">
                                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
                                     </form>

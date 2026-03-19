@@ -6,6 +6,7 @@ import {
   hideElement,
   reloadPageWithDelay,
   getUrlParameter,
+  showNotification,
 } from './common.js';
 import { isAdmin, setAdmin } from './state/adminState.js';
 import { isAdminFromServer } from './config.js';
@@ -17,7 +18,7 @@ let adminStatusCache = {
   promise: null,
   result: null,
   timestamp: 0,
-  ttl: 5 * 60 * 1000 // 5 Minuten Cache
+  ttl: 5 * 60 * 1000, // 5 Minuten Cache
 };
 // Admin-System Initialisierung
 let adminSystemInitialized = false;
@@ -300,6 +301,37 @@ export function initializeAdminDelegation() {
       if (typeof showAdminLoginModal === 'function') showAdminLoginModal();
       return;
     }
+  });
+
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form[action*="/blogpost/delete/"], form[action*="/cards/"][action$="/delete"]');
+    if (!form) return;
+    e.preventDefault();
+
+    const confirmed = window.confirm(form.dataset.confirm || 'Post wirklich löschen?');
+    if (!confirmed) return;
+
+    const csrfInput = form.querySelector('input[name="_csrf"]');
+    const body = new URLSearchParams();
+    if (csrfInput) body.append('_csrf', csrfInput.value);
+
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          showNotification('Post erfolgreich gelöscht', 'success');
+          setTimeout(() => { window.location.href = data.returnTo || '/'; }, 1500);
+        } else {
+          showNotification(data.error || 'Fehler beim Löschen', 'error');
+        }
+      })
+      .catch(() => {
+        showNotification('Netzwerkfehler beim Löschen', 'error');
+      });
   });
 }
 
