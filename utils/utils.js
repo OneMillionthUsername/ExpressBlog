@@ -140,8 +140,12 @@ export function convertBigInts(obj) {
   if (typeof obj === 'number') return obj;
   if (typeof obj === 'string') return obj; // Nicht NaN!
 
+  if (obj == null) return obj;
   if (Array.isArray(obj)) return obj.map(convertBigInts);
-  if (obj && typeof obj === 'object') {
+  if (typeof obj === 'object') {
+    // Only process plain objects — leave Date, Buffer, RegExp etc. untouched
+    const proto = Object.getPrototypeOf(obj);
+    if (proto !== null && proto !== Object.prototype) return obj;
     const result = {};
     for (const key in obj) {
       const val = obj[key];
@@ -149,7 +153,7 @@ export function convertBigInts(obj) {
         result[key] = (val > Number.MAX_SAFE_INTEGER || val < Number.MIN_SAFE_INTEGER)
           ? NaN
           : Number(val);
-      } else if (typeof val === 'object') {
+      } else if (val != null && typeof val === 'object') {
         result[key] = convertBigInts(val);
       } else {
         result[key] = val;
