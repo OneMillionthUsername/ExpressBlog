@@ -129,7 +129,11 @@ export function createSlug(title, { maxLength = 50 /*, addHash = true */ } = {})
 
   return slug;
 }
-// Convert BigInts in the object to Numbers (recursive)
+// MariaDB gibt numerische Felder (z.B. id, view_count) als BigInt zurück.
+// Diese Funktion konvertiert rekursiv alle BigInt-Werte zu Number, damit
+// JSON.stringify und Joi-Validierung funktionieren.
+// Falls das Objekt eingefroren ist (z.B. aus dem Cache), wird zuerst ein
+// flacher Klon erstellt, da BigInt-Felder sonst nicht überschrieben werden können.
 export function convertBigInts(obj) {
   if (typeof obj === 'bigint'){
     if (obj > Number.MAX_SAFE_INTEGER || obj < Number.MIN_SAFE_INTEGER) {
@@ -140,24 +144,19 @@ export function convertBigInts(obj) {
   if (typeof obj === 'number') return obj;
   if (typeof obj === 'string') return obj; // Nicht NaN!
 
-  if (obj == null) return obj;
   if (Array.isArray(obj)) return obj.map(convertBigInts);
-  if (obj instanceof Date || Buffer.isBuffer(obj)) return obj;
-  if (typeof obj === 'object') {
-    const result = {};
-    for (const key in obj) {
-      const val = obj[key];
-      if (typeof val === 'bigint') {
-        result[key] = (val > Number.MAX_SAFE_INTEGER || val < Number.MIN_SAFE_INTEGER)
+  if (obj && typeof obj === 'object') {
+    const target = Object.isFrozen(obj) ? { ...obj } : obj;
+    for (const key in target) {
+      if (typeof target[key] === 'bigint') {
+        target[key] = (target[key] > Number.MAX_SAFE_INTEGER || target[key] < Number.MIN_SAFE_INTEGER)
           ? NaN
-          : Number(val);
-      } else if (val != null && typeof val === 'object') {
-        result[key] = convertBigInts(val);
-      } else {
-        result[key] = val;
+          : Number(target[key]);
+      } else if (typeof target[key] === 'object') {
+        target[key] = convertBigInts(target[key]);
       }
     }
-    return result;
+    return target;
   }
   return obj;
 }
