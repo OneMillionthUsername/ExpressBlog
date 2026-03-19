@@ -31,11 +31,13 @@ const nonceMiddleware = (req, res, next) => {
     const tinymceStyleHashes = [
       '\'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=\'', // empty style element
       '\'sha256-Mia3q7J61OxNlAZtRNAwCYtIrMyDLicwwyzKx08ck64=\'', // TinyMCE skin style
+      '\'sha256-+OsIn6RhyCZCUkkvtHxFtP0kU3CGdGeLjDd9Fzqdl3o=\'', // dynamic inline style attribute
     ];
 
     // TinyMCE executor.js erstellt dynamisch Inline-Scripts die keine Nonce bekommen
     const tinymceScriptHashes = [
       '\'sha256-C0d30RW4IMywlXnx8PG0b2EsyhP36uq8ljzfmRP2RC0=\'', // TinyMCE executor inline script
+      '\'sha256-ZswfTY7H35rbv8WC7NXBoiC7WNu86vSzCDChNWwZZDM=\'', // TinyMCE/codesample dynamic inline script
     ];
 
     // Nonce für script-src und style-src hinzufügen
