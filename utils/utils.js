@@ -142,17 +142,20 @@ export function convertBigInts(obj) {
 
   if (Array.isArray(obj)) return obj.map(convertBigInts);
   if (obj && typeof obj === 'object') {
+    const result = {};
     for (const key in obj) {
-      if (typeof obj[key] === 'bigint') {
-        if (obj[key] > Number.MAX_SAFE_INTEGER || obj[key] < Number.MIN_SAFE_INTEGER) {
-          obj[key] = NaN;
-        } else {
-          obj[key] = Number(obj[key]);
-        }
-      } else if (typeof obj[key] === 'object') {
-        obj[key] = convertBigInts(obj[key]);
+      const val = obj[key];
+      if (typeof val === 'bigint') {
+        result[key] = (val > Number.MAX_SAFE_INTEGER || val < Number.MIN_SAFE_INTEGER)
+          ? NaN
+          : Number(val);
+      } else if (typeof val === 'object') {
+        result[key] = convertBigInts(val);
+      } else {
+        result[key] = val;
       }
     }
+    return result;
   }
   return obj;
 }
