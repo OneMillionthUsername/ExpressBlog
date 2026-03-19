@@ -863,7 +863,8 @@ a:hover { color: var(--text); }
 
 .sidebar {
     /* background: var(--surf); */
-    background: #230893;
+    background: #7f61ff;
+    color: rgb(11, 218, 33);
     /* Mobile: horizontal strip */
     padding: 1.5rem 1.2rem;
     border-bottom: 1px solid var(--line);
@@ -871,6 +872,7 @@ a:hover { color: var(--text); }
 
 .sidebar:hover {
     background: #08c9e2;
+    color: #000;
 }
 
 @media (min-width: 768px) {
@@ -887,7 +889,8 @@ a:hover { color: var(--text); }
     font-size: 0.95rem;
     font-weight: 300;
     font-style: italic;
-    color: var(--dim);
+    /* color: var(--dim); */
+    color: inherit;
     letter-spacing: 0.04em;
     border-bottom: 1px solid var(--line);
     padding-bottom: 0.4rem;
@@ -912,13 +915,17 @@ a:hover { color: var(--text); }
 }
 
 .nav-list a {
-    color: var(--dim);
+    /* color: var(--dim); */
+    color: inherit;
     font-family: var(--mono);
     font-size: 10px;
     transition: color 0.2s;
 }
 
-.nav-list a:hover { color: var(--gold); }
+.nav-list a:hover { 
+    /* color: var(--gold); */
+    color: inherit;
+ }
 
 .text-muted, .text-muted.small {
     color: var(--dim);
@@ -1127,16 +1134,16 @@ a:hover { color: var(--text); }
     content: '';
     position: absolute;
     inset: 0;
-    backdrop-filter: sepia(0) brightness(1);
-    -webkit-backdrop-filter: sepia(0) brightness(1);
-    transition: backdrop-filter 0.45s, -webkit-backdrop-filter 0.45s;
+    /* backdrop-filter: sepia(0) brightness(1); */
+    /* -webkit-backdrop-filter: sepia(0) brightness(1); */
+    /* transition: backdrop-filter 0.45s, -webkit-backdrop-filter 0.45s; */
     pointer-events: none;
     z-index: 0;
 }
 
 .featured-post-card:hover {
     /* background: #050505; */
-    background: #b30a0a;
+    background: #ec560de0;
     border: 1px solid rgba(232, 197, 71, 0.45);
     transform: scale(1.02);
     z-index: 9001;
