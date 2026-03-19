@@ -84,6 +84,22 @@ const getCardById = async (id) => {
  * @returns {Promise<Object>} Ergebnisobjekt mit Erfolgsmeldung.
  * @throws {CardControllerException} Bei ungültiger ID oder wenn das Löschen fehlschlägt.
  */
+const updateCard = async (id, cardData) => {
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new CardControllerException('Invalid card ID');
+  }
+  const { error, value } = Card.validate({ ...cardData, id });
+  if (error) {
+    throw new CardControllerException('Validation failed: ' + error.details.map(d => d.message).join('; '));
+  }
+  try {
+    await DatabaseService.updateCard(id, value);
+    return new Card({ ...value, id });
+  } catch (err) {
+    throw new CardControllerException(`Error updating card: ${err.message}`, err);
+  }
+};
+
 const deleteCard = async (id) => {
   try {
     if (!Number.isInteger(id) || id <= 0) {
@@ -99,6 +115,24 @@ const deleteCard = async (id) => {
   }
 };
 export const CARDS_PER_PAGE = 9;
+
+const getAllCardsAdmin = async () => {
+  try {
+    const cards = await DatabaseService.getAllCardsAdmin();
+    const validCards = [];
+    for (const card of (cards || [])) {
+      const { error, value } = Card.validate(card);
+      if (error) {
+        console.error('Validation failed for card:', error.details.map(d => d.message).join('; '));
+        continue;
+      }
+      validCards.push(new Card(value));
+    }
+    return validCards;
+  } catch (error) {
+    throw new CardControllerException(`Error getting all cards (admin): ${error.message}`, error);
+  }
+};
 
 const getCardsPaginated = async (page) => {
   const offset = (page - 1) * CARDS_PER_PAGE;
@@ -124,7 +158,9 @@ const getCardsPaginated = async (page) => {
 
 export default {
   createCard,
+  updateCard,
   getAllCards,
+  getAllCardsAdmin,
   getCardsPaginated,
   getCardById,
   deleteCard,

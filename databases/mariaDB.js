@@ -1207,6 +1207,23 @@ export const DatabaseService = {
       if (conn) conn.release();
     }
   },
+  async getAllCardsAdmin() {
+    let conn;
+    try {
+      conn = await getDatabasePool().getConnection();
+      const result = await conn.query('SELECT * FROM cards ORDER BY id DESC');
+      return (result || []).map(card => {
+        const converted = { ...convertBigInts(card) };
+        converted.published = normalizePublished(converted.published);
+        return converted;
+      });
+    } catch (error) {
+      logger.error(`Error in getAllCardsAdmin: ${error.message}`);
+      throw new databaseError(`Error in getAllCardsAdmin: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
   async getCardsPaginated(limit, offset) {
     let conn;
     try {
@@ -1275,6 +1292,29 @@ export const DatabaseService = {
     } catch (error) {
       logger.error(`Error in deleteCard: ${error.message}`);
       throw new databaseError(`Error in deleteCard: ${error.message}`, error);
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+  async updateCard(cardId, cardData) {
+    let conn;
+    try {
+      if (cardId === null || isNaN(cardId)) {
+        throw new databaseError('ID is null or invalid');
+      }
+      conn = await getDatabasePool().getConnection();
+      const published = typeof cardData.published === 'boolean' ? (cardData.published ? 1 : 0) : 1;
+      const result = await conn.query(
+        'UPDATE cards SET title = ?, subtitle = ?, link = ?, img_link = ?, published = ? WHERE id = ?',
+        [cardData.title, cardData.subtitle ?? null, cardData.link, cardData.img_link, published, cardId],
+      );
+      if (result.affectedRows === 0) {
+        throw new databaseError('No rows affected');
+      }
+      return { success: true };
+    } catch (error) {
+      logger.error(`Error in updateCard: ${error.message}`);
+      throw new databaseError(`Error in updateCard: ${error.message}`, error);
     } finally {
       if (conn) conn.release();
     }

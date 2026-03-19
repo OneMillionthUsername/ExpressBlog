@@ -1,0 +1,44 @@
+<%
+    pageTitle = 'Cards verwalten - Admin';
+    metaDescription = '';
+    metaRobots = 'noindex, nofollow';
+%>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="content-area">
+
+                <h2 class="mb-4">Cards verwalten</h2>
+
+                <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
+                    <div id="cards-admin-list">
+                        <% cards.forEach(function(card) { %>
+                            <article class="blog-post-card">
+                                <div class="post-meta">
+                                    <span class="post-date"><%= card.published ? 'Veröffentlicht' : 'Nicht veröffentlicht' %></span>
+                                </div>
+                                <h2 class="post-title">
+                                    <span class="post-link"><%= card.title %></span>
+                                </h2>
+                                <% if (card.subtitle) { %>
+                                    <p class="text-muted"><%= card.subtitle %></p>
+                                <% } %>
+                                <div class="post-footer">
+                                    <a href="/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-warning">Bearbeiten</a>
+                                </div>
+                            </article>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted">Keine Cards vorhanden.</p>
+                <% } %>
+
+            </div>
+        </div>
+    </div>
+    <div class="navigation mt-4 mb-5">
+        <a href="/cards/create" class="btn btn-outline-success">Neue Card erstellen</a>
+        <a href="/admin" class="btn btn-outline-secondary">Zurück zum Admin-Panel</a>
+    </div>
+</div>

@@ -16,6 +16,27 @@ import { applySsrNoCache, getSsrAdmin } from '../utils/utils.js';
  */
 const cardRouter = express.Router();
 
+// GET /cards/manage - Alle Cards verwalten (Admin only)
+cardRouter.get('/manage',
+  strictLimiter,
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  async (req, res) => {
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    try {
+      const cards = await cardController.getAllCardsAdmin();
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('adminCards', { isAdmin, csrfToken, cards });
+    } catch (err) {
+      logger.error('Error loading admin cards list:', err);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.status(500).render('error', { message: 'Serverfehler beim Laden der Cards', isAdmin, csrfToken });
+    }
+  },
+);
+
 // GET /cards/create - Card erstellen (Admin only)
 cardRouter.get('/create',
   strictLimiter,
@@ -41,17 +62,77 @@ cardRouter.post('/create',
       subtitle: Joi.string().max(500).allow('', null),
       link: Joi.string().uri().required(),
       img_link: Joi.string().uri().required(),
+      published: Joi.any().optional(),
     }).options({ allowUnknown: true }), // allowUnknown, da wir evtl. zusätzliche Felder wie _csrf haben
   }),
   authenticateToken,
   requireAdmin,
   async (req, res) => {
     try {
-      await cardController.createCard(req.body);
+      const published = req.body.published === 'on' || req.body.published === true;
+      await cardController.createCard({ ...req.body, published });
       return res.redirect(303, '/');
     } catch (error) {
       logger.error('Error creating card (SSR):', error);
       return res.redirect(303, '/cards/create?error=1');
+    }
+  },
+);
+
+// GET /cards/:id/edit - Card bearbeiten (Admin only)
+cardRouter.get('/:id/edit',
+  strictLimiter,
+  authenticateToken,
+  requireAdmin,
+  csrfProtection,
+  celebrate({
+    [Segments.PARAMS]: Joi.object({
+      id: Joi.number().integer().min(1).required(),
+    }),
+  }),
+  async (req, res) => {
+    const cardId = parseInt(req.params.id);
+    const isAdmin = getSsrAdmin(res);
+    const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
+    const error = req.query && req.query.error ? '1' : null;
+    try {
+      const card = await cardController.getCardById(cardId);
+      applySsrNoCache(res, { varyCookie: true });
+      return res.render('cardCreate', { isAdmin, csrfToken, card, formAction: `/cards/${cardId}/update`, error });
+    } catch (err) {
+      logger.error('Error loading card for edit:', err);
+      return res.redirect(303, '/?cardEditError=1');
+    }
+  },
+);
+
+// POST /cards/:id/update - Card aktualisieren (Admin only)
+cardRouter.post('/:id/update',
+  strictLimiter,
+  csrfProtection,
+  celebrate({
+    [Segments.PARAMS]: Joi.object({
+      id: Joi.number().integer().min(1).required(),
+    }),
+    [Segments.BODY]: Joi.object({
+      title: Joi.string().min(1).max(255).required(),
+      subtitle: Joi.string().max(500).allow('', null),
+      link: Joi.string().uri().required(),
+      img_link: Joi.string().uri().required(),
+      published: Joi.boolean().truthy('on').optional(),
+    }).options({ allowUnknown: true }),
+  }),
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    const cardId = parseInt(req.params.id);
+    try {
+      const published = req.body.published === 'on' || req.body.published === true;
+      await cardController.updateCard(cardId, { ...req.body, published });
+      return res.redirect(303, '/');
+    } catch (err) {
+      logger.error('Error updating card (SSR):', err);
+      return res.redirect(303, `/cards/${cardId}/edit?error=1`);
     }
   },
 );
@@ -71,10 +152,10 @@ cardRouter.post('/:id/delete',
     const cardId = parseInt(req.params.id);
     try {
       await cardController.deleteCard(cardId);
-      return res.redirect(303, '/');
+      return res.redirect(303, '/cards/manage');
     } catch (error) {
       logger.error('Error deleting card (SSR):', error);
-      return res.redirect(303, '/?cardDeleteError=1');
+      return res.redirect(303, '/cards/manage?cardDeleteError=1');
     }
   },
 );

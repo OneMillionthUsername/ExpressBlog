@@ -74,6 +74,37 @@ cardApiRouter.post('/',
   },
 );
 
+cardApiRouter.put('/:id',
+  strictLimiter,
+  csrfProtection,
+  requireJsonContent,
+  celebrate({
+    [Segments.PARAMS]: Joi.object({
+      id: Joi.number().integer().min(1).required(),
+    }),
+    [Segments.BODY]: Joi.object({
+      title: Joi.string().min(1).max(255).required(),
+      subtitle: Joi.string().max(500).allow('', null),
+      link: Joi.string().uri().required(),
+      img_link: Joi.string().uri().required(),
+      published: Joi.boolean().optional(),
+    }),
+  }),
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    const cardId = parseInt(req.params.id);
+    const requestId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    try {
+      const card = await cardController.updateCard(cardId, req.body);
+      res.json({ success: true, message: 'Card updated successfully', card });
+    } catch (error) {
+      logger.error(`[${requestId}] PUT /api/cards/${cardId}: Error occurred`, error);
+      res.status(500).json({ error: 'Server failed to update card' });
+    }
+  },
+);
+
 cardApiRouter.delete('/:id',
   strictLimiter,
   csrfProtection,
