@@ -65,14 +65,6 @@
         <a href="/" class="btn btn-outline-secondary">Zur Startseite</a>
         <a href="/createPost" class="btn btn-outline-success create-link hidden">Neuen Post erstellen</a>
         <% if (typeof isAdmin !== 'undefined' && isAdmin && post && post.id) { %>
-        <form id="admin-controls" method="POST" action="/blogpost/delete/<%= post.id %>">
-            <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <% } %>
-            <button type="submit" class="btn admin-delete-btn" data-confirm="Möchten Sie diesen Beitrag wirklich löschen?">
-                Post löschen
-            </button>
-        </form>
         <a href="/blogpost/update/<%= post.id %>" class="btn btn-outline-warning">
             Post bearbeiten
         </a>

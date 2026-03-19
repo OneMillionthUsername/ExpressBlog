@@ -822,7 +822,7 @@ export const DatabaseService = {
     try {
       conn = await getDatabasePool().getConnection();
       logger.debug(`DatabaseService.deletePost: Deleting post ${id}`);
-      const result = await conn.query('UPDATE posts SET published = 0, updated_at = NOW() WHERE id = ?', [id]);
+      const result = await conn.query('DELETE FROM posts WHERE id = ?', [id]);
       logger.debug(`DatabaseService.deletePost: Query result - affectedRows: ${result.affectedRows}`);
       if(!result || result.affectedRows === 0) {
         throw new Error(`Failed to delete post with id ${id}`);
