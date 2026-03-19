@@ -16,6 +16,22 @@
   function fmtNum(n) {
     return Number(n).toLocaleString('de-DE');
   }
+
+  function latencyClass(us) {
+    const ms = us / 1000;
+    if (ms < 100) return 'stats-good';
+    if (ms < 500) return 'stats-warn';
+    return 'stats-bad';
+  }
+
+  function statusClass(code) {
+    const c = String(code).charAt(0);
+    if (c === '2') return 'stats-good';
+    if (c === '3') return 'stats-info';
+    if (c === '4') return 'stats-warn';
+    if (c === '5') return 'stats-bad';
+    return '';
+  }
 %>
 
 <div class="container">
@@ -37,15 +53,15 @@
       </div>
 
       <div class="stats-kpi-grid">
-        <div class="stats-kpi-card">
+        <div class="stats-kpi-card stats-kpi--blue">
           <span class="stats-kpi-value"><%= fmtNum(g.total_requests || 0) %></span>
           <span class="stats-kpi-label">Requests (total)</span>
         </div>
-        <div class="stats-kpi-card">
+        <div class="stats-kpi-card stats-kpi--green">
           <span class="stats-kpi-value"><%= fmtNum(g.valid_requests || 0) %></span>
           <span class="stats-kpi-label">Gültige Requests</span>
         </div>
-        <div class="stats-kpi-card">
+        <div class="stats-kpi-card stats-kpi--gold">
           <span class="stats-kpi-value"><%= fmtNum(g.unique_visitors || 0) %></span>
           <span class="stats-kpi-label">Unique Visitors</span>
         </div>
@@ -53,11 +69,11 @@
           <span class="stats-kpi-value"><%= fmtNum(g.unique_files || 0) %></span>
           <span class="stats-kpi-label">Unique Files</span>
         </div>
-        <div class="stats-kpi-card">
+        <div class="stats-kpi-card stats-kpi--blue">
           <span class="stats-kpi-value"><%= fmtBytes(g.bandwidth || 0) %></span>
           <span class="stats-kpi-label">Bandwidth</span>
         </div>
-        <div class="stats-kpi-card">
+        <div class="stats-kpi-card stats-kpi--red">
           <span class="stats-kpi-value"><%= fmtNum(g.unique_not_found || 0) %></span>
           <span class="stats-kpi-label">404 Not Found</span>
         </div>
@@ -73,7 +89,9 @@
           const showMethod = opts.showMethod || false;
           const labelHeader = opts.labelHeader || 'Pfad';
           const limit = opts.limit || 20;
+          const isStatusCodes = opts.isStatusCodes || false;
           const rows = data.slice(0, limit);
+          const maxHits = Math.max(...rows.map(r => r.hits ? r.hits.count : 0), 1);
 
           let html = '<div class="stats-section">';
           html += '<h3 class="stats-section-title">' + title + '</h3>';
@@ -88,14 +106,24 @@
           html += '</tr></thead><tbody>';
 
           for (const row of rows) {
-            html += '<tr>';
-            html += '<td class="stats-td-label">' + (row.data || '–') + '</td>';
+            const hits = row.hits ? row.hits.count : 0;
+            const pct = row.hits ? parseFloat(row.hits.percent) : 0;
+            const barWidth = Math.round((hits / maxHits) * 100);
+            const lClass = latencyClass(row.avgts || 0);
+            const rowClass = isStatusCodes ? statusClass(row.data) : '';
+
+            html += '<tr' + (rowClass ? ' class="' + rowClass + '"' : '') + '>';
+            html += '<td class="stats-td-label">';
+            if (isStatusCodes) {
+              html += '<span class="stats-status-dot ' + statusClass(row.data) + '"></span>';
+            }
+            html += (row.data || '–') + '</td>';
             if (showMethod) html += '<td>' + (row.method || '') + '</td>';
-            html += '<td>' + fmtNum(row.hits ? row.hits.count : 0) + '</td>';
-            html += '<td>' + (row.hits ? row.hits.percent : '0') + '%</td>';
+            html += '<td>' + fmtNum(hits) + '</td>';
+            html += '<td class="stats-td-bar"><span class="stats-bar" style="width:' + barWidth + '%"></span><span class="stats-bar-label">' + pct.toFixed(1) + '%</span></td>';
             html += '<td>' + fmtNum(row.visitors ? row.visitors.count : 0) + '</td>';
             html += '<td>' + fmtBytes(row.bytes ? row.bytes.count : 0) + '</td>';
-            html += '<td>' + fmtMs(row.avgts || 0) + '</td>';
+            html += '<td class="' + lClass + '">' + fmtMs(row.avgts || 0) + ' ms</td>';
             html += '</tr>';
           }
 
@@ -116,7 +144,7 @@
       <%- renderSection('Betriebssysteme', stats.os, { labelHeader: 'OS' }) %>
       <%- renderSection('Browser', stats.browsers, { labelHeader: 'Browser' }) %>
       <%- renderSection('Besuchszeiten', stats.visit_time, { labelHeader: 'Stunde' }) %>
-      <%- renderSection('Status-Codes', stats.status_codes, { labelHeader: 'Code' }) %>
+      <%- renderSection('Status-Codes', stats.status_codes, { labelHeader: 'Code', isStatusCodes: true }) %>
       <%- renderSection('Referring Sites', stats.referring_sites, { labelHeader: 'Referrer' }) %>
       <%- renderSection('Virtual Hosts', stats.vhosts, { labelHeader: 'VHost' }) %>
 

@@ -1750,10 +1750,11 @@ a:hover { color: var(--text); }
 .stats-meta {
     font-family: var(--mono);
     font-size: 0.8rem;
-    color: var(--muted);
+    color: var(--dim);
     margin-bottom: 1.5rem;
 }
 
+/* KPI cards */
 .stats-kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1762,8 +1763,9 @@ a:hover { color: var(--text); }
 }
 
 .stats-kpi-card {
-    background: var(--card-bg, var(--surface));
-    border: 1px solid var(--border);
+    background: var(--surf);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--line-hi);
     border-radius: 6px;
     padding: 1.2rem 1rem;
     display: flex;
@@ -1772,22 +1774,33 @@ a:hover { color: var(--text); }
     text-align: center;
 }
 
+.stats-kpi--green  { border-left-color: var(--green); }
+.stats-kpi--red    { border-left-color: var(--red); }
+.stats-kpi--blue   { border-left-color: var(--blue); }
+.stats-kpi--gold   { border-left-color: var(--gold); }
+
+.stats-kpi--green .stats-kpi-value  { color: var(--green); }
+.stats-kpi--red   .stats-kpi-value  { color: var(--red); }
+.stats-kpi--blue  .stats-kpi-value  { color: var(--blue); }
+.stats-kpi--gold  .stats-kpi-value  { color: var(--gold); }
+
 .stats-kpi-value {
     font-family: var(--mono);
     font-size: 1.6rem;
     font-weight: 500;
-    color: var(--accent, var(--text));
+    color: var(--text);
     line-height: 1.2;
 }
 
 .stats-kpi-label {
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: var(--muted);
+    color: var(--dim);
     margin-top: 0.4rem;
     letter-spacing: 0.03em;
 }
 
+/* Section tables */
 .stats-section {
     margin-bottom: 2.5rem;
 }
@@ -1795,7 +1808,7 @@ a:hover { color: var(--text); }
 .stats-section-title {
     font-size: 1.1rem;
     margin-bottom: 0.8rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--line);
     padding-bottom: 0.4rem;
 }
 
@@ -1814,16 +1827,27 @@ a:hover { color: var(--text); }
 .stats-table thead {
     position: sticky;
     top: 0;
-    background: var(--bg, #111);
+    background: var(--bg);
     z-index: 1;
 }
 
-.stats-table th,
+.stats-table th {
+    padding: 0.5rem 0.7rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--line-hi);
+    color: var(--dim);
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+}
+
 .stats-table td {
     padding: 0.45rem 0.7rem;
     text-align: right;
     white-space: nowrap;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--line);
 }
 
 .stats-th-label,
@@ -1835,13 +1859,57 @@ a:hover { color: var(--text); }
 }
 
 .stats-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
 }
+
+/* Inline percent bar */
+.stats-td-bar {
+    position: relative;
+    min-width: 80px;
+    padding-right: 0.7rem;
+}
+
+.stats-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(74, 154, 190, 0.15);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.stats-bar-label {
+    position: relative;
+    z-index: 1;
+}
+
+/* Latency / status semantic colors */
+.stats-good { color: var(--green); }
+.stats-info { color: var(--blue); }
+.stats-warn { color: var(--gold); }
+.stats-bad  { color: var(--red); }
+
+/* Status code dot */
+.stats-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    background: var(--dim);
+}
+
+.stats-status-dot.stats-good { background: var(--green); }
+.stats-status-dot.stats-info { background: var(--blue); }
+.stats-status-dot.stats-warn { background: var(--gold); }
+.stats-status-dot.stats-bad  { background: var(--red); }
 
 .stats-truncated {
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: var(--muted);
+    color: var(--dim);
     margin-top: 0.4rem;
 }
 
