@@ -145,6 +145,7 @@ export function convertBigInts(obj) {
   if (typeof obj === 'string') return obj; // Nicht NaN!
 
   if (Array.isArray(obj)) return obj.map(convertBigInts);
+  if (obj instanceof Date || (typeof Buffer !== 'undefined' && Buffer.isBuffer(obj))) return obj;
   if (obj && typeof obj === 'object') {
     const target = Object.isFrozen(obj) ? { ...obj } : obj;
     for (const key in target) {
