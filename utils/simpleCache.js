@@ -6,8 +6,6 @@
  * deep-cloned on retrieval to avoid accidental mutation by callers.
  */
 
-import { sanitizeFields } from './sanitizer.js';
-
 const store = new Map();
 
 function now() {
@@ -44,22 +42,6 @@ function deepClone(value) {
   }
 }
 
-function sanitizeForCache(value) {
-  try {
-    if (!value) return value;
-    // Only attempt to sanitize objects/arrays which may contain content fields
-    if (typeof value === 'object') {
-      // Work on a clone to avoid mutating caller's object
-      // Use the shared sanitizer to sanitize known fields (content, description)
-      const cloned = sanitizeFields(value, ['content', 'description']);
-      return cloned;
-    }
-    return value;
-  } catch (_err) {
-    return value;
-  }
-}
-
 function sizeOf(value) {
   try {
     const s = JSON.stringify(value);
@@ -71,14 +53,13 @@ function sizeOf(value) {
 
 function set(key, value, ttlMs = DEFAULT_TTL) {
   const expires = ttlMs > 0 ? now() + ttlMs : null;
-  const safeValue = sanitizeForCache(value);
-  const newSize = sizeOf(safeValue);
+  const newSize = sizeOf(value);
   // If replacing existing entry, remove its size contribution
   const existing = store.get(key);
   if (existing && typeof existing.size === 'number') {
     totalBytes -= existing.size;
   }
-  store.set(key, { value: safeValue, expires, size: newSize });
+  store.set(key, { value, expires, size: newSize });
   totalBytes += newSize;
   ensureLimit();
 }
