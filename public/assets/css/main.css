@@ -10,12 +10,14 @@
 
 /* ── DESIGN TOKENS ── */
 :root {
-    --bg:       #080807;
+    /* --bg:       #080807; */
+    --bg:      #043d0b;
     --surf:     #131311;
     --surf-2:   #1a1a17;
     --line:     rgba(255,255,255,0.07);
     --line-hi:  rgba(255,255,255,0.15);
-    --text:     #e6e1d8;
+    /* --text:     #e6e1d8; */
+    --text:    #d4d431;
     --dim:      rgba(230,225,216,0.55);
     --gold:     #e8c547;
     --red:      #c74b3a;
@@ -23,6 +25,9 @@
     --green:    #7eb88a;
     --mono:     'IBM Plex Mono', monospace;
     --serif:    'Cormorant Garamond', serif;
+
+
+    
 
     /* Compat aliases */
     --color-bg:         var(--bg);
@@ -253,7 +258,8 @@
 
 .card-body {
     flex: 1 1 auto;
-    background: var(--surf);
+    /* background: var(--surf); */
+    background: #07cce1;
     padding: 1rem 1.2rem;
 }
 
@@ -404,7 +410,10 @@
 .close:hover { opacity: 0.75; }
 
 /* ── MISC UTILITIES ── */
-.bg-transparent { background: transparent; }
+.bg-transparent { 
+    /* background: transparent;  */
+    background: #100b30;
+}
 
 /* ═══════════════════════════════════════════════════════════════ */
 
@@ -485,7 +494,8 @@ a:hover { color: var(--text); }
     left: 0;
     width: 100%;
     z-index: 9002;
-    background: #050504;
+    /* background: #050504; */
+    background: #d4d431;
     /* TECHNIQUE 03: backdrop-filter on navbar */
     backdrop-filter: blur(16px) saturate(1.2);
     -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -534,7 +544,8 @@ a:hover { color: var(--text); }
     font-weight: 400;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--dim);
+    /* color: var(--dim); */
+    color: rgb(31, 12, 48);
     background: transparent;
     border: none;
     border-radius: 0;
@@ -721,7 +732,8 @@ a:hover { color: var(--text); }
     padding: 2rem 1.5rem;
     backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
     -webkit-backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
-    background: rgba(20,20,18,0.3);
+    /* background: rgba(20,20,18,0.3); */
+    background: rgba(175, 23, 23, 0.8);
     border: 1px solid var(--line-hi);
     width: 92%;
     margin: 2.5rem auto;
@@ -850,10 +862,15 @@ a:hover { color: var(--text); }
 }
 
 .sidebar {
-    background: var(--surf);
+    /* background: var(--surf); */
+    background: #230893;
     /* Mobile: horizontal strip */
     padding: 1.5rem 1.2rem;
     border-bottom: 1px solid var(--line);
+}
+
+.sidebar:hover {
+    background: #08c9e2;
 }
 
 @media (min-width: 768px) {
@@ -1092,7 +1109,8 @@ a:hover { color: var(--text); }
 }
 
 .featured-post-card {
-    background: var(--surf);
+    /* background: var(--surf); */
+    background: #1e00ec;
     padding: 1.2rem 1.5rem;
     position: relative;
     overflow: hidden;
@@ -1117,7 +1135,8 @@ a:hover { color: var(--text); }
 }
 
 .featured-post-card:hover {
-    background: #050505;
+    /* background: #050505; */
+    background: #b30a0a;
     border: 1px solid rgba(232, 197, 71, 0.45);
     transform: scale(1.02);
     z-index: 9001;
@@ -1347,7 +1366,8 @@ a:hover { color: var(--text); }
 }
 
 .discovery-card {
-    background: var(--surf);
+    /* background: var(--surf); */
+    background: #8f11d6;
     border: 1px solid var(--line);
     border-radius: 0;
     position: relative;
@@ -1376,7 +1396,8 @@ a:hover { color: var(--text); }
 
 /* ── FOOTER ── */
 .site-footer {
-    background: var(--surf);
+    /* background: var(--surf); */
+    background: #e79412;
     border-top: 1px solid var(--line);
     margin-top: 0;
     padding: 1.8rem 0;
