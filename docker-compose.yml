@@ -59,6 +59,8 @@ services:
       # 2. Den Upload-Ordner explizit beschreibbar machen
       - ./public/assets/media:/app/public/assets/media:rw
       - ./logs:/app/logs:rw
+      - /var/log/nginx/blog-access.log:/var/log/nginx/blog-access.log:ro
+      - /etc/goaccess/goaccess.conf:/etc/goaccess/goaccess.conf:ro
       # 4. Temporärer Speicher für den Upload-Vorgang (Buffer)
       - type: tmpfs
         target: /tmp

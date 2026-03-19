@@ -1746,6 +1746,105 @@ a:hover { color: var(--text); }
     opacity: 0.8;
 }
 
+/* ── ADMIN STATS DASHBOARD ── */
+.stats-meta {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+}
+
+.stats-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.stats-kpi-card {
+    background: var(--card-bg, var(--surface));
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.stats-kpi-value {
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--accent, var(--text));
+    line-height: 1.2;
+}
+
+.stats-kpi-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    letter-spacing: 0.03em;
+}
+
+.stats-section {
+    margin-bottom: 2.5rem;
+}
+
+.stats-section-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.4rem;
+}
+
+.stats-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+}
+
+.stats-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg, #111);
+    z-index: 1;
+}
+
+.stats-table th,
+.stats-table td {
+    padding: 0.45rem 0.7rem;
+    text-align: right;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.stats-th-label,
+.stats-td-label {
+    text-align: left;
+    max-width: 360px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stats-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.stats-truncated {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+}
+
 /* ── FEEDBACK / NOTIFICATION SYSTEM ── */
 #comment-feedback {
     position: fixed;

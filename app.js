@@ -467,6 +467,9 @@ app.use('/api/ai', aiRoutes);
 // Mount utility routes under /api for consistent API structure
 app.use('/api', routes.utilityRouter);
 
+// Admin stats (GoAccess report) — no DB needed, auth enforced by the router
+app.use('/', routes.adminStatsRouter);
+
 // Temporary diagnostic endpoint to help debug header forwarding issues in
 // production (e.g. proxies/CDNs that strip Accept or X-Requested-With).
 // This endpoint intentionally masks sensitive headers (cookies, authorization)

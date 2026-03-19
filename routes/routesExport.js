@@ -9,6 +9,7 @@ import cardRouter from './cardRoutes.js';
 import cardApiRouter from './cardApiRoutes.js';
 import postApiRouter from './postApiRoutes.js';
 import sitemapRouter from './sitemapRoutes.js';
+import adminStatsRouter from './adminStatsRoutes.js';
 
 /**
  * Central export of routers used by `app.js`.
@@ -28,5 +29,6 @@ export default {
   cardApiRouter,
   postApiRouter,
   sitemapRouter,
+  adminStatsRouter,
   // Note: debug endpoint is mounted directly in app.js as `/debug/headers`.
 };
