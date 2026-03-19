@@ -225,15 +225,14 @@ app.use(cookieParser());
 // Note: This middleware runs before any route handlers, so res.locals.isAdmin is available in all templates.
 // It handels ALL requests, but only sets a simple boolean flag based on the presence and validity of the auth token.
 app.use((req, res, next) => {
-  let isAdmin = false;
-  try {
-    const token = authService.extractTokenFromRequest(req);
-    if (token) {
+  res.locals.isAdmin = false;
+  const token = authService.extractTokenFromRequest(req);
+  if (token) {
+    try {
       const decoded = authService.verifyToken(token);
-      if (decoded && decoded.role === 'admin') isAdmin = true;
-    }
-  } catch { /* ignore token errors */ }
-  res.locals.isAdmin = isAdmin;
+      if (decoded && decoded.role === 'admin') res.locals.isAdmin = true;
+    } catch { /* ignore token errors */ }
+  }
   next();
 });
 // 4. Request-Parsing (with security limits)

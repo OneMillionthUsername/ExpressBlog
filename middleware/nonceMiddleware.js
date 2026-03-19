@@ -12,6 +12,11 @@ import crypto from 'crypto';
  * @param {import('express').NextFunction} next
  */
 const nonceMiddleware = (req, res, next) => {
+  // Skip nonce generation for static assets — they don't need CSP nonces
+  if (req.path.startsWith('/assets/') || req.path.startsWith('/public/') || req.path.startsWith('/node_modules/')) {
+    return next();
+  }
+
   // Generiere eine sichere Nonce für jeden Request
   const nonce = crypto.randomBytes(16).toString('base64');
 

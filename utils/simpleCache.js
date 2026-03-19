@@ -3,7 +3,7 @@
  * Not suitable for multi-process deployments (use Redis or similar there).
  *
  * Exposes `set`, `get`, `del`, `clear` and `getStats` helpers. Values are
- * deep-cloned on retrieval to avoid accidental mutation by callers.
+ * deep-frozen on storage to prevent accidental mutation by callers.
  */
 
 const store = new Map();
@@ -30,16 +30,15 @@ function ensureLimit() {
   }
 }
 
-function deepClone(value) {
-  // Use structuredClone when available (Node 18+), fallback to JSON methods
-  try {
-    if (typeof globalThis.structuredClone === 'function') return globalThis.structuredClone(value);
-  } catch (_e) { /* ignore */ }
-  try {
-    return JSON.parse(JSON.stringify(value));
-  } catch (_e) {
-    return value;
+function deepFreeze(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  Object.freeze(obj);
+  for (const val of Object.values(obj)) {
+    if (val !== null && typeof val === 'object' && !Object.isFrozen(val)) {
+      deepFreeze(val);
+    }
   }
+  return obj;
 }
 
 function sizeOf(value) {
@@ -59,7 +58,7 @@ function set(key, value, ttlMs = DEFAULT_TTL) {
   if (existing && typeof existing.size === 'number') {
     totalBytes -= existing.size;
   }
-  store.set(key, { value, expires, size: newSize });
+  store.set(key, { value: deepFreeze(value), expires, size: newSize });
   totalBytes += newSize;
   ensureLimit();
 }
@@ -73,8 +72,7 @@ function get(key) {
     store.delete(key);
     return null;
   }
-  // Return a deep clone so callers can't mutate the cached object
-  return deepClone(entry.value);
+  return entry.value;
 }
 
 function del(key) {
