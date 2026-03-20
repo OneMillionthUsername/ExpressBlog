@@ -322,7 +322,7 @@
 
 .list-group-item {
     position: relative;
-    display: block;
+    display: contents;
     background: var(--surf);
     border: none;
     border-bottom: 1px solid var(--line);
@@ -700,12 +700,13 @@ a:hover { color: var(--text); }
 
 /* ── HERO SECTION — Mobile first ── */
 .header-section {
-    position: relative;
-    min-height: 55vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    /* position: relative; */
+    /* min-height: 55vh; */
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr;
+    grid-template-rows: auto;
+    /* align-items: center; */
+    /* justify-content: center; */
     overflow: hidden;
     padding: 0;
     background: var(--bg);
@@ -726,33 +727,36 @@ a:hover { color: var(--text); }
 /* TECHNIQUE 03: Glass panel with backdrop-filter — Mobile first */
 .hero-glass-content {
     position: relative;
-    z-index: 9001;
+    height: fit-content;
+    /* z-index: 9001; */
     text-align: center;
     /* Mobile: compact padding */
     padding: 2rem 1.5rem;
-    backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
-    -webkit-backdrop-filter: blur(8px) brightness(0.55) contrast(1.1);
+    /* backdrop-filter: blur(8px) brightness(0.55) contrast(1.1); */
+    /* -webkit-backdrop-filter: blur(8px) brightness(0.55) contrast(1.1); */
     /* background: rgba(20,20,18,0.3); */
     background: rgba(175, 23, 23, 0.8);
     border: 1px solid var(--line-hi);
-    width: 92%;
-    margin: 2.5rem auto;
+    /* width: 100%; */
+    /* margin: 2.5rem auto; */
 }
 
 /* Tablet+ */
 @media (min-width: 576px) {
     .hero-glass-content {
         padding: 2.5rem 3rem;
-        width: 85%;
+        /* width: 85%; */
     }
+
+
 }
 
 /* Desktop */
 @media (min-width: 992px) {
     .hero-glass-content {
         padding: 3.5rem 5rem;
-        max-width: 860px;
-        width: 80%;
+        /* max-width: 860px; */
+        /* width: 80%; */
     }
 }
 
@@ -865,6 +869,7 @@ a:hover { color: var(--text); }
     /* background: var(--surf); */
     background: #7f61ff;
     color: rgb(11, 218, 33);
+    height: fit-content;
     /* Mobile: horizontal strip */
     padding: 1.5rem 1.2rem;
     border-bottom: 1px solid var(--line);
@@ -880,7 +885,7 @@ a:hover { color: var(--text); }
         padding: 2.5rem 1.8rem;
         border-bottom: none;
         border-right: 1px solid var(--line);
-        min-height: 100%;
+        /* min-height: 100%; */
     }
 }
 
@@ -964,14 +969,16 @@ a:hover { color: var(--text); }
 .col-md-9 { padding-left: 0; padding-right: 0; }
 
 .content-area {
-    padding: 2rem 1rem 2rem;
+    /* padding: 2rem 1rem 2rem; */
     background: var(--bg);
-    max-width: 895px;
+    display: flex;
+    flex-direction: column;
+    /* max-width: 895px; */
 }
 
-.col-md-9 .content-area {
+/* .col-md-9 .content-area {
     max-width: 100%;
-}
+} */
 
 /* Read-post page: dark background for content area */
 #blogpost-content {
@@ -987,7 +994,7 @@ a:hover { color: var(--text); }
 }
 
 @media (min-width: 768px) {
-    .content-area { padding: 2.5rem 2rem 2rem; }
+    /* .content-area { padding: 2.5rem 2rem 2rem; } */
     #blogpost-content { padding: 2.5rem 2rem; }
 }
 
@@ -1102,19 +1109,20 @@ a:hover { color: var(--text); }
 
 /* ── FEATURED POST CARDS — Mobile first ── */
 .featured-posts-grid {
-    display: grid;
+    /* display: grid; */
     /* Mobile: single column */
-    grid-template-columns: 1fr;
-    gap: 20px;
+    /* grid-template-columns: 1fr;
+    grid-template-rows: 33% 33% 34%; */
+    /* gap: 20px; */
     background: transparent;
     border-radius: 0;
 }
 
-@media (min-width: 768px) {
+/* @media (min-width: 768px) {
     .featured-posts-grid {
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
-}
+} */
 
 .featured-post-card {
     /* background: var(--surf); */
