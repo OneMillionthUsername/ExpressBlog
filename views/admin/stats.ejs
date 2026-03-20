@@ -87,6 +87,7 @@
           if (!data.length) return '';
 
           const showMethod = opts.showMethod || false;
+          const protocol = opts.protocol || '';
           const labelHeader = opts.labelHeader || 'Pfad';
           const limit = opts.limit || 20;
           const isStatusCodes = opts.isStatusCodes || false;
@@ -99,6 +100,7 @@
           html += '<thead><tr>';
           html += '<th class="stats-th-label">' + labelHeader + '</th>';
           if (showMethod) html += '<th>Method</th>';
+          if (protocol) html += '<th>Protocol</th>';
           html += '<th>Hits</th><th>%</th>';
           html += '<th>Visitors</th>';
           html += '<th>Bandwidth</th>';
@@ -119,6 +121,7 @@
             }
             html += (row.data || '–') + '</td>';
             if (showMethod) html += '<td>' + (row.method || '') + '</td>';
+            if (protocol) html += '<td>' + (row.protocol || '') + '</td>';
             html += '<td>' + fmtNum(hits) + '</td>';
             html += '<td class="stats-td-bar"><span class="stats-bar" style="width:' + barWidth + '%"></span><span class="stats-bar-label">' + pct.toFixed(1) + '%</span></td>';
             html += '<td>' + fmtNum(row.visitors ? row.visitors.count : 0) + '</td>';
