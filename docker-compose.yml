@@ -1,36 +1,5 @@
-# Gemischte Entwicklungs- und Produktionsumgebung: Nginx läuft in einem separaten Container für die Entwicklung, aber direkt auf dem Host für die Produktion.
 # In der Produktion läuft Nginx direkt auf dem Host, um besseres Monitoring, Logging
-#
-# TODO PRODUKTION: Container wurden von "expressblog_*" auf "speculumx_*" umbenannt.
-# Auf dem Produktionsserver folgende Schritte ausführen:
-#   1. docker compose down  (stoppt expressblog_app, expressblog_db)
-#   2. git pull             (zieht diese docker-compose.yml)
-#   3. docker compose --env-file .env.production up -d
-# Die DB-Daten bleiben im Volume erhalten (kein --volumes flag verwenden!).
-# Das Volume heißt danach speculumx_db_data statt expressblog_db_data —
-# falls das alte Volume weiter genutzt werden soll, vorher manuell migrieren:
-#   docker run --rm -v expressblog_db_data:/from -v speculumx_db_data:/to alpine sh -c "cp -a /from/. /to/"
 services:
-  # Produktion: Nginx wird nicht mehr in Docker ausgeführt,
-  # sondern direkt auf dem Host, wegen besseremn Monitoring, Logging und fail2ban.
-  # nginx:
-  #   image: nginx:latest
-  #   container_name: speculumx_nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-  #     - /etc/letsencrypt:/etc/letsencrypt:ro
-  #     # Damit Nginx die Assets des Blogs direkt ausliefern kann
-  #     - .:/app:ro
-  #     # Damit das Portfolio erreichbar ist
-  #     - /var/www/portfolio:/var/www/portfolio:ro
-  #   depends_on:
-  #     - app
-  #   networks:
-  #     - speculumx_net
-
   app:
     image: nullhasvalue/expressblog:latest
     # Container-Prozess läuft mit dediziertem Docker-User (UID 119)
@@ -43,8 +12,6 @@ services:
       target: ${DOCKER_TARGET:-release}
     container_name: speculumx_app
     restart: always
-    # expose:
-    #   - "3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=3000
@@ -56,7 +23,7 @@ services:
     volumes:
       # Produktionsmodus: Code kommt aus dem Image (kein Host-Bind-Mount)
       # Dadurch bleibt das readonly-RootFS kompatibel und reproduzierbar.
-      # 2. Den Upload-Ordner explizit beschreibbar machen
+      # Den Upload-Ordner explizit beschreibbar machen, für Bilder und Logs.
       - ./public/assets/media:/app/public/assets/media:rw
       - ./logs:/app/logs:rw
       - /var/log/nginx/blog-access.log:/var/log/nginx/blog-access.log:ro

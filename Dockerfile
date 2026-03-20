@@ -39,7 +39,7 @@ ENV NODE_ENV=production
 # Wir kopieren die Abhängigkeiten, die in Stage 1 (Bookworm) gebaut wurden
 COPY --from=build --chown=node:node /app/package*.json ./
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
-# Hier der Fix: Wir kopieren ALLES (server.js, etc.), da kein /dist existiert
+# Wir kopieren ALLES (server.js, etc.), da kein /dist existiert
 COPY --from=build --chown=node:node /app .
 
 # Sicherheit: App läuft als eingeschränkter User 'node'

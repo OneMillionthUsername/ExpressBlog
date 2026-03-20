@@ -126,7 +126,7 @@
     <div class="row" id="discoveries-grid">
         <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
             <% cards.forEach(function(card, cardIndex) { %>
-                <div class="col-md-4 mb-4 discovery-card-item">
+                <div class="col-md-4 discovery-card-item">
                     <div class="card discovery-card h-100">
                         <% if (card.img_link) { %>
                             <%
@@ -160,7 +160,7 @@
                                 <p class="card-text"><%= card.subtitle %></p>
                             <% } %>
                         </div>
-                        <div class="card-footer bg-transparent">
+                        <div class="card-footer">
                             <a href="<%= card.link %>" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">Mehr lesen</a>
                         </div>
                     </div>
