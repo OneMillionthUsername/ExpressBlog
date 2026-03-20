@@ -5,7 +5,7 @@
 
 <div class="header-section">
     <div class="sidebar">
-        <h2 class="sidebar-title mt-4">Beliebte Beiträge</h2>
+        <h2 class="sidebar-title">Beliebte Beiträge</h2>
         <ul class="nav-list" id="popular-posts">
             <% if (typeof popularPosts !== 'undefined' && Array.isArray(popularPosts) && popularPosts.length > 0) { %>
                 <% popularPosts.forEach(function(p) { %>
@@ -24,7 +24,7 @@
             <% } %>
         </ul>
 
-        <h2 class="sidebar-title mt-4">Kategorien</h2>
+        <h2 class="sidebar-title">Kategorien</h2>
         <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#categoriesCollapse" aria-controls="categoriesCollapse" aria-expanded="false">
             Kategorien
         </button>
@@ -38,7 +38,7 @@
             </ul>
         </div>
 
-        <h2 class="sidebar-title mt-4">Archiv</h2>
+        <h2 class="sidebar-title">Archiv</h2>
         <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#archiveCollapse" aria-controls="archiveCollapse" aria-expanded="false">
             Jahr wählen
         </button>
@@ -78,12 +78,12 @@
                     <div class="featured-post-card">
                         <h4 class="featured-post-title"><a href="/blogpost/<%= fp.slug %>" class="featured-post-link"><%= fp.title %></a></h4>
                         <p class="featured-post-excerpt"><%= fp.excerpt %></p>
-                        <div class="featured-post-actions">
+                        <!-- <div class="featured-post-actions">
                             <% if (fp.previewImage && fp.previewImage.src) { %>
                                 <img class="featured-post-preview" src="<%= fp.previewImage.src %>"<% if (fp.previewImage.srcset) { %> srcset="<%= fp.previewImage.srcset %>"<% } %> alt="" loading="lazy" decoding="async" width="72" height="72">
                             <% } %>
                             <a href="/blogpost/<%= fp.slug %>" class="btn btn-outline-primary">Lesen</a>
-                        </div>
+                        </div> -->
                     </div>
                 <% }); %>
             <% } else { %>
