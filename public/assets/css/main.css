@@ -589,15 +589,15 @@ a:hover { color: var(--text); }
 .menu-home { display: none; }
 
 /* Mobile: hamburger + slide-in menu */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .navbar input[type="checkbox"],
     .navbar .hamburger-lines {
         display: block;
     }
 
     .navbar-container input[type="checkbox"] {
-        position: absolute;
-        height: 25px;
+        position: relative;
+        height: 40px;
         width: 25px;
         top: 14px;
         left: 1rem;
@@ -727,6 +727,12 @@ a:hover { color: var(--text); }
     background: var(--bg);
 }
 
+@media (max-width: 576px) {
+    .header-section {
+        grid-template-columns: 1fr;
+    } 
+}
+
 
 /* Override the existing warm gradient overlay */
 .header-section::before {
@@ -764,9 +770,7 @@ a:hover { color: var(--text); }
     .hero-glass-content {
         padding: 2.5rem 3rem;
         /* width: 85%; */
-    }
-
-
+    };  
 }
 
 /* Desktop */
@@ -1429,8 +1433,10 @@ a:hover { color: var(--text); }
     line-height: 1.65;
 }
 
-@media (max-width: 768px) {
-    #discoveries-grid { gap: 1rem; }
+@media (max-width: 767px) {
+    #discoveries-grid { 
+        /* gap: 1rem; */
+    }
 }
 
 /* ── FOOTER ── */
@@ -2669,7 +2675,7 @@ a.tag:hover {
 }
 
 /* Mobile: archive stacked */
-@media (max-width: 575px) {
+@media (max-width: 576px) {
     .archive-post-item {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -3053,7 +3059,7 @@ a.tag:hover {
     margin: 0;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
     .about-intro-row {
         flex-direction: column;
         align-items: center;
