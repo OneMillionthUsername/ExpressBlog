@@ -25,29 +25,31 @@
         </ul>
 
         <h2 class="sidebar-title">Kategorien</h2>
-        <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#categoriesCollapse" aria-controls="categoriesCollapse" aria-expanded="false">
+        <!-- <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#categoriesCollapse" aria-controls="categoriesCollapse" aria-expanded="false">
             Kategorien
-        </button>
-        <div class="collapse mt-2" id="categoriesCollapse">
+        </button> -->
+        <!-- <div class="collapse mt-2" id="categoriesCollapse"> -->
+        <div>
             <ul class="list-group">
                 <% categories.forEach(function(category) { %>
                     <li class="list-group-item">
-                        <a href="/blogpost/category/<%= category.slug %>"><%= category.name %></a>
+                        <a href="/blogpost/category/<%= category.slug %>"><%= category.name %>&nbsp;</a>
                     </li>
                 <% }); %>
             </ul>
         </div>
 
         <h2 class="sidebar-title">Archiv</h2>
-        <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#archiveCollapse" aria-controls="archiveCollapse" aria-expanded="false">
+        <!-- <button type="button" class="btn btn-secondary dropdown-toggle w-100" data-collapse="#archiveCollapse" aria-controls="archiveCollapse" aria-expanded="false">
             Jahr wählen
-        </button>
-        <div class="collapse mt-2" id="archiveCollapse">
+        </button> -->
+        <!-- <div class="collapse mt-2" id="archiveCollapse"> -->
+        <div>
             <ul class="list-group">
                 <% if (typeof archiveYears !== 'undefined' && Array.isArray(archiveYears) && archiveYears.length > 0) { %>
                     <% archiveYears.forEach(function(y) { %>
                         <li class="list-group-item">
-                            <a href="/blogpost/archive?<%= 'year=' + y %>"><%= y %></a>
+                            <a href="/blogpost/archive?<%= 'year=' + y %>"><%= y %>&nbsp;</a>
                         </li>
                     <% }); %>
                 <% } else { %>
@@ -115,7 +117,7 @@
 
 
 <div class="container my-5">
-    <h3 class="featured-title">Fundstücke & Empfehlungen</h3>
+    <!-- <h3 class="featured-title">Fundstücke & Empfehlungen</h3> -->
     <div class="row" id="discoveries-grid">
         <% if (typeof cards !== 'undefined' && Array.isArray(cards) && cards.length > 0) { %>
             <% cards.forEach(function(card, cardIndex) { %>
