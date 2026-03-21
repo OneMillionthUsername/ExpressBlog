@@ -50,10 +50,12 @@ async function showHomePage(req, res) {
     const cardsPage = Math.max(1, parseInt(req.query.cardsPage, 10) || 1);
     let cards = [];
     let cardsPagination = null;
+    let total = 0;
     try {
       const result = await cardController.getCardsPaginated(cardsPage);
       cards = result.cards;
-      const totalCardPages = Math.ceil(result.total / CARDS_PER_PAGE);
+      total = result.total;
+      const totalCardPages = Math.ceil(total / CARDS_PER_PAGE);
       if (totalCardPages > 1) {
         cardsPagination = {
           currentPage: cardsPage,
