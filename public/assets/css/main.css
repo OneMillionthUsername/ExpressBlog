@@ -2361,7 +2361,8 @@ a:hover { color: var(--text); }
 .post-excerpt {
     font-family: var(--mono);
     font-size: 11px;
-    color: var(--dim);
+    /* color: var(--dim); */
+    color: rgb(92, 255, 0);
     line-height: 1.72;
     max-height: 0;
     overflow: hidden;
@@ -2467,11 +2468,13 @@ a.tag:hover {
     border-left: none;
     position: relative;
     border-radius: 0;
-    background: var(--surf);
-    background-image: none;
+    /* background: var(--surf); */
+    /* background-image: none; */
     box-shadow: none;
     transform: none;
     transition: border-color 0.3s;
+    background-color: #320870;
+    background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .most-read-item:first-child {
@@ -2480,7 +2483,7 @@ a.tag:hover {
 
 .most-read-item:hover {
     border-color: var(--line-hi);
-    background: #050505;
+    /* background: #050505; */
     z-index: 9001;
 }
 
@@ -2522,7 +2525,7 @@ a.tag:hover {
 .most-read-content p {
     font-family: var(--mono);
     font-size: 8px;
-    color: var(--dim);
+    /* color: var(--dim); */
     letter-spacing: 0.18em;
     text-transform: uppercase;
     margin: 0 0 0.4rem 0;
@@ -2537,7 +2540,7 @@ a.tag:hover {
     margin-top: 0.5rem;
     font-family: var(--mono);
     font-size: 10px;
-    color: var(--dim);
+    /* color: var(--dim); */
     line-height: 1.7;
     padding-right: 0;
 }
@@ -2626,10 +2629,12 @@ a.tag:hover {
     border-bottom: 1px solid var(--line);
     position: relative;
     border-radius: 0;
-    background: var(--surf);
-    background-image: none;
+    /* background: var(--surf); */
+    /* background-image: none; */
     box-shadow: none;
     border-left: none;
+    background-color: #562D00;
+    background-image: url("data:image/svg+xml,%3Csvg width='42' height='44' viewBox='0 0 42 44' xmlns='http://www.w3.org/2000/svg'%3E%3Cg id='Page-1' fill='none' fill-rule='evenodd'%3E%3Cg id='brick-wall' fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M0 0h42v44H0V0zm1 1h40v20H1V1zM0 23h20v20H0V23zm22 0h20v20H22V23z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
 .archive-post-item::after {
@@ -2644,7 +2649,7 @@ a.tag:hover {
 }
 
 .archive-post-item:hover {
-    background: rgba(0, 0, 0, 0.35);
+    /* background: rgba(0, 0, 0, 0.35); */
     z-index: 9001;
 }
 
@@ -2656,8 +2661,8 @@ a.tag:hover {
 .archive-post-item h3 {
     grid-area: title;
     font-family: var(--serif);
-    font-size: clamp(0.9rem, 2vw, 1.15rem);
-    font-weight: 300;
+    font-size: clamp(0.9rem, 2vw, 1.35rem);
+    font-weight: 600;
     font-style: italic;
     line-height: 1.25;
     margin: 0;
@@ -2669,8 +2674,8 @@ a.tag:hover {
 .archive-post-item .post-meta {
     grid-area: date;
     font-family: var(--mono);
-    font-size: 8px;
-    color: var(--dim);
+    font-size: 14px;
+    color: rgb(1, 242, 5);
     letter-spacing: 0.1em;
     text-transform: none;
     margin: 0;
@@ -2687,8 +2692,9 @@ a.tag:hover {
 .archive-post-item .post-excerpt {
     grid-area: excerpt;
     font-family: var(--mono);
-    font-size: 10px;
-    color: var(--dim);
+    font-size: 12px;
+    /* color: var(--dim); */
+    color: rgb(92, 255, 0);
     line-height: 1.68;
     margin-top: 0.4rem;
     max-height: none;
