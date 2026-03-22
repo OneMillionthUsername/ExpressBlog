@@ -2188,8 +2188,8 @@ a:hover { color: var(--text); }
 }
 
 .post-filter-input::placeholder {
-    color: var(--dim);
-    font-size: 9px;
+    color: black;
+    font-size: 13px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
 }
@@ -2582,15 +2582,16 @@ a.tag:hover {
     gap: 0.3rem;
     padding-bottom: 1.5rem;
     margin-bottom: 0;
+    margin-top: 1rem;
     border-bottom: 1px solid var(--line);
 }
 
 .archive-years label {
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: var(--dim);
+    /* color: var(--dim); */
     margin: 0 0.4rem 0 0;
 }
 
@@ -2599,7 +2600,7 @@ a.tag:hover {
 /* Year heading — dünner Separator-Label */
 .archive-year-heading {
     font-family: var(--mono);
-    font-size: 8px;
+    font-size: 12px;
     font-weight: 400;
     font-style: normal;
     letter-spacing: 0.32em;
@@ -2730,6 +2731,7 @@ a.tag:hover {
     justify-content: center;
     align-items: center;
     gap: 8px;
+    margin: 1rem auto;
     /* padding: 0.5rem 1rem; */
     /* padding-bottom: 5rem; */
 }
@@ -2748,7 +2750,7 @@ a.tag:hover {
         flex-direction: column;
         /* align-items: stretch; */
         max-width: 280px;
-        margin: 0 auto;
+        /* margin: 0 auto; */
     }
 
     .navigation .btn {
