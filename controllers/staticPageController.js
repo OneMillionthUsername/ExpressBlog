@@ -186,7 +186,7 @@ async function renderCreatePostView(req, res, { post = null, formAction = '/blog
     logger.debug('[CREATEPOST] Fetched categories for createPost view', { categoryCount: Array.isArray(categories) ? categories.length : 0 });
 
     applySsrNoCache(res, { varyCookie: true });
-    res.render('createPost', { isAdmin, post, csrfToken, formAction, formError, categories });
+    res.render('createPost', { isAdmin, post, csrfToken, formAction, formError, categories, usePrism: true, useTinyMce: true });
   } catch (err) {
     logger.error('[CREATEPOST] Error rendering createPost:', err);
     const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : null;
@@ -198,6 +198,8 @@ async function renderCreatePostView(req, res, { post = null, formAction = '/blog
       formAction: '/blogpost/create',
       formError: 'Blogpost konnte nicht geladen werden.',
       categories: [],
+      usePrism: true,
+      useTinyMce: true,
     });
   }
 }

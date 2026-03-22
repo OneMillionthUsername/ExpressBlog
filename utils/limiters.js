@@ -9,7 +9,7 @@ import logger from './logger.js';
  *
  * Set RATE_LIMIT_WHITELIST in .env to a comma-separated list of IPs
  * or CIDR ranges that should bypass all rate limits.
- * Examples: "84.115.0.0/16" or "203.0.113.42,10.0.0.0/8"
+ * Examples: "203.0.113.42,10.0.0.0/8"
  */
 
 const whitelist = new BlockList();

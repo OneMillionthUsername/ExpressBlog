@@ -78,7 +78,7 @@ async function buildReadPostViewData(req, res, post) {
     : commentStatus === 'deleted'
       ? 'Kommentar gelöscht.'
       : (commentStatus === 'error' ? 'Kommentar konnte nicht gespeichert werden.' : null);
-  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage };
+  return { isAdmin, comments, csrfToken, commentCount: comments.length, commentStatus, commentMessage, usePrism: true };
 }
 
 // commentsRouter.all();

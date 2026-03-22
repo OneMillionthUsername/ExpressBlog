@@ -176,7 +176,7 @@ app.use(helmet({
         'https://cdnjs.cloudflare.com',
         // Nonce wird dynamisch hinzugefügt für Inline-Styles (nonceMiddleware)
       ],
-      styleSrcAttr: ['\'none\''],
+      styleSrcAttr: ['\'unsafe-inline\''],
       fontSrc: [
         '\'self\'',
         'https://fonts.gstatic.com',
