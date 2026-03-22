@@ -56,6 +56,10 @@ async function showHomePage(req, res) {
       cards = result.cards;
       total = result.total;
       const totalCardPages = Math.ceil(total / CARDS_PER_PAGE);
+      if(cardsPage > totalCardPages && totalCardPages >= 0 || cardsPage < 1) {
+        applySsrNoCache(res, { varyCookie: true });
+        return res.status(404).render('notFound', { isAdmin, csrfToken });
+      }
       if (totalCardPages > 1) {
         cardsPagination = {
           currentPage: cardsPage,
