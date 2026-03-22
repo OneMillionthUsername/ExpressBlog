@@ -2605,10 +2605,11 @@ a.tag:hover {
     font-style: normal;
     letter-spacing: 0.32em;
     text-transform: uppercase;
-    color: var(--dim);
-    opacity: 0.45;
+    /* color: var(--dim); */
+    color: rgb(0, 255, 171);
+    /* opacity: 0.45; */
     border-top: 1px solid var(--line);
-    padding-top: 2rem;
+    /* padding-top: 2rem; */
     padding-bottom: 1.2rem;
     margin: 0;
 }
