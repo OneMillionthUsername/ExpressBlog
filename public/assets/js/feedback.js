@@ -27,7 +27,7 @@ export function showFeedback(message, type = 'info') {
 
   feedbackContainer.appendChild(feedback);
     
-  // Auto-remove nach 4 Sekunden
+  // Auto-remove nach 3 Sekunden
   setTimeout(() => {
     if (feedback.parentNode) {
       feedback.style.animation = 'slideOutRight 0.3s ease-out';
@@ -37,5 +37,5 @@ export function showFeedback(message, type = 'info') {
         }
       }, 300);
     }
-  }, 4000);
+  }, 3000);
 }
