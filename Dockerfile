@@ -27,9 +27,6 @@ RUN npm run build --if-present
 # Minimalistisches Alpine Linux für minimale Angriffsfläche
 FROM node:22-alpine AS release
 
-# npm auf die neueste Version aktualisieren
-RUN npm install -g npm@latest
-
 # GoAccess für On-Demand Stats-Report-Generierung
 RUN apk add --no-cache goaccess
 
