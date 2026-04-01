@@ -11,7 +11,7 @@
                     <% if (typeof activeTag !== 'undefined' && activeTag) { %>
                         <div class="active-tag-banner mb-2">
                             Tag: <strong><%= activeTag %></strong>
-                            <a href="/blogpost/all" class="btn btn-sm btn-outline-secondary">× Zurücksetzen</a>
+                            <a href="/posts" class="btn btn-sm btn-outline-secondary">× Zurücksetzen</a>
                         </div>
                     <% } %>
                     <form id="tag-search-form" class="form-group mb-0" action="/blogpost/tag" method="GET">

@@ -132,7 +132,7 @@ if (!__assetVersion) {
 // set the values for the views to use
 app.use((req, res, next) => {
   res.locals.assetVersion = __assetVersion;
-  res.locals.pageTitle = 'Sub specie aeternitatis';
+  res.locals.pageTitle = 'Sub specie aeternitatis'; //könnte ich für jede Page dann individuell setzen, aber das ist ein guter Default
   res.locals.metaDescription = 'Sub specie aeternitatis – Tech, Programming, Philosophie und mehr.';
   res.locals.metaRobots = '';
   res.locals.extraHead = '';
@@ -523,40 +523,6 @@ export function getAppStatus() {
 
 // Export appStatus for middleware usage
 export { appStatus };
-
-// ===========================================
-// ERROR HANDLING & FALLBACKS
-// ===========================================
-
-// HTTP zu HTTPS Redirect (Plesk-kompatibel) - API-Routen und statische Dateien ausgeschlossen
-// app.use((req, res, next) => {
-//   // API-Routen und statische Assets von HTTPS-Redirect ausschließen
-//   if (req.url.startsWith('/auth/') || 
-//     req.url.startsWith('/extension/') || 
-//     req.url.startsWith('/blogpost') || 
-//     req.url.startsWith('/comments/') || 
-//     req.url.startsWith('/upload/') ||
-//     req.url.startsWith('/assets/') || 
-//     req.url.startsWith('/public/') ||
-//     req.url.includes('.js') ||
-//     req.url.includes('.css') ||
-//     req.url.includes('.ico')) {
-//     return next(); // Kein Redirect für API-Calls und statische Dateien
-//   }
-//   // Plesk verwendet x-forwarded-proto Header
-//   if (config.IS_PLESK && req.header('x-forwarded-proto') === 'http') {
-//     // Nur GET-Requests umleiten, POST/PUT/DELETE über HTTP ablehnen
-//     if (req.method === 'GET') {
-//       return res.redirect(301, `https://${req.header('host')}${req.url}`);
-//     } else {
-//       return res.status(400).json({
-//         error: 'HTTPS required',
-//         message: 'API endpoints require HTTPS connection',
-//       });
-//     }
-//   } 
-//   next();
-// });
 
 // Export the app to be used by the server
 export default app;
